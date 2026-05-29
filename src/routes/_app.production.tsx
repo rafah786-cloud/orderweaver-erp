@@ -66,9 +66,8 @@ function ProductionPage() {
     mutationFn: async (o: Order) => {
       const next = NEXT[o.status];
       if (!next) return;
-      const patch: Record<string, unknown> = { status: next };
       const col = STAMP[next];
-      if (col) patch[col] = new Date().toISOString();
+      const patch = { status: next, ...(col ? { [col]: new Date().toISOString() } : {}) };
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
       if (error) throw error;
     },
