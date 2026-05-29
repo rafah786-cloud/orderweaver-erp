@@ -19,9 +19,14 @@ export type Database = {
           attendance_date: string
           created_at: string
           employee_id: string
+          first_in: string | null
           hours_worked: number | null
           id: string
           in_time: string | null
+          is_early_exit: boolean
+          is_half_day: boolean
+          is_late: boolean
+          last_out: string | null
           notes: string | null
           ot_hours: number
           out_time: string | null
@@ -31,9 +36,14 @@ export type Database = {
           attendance_date: string
           created_at?: string
           employee_id: string
+          first_in?: string | null
           hours_worked?: number | null
           id?: string
           in_time?: string | null
+          is_early_exit?: boolean
+          is_half_day?: boolean
+          is_late?: boolean
+          last_out?: string | null
           notes?: string | null
           ot_hours?: number
           out_time?: string | null
@@ -43,9 +53,14 @@ export type Database = {
           attendance_date?: string
           created_at?: string
           employee_id?: string
+          first_in?: string | null
           hours_worked?: number | null
           id?: string
           in_time?: string | null
+          is_early_exit?: boolean
+          is_half_day?: boolean
+          is_late?: boolean
+          last_out?: string | null
           notes?: string | null
           ot_hours?: number
           out_time?: string | null
@@ -60,6 +75,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      device_settings: {
+        Row: {
+          api_key_hash: string
+          created_at: string
+          device_id: string
+          id: string
+          ip_address: string
+          is_active: boolean
+          last_seen_at: string | null
+          name: string
+          poll_interval_ms: number
+          port: number
+          updated_at: string
+        }
+        Insert: {
+          api_key_hash: string
+          created_at?: string
+          device_id: string
+          id?: string
+          ip_address: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          name: string
+          poll_interval_ms?: number
+          port?: number
+          updated_at?: string
+        }
+        Update: {
+          api_key_hash?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          ip_address?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          name?: string
+          poll_interval_ms?: number
+          port?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       employees: {
         Row: {
@@ -431,6 +488,47 @@ export type Database = {
         }
         Relationships: []
       }
+      punch_events: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          employee_code: string
+          employee_id: string | null
+          id: string
+          punch_time: string
+          punch_type: Database["public"]["Enums"]["punch_type"]
+          raw_payload: Json | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          employee_code: string
+          employee_id?: string | null
+          id?: string
+          punch_time: string
+          punch_type: Database["public"]["Enums"]["punch_type"]
+          raw_payload?: Json | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          employee_code?: string
+          employee_id?: string | null
+          id?: string
+          punch_time?: string
+          punch_type?: Database["public"]["Enums"]["punch_type"]
+          raw_payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_events_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_order_items: {
         Row: {
           amount: number | null
@@ -523,6 +621,42 @@ export type Database = {
           },
         ]
       }
+      shift_settings: {
+        Row: {
+          half_day_deduction_pct: number
+          half_day_hours: number
+          id: string
+          late_deduction_pct: number
+          late_grace_minutes: number
+          shift_end: string
+          shift_start: string
+          updated_at: string
+          working_days_per_month: number
+        }
+        Insert: {
+          half_day_deduction_pct?: number
+          half_day_hours?: number
+          id?: string
+          late_deduction_pct?: number
+          late_grace_minutes?: number
+          shift_end?: string
+          shift_start?: string
+          updated_at?: string
+          working_days_per_month?: number
+        }
+        Update: {
+          half_day_deduction_pct?: number
+          half_day_hours?: number
+          id?: string
+          late_deduction_pct?: number
+          late_grace_minutes?: number
+          shift_end?: string
+          shift_start?: string
+          updated_at?: string
+          working_days_per_month?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -587,6 +721,7 @@ export type Database = {
         | "qc"
         | "ready"
         | "dispatched"
+      punch_type: "in" | "out"
       user_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -725,6 +860,7 @@ export const Constants = {
         "ready",
         "dispatched",
       ],
+      punch_type: ["in", "out"],
       user_status: ["pending", "approved", "rejected"],
     },
   },
