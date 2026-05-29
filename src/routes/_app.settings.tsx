@@ -161,7 +161,7 @@ function ShiftCard() {
         </div>
         <Button onClick={async () => {
           if (!shift) return;
-          const { error } = await supabase.from("shift_settings").update(form).eq("id", shift.id);
+          const { error } = await supabase.from("shift_settings").update(form as never).eq("id", shift.id);
           if (error) { toast.error(error.message); return; }
           toast.success("Saved");
           qc.invalidateQueries({ queryKey: ["shift"] });

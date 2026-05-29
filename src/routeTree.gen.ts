@@ -14,6 +14,7 @@ import { Route as PendingRouteImport } from './routes/pending'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
@@ -23,6 +24,7 @@ import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
+import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -47,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
   id: '/sales-orders',
@@ -93,6 +100,11 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
+  id: '/api/public/biometric/punch',
+  path: '/api/public/biometric/punch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +120,8 @@ export interface FileRoutesByFullPath {
   '/payslips': typeof AppPayslipsRoute
   '/production': typeof AppProductionRoute
   '/sales-orders': typeof AppSalesOrdersRoute
+  '/settings': typeof AppSettingsRoute
+  '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -123,6 +137,8 @@ export interface FileRoutesByTo {
   '/payslips': typeof AppPayslipsRoute
   '/production': typeof AppProductionRoute
   '/sales-orders': typeof AppSalesOrdersRoute
+  '/settings': typeof AppSettingsRoute
+  '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,6 +156,8 @@ export interface FileRoutesById {
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/production': typeof AppProductionRoute
   '/_app/sales-orders': typeof AppSalesOrdersRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,6 +175,8 @@ export interface FileRouteTypes {
     | '/payslips'
     | '/production'
     | '/sales-orders'
+    | '/settings'
+    | '/api/public/biometric/punch'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -172,6 +192,8 @@ export interface FileRouteTypes {
     | '/payslips'
     | '/production'
     | '/sales-orders'
+    | '/settings'
+    | '/api/public/biometric/punch'
   id:
     | '__root__'
     | '/'
@@ -188,6 +210,8 @@ export interface FileRouteTypes {
     | '/_app/payslips'
     | '/_app/production'
     | '/_app/sales-orders'
+    | '/_app/settings'
+    | '/api/public/biometric/punch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,6 +220,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PendingRoute: typeof PendingRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -234,6 +259,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/sales-orders': {
       id: '/_app/sales-orders'
@@ -298,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/biometric/punch': {
+      id: '/api/public/biometric/punch'
+      path: '/api/public/biometric/punch'
+      fullPath: '/api/public/biometric/punch'
+      preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -311,6 +350,7 @@ interface AppRouteChildren {
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProductionRoute: typeof AppProductionRoute
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
+  AppSettingsRoute: typeof AppSettingsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -323,6 +363,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPayslipsRoute: AppPayslipsRoute,
   AppProductionRoute: AppProductionRoute,
   AppSalesOrdersRoute: AppSalesOrdersRoute,
+  AppSettingsRoute: AppSettingsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -333,17 +374,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PendingRoute: PendingRoute,
   SignupRoute: SignupRoute,
+  ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

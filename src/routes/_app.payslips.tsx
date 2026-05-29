@@ -74,9 +74,9 @@ function PayslipsPage() {
                 {(payslips ?? []).length === 0 && (
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payslips for this period.</TableCell></TableRow>
                 )}
-                {(payslips ?? []).map((p: typeof payslips extends Array<infer X> ? X : never) => (
+                {(payslips ?? []).map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell>{p.employees?.full_name ?? "—"}</TableCell>
+                    <TableCell>{(p as { employees?: { full_name?: string } }).employees?.full_name ?? "—"}</TableCell>
                     <TableCell>{Number(p.days_worked)}</TableCell>
                     <TableCell>{Number(p.days_absent)}</TableCell>
                     <TableCell>{inr(Number(p.gross_salary))}</TableCell>
