@@ -1,0 +1,16 @@
+{
+  "name": "biometric-sync",
+  "version": "1.0.0",
+  "description": "Local LAN bridge that streams Identix/ZKTeco biometric punches to the ERP",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "better-sqlite3": "^11.3.0",
+    "dotenv": "^16.4.5",
+    "node-zklib": "^1.1.10"
+  }
+}
