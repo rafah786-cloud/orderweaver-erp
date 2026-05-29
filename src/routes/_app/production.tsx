@@ -51,8 +51,7 @@ function ProductionPage() {
                   <div key={o.id} className="rounded-md border border-border bg-card p-3 text-xs">
                     <div className="font-medium text-foreground">{o.production_number}</div>
                     <div className="text-muted-foreground mt-1">
-                      {/* @ts-expect-error nested join type */}
-                      {o.sales_orders?.parties?.name ?? "—"}
+                      {(o as any).sales_orders?.parties?.name ?? "—"}
                     </div>
                   </div>
                 ))}
