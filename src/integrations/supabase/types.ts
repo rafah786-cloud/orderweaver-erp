@@ -704,6 +704,10 @@ export type Database = {
         Returns: boolean
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
+      recalc_attendance_day: {
+        Args: { _date: string; _employee_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
