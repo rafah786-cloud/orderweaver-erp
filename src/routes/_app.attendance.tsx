@@ -140,6 +140,9 @@ function AttendancePage() {
               <div className="flex items-center gap-2">
                 <Label className="text-xs">Date</Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+                <Button variant="outline" size="sm" onClick={exportCSV}>
+                  <Download className="h-4 w-4 mr-1" />Export CSV
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
