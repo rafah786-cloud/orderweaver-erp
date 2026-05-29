@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Activity, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Activity, Download, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   addManualPunch, deletePunchEvent, recalcAttendance, recalcAttendanceForDay,
@@ -94,6 +94,28 @@ function AttendancePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const exportCSV = () => {
+    const rows = (employees ?? []).map((e) => {
+      const r = byEmp.get(e.id);
+      const inTime = r?.first_in ? new Date(r.first_in).toLocaleTimeString() : "";
+      const outTime = r?.last_out ? new Date(r.last_out).toLocaleTimeString() : "";
+      const hours = r?.hours_worked ? Number(r.hours_worked).toFixed(1) : "";
+      const status = !r ? "Absent" : r.is_half_day ? "Half Day" : "Present";
+      return [e.employee_code, e.full_name, date, inTime, outTime, hours, status, r?.is_late ? "Yes" : "", r?.is_early_exit ? "Yes" : ""];
+    });
+    const headers = ["Employee Code", "Employee Name", "Date", "In Time", "Out Time", "Hours Worked", "Status", "Late", "Early Exit"];
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `attendance-register-${date}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    toast.success("CSV downloaded");
+  };
+
   return (
     <>
       <PageHeader
@@ -140,6 +162,9 @@ function AttendancePage() {
               <div className="flex items-center gap-2">
                 <Label className="text-xs">Date</Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+                <Button variant="outline" size="sm" onClick={exportCSV}>
+                  <Download className="h-4 w-4 mr-1" />Export CSV
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
