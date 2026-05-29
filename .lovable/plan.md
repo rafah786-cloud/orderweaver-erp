@@ -1,65 +1,67 @@
-# Mattress ERP Build Plan
+## Biometric Attendance Integration — Implementation Plan
 
-A large multi-module app. I'll deliver it in phases so you can verify each layer before stacking the next.
+Adds real-time LAN biometric sync (Identix / ZKTeco-protocol device on TCP 4370), a public ingestion API, live feed UI, device settings, and attendance/payroll auto-calculation rules.
 
-## Tech & Foundation
-- React + TanStack Start (existing template)
-- Lovable Cloud (Supabase) for DB + Auth
-- Clean professional UI: neutral palette, sidebar layout, data-dense tables, semantic tokens in `src/styles.css`
-- Auth: email/password; signup creates a `pending` profile — admin must approve & assign role before login works
+---
 
-## Phase 1 — Foundation (this turn)
-1. Enable Lovable Cloud
-2. Database schema + RLS:
-   - `profiles` (id, name, status: pending/approved/rejected)
-   - `app_role` enum: admin, sales, production, hr, customer, employee
-   - `user_roles` (separate table, security-definer `has_role()`)
-   - `parties` (customers/vendors, outstanding_balance, oldest_unpaid_date)
-   - `invoices` + `invoice_items`
-   - `sales_orders` + `production_orders` (status enum)
-   - `employees`, `pay_structures`, `attendance`, `payslips`
-3. Auth pages: Login, Signup (pending approval screen), Reset password
-4. Role-aware sidebar shell + dashboard route stubs
-5. Admin "User Approvals" page (approve user + assign role)
+### 1. Local Sync Service (new folder `biometric-sync/`)
 
-## Phase 2 — Sales & Invoicing
-- Party master CRUD
-- Invoice create form with **block rule**:
-  - Outstanding ≥ ₹1,50,000 → block
-  - Outstanding ≥ ₹50,000 AND oldest unpaid > 90 days → block
-  - Show blocking reason in dialog
-- Invoice list, party outstanding view
-- Server fn enforces the rule (not just client) so it can't be bypassed
+A standalone Node.js service the user runs on a PC inside the office LAN.
 
-## Phase 3 — Production
-- Sales order → auto-create production order (DB trigger)
-- Kanban + table view: Received → In Production → QC → Ready → Dispatched
-- Sales staff: read-only live status of their own orders
+- `biometric-sync/package.json` — deps: `node-zklib` (Identix uses the ZKTeco protocol on port 4370), `axios`, `dotenv`, `better-sqlite3` (local queue).
+- `biometric-sync/index.js`:
+  - Reads `.env`: `DEVICE_IP`, `DEVICE_PORT=4370`, `ERP_URL`, `DEVICE_API_KEY`, `DEVICE_ID`, `POLL_INTERVAL_MS=5000`.
+  - Connects via `node-zklib`, enables real-time event listener for punch events.
+  - On punch → POST `{ employee_code, punch_type, punch_time, device_id }` to `/api/public/biometric/punch` with header `x-device-key`.
+  - On network/device failure → enqueue to `queue.db` (SQLite); background worker drains queue every interval when connection restored.
+  - Falls back to polling `getAttendances()` when real-time events aren't supported, deduping via last-synced timestamp.
+- `biometric-sync/README.md` — install + run instructions for office IT.
 
-## Phase 4 — HR & Attendance
-- Employee master + pay structure (basic, DA, allowances, OT rate, daily wage)
-- Daily attendance: manual entry + CSV import (configurable column mapping for biometric exports)
-- Monthly payslip generation (auto-calc from attendance × pay structure)
-- Employee self-service: own attendance + payslips
+### 2. Database (single migration)
 
-## Phase 5 — Admin Dashboard
-- KPI cards: total outstanding, overdue >90d, orders in pipeline, today's attendance %
-- Charts: production pipeline funnel, top 10 customers by sales (last 90 days)
-- Recent activity feed
+- `device_settings` table: `id`, `device_id` (unique), `name`, `ip_address`, `port`, `poll_interval_ms`, `api_key_hash`, `last_seen_at`, `is_active`.
+- `shift_settings` table (singleton row): `shift_start`, `shift_end`, `late_grace_minutes`, `half_day_hours`, `late_deduction_pct`, `half_day_deduction_pct`, `working_days_per_month`.
+- `punch_events` table: `id`, `employee_id`, `employee_code`, `device_id`, `punch_type` (IN/OUT), `punch_time`, `raw_payload`, `created_at`. Realtime enabled.
+- Extend `attendance`: ensure `first_in`, `last_out`, `is_late`, `is_early_exit`, `is_half_day` columns exist (add via ALTER).
+- Trigger `on_punch_event_insert`: upsert `attendance` row for `(employee_id, date(punch_time))`, set first_in/last_out, recompute flags & hours; mark `half_day` if only one punch by EOD (cron — see step 5).
+- RLS + GRANTs: admin/hr write, all employees read own; service_role full.
+- `ALTER PUBLICATION supabase_realtime ADD TABLE punch_events;`
 
-## Role Access Matrix (enforced via RLS + route guards)
-| Role | Sees |
-|---|---|
-| Admin | Everything + approvals + dashboard |
-| Sales | Parties, own invoices, own orders' production status |
-| Production | Production module only |
-| HR | Employees, attendance, payroll |
-| Customer | Own orders + invoices |
-| Employee | Own attendance + payslips |
+### 3. Public Ingestion Endpoint
 
-## Notes
-- This is ~4–5 turns of work. Phase 1 lands a working skeleton you can log into and approve users on. Each later phase is shippable independently.
-- CSV biometric import: I'll default to common format (employee_id, date, in_time, out_time). Tell me your device's export format if different.
-- Currency: ₹ (INR), date format dd/mm/yyyy.
+- `src/routes/api/public/biometric/punch.ts` — POST handler:
+  - Validate `x-device-key` against `device_settings.api_key_hash` (bcrypt compare via `supabaseAdmin`).
+  - Zod-validate body, look up employee by `employee_code`, insert `punch_events` row (trigger handles attendance).
+  - Update `device_settings.last_seen_at`.
+  - Returns 200 `{ok:true}` or 401/404.
 
-Approve and I'll start with Phase 1.
+### 4. ERP UI
+
+- `src/routes/_app.attendance.tsx` — full build:
+  - **Live Feed panel**: subscribes to `punch_events` realtime channel, shows last 10 (employee name, time, IN green / OUT red badge).
+  - **Daily register table**: date picker → employees × status (Present / Absent / Half Day / Late / Early Exit) with computed hours.
+  - Manual entry dialog (admin/hr) retained.
+- `src/routes/_app.settings.tsx` (new) — admin only:
+  - Device config CRUD (IP, port, poll interval, regenerate API key — shown once).
+  - Shift settings form (start/end/grace/deduction rules).
+- `src/routes/_app.payslips.tsx` — generate-month action:
+  - Server fn computes: `present_days`, `absent_days`, `late_count`, `half_day_count` from attendance.
+  - Net = `(present_days / working_days_per_month) × monthly_ctc` − late/half-day deductions per shift_settings — write to `payslips`.
+
+### 5. Cron / End-of-day pass
+
+- pg_cron job at 23:55 IST: mark any attendance row with only one punch as `half_day`, mark employees with no punches as `absent` (skipping weekends per shift_settings).
+
+### 6. Sidebar
+
+- Add "Settings" link (admin only) to `AppSidebar.tsx`.
+
+---
+
+### Technical notes
+- Identix devices in India almost universally speak the ZKTeco TCP protocol on 4370 — `node-zklib` covers both real-time push (`getRealTimeLogs`) and polling fallback (`getAttendances`).
+- Device authenticates to ERP via shared API key (stored hashed) — no Supabase JWT needed since service is headless.
+- Realtime feed uses existing Supabase realtime — no extra infra.
+- All calculations server-side (server fns) so RLS-protected; UI just renders.
+
+Approve and I'll implement.
