@@ -14,15 +14,15 @@ import { Route as PendingRouteImport } from './routes/pending'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppSalesOrdersRouteImport } from './routes/_app/sales-orders'
-import { Route as AppProductionRouteImport } from './routes/_app/production'
-import { Route as AppPayslipsRouteImport } from './routes/_app/payslips'
-import { Route as AppPartiesRouteImport } from './routes/_app/parties'
-import { Route as AppInvoicesRouteImport } from './routes/_app/invoices'
-import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
-import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
-import { Route as AppApprovalsRouteImport } from './routes/_app/approvals'
+import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
+import { Route as AppProductionRouteImport } from './routes/_app.production'
+import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppPartiesRouteImport } from './routes/_app.parties'
+import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
+import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -337,3 +337,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
