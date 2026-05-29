@@ -9,38 +9,225 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as PendingRouteImport } from './routes/pending'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSalesOrdersRouteImport } from './routes/_app/sales-orders'
+import { Route as AppProductionRouteImport } from './routes/_app/production'
+import { Route as AppPayslipsRouteImport } from './routes/_app/payslips'
+import { Route as AppPartiesRouteImport } from './routes/_app/parties'
+import { Route as AppInvoicesRouteImport } from './routes/_app/invoices'
+import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
+import { Route as AppApprovalsRouteImport } from './routes/_app/approvals'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendingRoute = PendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
+  id: '/sales-orders',
+  path: '/sales-orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProductionRoute = AppProductionRouteImport.update({
+  id: '/production',
+  path: '/production',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPayslipsRoute = AppPayslipsRouteImport.update({
+  id: '/payslips',
+  path: '/payslips',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPartiesRoute = AppPartiesRouteImport.update({
+  id: '/parties',
+  path: '/parties',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesRoute = AppInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEmployeesRoute = AppEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAttendanceRoute = AppAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppApprovalsRoute = AppApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/pending': typeof PendingRoute
+  '/signup': typeof SignupRoute
+  '/approvals': typeof AppApprovalsRoute
+  '/attendance': typeof AppAttendanceRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/employees': typeof AppEmployeesRoute
+  '/invoices': typeof AppInvoicesRoute
+  '/parties': typeof AppPartiesRoute
+  '/payslips': typeof AppPayslipsRoute
+  '/production': typeof AppProductionRoute
+  '/sales-orders': typeof AppSalesOrdersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/pending': typeof PendingRoute
+  '/signup': typeof SignupRoute
+  '/approvals': typeof AppApprovalsRoute
+  '/attendance': typeof AppAttendanceRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/employees': typeof AppEmployeesRoute
+  '/invoices': typeof AppInvoicesRoute
+  '/parties': typeof AppPartiesRoute
+  '/payslips': typeof AppPayslipsRoute
+  '/production': typeof AppProductionRoute
+  '/sales-orders': typeof AppSalesOrdersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/pending': typeof PendingRoute
+  '/signup': typeof SignupRoute
+  '/_app/approvals': typeof AppApprovalsRoute
+  '/_app/attendance': typeof AppAttendanceRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/employees': typeof AppEmployeesRoute
+  '/_app/invoices': typeof AppInvoicesRoute
+  '/_app/parties': typeof AppPartiesRoute
+  '/_app/payslips': typeof AppPayslipsRoute
+  '/_app/production': typeof AppProductionRoute
+  '/_app/sales-orders': typeof AppSalesOrdersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/pending'
+    | '/signup'
+    | '/approvals'
+    | '/attendance'
+    | '/dashboard'
+    | '/employees'
+    | '/invoices'
+    | '/parties'
+    | '/payslips'
+    | '/production'
+    | '/sales-orders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/pending'
+    | '/signup'
+    | '/approvals'
+    | '/attendance'
+    | '/dashboard'
+    | '/employees'
+    | '/invoices'
+    | '/parties'
+    | '/payslips'
+    | '/production'
+    | '/sales-orders'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/pending'
+    | '/signup'
+    | '/_app/approvals'
+    | '/_app/attendance'
+    | '/_app/dashboard'
+    | '/_app/employees'
+    | '/_app/invoices'
+    | '/_app/parties'
+    | '/_app/payslips'
+    | '/_app/production'
+    | '/_app/sales-orders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  PendingRoute: typeof PendingRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pending': {
+      id: '/pending'
+      path: '/pending'
+      fullPath: '/pending'
+      preLoaderRoute: typeof PendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +235,105 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/sales-orders': {
+      id: '/_app/sales-orders'
+      path: '/sales-orders'
+      fullPath: '/sales-orders'
+      preLoaderRoute: typeof AppSalesOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/production': {
+      id: '/_app/production'
+      path: '/production'
+      fullPath: '/production'
+      preLoaderRoute: typeof AppProductionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/payslips': {
+      id: '/_app/payslips'
+      path: '/payslips'
+      fullPath: '/payslips'
+      preLoaderRoute: typeof AppPayslipsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/parties': {
+      id: '/_app/parties'
+      path: '/parties'
+      fullPath: '/parties'
+      preLoaderRoute: typeof AppPartiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/invoices': {
+      id: '/_app/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AppInvoicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/employees': {
+      id: '/_app/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AppEmployeesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/attendance': {
+      id: '/_app/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AppAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/approvals': {
+      id: '/_app/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppApprovalsRoute: typeof AppApprovalsRoute
+  AppAttendanceRoute: typeof AppAttendanceRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppEmployeesRoute: typeof AppEmployeesRoute
+  AppInvoicesRoute: typeof AppInvoicesRoute
+  AppPartiesRoute: typeof AppPartiesRoute
+  AppPayslipsRoute: typeof AppPayslipsRoute
+  AppProductionRoute: typeof AppProductionRoute
+  AppSalesOrdersRoute: typeof AppSalesOrdersRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppApprovalsRoute: AppApprovalsRoute,
+  AppAttendanceRoute: AppAttendanceRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppEmployeesRoute: AppEmployeesRoute,
+  AppInvoicesRoute: AppInvoicesRoute,
+  AppPartiesRoute: AppPartiesRoute,
+  AppPayslipsRoute: AppPayslipsRoute,
+  AppProductionRoute: AppProductionRoute,
+  AppSalesOrdersRoute: AppSalesOrdersRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  PendingRoute: PendingRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

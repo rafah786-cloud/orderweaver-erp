@@ -1,0 +1,1 @@
+ALTER VIEW public.party_outstanding SET (security_invoker = true);
