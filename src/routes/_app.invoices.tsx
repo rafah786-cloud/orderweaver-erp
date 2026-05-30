@@ -13,9 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Ban } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Ban, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
+import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
 
 export const Route = createFileRoute("/_app/invoices")({
   component: InvoicesPage,
@@ -50,6 +51,13 @@ function InvoicesPage() {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Item[]>([{ description: "", quantity: 1, unit_price: 0 }]);
   const [blockMsg, setBlockMsg] = useState<{ title: string; reason: string } | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const today = new Date();
+  const [exportYear, setExportYear] = useState(today.getFullYear());
+  const [exportMonth, setExportMonth] = useState(today.getMonth() + 1);
+  const [supplierGstin, setSupplierGstin] = useState("");
+  const [supplierState, setSupplierState] = useState("29");
+  const [exporting, setExporting] = useState(false);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
@@ -164,13 +172,67 @@ function InvoicesPage() {
     },
   });
 
+  const handleExport = async () => {
+    if (!/^\d{2}[A-Z0-9]{13}$/.test(supplierGstin.trim().toUpperCase())) {
+      toast.error("Enter a valid 15-character supplier GSTIN");
+      return;
+    }
+    setExporting(true);
+    try {
+      const start = new Date(Date.UTC(exportYear, exportMonth - 1, 1)).toISOString().slice(0, 10);
+      const end = new Date(Date.UTC(exportYear, exportMonth, 1)).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, invoice_date, total_amount, subtotal, tax_amount, party_id, invoice_items(description, quantity, unit_price, amount, hsn_code, tax_rate)")
+        .neq("status", "cancelled")
+        .gte("invoice_date", start)
+        .lt("invoice_date", end);
+      if (error) throw error;
+      const { data: partyData, error: pErr } = await supabase
+        .from("parties")
+        .select("id, name, gstin, state_code");
+      if (pErr) throw pErr;
+      if (!data || data.length === 0) {
+        toast.error("No invoices found for this period");
+        return;
+      }
+      const json = buildGstr1Json({
+        gstin: supplierGstin.trim().toUpperCase(),
+        year: exportYear,
+        month: exportMonth,
+        invoices: data as never,
+        parties: partyData as never,
+        supplierStateCode: supplierState,
+      });
+      downloadJson(`gstr1_${supplierGstin.trim().toUpperCase()}_${String(exportMonth).padStart(2, "0")}${exportYear}.json`, json);
+      toast.success(`Exported ${data.length} invoice(s)`);
+      setExportOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Invoices"
         description="Create invoices with automatic credit-limit and overdue blocking."
-        actions={canCreate ? <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Invoice</Button> : undefined}
+        actions={
+          <div className="flex gap-2">
+            {hasAnyRole(["admin", "sales"]) && (
+              <Button variant="outline" onClick={() => setExportOpen(true)}>
+                <FileDown className="h-4 w-4 mr-1" />Export GSTR-1 JSON
+              </Button>
+            )}
+            {canCreate && (
+              <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Invoice</Button>
+            )}
+          </div>
+        }
       />
+
       <PageBody>
         <Card>
           <CardContent className="p-0">
@@ -310,7 +372,73 @@ function InvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Export GSTR-1 JSON</DialogTitle>
+            <DialogDescription>
+              Generates a GSTR-1 JSON file for the selected month. Upload it on the GST portal via the Returns Offline Tool.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Supplier GSTIN *</Label>
+              <Input
+                placeholder="e.g. 29ABCDE1234F1Z5"
+                value={supplierGstin}
+                maxLength={15}
+                onChange={(e) => setSupplierGstin(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">State code</Label>
+                <Input
+                  placeholder="29"
+                  value={supplierState}
+                  maxLength={2}
+                  onChange={(e) => setSupplierState(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Month</Label>
+                <Select value={String(exportMonth)} onValueChange={(v) => setExportMonth(Number(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {new Date(2000, m - 1, 1).toLocaleString("en-IN", { month: "long" })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Year</Label>
+              <Input
+                type="number"
+                min="2020"
+                max="2100"
+                value={exportYear}
+                onChange={(e) => setExportYear(Number(e.target.value))}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Invoices with a valid party GSTIN are exported as B2B; the rest are aggregated as B2CS. Cancelled invoices are excluded.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)}>Cancel</Button>
+            <Button onClick={handleExport} disabled={exporting}>
+              {exporting ? "Generating…" : "Download JSON"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
 
