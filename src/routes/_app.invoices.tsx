@@ -372,7 +372,73 @@ function InvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Export GSTR-1 JSON</DialogTitle>
+            <DialogDescription>
+              Generates a GSTR-1 JSON file for the selected month. Upload it on the GST portal via the Returns Offline Tool.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Supplier GSTIN *</Label>
+              <Input
+                placeholder="e.g. 29ABCDE1234F1Z5"
+                value={supplierGstin}
+                maxLength={15}
+                onChange={(e) => setSupplierGstin(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">State code</Label>
+                <Input
+                  placeholder="29"
+                  value={supplierState}
+                  maxLength={2}
+                  onChange={(e) => setSupplierState(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Month</Label>
+                <Select value={String(exportMonth)} onValueChange={(v) => setExportMonth(Number(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {new Date(2000, m - 1, 1).toLocaleString("en-IN", { month: "long" })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Year</Label>
+              <Input
+                type="number"
+                min="2020"
+                max="2100"
+                value={exportYear}
+                onChange={(e) => setExportYear(Number(e.target.value))}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Invoices with a valid party GSTIN are exported as B2B; the rest are aggregated as B2CS. Cancelled invoices are excluded.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)}>Cancel</Button>
+            <Button onClick={handleExport} disabled={exporting}>
+              {exporting ? "Generating…" : "Download JSON"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
 
