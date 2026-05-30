@@ -14,6 +14,7 @@ import { Route as PendingRouteImport } from './routes/pending'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
@@ -49,6 +50,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppWhatsappRoute = AppWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/production': typeof AppProductionRoute
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
+  '/whatsapp': typeof AppWhatsappRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesByTo {
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/production': typeof AppProductionRoute
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
+  '/whatsapp': typeof AppWhatsappRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesById {
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/_app/production': typeof AppProductionRoute
   '/_app/sales-orders': typeof AppSalesOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/whatsapp': typeof AppWhatsappRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRouteTypes {
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/production'
     | '/sales-orders'
     | '/settings'
+    | '/whatsapp'
     | '/api/public/biometric/punch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/production'
     | '/sales-orders'
     | '/settings'
+    | '/whatsapp'
     | '/api/public/biometric/punch'
   id:
     | '__root__'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/_app/production'
     | '/_app/sales-orders'
     | '/_app/settings'
+    | '/_app/whatsapp'
     | '/api/public/biometric/punch'
   fileRoutesById: FileRoutesById
 }
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/whatsapp': {
+      id: '/_app/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AppWhatsappRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/settings': {
       id: '/_app/settings'
@@ -351,6 +370,7 @@ interface AppRouteChildren {
   AppProductionRoute: typeof AppProductionRoute
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppWhatsappRoute: typeof AppWhatsappRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -364,6 +384,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProductionRoute: AppProductionRoute,
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppWhatsappRoute: AppWhatsappRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Users, FileText, ShoppingCart, Factory,
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
+  MessageCircle,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
