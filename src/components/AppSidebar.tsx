@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Users, FileText, ShoppingCart, Factory,
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
+  MessageCircle,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const NAV: NavItem[] = [
   { to: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["admin", "hr", "employee"] },
   { to: "/payslips", label: "Payslips", icon: Receipt, roles: ["admin", "hr", "employee"] },
   { to: "/approvals", label: "User Approvals", icon: ShieldCheck, roles: ["admin"] },
+  { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle, roles: ["admin", "sales", "production", "hr", "customer", "employee"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
 ];
 
