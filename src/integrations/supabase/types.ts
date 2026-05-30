@@ -118,6 +118,83 @@ export type Database = {
         }
         Relationships: []
       }
+      e_way_bills: {
+        Row: {
+          created_at: string
+          distance_km: number | null
+          document_type: string | null
+          error_message: string | null
+          ewb_date: string | null
+          ewb_number: string | null
+          generated_by: string | null
+          id: string
+          invoice_id: string
+          request_payload: Json | null
+          response_payload: Json | null
+          status: string
+          sub_supply_type: string | null
+          transaction_type: string | null
+          transport_mode: string | null
+          transporter_id: string | null
+          transporter_name: string | null
+          updated_at: string
+          valid_upto: string | null
+          vehicle_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          distance_km?: number | null
+          document_type?: string | null
+          error_message?: string | null
+          ewb_date?: string | null
+          ewb_number?: string | null
+          generated_by?: string | null
+          id?: string
+          invoice_id: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string
+          sub_supply_type?: string | null
+          transaction_type?: string | null
+          transport_mode?: string | null
+          transporter_id?: string | null
+          transporter_name?: string | null
+          updated_at?: string
+          valid_upto?: string | null
+          vehicle_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          distance_km?: number | null
+          document_type?: string | null
+          error_message?: string | null
+          ewb_date?: string | null
+          ewb_number?: string | null
+          generated_by?: string | null
+          id?: string
+          invoice_id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string
+          sub_supply_type?: string | null
+          transaction_type?: string | null
+          transport_mode?: string | null
+          transporter_id?: string | null
+          transporter_name?: string | null
+          updated_at?: string
+          valid_upto?: string | null
+          vehicle_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "e_way_bills_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           basic_salary: number
@@ -194,25 +271,31 @@ export type Database = {
         Row: {
           amount: number | null
           description: string
+          hsn_code: string | null
           id: string
           invoice_id: string
           quantity: number
+          tax_rate: number
           unit_price: number
         }
         Insert: {
           amount?: number | null
           description: string
+          hsn_code?: string | null
           id?: string
           invoice_id: string
           quantity?: number
+          tax_rate?: number
           unit_price?: number
         }
         Update: {
           amount?: number | null
           description?: string
+          hsn_code?: string | null
           id?: string
           invoice_id?: string
           quantity?: number
+          tax_rate?: number
           unit_price?: number
         }
         Relationships: [
@@ -229,6 +312,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          dispatch_pincode: string | null
+          dispatch_state_code: string | null
           due_date: string | null
           id: string
           invoice_date: string
@@ -239,6 +324,7 @@ export type Database = {
           sales_order_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
+          supplier_gstin: string | null
           tax_amount: number
           total_amount: number
           updated_at: string
@@ -246,6 +332,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          dispatch_pincode?: string | null
+          dispatch_state_code?: string | null
           due_date?: string | null
           id?: string
           invoice_date?: string
@@ -256,6 +344,7 @@ export type Database = {
           sales_order_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
+          supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
           updated_at?: string
@@ -263,6 +352,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          dispatch_pincode?: string | null
+          dispatch_state_code?: string | null
           due_date?: string | null
           id?: string
           invoice_date?: string
@@ -273,6 +364,7 @@ export type Database = {
           sales_order_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
+          supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
           updated_at?: string
@@ -314,6 +406,8 @@ export type Database = {
           notes: string | null
           owner_id: string | null
           phone: string | null
+          pin_code: string | null
+          state_code: string | null
           updated_at: string
           user_id: string | null
         }
@@ -329,6 +423,8 @@ export type Database = {
           notes?: string | null
           owner_id?: string | null
           phone?: string | null
+          pin_code?: string | null
+          state_code?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -344,6 +440,8 @@ export type Database = {
           notes?: string | null
           owner_id?: string | null
           phone?: string | null
+          pin_code?: string | null
+          state_code?: string | null
           updated_at?: string
           user_id?: string | null
         }
