@@ -457,34 +457,43 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           created_at: string
+          department: string | null
           email: string
           full_name: string
           id: string
           phone: string | null
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string
+          whatsapp_number: string | null
+          whatsapp_opt_in: boolean
         }
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
+          department?: string | null
           email: string
           full_name: string
           id: string
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
         }
         Update: {
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
+          department?: string | null
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
         }
         Relationships: []
       }
