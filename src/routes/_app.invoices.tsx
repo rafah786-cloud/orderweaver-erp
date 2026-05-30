@@ -172,13 +172,67 @@ function InvoicesPage() {
     },
   });
 
+  const handleExport = async () => {
+    if (!/^\d{2}[A-Z0-9]{13}$/.test(supplierGstin.trim().toUpperCase())) {
+      toast.error("Enter a valid 15-character supplier GSTIN");
+      return;
+    }
+    setExporting(true);
+    try {
+      const start = new Date(Date.UTC(exportYear, exportMonth - 1, 1)).toISOString().slice(0, 10);
+      const end = new Date(Date.UTC(exportYear, exportMonth, 1)).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, invoice_date, total_amount, subtotal, tax_amount, party_id, invoice_items(description, quantity, unit_price, amount, hsn_code, tax_rate)")
+        .neq("status", "cancelled")
+        .gte("invoice_date", start)
+        .lt("invoice_date", end);
+      if (error) throw error;
+      const { data: partyData, error: pErr } = await supabase
+        .from("parties")
+        .select("id, name, gstin, state_code");
+      if (pErr) throw pErr;
+      if (!data || data.length === 0) {
+        toast.error("No invoices found for this period");
+        return;
+      }
+      const json = buildGstr1Json({
+        gstin: supplierGstin.trim().toUpperCase(),
+        year: exportYear,
+        month: exportMonth,
+        invoices: data as never,
+        parties: partyData as never,
+        supplierStateCode: supplierState,
+      });
+      downloadJson(`gstr1_${supplierGstin.trim().toUpperCase()}_${String(exportMonth).padStart(2, "0")}${exportYear}.json`, json);
+      toast.success(`Exported ${data.length} invoice(s)`);
+      setExportOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Invoices"
         description="Create invoices with automatic credit-limit and overdue blocking."
-        actions={canCreate ? <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Invoice</Button> : undefined}
+        actions={
+          <div className="flex gap-2">
+            {hasAnyRole(["admin", "sales"]) && (
+              <Button variant="outline" onClick={() => setExportOpen(true)}>
+                <FileDown className="h-4 w-4 mr-1" />Export GSTR-1 JSON
+              </Button>
+            )}
+            {canCreate && (
+              <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Invoice</Button>
+            )}
+          </div>
+        }
       />
+
       <PageBody>
         <Card>
           <CardContent className="p-0">
