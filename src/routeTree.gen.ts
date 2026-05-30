@@ -17,12 +17,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
+import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
@@ -66,6 +68,11 @@ const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
   path: '/sales-orders',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPurchasesRoute = AppPurchasesRouteImport.update({
+  id: '/purchases',
+  path: '/purchases',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProductionRoute = AppProductionRouteImport.update({
   id: '/production',
   path: '/production',
@@ -96,6 +103,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBoqRoute = AppBoqRouteImport.update({
+  id: '/boq',
+  path: '/boq',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -119,12 +131,14 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/invoices': typeof AppInvoicesRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
   '/production': typeof AppProductionRoute
+  '/purchases': typeof AppPurchasesRoute
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/whatsapp': typeof AppWhatsappRoute
@@ -137,12 +151,14 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/invoices': typeof AppInvoicesRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
   '/production': typeof AppProductionRoute
+  '/purchases': typeof AppPurchasesRoute
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/whatsapp': typeof AppWhatsappRoute
@@ -157,12 +173,14 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
+  '/_app/boq': typeof AppBoqRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/invoices': typeof AppInvoicesRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/production': typeof AppProductionRoute
+  '/_app/purchases': typeof AppPurchasesRoute
   '/_app/sales-orders': typeof AppSalesOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
@@ -177,12 +195,14 @@ export interface FileRouteTypes {
     | '/signup'
     | '/approvals'
     | '/attendance'
+    | '/boq'
     | '/dashboard'
     | '/employees'
     | '/invoices'
     | '/parties'
     | '/payslips'
     | '/production'
+    | '/purchases'
     | '/sales-orders'
     | '/settings'
     | '/whatsapp'
@@ -195,12 +215,14 @@ export interface FileRouteTypes {
     | '/signup'
     | '/approvals'
     | '/attendance'
+    | '/boq'
     | '/dashboard'
     | '/employees'
     | '/invoices'
     | '/parties'
     | '/payslips'
     | '/production'
+    | '/purchases'
     | '/sales-orders'
     | '/settings'
     | '/whatsapp'
@@ -214,12 +236,14 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_app/approvals'
     | '/_app/attendance'
+    | '/_app/boq'
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/invoices'
     | '/_app/parties'
     | '/_app/payslips'
     | '/_app/production'
+    | '/_app/purchases'
     | '/_app/sales-orders'
     | '/_app/settings'
     | '/_app/whatsapp'
@@ -293,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSalesOrdersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/purchases': {
+      id: '/_app/purchases'
+      path: '/purchases'
+      fullPath: '/purchases'
+      preLoaderRoute: typeof AppPurchasesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/production': {
       id: '/_app/production'
       path: '/production'
@@ -335,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/boq': {
+      id: '/_app/boq'
+      path: '/boq'
+      fullPath: '/boq'
+      preLoaderRoute: typeof AppBoqRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/attendance': {
       id: '/_app/attendance'
       path: '/attendance'
@@ -362,12 +400,14 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
+  AppBoqRoute: typeof AppBoqRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProductionRoute: typeof AppProductionRoute
+  AppPurchasesRoute: typeof AppPurchasesRoute
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppWhatsappRoute: typeof AppWhatsappRoute
@@ -376,12 +416,14 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
+  AppBoqRoute: AppBoqRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppInvoicesRoute: AppInvoicesRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProductionRoute: AppProductionRoute,
+  AppPurchasesRoute: AppPurchasesRoute,
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppWhatsappRoute: AppWhatsappRoute,
@@ -400,13 +442,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

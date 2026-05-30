@@ -22,7 +22,8 @@ export const Route = createFileRoute("/_app/sales-orders")({
   component: SalesOrdersPage,
 });
 
-type Item = { product_name: string; size: string; quantity: number; unit_price: number };
+type Item = { model_id: string; product_name: string; size: string; quantity: number; unit_price: number };
+type ModelOption = { id: string; name: string; size: string | null; default_price: number };
 
 type Order = {
   id: string;
@@ -43,7 +44,7 @@ function SalesOrdersPage() {
   const [orderDate, setOrderDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [expectedDelivery, setExpectedDelivery] = useState("");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<Item[]>([{ product_name: "", size: "", quantity: 1, unit_price: 0 }]);
+  const [items, setItems] = useState<Item[]>([{ model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 }]);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["sales-orders"],
@@ -66,6 +67,16 @@ function SalesOrdersPage() {
     },
   });
 
+  const { data: models = [] } = useQuery({
+    queryKey: ["models-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("product_models")
+        .select("id, name, size, default_price").order("name");
+      if (error) throw error;
+      return (data ?? []) as ModelOption[];
+    },
+  });
+
   const partyMap = new Map(parties.map((p) => [p.id, p.name]));
   const total = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0);
 
@@ -74,13 +85,23 @@ function SalesOrdersPage() {
     setOrderDate(new Date().toISOString().slice(0, 10));
     setExpectedDelivery("");
     setNotes("");
-    setItems([{ product_name: "", size: "", quantity: 1, unit_price: 0 }]);
+    setItems([{ model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 }]);
+  };
+
+  const pickModel = (idx: number, modelId: string) => {
+    const m = models.find((x) => x.id === modelId);
+    setItems(items.map((x, i) => i === idx ? {
+      ...x, model_id: modelId,
+      product_name: m?.name ?? x.product_name,
+      size: m?.size ?? x.size,
+      unit_price: m?.default_price ?? x.unit_price,
+    } : x));
   };
 
   const create = useMutation({
     mutationFn: async () => {
       if (!partyId) throw new Error("Select a party");
-      if (items.some((i) => !i.product_name.trim())) throw new Error("All line items need a product name");
+      if (items.some((i) => !i.model_id)) throw new Error("Every line must select a registered model. Add it in BOQ first.");
       if (total <= 0) throw new Error("Order total must be greater than zero");
 
       const orderNumber = `SO-${Date.now().toString().slice(-8)}`;
@@ -102,6 +123,7 @@ function SalesOrdersPage() {
       const { error: itemErr } = await supabase.from("sales_order_items").insert(
         items.map((i) => ({
           sales_order_id: so.id,
+          model_id: i.model_id,
           product_name: i.product_name,
           size: i.size || null,
           quantity: Number(i.quantity),
@@ -191,15 +213,26 @@ function SalesOrdersPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-sm font-medium">Line Items</Label>
-                <Button size="sm" variant="outline" onClick={() => setItems([...items, { product_name: "", size: "", quantity: 1, unit_price: 0 }])}>
+                <Button size="sm" variant="outline" onClick={() => setItems([...items, { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 }])}>
                   <Plus className="h-3 w-3 mr-1" />Add
                 </Button>
               </div>
+              {models.length === 0 && (
+                <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground mb-2">
+                  No models yet. Add them with specifications in <span className="font-medium">BOQ → Models</span> before placing orders.
+                </div>
+              )}
               <div className="space-y-2">
                 {items.map((it, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-start">
-                    <Input className="col-span-5" placeholder="Product (e.g. King Memory Foam)" value={it.product_name}
-                      onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, product_name: e.target.value } : x))} />
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-5">
+                      <Select value={it.model_id} onValueChange={(v) => pickModel(idx, v)}>
+                        <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                        <SelectContent>
+                          {models.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}{m.size ? ` — ${m.size}` : ""}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Input className="col-span-2" placeholder="Size" value={it.size}
                       onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, size: e.target.value } : x))} />
                     <Input className="col-span-2" type="number" min="0" placeholder="Qty" value={it.quantity}

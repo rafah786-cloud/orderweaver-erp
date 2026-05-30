@@ -393,6 +393,42 @@ export type Database = {
           },
         ]
       }
+      model_boq: {
+        Row: {
+          id: string
+          model_id: string
+          quantity_per_unit: number
+          raw_material_id: string
+        }
+        Insert: {
+          id?: string
+          model_id: string
+          quantity_per_unit?: number
+          raw_material_id: string
+        }
+        Update: {
+          id?: string
+          model_id?: string
+          quantity_per_unit?: number
+          raw_material_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_boq_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "product_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_boq_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parties: {
         Row: {
           address: string | null
@@ -496,6 +532,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_models: {
+        Row: {
+          code: string | null
+          cover_fabric: string | null
+          created_at: string
+          created_by: string | null
+          default_price: number
+          extra_specs: Json
+          foam_density: string | null
+          id: string
+          name: string
+          notes: string | null
+          size: string | null
+          thickness: string | null
+          updated_at: string
+          warranty: string | null
+        }
+        Insert: {
+          code?: string | null
+          cover_fabric?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_price?: number
+          extra_specs?: Json
+          foam_density?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          size?: string | null
+          thickness?: string | null
+          updated_at?: string
+          warranty?: string | null
+        }
+        Update: {
+          code?: string | null
+          cover_fabric?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_price?: number
+          extra_specs?: Json
+          foam_density?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          size?: string | null
+          thickness?: string | null
+          updated_at?: string
+          warranty?: string | null
+        }
+        Relationships: []
       }
       production_orders: {
         Row: {
@@ -636,10 +723,133 @@ export type Database = {
           },
         ]
       }
+      purchase_bill_items: {
+        Row: {
+          amount: number | null
+          id: string
+          purchase_bill_id: string
+          quantity: number
+          raw_material_id: string
+          unit_price: number
+        }
+        Insert: {
+          amount?: number | null
+          id?: string
+          purchase_bill_id: string
+          quantity?: number
+          raw_material_id: string
+          unit_price?: number
+        }
+        Update: {
+          amount?: number | null
+          id?: string
+          purchase_bill_id?: string
+          quantity?: number
+          raw_material_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bill_items_purchase_bill_id_fkey"
+            columns: ["purchase_bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bill_items_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_bills: {
+        Row: {
+          bill_date: string
+          bill_number: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          supplier_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          bill_date?: string
+          bill_number: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          supplier_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          bill_date?: string
+          bill_number?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          supplier_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bills_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_materials: {
+        Row: {
+          code: string | null
+          created_at: string
+          current_stock: number
+          id: string
+          name: string
+          notes: string | null
+          reorder_level: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          current_stock?: number
+          id?: string
+          name: string
+          notes?: string | null
+          reorder_level?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          current_stock?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          reorder_level?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_order_items: {
         Row: {
           amount: number | null
           id: string
+          model_id: string | null
           product_name: string
           quantity: number
           sales_order_id: string
@@ -649,6 +859,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           id?: string
+          model_id?: string | null
           product_name: string
           quantity?: number
           sales_order_id: string
@@ -658,6 +869,7 @@ export type Database = {
         Update: {
           amount?: number | null
           id?: string
+          model_id?: string | null
           product_name?: string
           quantity?: number
           sales_order_id?: string
@@ -665,6 +877,13 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_order_items_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "product_models"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_order_items_sales_order_id_fkey"
             columns: ["sales_order_id"]
@@ -761,6 +980,42 @@ export type Database = {
           shift_start?: string
           updated_at?: string
           working_days_per_month?: number
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          gstin: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

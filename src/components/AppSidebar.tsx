@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Users, FileText, ShoppingCart, Factory,
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
-  MessageCircle,
+  MessageCircle, Package, Truck,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ const NAV: NavItem[] = [
   { to: "/parties", label: "Parties", icon: Users, roles: ["admin", "sales"] },
   { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "sales", "customer"] },
   { to: "/sales-orders", label: "Sales Orders", icon: ShoppingCart, roles: ["admin", "sales", "customer"] },
+  { to: "/boq", label: "BOQ", icon: Package, roles: ["admin", "sales", "production"] },
+  { to: "/purchases", label: "Purchases", icon: Truck, roles: ["admin", "production"] },
   { to: "/production", label: "Production", icon: Factory, roles: ["admin", "production", "sales"] },
   { to: "/employees", label: "Employees", icon: UserCog, roles: ["admin", "hr"] },
   { to: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["admin", "hr", "employee"] },
