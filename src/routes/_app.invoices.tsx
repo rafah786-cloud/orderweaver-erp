@@ -51,6 +51,13 @@ function InvoicesPage() {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Item[]>([{ description: "", quantity: 1, unit_price: 0 }]);
   const [blockMsg, setBlockMsg] = useState<{ title: string; reason: string } | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const today = new Date();
+  const [exportYear, setExportYear] = useState(today.getFullYear());
+  const [exportMonth, setExportMonth] = useState(today.getMonth() + 1);
+  const [supplierGstin, setSupplierGstin] = useState("");
+  const [supplierState, setSupplierState] = useState("29");
+  const [exporting, setExporting] = useState(false);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
