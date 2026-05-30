@@ -213,15 +213,26 @@ function SalesOrdersPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-sm font-medium">Line Items</Label>
-                <Button size="sm" variant="outline" onClick={() => setItems([...items, { product_name: "", size: "", quantity: 1, unit_price: 0 }])}>
+                <Button size="sm" variant="outline" onClick={() => setItems([...items, { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 }])}>
                   <Plus className="h-3 w-3 mr-1" />Add
                 </Button>
               </div>
+              {models.length === 0 && (
+                <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground mb-2">
+                  No models yet. Add them with specifications in <span className="font-medium">BOQ → Models</span> before placing orders.
+                </div>
+              )}
               <div className="space-y-2">
                 {items.map((it, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-start">
-                    <Input className="col-span-5" placeholder="Product (e.g. King Memory Foam)" value={it.product_name}
-                      onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, product_name: e.target.value } : x))} />
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-5">
+                      <Select value={it.model_id} onValueChange={(v) => pickModel(idx, v)}>
+                        <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                        <SelectContent>
+                          {models.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}{m.size ? ` — ${m.size}` : ""}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Input className="col-span-2" placeholder="Size" value={it.size}
                       onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, size: e.target.value } : x))} />
                     <Input className="col-span-2" type="number" min="0" placeholder="Qty" value={it.quantity}
