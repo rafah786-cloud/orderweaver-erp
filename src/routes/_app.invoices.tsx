@@ -175,6 +175,45 @@ function InvoicesPage() {
     },
   });
 
+  const recordPayment = useMutation({
+    mutationFn: async () => {
+      if (!payInv) throw new Error("No invoice selected");
+      const amt = Number(payAmount);
+      if (!amt || amt <= 0) throw new Error("Enter a payment amount greater than zero");
+      const newPaid = Number(payInv.paid_amount) + amt;
+      if (newPaid > Number(payInv.total_amount) + 0.01) throw new Error("Payment exceeds invoice total");
+      const status: InvoiceRow["status"] = newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
+      const { error } = await supabase
+        .from("invoices")
+        .update({ paid_amount: newPaid, status })
+        .eq("id", payInv.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Payment recorded");
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["dash-outstanding"] });
+      setPayInv(null);
+      setPayAmount("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cancelInvoice = useMutation({
+    mutationFn: async (inv: InvoiceRow) => {
+      const { error } = await supabase.from("invoices").update({ status: "cancelled" }).eq("id", inv.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Invoice cancelled");
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["dash-outstanding"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+
   const handleExport = async () => {
     if (!/^\d{2}[A-Z0-9]{13}$/.test(supplierGstin.trim().toUpperCase())) {
       toast.error("Enter a valid 15-character supplier GSTIN");
