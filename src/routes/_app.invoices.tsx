@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Ban, FileDown } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
