@@ -59,6 +59,8 @@ function InvoicesPage() {
   const [supplierGstin, setSupplierGstin] = useState("");
   const [supplierState, setSupplierState] = useState("29");
   const [exporting, setExporting] = useState(false);
+  const [payInv, setPayInv] = useState<InvoiceRow | null>(null);
+  const [payAmount, setPayAmount] = useState("");
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
