@@ -1,19 +1,26 @@
-import { createFileRoute, Navigate, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar } from "@/components/AppSidebar";
+import { allowedRolesFor } from "@/lib/permissions";
+import { ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
 function AppLayout() {
-  const { loading, session, profile } = useAuth();
+  const { loading, session, profile, hasAnyRole, roles } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) return <Navigate to="/login" />;
   if (profile?.status !== "approved") return <Navigate to="/pending" />;
+
+  const allowed = allowedRolesFor(location.pathname);
+  const denied = allowed !== null && !hasAnyRole(allowed);
 
   return (
     <div className="relative flex h-screen overflow-hidden">
@@ -24,8 +31,28 @@ function AppLayout() {
 
       <AppSidebar />
       <main className="relative flex-1 overflow-y-auto">
-        <Outlet />
+        {denied ? <AccessDenied allowed={allowed!} have={roles} /> : <Outlet />}
       </main>
+    </div>
+  );
+}
+
+function AccessDenied({ allowed, have }: { allowed: string[]; have: string[] }) {
+  return (
+    <div className="flex min-h-full items-center justify-center p-8">
+      <div className="glass max-w-md w-full p-8 text-center space-y-4 rounded-2xl">
+        <div className="mx-auto h-14 w-14 rounded-2xl btn-gold flex items-center justify-center">
+          <ShieldAlert className="h-7 w-7" />
+        </div>
+        <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Access denied</h1>
+        <p className="text-sm text-muted-foreground">
+          This screen is restricted to: <span className="font-medium text-foreground">{allowed.join(", ")}</span>.
+          Your role{have.length > 1 ? "s are" : " is"}: <span className="font-medium text-foreground">{have.join(", ") || "none"}</span>.
+        </p>
+        <Button asChild className="btn-3d">
+          <Link to="/dashboard">Back to dashboard</Link>
+        </Button>
+      </div>
     </div>
   );
 }

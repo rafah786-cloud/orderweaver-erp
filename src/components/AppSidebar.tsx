@@ -5,33 +5,47 @@ import {
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
   MessageCircle, Package, Truck,
 } from "lucide-react";
-import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { ROUTE_ROLES } from "@/lib/permissions";
 
-type AppRole = Database["public"]["Enums"]["app_role"];
+const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  "/dashboard": LayoutDashboard,
+  "/parties": Users,
+  "/invoices": FileText,
+  "/sales-orders": ShoppingCart,
+  "/boq": Package,
+  "/purchases": Truck,
+  "/production": Factory,
+  "/employees": UserCog,
+  "/attendance": CalendarCheck,
+  "/payslips": Receipt,
+  "/approvals": ShieldCheck,
+  "/whatsapp": MessageCircle,
+  "/settings": Settings,
+};
 
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  roles: AppRole[];
-}
+const LABELS: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/parties": "Parties",
+  "/invoices": "Invoices",
+  "/sales-orders": "Sales Orders",
+  "/boq": "BOQ",
+  "/purchases": "Purchases",
+  "/production": "Production",
+  "/employees": "Employees",
+  "/attendance": "Attendance",
+  "/payslips": "Payslips",
+  "/approvals": "User Approvals",
+  "/whatsapp": "WhatsApp",
+  "/settings": "Settings",
+};
 
-const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "sales", "production", "hr", "customer", "employee"] },
-  { to: "/parties", label: "Parties", icon: Users, roles: ["admin", "sales"] },
-  { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "sales", "customer"] },
-  { to: "/sales-orders", label: "Sales Orders", icon: ShoppingCart, roles: ["admin", "sales", "customer"] },
-  { to: "/boq", label: "BOQ", icon: Package, roles: ["admin", "sales", "production"] },
-  { to: "/purchases", label: "Purchases", icon: Truck, roles: ["admin", "production"] },
-  { to: "/production", label: "Production", icon: Factory, roles: ["admin", "production", "sales"] },
-  { to: "/employees", label: "Employees", icon: UserCog, roles: ["admin", "hr"] },
-  { to: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["admin", "hr", "employee"] },
-  { to: "/payslips", label: "Payslips", icon: Receipt, roles: ["admin", "hr", "employee"] },
-  { to: "/approvals", label: "User Approvals", icon: ShieldCheck, roles: ["admin"] },
-  { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle, roles: ["admin", "sales", "production", "hr", "customer", "employee"] },
-  { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
-];
+const NAV = ROUTE_ROLES.map((r) => ({
+  to: r.prefix,
+  label: LABELS[r.prefix] ?? r.prefix,
+  icon: ICONS[r.prefix] ?? LayoutDashboard,
+  roles: r.roles,
+}));
 
 export function AppSidebar() {
   const { profile, roles, signOut, hasAnyRole } = useAuth();
