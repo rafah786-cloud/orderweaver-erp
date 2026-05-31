@@ -141,19 +141,37 @@
 /* ============ Glass + 3D Utilities ============ */
 @layer utilities {
   .glass {
+    position: relative;
     background: var(--gradient-glass), oklch(0.22 0.04 268 / 0.45);
     backdrop-filter: blur(22px) saturate(160%);
     -webkit-backdrop-filter: blur(22px) saturate(160%);
     border: 1px solid oklch(1 0 0 / 0.10);
     box-shadow: var(--shadow-3d);
+    transform: translateZ(0);
+    transition: transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s ease, border-color .3s ease;
   }
   .glass-sm {
+    position: relative;
     background: var(--gradient-glass), oklch(0.22 0.04 268 / 0.40);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
     border: 1px solid oklch(1 0 0 / 0.08);
     box-shadow: var(--shadow-3d-sm);
+    transition: transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s ease, border-color .3s ease;
   }
+  /* Specular sheen overlay */
+  .glass::before, .glass-sm::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, oklch(1 0 0 / 0.12) 0%, oklch(1 0 0 / 0) 40%, oklch(1 0 0 / 0) 60%, oklch(1 0 0 / 0.05) 100%);
+    pointer-events: none;
+    opacity: .75;
+    transition: opacity .35s ease;
+  }
+  .glass:hover::before, .glass-sm:hover::before { opacity: 1; }
+
   .glass-inset {
     background: oklch(0 0 0 / 0.25);
     box-shadow:
@@ -167,42 +185,83 @@
     background-clip: text;
     color: transparent;
   }
-  .gold-ring {
-    box-shadow: var(--shadow-glow-gold);
-  }
+  .gold-ring { box-shadow: var(--shadow-glow-gold); }
+
   .btn-3d {
     background: linear-gradient(180deg, oklch(0.32 0.05 268), oklch(0.22 0.04 268));
     box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 0.15) inset,
-      0 -1px 0 0 oklch(0 0 0 / 0.4) inset,
-      0 8px 18px -6px oklch(0 0 0 / 0.55);
-    transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+      0 1px 0 0 oklch(1 0 0 / 0.18) inset,
+      0 -2px 0 0 oklch(0 0 0 / 0.45) inset,
+      0 2px 0 0 oklch(0 0 0 / 0.35),
+      0 12px 24px -8px oklch(0 0 0 / 0.65),
+      0 4px 10px -3px oklch(0 0 0 / 0.45);
+    transition: transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, filter .2s ease;
   }
-  .btn-3d:hover { transform: translateY(-1px); filter: brightness(1.08); }
-  .btn-3d:active { transform: translateY(1px); filter: brightness(0.95); }
+  .btn-3d:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.22) inset,
+      0 -2px 0 0 oklch(0 0 0 / 0.45) inset,
+      0 4px 0 0 oklch(0 0 0 / 0.4),
+      0 22px 38px -10px oklch(0 0 0 / 0.7),
+      0 8px 16px -4px oklch(0 0 0 / 0.5);
+  }
+  .btn-3d:active {
+    transform: translateY(1px);
+    filter: brightness(0.95);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.12) inset,
+      0 -1px 0 0 oklch(0 0 0 / 0.4) inset,
+      0 6px 14px -6px oklch(0 0 0 / 0.55);
+  }
 
   .btn-gold {
     background: var(--gradient-gold);
     color: oklch(0.18 0.04 270);
     box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 0.45) inset,
-      0 -1px 0 0 oklch(0 0 0 / 0.25) inset,
-      0 10px 24px -8px oklch(0.80 0.14 85 / 0.55);
-    transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+      0 1px 0 0 oklch(1 0 0 / 0.55) inset,
+      0 -2px 0 0 oklch(0 0 0 / 0.28) inset,
+      0 2px 0 0 oklch(0.40 0.10 70 / 0.6),
+      0 14px 28px -8px oklch(0.80 0.14 85 / 0.6),
+      0 6px 14px -4px oklch(0 0 0 / 0.4);
+    transition: transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, filter .2s ease;
   }
-  .btn-gold:hover { transform: translateY(-1px); filter: brightness(1.05); }
-  .btn-gold:active { transform: translateY(1px); }
+  .btn-gold:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.07);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.6) inset,
+      0 -2px 0 0 oklch(0 0 0 / 0.28) inset,
+      0 4px 0 0 oklch(0.40 0.10 70 / 0.55),
+      0 26px 44px -10px oklch(0.80 0.14 85 / 0.75),
+      0 10px 20px -4px oklch(0 0 0 / 0.45);
+  }
+  .btn-gold:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 0.35) inset,
+      0 -1px 0 0 oklch(0 0 0 / 0.3) inset,
+      0 8px 16px -6px oklch(0.80 0.14 85 / 0.5);
+  }
 
   .hover-lift {
-    transition: transform .25s ease, box-shadow .25s ease;
+    transition: transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s ease, border-color .3s ease;
   }
   .hover-lift:hover {
-    transform: translateY(-2px);
+    transform: translateY(-6px) scale(1.008);
+    border-color: oklch(1 0 0 / 0.18);
     box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 0.10) inset,
-      0 -1px 0 0 oklch(0 0 0 / 0.30) inset,
-      0 28px 60px -16px oklch(0 0 0 / 0.6);
+      0 1px 0 0 oklch(1 0 0 / 0.14) inset,
+      0 -1px 0 0 oklch(0 0 0 / 0.35) inset,
+      0 40px 80px -20px oklch(0 0 0 / 0.7),
+      0 18px 36px -10px oklch(0 0 0 / 0.5),
+      0 0 0 1px oklch(0.80 0.14 85 / 0.12),
+      0 0 60px -10px oklch(0.80 0.14 85 / 0.25);
   }
+  /* Subtle parallax: inner content drifts opposite the lift */
+  .hover-lift > * { transition: transform .55s cubic-bezier(.2,.7,.2,1); }
+  .hover-lift:hover > * { transform: translateY(-2px); }
 
   .ambient-blob {
     position: absolute;
@@ -210,5 +269,10 @@
     filter: blur(80px);
     opacity: 0.55;
     pointer-events: none;
+    animation: blob-float 18s ease-in-out infinite;
+  }
+  @keyframes blob-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(24px, -32px) scale(1.08); }
   }
 }
