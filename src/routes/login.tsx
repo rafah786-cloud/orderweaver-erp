@@ -44,7 +44,7 @@ function LoginPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Building2 className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl">MattressERP</CardTitle>
+          <CardTitle className="text-2xl">Abood Tradings ERP</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
