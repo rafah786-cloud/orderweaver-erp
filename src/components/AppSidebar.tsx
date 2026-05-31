@@ -47,7 +47,7 @@ export function AppSidebar() {
           <Building2 className="h-5 w-5" />
         </div>
         <div>
-          <div className="font-semibold text-base gold-text" style={{ fontFamily: "var(--font-display)" }}>MattressERP</div>
+          <div className="font-semibold text-base gold-text" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</div>
           <div className="text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/50">Manufacturing</div>
         </div>
       </div>
