@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Ban, FileDown } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
@@ -58,6 +59,8 @@ function InvoicesPage() {
   const [supplierGstin, setSupplierGstin] = useState("");
   const [supplierState, setSupplierState] = useState("29");
   const [exporting, setExporting] = useState(false);
+  const [payInv, setPayInv] = useState<InvoiceRow | null>(null);
+  const [payAmount, setPayAmount] = useState("");
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
@@ -172,6 +175,45 @@ function InvoicesPage() {
     },
   });
 
+  const recordPayment = useMutation({
+    mutationFn: async () => {
+      if (!payInv) throw new Error("No invoice selected");
+      const amt = Number(payAmount);
+      if (!amt || amt <= 0) throw new Error("Enter a payment amount greater than zero");
+      const newPaid = Number(payInv.paid_amount) + amt;
+      if (newPaid > Number(payInv.total_amount) + 0.01) throw new Error("Payment exceeds invoice total");
+      const status: InvoiceRow["status"] = newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
+      const { error } = await supabase
+        .from("invoices")
+        .update({ paid_amount: newPaid, status })
+        .eq("id", payInv.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Payment recorded");
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["dash-outstanding"] });
+      setPayInv(null);
+      setPayAmount("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cancelInvoice = useMutation({
+    mutationFn: async (inv: InvoiceRow) => {
+      const { error } = await supabase.from("invoices").update({ status: "cancelled" }).eq("id", inv.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Invoice cancelled");
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["dash-outstanding"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+
   const handleExport = async () => {
     if (!/^\d{2}[A-Z0-9]{13}$/.test(supplierGstin.trim().toUpperCase())) {
       toast.error("Enter a valid 15-character supplier GSTIN");
@@ -246,14 +288,18 @@ function InvoicesPage() {
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">Paid</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : invoices.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No invoices yet.</TableCell></TableRow>
-                ) : invoices.map((inv) => (
+                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No invoices yet.</TableCell></TableRow>
+                ) : invoices.map((inv) => {
+                  const canManage = hasAnyRole(["admin", "sales"]);
+                  const closed = inv.status === "paid" || inv.status === "cancelled";
+                  return (
                   <TableRow key={inv.id}>
                     <TableCell className="font-medium">{inv.invoice_number}</TableCell>
                     <TableCell>{partyMap.get(inv.party_id)?.name ?? "—"}</TableCell>
@@ -266,8 +312,30 @@ function InvoicesPage() {
                         {inv.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {canManage && !closed && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setPayInv(inv); setPayAmount(String(Math.max(0, Number(inv.total_amount) - Number(inv.paid_amount)))); }}>
+                              <IndianRupee className="h-4 w-4 mr-2" />Record payment
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => { if (confirm(`Cancel invoice ${inv.invoice_number}?`)) cancelInvoice.mutate(inv); }}
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />Cancel invoice
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -433,6 +501,33 @@ function InvoicesPage() {
             <Button variant="outline" onClick={() => setExportOpen(false)}>Cancel</Button>
             <Button onClick={handleExport} disabled={exporting}>
               {exporting ? "Generating…" : "Download JSON"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!payInv} onOpenChange={(o) => { if (!o) { setPayInv(null); setPayAmount(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>
+              {payInv && (
+                <>Invoice <span className="font-medium">{payInv.invoice_number}</span> · Balance{" "}
+                  <span className="font-medium">{inr(Number(payInv.total_amount) - Number(payInv.paid_amount))}</span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Amount received (₹)</Label>
+              <Input type="number" min="0" step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPayInv(null); setPayAmount(""); }}>Cancel</Button>
+            <Button onClick={() => recordPayment.mutate()} disabled={recordPayment.isPending}>
+              {recordPayment.isPending ? "Saving…" : "Record Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>
