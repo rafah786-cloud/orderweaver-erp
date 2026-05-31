@@ -505,6 +505,33 @@ function InvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!payInv} onOpenChange={(o) => { if (!o) { setPayInv(null); setPayAmount(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>
+              {payInv && (
+                <>Invoice <span className="font-medium">{payInv.invoice_number}</span> · Balance{" "}
+                  <span className="font-medium">{inr(Number(payInv.total_amount) - Number(payInv.paid_amount))}</span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Amount received (₹)</Label>
+              <Input type="number" min="0" step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPayInv(null); setPayAmount(""); }}>Cancel</Button>
+            <Button onClick={() => recordPayment.mutate()} disabled={recordPayment.isPending}>
+              {recordPayment.isPending ? "Saving…" : "Record Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
 
   );
