@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, AlertTriangle, Printer } from "lucide-react";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 
