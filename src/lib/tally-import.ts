@@ -104,7 +104,7 @@ export function parseTallyMasters(
   const finishedGoods: TallyStockItem[] = [];
 
   for (const msg of messages) {
-    const ledgers = arr<Record<string, unknown>>(msg.LEDGER);
+    const ledgers = arr<Record<string, unknown>>(msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined);
     for (const l of ledgers) {
       const name = text(l["@_NAME"] ?? l.NAME);
       if (!name) continue;
