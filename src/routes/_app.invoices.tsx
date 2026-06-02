@@ -63,6 +63,7 @@ function InvoicesPage() {
   const [exporting, setExporting] = useState(false);
   const [payInv, setPayInv] = useState<InvoiceRow | null>(null);
   const [payAmount, setPayAmount] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
