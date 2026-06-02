@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, AlertTriangle, Printer } from "lucide-react";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 
@@ -56,6 +57,7 @@ function PartiesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { data: parties = [], isLoading } = useQuery({
     queryKey: ["parties"],
@@ -180,10 +182,9 @@ function PartiesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
-                          <Button asChild size="icon" variant="ghost" title="Print ledger">
-                            <Link to="/print/party-ledger/$id" params={{ id: p.id }} target="_blank">
-                              <Printer className="h-4 w-4" />
-                            </Link>
+                          <Button size="icon" variant="ghost" title="Print preview"
+                            onClick={() => setPreviewUrl(`/print/party-ledger/${p.id}`)}>
+                            <Printer className="h-4 w-4" />
                           </Button>
                           {canEdit && (
                             <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
@@ -224,6 +225,12 @@ function PartiesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PrintPreviewModal
+        url={previewUrl}
+        title="Ledger Preview"
+        onClose={() => setPreviewUrl(null)}
+      />
     </>
   );
 }

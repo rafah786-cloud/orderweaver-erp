@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Trash2, Pencil, Printer } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, formatDate } from "@/lib/format";
 
@@ -28,6 +29,7 @@ type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_
 function PurchasesPage() {
   const { hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "production"]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   return (
     <>
@@ -38,17 +40,18 @@ function PurchasesPage() {
             <TabsTrigger value="bills">Purchase Bills</TabsTrigger>
             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
           </TabsList>
-          <TabsContent value="bills"><BillsTab canEdit={canEdit} /></TabsContent>
-          <TabsContent value="suppliers"><SuppliersTab canEdit={canEdit} /></TabsContent>
+          <TabsContent value="bills"><BillsTab canEdit={canEdit} onPreview={setPreviewUrl} /></TabsContent>
+          <TabsContent value="suppliers"><SuppliersTab canEdit={canEdit} onPreview={setPreviewUrl} /></TabsContent>
         </Tabs>
       </PageBody>
+      <PrintPreviewModal url={previewUrl} title="Print Preview" onClose={() => setPreviewUrl(null)} />
     </>
   );
 }
 
 /* ---------------- Suppliers ---------------- */
 
-function SuppliersTab({ canEdit }: { canEdit: boolean }) {
+function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Supplier | null>(null);
@@ -111,10 +114,9 @@ function SuppliersTab({ canEdit }: { canEdit: boolean }) {
                 <TableCell>{s.phone ?? "—"}</TableCell>
                 <TableCell>{s.email ?? "—"}</TableCell>
                 <TableCell className="text-right">
-                  <Button asChild size="icon" variant="ghost" title="Print ledger">
-                    <Link to="/print/supplier-ledger/$id" params={{ id: s.id }} target="_blank">
-                      <Printer className="h-4 w-4" />
-                    </Link>
+                  <Button size="icon" variant="ghost" title="Print preview"
+                    onClick={() => onPreview(`/print/supplier-ledger/${s.id}`)}>
+                    <Printer className="h-4 w-4" />
                   </Button>
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                 </TableCell>
@@ -155,7 +157,7 @@ function SuppliersTab({ canEdit }: { canEdit: boolean }) {
 
 type BillItem = { raw_material_id: string; quantity: number; unit_price: number };
 
-function BillsTab({ canEdit }: { canEdit: boolean }) {
+function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -249,10 +251,9 @@ function BillsTab({ canEdit }: { canEdit: boolean }) {
                 <TableCell>{formatDate(b.bill_date)}</TableCell>
                 <TableCell className="text-right font-medium">{inr(b.total_amount)}</TableCell>
                 <TableCell>
-                  <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Print bill">
-                    <Link to="/print/purchase/$id" params={{ id: b.id }} target="_blank">
-                      <Printer className="h-4 w-4" />
-                    </Link>
+                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
+                    onClick={() => onPreview(`/print/purchase/${b.id}`)}>
+                    <Printer className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>

@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle, Printer } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
@@ -62,6 +63,7 @@ function InvoicesPage() {
   const [exporting, setExporting] = useState(false);
   const [payInv, setPayInv] = useState<InvoiceRow | null>(null);
   const [payAmount, setPayAmount] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
@@ -315,10 +317,9 @@ function InvoicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Print invoice">
-                          <Link to="/print/invoice/$id" params={{ id: inv.id }} target="_blank">
-                            <Printer className="h-4 w-4" />
-                          </Link>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
+                          onClick={() => setPreviewUrl(`/print/invoice/${inv.id}`)}>
+                          <Printer className="h-4 w-4" />
                         </Button>
                         {canManage && !closed && (
                           <DropdownMenu>
@@ -540,8 +541,13 @@ function InvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
 
+      <PrintPreviewModal
+        url={previewUrl}
+        title="Invoice Preview"
+        onClose={() => setPreviewUrl(null)}
+      />
+    </>
   );
 }
 
