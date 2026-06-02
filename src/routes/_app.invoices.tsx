@@ -541,8 +541,13 @@ function InvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
 
+      <PrintPreviewModal
+        url={previewUrl}
+        title="Invoice Preview"
+        onClose={() => setPreviewUrl(null)}
+      />
+    </>
   );
 }
 
