@@ -182,10 +182,9 @@ function PartiesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
-                          <Button asChild size="icon" variant="ghost" title="Print ledger">
-                            <Link to="/print/party-ledger/$id" params={{ id: p.id }} target="_blank">
-                              <Printer className="h-4 w-4" />
-                            </Link>
+                          <Button size="icon" variant="ghost" title="Print preview"
+                            onClick={() => setPreviewUrl(`/print/party-ledger/${p.id}`)}>
+                            <Printer className="h-4 w-4" />
                           </Button>
                           {canEdit && (
                             <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
