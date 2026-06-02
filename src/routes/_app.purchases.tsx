@@ -111,6 +111,11 @@ function SuppliersTab({ canEdit }: { canEdit: boolean }) {
                 <TableCell>{s.phone ?? "—"}</TableCell>
                 <TableCell>{s.email ?? "—"}</TableCell>
                 <TableCell className="text-right">
+                  <Button asChild size="icon" variant="ghost" title="Print ledger">
+                    <Link to="/print/supplier-ledger/$id" params={{ id: s.id }} target="_blank">
+                      <Printer className="h-4 w-4" />
+                    </Link>
+                  </Button>
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                 </TableCell>
               </TableRow>

@@ -178,13 +178,20 @@ function PartiesPage() {
                           <Badge variant="secondary">OK</Badge>
                         )}
                       </TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
-                            <Pencil className="h-4 w-4" />
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button asChild size="icon" variant="ghost" title="Print ledger">
+                            <Link to="/print/party-ledger/$id" params={{ id: p.id }} target="_blank">
+                              <Printer className="h-4 w-4" />
+                            </Link>
                           </Button>
-                        </TableCell>
-                      )}
+                          {canEdit && (
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
