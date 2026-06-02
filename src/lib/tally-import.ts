@@ -127,7 +127,7 @@ export function parseTallyMasters(
       (isCustomer ? customers : vendors).push(party);
     }
 
-    const items = arr<Record<string, unknown>>(msg.STOCKITEM);
+    const items = arr<Record<string, unknown>>(msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined);
     for (const it of items) {
       const name = text(it["@_NAME"] ?? it.NAME);
       if (!name) continue;
