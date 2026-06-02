@@ -236,6 +236,29 @@ function ResultStat({ label, inserted, updated }: { label: string; inserted: num
   );
 }
 
+function LedgerTable({ rows }: { rows: Array<{ party_name: string; entry_date: string; voucher_type: string | null; voucher_number: string | null; debit: number; credit: number }> }) {
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No voucher entries found in this XML. Export a Day Book or Ledger XML to bring in transactions.</p>;
+  return (
+    <div className="max-h-[420px] overflow-y-auto">
+      <Table>
+        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Party</TableHead><TableHead>Voucher</TableHead><TableHead className="text-right">Debit</TableHead><TableHead className="text-right">Credit</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.slice(0, 200).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="text-xs">{r.entry_date}</TableCell>
+              <TableCell className="font-medium">{r.party_name}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.voucher_type ?? "—"} {r.voucher_number ?? ""}</TableCell>
+              <TableCell className="text-right">{r.debit.toFixed(2)}</TableCell>
+              <TableCell className="text-right">{r.credit.toFixed(2)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {rows.length > 200 && <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>}
+    </div>
+  );
+}
+
 function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | null; phone?: string | null; opening_balance: number }> }) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
   return (
