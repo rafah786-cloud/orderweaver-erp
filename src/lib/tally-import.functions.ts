@@ -56,22 +56,20 @@ function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
 }
 
-async function chunkInsert<T extends Record<string, unknown>>(
-  supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any,
-  table: string,
-  rows: T[],
+async function chunkInsert(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  table: "party_ledger_entries" | "supplier_ledger_entries",
+  rows: Record<string, unknown>[],
   chunk = 500
 ): Promise<{ inserted: number; errors: string[] }> {
   let inserted = 0;
   const errors: string[] = [];
   for (let i = 0; i < rows.length; i += chunk) {
     const slice = rows.slice(i, i + chunk);
-    const { error, count } = await supabase
-      .from(table)
-      .insert(slice, { count: "exact" })
-      .select("id", { count: "exact", head: true });
+    const { error } = await supabase.from(table).insert(slice);
     if (error) {
-      // Fall back to per-row to skip duplicates from the unique idx_external_ref index
+      // Fall back to per-row to skip duplicates from the unique external_ref index
       for (const row of slice) {
         const { error: e1 } = await supabase.from(table).insert(row);
         if (!e1) inserted++;
@@ -80,7 +78,7 @@ async function chunkInsert<T extends Record<string, unknown>>(
         }
       }
     } else {
-      inserted += count ?? slice.length;
+      inserted += slice.length;
     }
   }
   return { inserted, errors };
