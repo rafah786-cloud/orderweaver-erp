@@ -259,19 +259,19 @@ function LedgerTable({ rows }: { rows: Array<{ party_name: string; entry_date: s
   );
 }
 
-function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | null; phone?: string | null; opening_balance: number }> }) {
+function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | null; phone?: string | null; opening_balance: number; closing_balance: number }> }) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>GSTIN</TableHead><TableHead>Phone</TableHead><TableHead className="text-right">Opening Bal</TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>GSTIN</TableHead><TableHead className="text-right">Opening</TableHead><TableHead className="text-right">Closing</TableHead></TableRow></TableHeader>
         <TableBody>
           {rows.slice(0, 200).map((r, i) => (
             <TableRow key={i}>
               <TableCell className="font-medium">{r.name}</TableCell>
               <TableCell className="text-xs text-muted-foreground">{r.gstin ?? "—"}</TableCell>
-              <TableCell className="text-xs">{r.phone ?? "—"}</TableCell>
               <TableCell className="text-right">{r.opening_balance.toFixed(2)}</TableCell>
+              <TableCell className="text-right">{r.closing_balance.toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
