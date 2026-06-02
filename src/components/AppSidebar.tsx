@@ -21,6 +21,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/payslips": Receipt,
   "/approvals": ShieldCheck,
   "/whatsapp": MessageCircle,
+  "/tally-import": Database,
   "/settings": Settings,
 };
 
