@@ -31,6 +31,10 @@ import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
+import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
+import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
+import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
+import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -141,6 +145,27 @@ const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   path: '/api/public/biometric/punch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPrintSupplierLedgerIdRoute =
+  AppPrintSupplierLedgerIdRouteImport.update({
+    id: '/print/supplier-ledger/$id',
+    path: '/print/supplier-ledger/$id',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppPrintPurchaseIdRoute = AppPrintPurchaseIdRouteImport.update({
+  id: '/print/purchase/$id',
+  path: '/print/purchase/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrintPartyLedgerIdRoute = AppPrintPartyLedgerIdRouteImport.update({
+  id: '/print/party-ledger/$id',
+  path: '/print/party-ledger/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
+  id: '/print/invoice/$id',
+  path: '/print/invoice/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,6 +188,10 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
+  '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
+  '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
+  '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesByTo {
@@ -186,6 +215,10 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
+  '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
+  '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
+  '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesById {
@@ -211,6 +244,10 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
+  '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
+  '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
+  '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
+  '/_app/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRouteTypes {
@@ -236,6 +273,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/print/invoice/$id'
+    | '/print/party-ledger/$id'
+    | '/print/purchase/$id'
+    | '/print/supplier-ledger/$id'
     | '/api/public/biometric/punch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -259,6 +300,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/print/invoice/$id'
+    | '/print/party-ledger/$id'
+    | '/print/purchase/$id'
+    | '/print/supplier-ledger/$id'
     | '/api/public/biometric/punch'
   id:
     | '__root__'
@@ -283,6 +328,10 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tally-import'
     | '/_app/whatsapp'
+    | '/_app/print/invoice/$id'
+    | '/_app/print/party-ledger/$id'
+    | '/_app/print/purchase/$id'
+    | '/_app/print/supplier-ledger/$id'
     | '/api/public/biometric/punch'
   fileRoutesById: FileRoutesById
 }
@@ -453,6 +502,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/print/supplier-ledger/$id': {
+      id: '/_app/print/supplier-ledger/$id'
+      path: '/print/supplier-ledger/$id'
+      fullPath: '/print/supplier-ledger/$id'
+      preLoaderRoute: typeof AppPrintSupplierLedgerIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/print/purchase/$id': {
+      id: '/_app/print/purchase/$id'
+      path: '/print/purchase/$id'
+      fullPath: '/print/purchase/$id'
+      preLoaderRoute: typeof AppPrintPurchaseIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/print/party-ledger/$id': {
+      id: '/_app/print/party-ledger/$id'
+      path: '/print/party-ledger/$id'
+      fullPath: '/print/party-ledger/$id'
+      preLoaderRoute: typeof AppPrintPartyLedgerIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/print/invoice/$id': {
+      id: '/_app/print/invoice/$id'
+      path: '/print/invoice/$id'
+      fullPath: '/print/invoice/$id'
+      preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -471,6 +548,10 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
   AppWhatsappRoute: typeof AppWhatsappRoute
+  AppPrintInvoiceIdRoute: typeof AppPrintInvoiceIdRoute
+  AppPrintPartyLedgerIdRoute: typeof AppPrintPartyLedgerIdRoute
+  AppPrintPurchaseIdRoute: typeof AppPrintPurchaseIdRoute
+  AppPrintSupplierLedgerIdRoute: typeof AppPrintSupplierLedgerIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -488,6 +569,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppTallyImportRoute: AppTallyImportRoute,
   AppWhatsappRoute: AppWhatsappRoute,
+  AppPrintInvoiceIdRoute: AppPrintInvoiceIdRoute,
+  AppPrintPartyLedgerIdRoute: AppPrintPartyLedgerIdRoute,
+  AppPrintPurchaseIdRoute: AppPrintPurchaseIdRoute,
+  AppPrintSupplierLedgerIdRoute: AppPrintSupplierLedgerIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

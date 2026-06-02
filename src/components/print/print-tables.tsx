@@ -33,10 +33,10 @@ export function PrintTable({ children }: { children: ReactNode }) {
   );
 }
 
-export const Th = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
+export const Th = ({ children, className = "" }: { children?: ReactNode; className?: string }) => (
   <th className={`border border-gray-400 bg-gray-100 px-2 py-1 text-left font-semibold ${className}`}>{children}</th>
 );
 
-export const Td = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
+export const Td = ({ children, className = "" }: { children?: ReactNode; className?: string }) => (
   <td className={`border border-gray-300 px-2 py-1 align-top ${className}`}>{children}</td>
 );
