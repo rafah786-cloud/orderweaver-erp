@@ -435,15 +435,18 @@ export type Database = {
           contact_person: string | null
           created_at: string
           credit_limit: number
+          current_balance: number
           email: string | null
           gstin: string | null
           id: string
           name: string
           notes: string | null
+          opening_balance: number
           owner_id: string | null
           phone: string | null
           pin_code: string | null
           state_code: string | null
+          tally_name: string | null
           updated_at: string
           user_id: string | null
         }
@@ -452,15 +455,18 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           credit_limit?: number
+          current_balance?: number
           email?: string | null
           gstin?: string | null
           id?: string
           name: string
           notes?: string | null
+          opening_balance?: number
           owner_id?: string | null
           phone?: string | null
           pin_code?: string | null
           state_code?: string | null
+          tally_name?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -469,19 +475,79 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           credit_limit?: number
+          current_balance?: number
           email?: string | null
           gstin?: string | null
           id?: string
           name?: string
           notes?: string | null
+          opening_balance?: number
           owner_id?: string | null
           phone?: string | null
           pin_code?: string | null
           state_code?: string | null
+          tally_name?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Relationships: []
+      }
+      party_ledger_entries: {
+        Row: {
+          created_at: string
+          credit: number
+          debit: number
+          entry_date: string
+          external_ref: string | null
+          id: string
+          narration: string | null
+          party_id: string
+          source: string
+          voucher_number: string | null
+          voucher_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          credit?: number
+          debit?: number
+          entry_date: string
+          external_ref?: string | null
+          id?: string
+          narration?: string | null
+          party_id: string
+          source?: string
+          voucher_number?: string | null
+          voucher_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          credit?: number
+          debit?: number
+          entry_date?: string
+          external_ref?: string | null
+          id?: string
+          narration?: string | null
+          party_id?: string
+          source?: string
+          voucher_number?: string | null
+          voucher_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "party_ledger_entries_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "party_ledger_entries_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "party_outstanding"
+            referencedColumns: ["party_id"]
+          },
+        ]
       }
       payslips: {
         Row: {
@@ -983,38 +1049,97 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_ledger_entries: {
+        Row: {
+          created_at: string
+          credit: number
+          debit: number
+          entry_date: string
+          external_ref: string | null
+          id: string
+          narration: string | null
+          source: string
+          supplier_id: string
+          voucher_number: string | null
+          voucher_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          credit?: number
+          debit?: number
+          entry_date: string
+          external_ref?: string | null
+          id?: string
+          narration?: string | null
+          source?: string
+          supplier_id: string
+          voucher_number?: string | null
+          voucher_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          credit?: number
+          debit?: number
+          entry_date?: string
+          external_ref?: string | null
+          id?: string
+          narration?: string | null
+          source?: string
+          supplier_id?: string
+          voucher_number?: string | null
+          voucher_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_ledger_entries_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
           created_at: string
+          current_balance: number
           email: string | null
           gstin: string | null
           id: string
           name: string
           notes: string | null
+          opening_balance: number
           phone: string | null
+          tally_name: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           created_at?: string
+          current_balance?: number
           email?: string | null
           gstin?: string | null
           id?: string
           name: string
           notes?: string | null
+          opening_balance?: number
           phone?: string | null
+          tally_name?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           created_at?: string
+          current_balance?: number
           email?: string | null
           gstin?: string | null
           id?: string
           name?: string
           notes?: string | null
+          opening_balance?: number
           phone?: string | null
+          tally_name?: string | null
           updated_at?: string
         }
         Relationships: []
