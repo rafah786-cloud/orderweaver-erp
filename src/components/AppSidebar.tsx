@@ -38,6 +38,7 @@ const LABELS: Record<string, string> = {
   "/payslips": "Payslips",
   "/approvals": "User Approvals",
   "/whatsapp": "WhatsApp",
+  "/tally-import": "Tally Import",
   "/settings": "Settings",
 };
 
