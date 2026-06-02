@@ -8,7 +8,10 @@ export type TallyParty = {
   address?: string | null;
   state_code?: string | null;
   pin_code?: string | null;
-  opening_balance: number; // positive = Dr, negative = Cr
+  /** Positive = Dr (receivable / asset), negative = Cr (payable / liability) */
+  opening_balance: number;
+  /** Closing balance from LEDGER export, if present. Falls back to opening when absent. */
+  closing_balance: number;
 };
 
 export type TallyStockItem = {
@@ -16,7 +19,20 @@ export type TallyStockItem = {
   unit: string;
   opening_qty: number;
   opening_rate: number;
-  group: string; // PARENT
+  group: string;
+};
+
+export type TallyLedgerEntry = {
+  /** Tally ledger name this entry belongs to (party/vendor). */
+  party_name: string;
+  entry_date: string; // ISO yyyy-mm-dd
+  voucher_type: string | null;
+  voucher_number: string | null;
+  debit: number;
+  credit: number;
+  narration: string | null;
+  /** Stable per-voucher key for idempotent re-imports. */
+  external_ref: string;
 };
 
 export type TallyParsed = {
@@ -24,6 +40,8 @@ export type TallyParsed = {
   vendors: TallyParty[];
   rawMaterials: TallyStockItem[];
   finishedGoods: TallyStockItem[];
+  /** Voucher-level ledger entries (Day Book / Ledger XML exports). */
+  ledgerEntries: TallyLedgerEntry[];
 };
 
 const parser = new XMLParser({
@@ -43,7 +61,6 @@ function text(v: unknown): string {
   if (typeof v === "string") return v.trim();
   if (typeof v === "number") return String(v);
   if (typeof v === "object") {
-    // Tally often wraps text in { "#text": "..." } when attributes exist
     const t = (v as Record<string, unknown>)["#text"];
     if (typeof t === "string") return t.trim();
   }
@@ -53,7 +70,6 @@ function text(v: unknown): string {
 function num(v: unknown): number {
   const s = text(v).replace(/,/g, "").trim();
   if (!s) return 0;
-  // Tally negative balances are sometimes "(-)1234.56" or "-1234.56"
   const m = s.match(/-?\d+(\.\d+)?/);
   return m ? parseFloat(m[0]) : 0;
 }
@@ -66,14 +82,12 @@ function parseQtyUnit(raw: string): { qty: number; unit: string } {
 }
 
 function parseRate(raw: string): number {
-  // e.g. "100.00/Nos" or "100.00"
   const s = raw.split("/")[0]?.trim() ?? "";
   return num(s);
 }
 
 function flattenAddress(v: unknown): string {
   if (!v) return "";
-  // ADDRESS.LIST -> ADDRESS -> string | string[]
   if (typeof v === "string") return v.trim();
   if (Array.isArray(v)) return v.map(text).filter(Boolean).join(", ");
   const obj = v as Record<string, unknown>;
@@ -87,13 +101,22 @@ function parentMatches(parent: string, patterns: string[]): boolean {
   return patterns.some((pat) => p.includes(pat.toLowerCase()));
 }
 
+/** Tally dates are YYYYMMDD (e.g. 20240415). Returns ISO yyyy-mm-dd or "". */
+function parseTallyDate(raw: string): string {
+  const s = raw.trim();
+  const m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  // Some exports use yyyy-mm-dd already
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return "";
+}
+
 export function parseTallyMasters(
   xml: string,
   opts: { rawGroups: string[]; finishedGroups: string[] }
 ): TallyParsed {
   const json = parser.parse(xml);
 
-  // Walk to TALLYMESSAGE array
   const messages = arr<Record<string, unknown>>(
     json?.ENVELOPE?.BODY?.DATA?.TALLYMESSAGE ?? json?.ENVELOPE?.BODY?.IMPORTDATA?.REQUESTDATA?.TALLYMESSAGE
   );
@@ -102,9 +125,16 @@ export function parseTallyMasters(
   const vendors: TallyParty[] = [];
   const rawMaterials: TallyStockItem[] = [];
   const finishedGoods: TallyStockItem[] = [];
+  const ledgerEntries: TallyLedgerEntry[] = [];
+
+  // Build a map of ledger-name → party type to classify vouchers
+  const partyType = new Map<string, "customer" | "vendor">();
 
   for (const msg of messages) {
-    const ledgers = arr<Record<string, unknown>>(msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined);
+    /* ---------------- LEDGER masters ---------------- */
+    const ledgers = arr<Record<string, unknown>>(
+      msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined
+    );
     for (const l of ledgers) {
       const name = text(l["@_NAME"] ?? l.NAME);
       if (!name) continue;
@@ -114,6 +144,10 @@ export function parseTallyMasters(
       const isVendor = parent.includes("sundry creditor") || parent.includes("creditor");
       if (!isCustomer && !isVendor) continue;
 
+      const opening = num(l.OPENINGBALANCE);
+      const closingRaw = l.CLOSINGBALANCE;
+      const closing = closingRaw != null ? num(closingRaw) : opening;
+
       const party: TallyParty = {
         name,
         gstin: text(l.PARTYGSTIN ?? l.GSTREGISTRATIONNUMBER) || null,
@@ -122,12 +156,17 @@ export function parseTallyMasters(
         address: flattenAddress(l["ADDRESS.LIST"]) || null,
         state_code: text(l.LEDSTATENAME) || null,
         pin_code: text(l.PINCODE) || null,
-        opening_balance: num(l.OPENINGBALANCE),
+        opening_balance: opening,
+        closing_balance: closing,
       };
       (isCustomer ? customers : vendors).push(party);
+      partyType.set(name.toLowerCase(), isCustomer ? "customer" : "vendor");
     }
 
-    const items = arr<Record<string, unknown>>(msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined);
+    /* ---------------- STOCKITEM masters ---------------- */
+    const items = arr<Record<string, unknown>>(
+      msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined
+    );
     for (const it of items) {
       const name = text(it["@_NAME"] ?? it.NAME);
       if (!name) continue;
@@ -151,12 +190,58 @@ export function parseTallyMasters(
       if (isRaw) rawMaterials.push(stock);
       else if (isFinished) finishedGoods.push(stock);
       else {
-        // Fallback heuristic: words like raw/material/component → raw; else finished
         if (/raw|material|component|fabric|foam|spring|cloth|thread/i.test(parent)) rawMaterials.push(stock);
         else finishedGoods.push(stock);
       }
     }
+
+    /* ---------------- VOUCHER entries (Day Book / Ledger export) ---------------- */
+    const vouchers = arr<Record<string, unknown>>(
+      msg.VOUCHER as Record<string, unknown> | Record<string, unknown>[] | undefined
+    );
+    for (const v of vouchers) {
+      const dateRaw = text(v.DATE ?? v["@_DATE"]);
+      const entry_date = parseTallyDate(dateRaw);
+      if (!entry_date) continue;
+      const voucher_type = text(v.VOUCHERTYPENAME ?? v["@_VCHTYPE"]) || null;
+      const voucher_number = text(v.VOUCHERNUMBER) || null;
+      const narration = text(v.NARRATION) || null;
+      const guid = text(v.GUID ?? v["@_REMOTEID"]) || `${voucher_type ?? ""}|${voucher_number ?? ""}|${entry_date}`;
+
+      const ledgerLines = arr<Record<string, unknown>>(
+        v["ALLLEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
+      );
+      // Some exports use LEDGERENTRIES.LIST instead
+      const altLines = arr<Record<string, unknown>>(
+        v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
+      );
+      const lines = [...ledgerLines, ...altLines];
+
+      for (const line of lines) {
+        const ledgerName = text(line.LEDGERNAME);
+        if (!ledgerName) continue;
+        const type = partyType.get(ledgerName.toLowerCase());
+        if (!type) continue; // only track party/vendor ledger movements
+
+        const amount = num(line.AMOUNT);
+        // Tally convention: negative AMOUNT = Dr in some contexts; ISDEEMEDPOSITIVE flag clarifies
+        const isDeemedPositive = text(line.ISDEEMEDPOSITIVE).toLowerCase() === "yes";
+        const debit = isDeemedPositive ? Math.abs(amount) : 0;
+        const credit = !isDeemedPositive ? Math.abs(amount) : 0;
+
+        ledgerEntries.push({
+          party_name: ledgerName,
+          entry_date,
+          voucher_type,
+          voucher_number,
+          debit,
+          credit,
+          narration,
+          external_ref: `${guid}|${ledgerName}`,
+        });
+      }
+    }
   }
 
-  return { customers, vendors, rawMaterials, finishedGoods };
+  return { customers, vendors, rawMaterials, finishedGoods, ledgerEntries };
 }

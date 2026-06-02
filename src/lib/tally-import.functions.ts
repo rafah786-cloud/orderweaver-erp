@@ -11,6 +11,7 @@ const partySchema = z.object({
   state_code: z.string().max(20).nullable().optional(),
   pin_code: z.string().max(20).nullable().optional(),
   opening_balance: z.number(),
+  closing_balance: z.number(),
 });
 
 const stockSchema = z.object({
@@ -21,11 +22,23 @@ const stockSchema = z.object({
   group: z.string().max(255),
 });
 
+const ledgerEntrySchema = z.object({
+  party_name: z.string().min(1).max(255),
+  entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  voucher_type: z.string().max(120).nullable(),
+  voucher_number: z.string().max(120).nullable(),
+  debit: z.number().min(0),
+  credit: z.number().min(0),
+  narration: z.string().max(2000).nullable(),
+  external_ref: z.string().min(1).max(255),
+});
+
 const inputSchema = z.object({
   customers: z.array(partySchema).max(20000),
   vendors: z.array(partySchema).max(20000),
   rawMaterials: z.array(stockSchema).max(20000),
   finishedGoods: z.array(stockSchema).max(20000),
+  ledgerEntries: z.array(ledgerEntrySchema).max(200000).default([]),
 });
 
 export type TallyImportResult = {
@@ -33,11 +46,42 @@ export type TallyImportResult = {
   vendors: { inserted: number; updated: number };
   rawMaterials: { inserted: number; updated: number };
   finishedGoods: { inserted: number; updated: number };
+  partyLedgerEntries: { inserted: number; skipped: number };
+  supplierLedgerEntries: { inserted: number; skipped: number };
+  unmatchedLedgerNames: string[];
   errors: string[];
 };
 
 function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
+}
+
+async function chunkInsert(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  table: "party_ledger_entries" | "supplier_ledger_entries",
+  rows: Record<string, unknown>[],
+  chunk = 500
+): Promise<{ inserted: number; errors: string[] }> {
+  let inserted = 0;
+  const errors: string[] = [];
+  for (let i = 0; i < rows.length; i += chunk) {
+    const slice = rows.slice(i, i + chunk);
+    const { error } = await supabase.from(table).insert(slice);
+    if (error) {
+      // Fall back to per-row to skip duplicates from the unique external_ref index
+      for (const row of slice) {
+        const { error: e1 } = await supabase.from(table).insert(row);
+        if (!e1) inserted++;
+        else if (!/duplicate key|unique constraint/i.test(e1.message)) {
+          errors.push(`${table}: ${e1.message}`);
+        }
+      }
+    } else {
+      inserted += slice.length;
+    }
+  }
+  return { inserted, errors };
 }
 
 export const importTallyMasters = createServerFn({ method: "POST" })
@@ -50,17 +94,27 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       vendors: { inserted: 0, updated: 0 },
       rawMaterials: { inserted: 0, updated: 0 },
       finishedGoods: { inserted: 0, updated: 0 },
+      partyLedgerEntries: { inserted: 0, skipped: 0 },
+      supplierLedgerEntries: { inserted: 0, skipped: 0 },
+      unmatchedLedgerNames: [],
       errors: [],
     };
 
+    // Maps populated below for ledger entry matching
+    const partyByName = new Map<string, string>(); // lowercased name → id
+    const supplierByName = new Map<string, string>();
+
     /* ---------------- parties (customers) ---------------- */
     {
-      const { data: existing, error } = await supabase.from("parties").select("id, name, gstin");
+      const { data: existing, error } = await supabase
+        .from("parties")
+        .select("id, name, gstin, tally_name");
       if (error) throw new Error(`Read parties failed: ${error.message}`);
       const byName = new Map<string, string>();
       const byGstin = new Map<string, string>();
       (existing ?? []).forEach((p) => {
         byName.set(norm(p.name), p.id);
+        if (p.tally_name) byName.set(norm(p.tally_name), p.id);
         if (p.gstin) byGstin.set(norm(p.gstin), p.id);
       });
 
@@ -68,34 +122,53 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         const existingId = (c.gstin && byGstin.get(norm(c.gstin))) || byName.get(norm(c.name));
         const row = {
           name: c.name,
+          tally_name: c.name,
           gstin: c.gstin ?? null,
           phone: c.phone ?? null,
           email: c.email ?? null,
           address: c.address ?? null,
           state_code: c.state_code ?? null,
           pin_code: c.pin_code ?? null,
-          notes: c.opening_balance ? `Tally opening balance: ${c.opening_balance.toFixed(2)}` : null,
+          opening_balance: c.opening_balance,
+          current_balance: c.closing_balance,
         };
         if (existingId) {
           const { error: uErr } = await supabase.from("parties").update(row).eq("id", existingId);
           if (uErr) result.errors.push(`Customer ${c.name}: ${uErr.message}`);
           else result.customers.updated++;
+          partyByName.set(norm(c.name), existingId);
         } else {
-          const { error: iErr } = await supabase.from("parties").insert(row);
-          if (iErr) result.errors.push(`Customer ${c.name}: ${iErr.message}`);
-          else result.customers.inserted++;
+          const { data: ins, error: iErr } = await supabase
+            .from("parties")
+            .insert(row)
+            .select("id")
+            .single();
+          if (iErr || !ins) result.errors.push(`Customer ${c.name}: ${iErr?.message ?? "insert failed"}`);
+          else {
+            result.customers.inserted++;
+            partyByName.set(norm(c.name), ins.id);
+          }
         }
       }
+
+      // Ensure ALL parties (even those not in this import) are addressable for ledger matching
+      (existing ?? []).forEach((p) => {
+        if (!partyByName.has(norm(p.name))) partyByName.set(norm(p.name), p.id);
+        if (p.tally_name && !partyByName.has(norm(p.tally_name))) partyByName.set(norm(p.tally_name), p.id);
+      });
     }
 
     /* ---------------- suppliers (vendors) ---------------- */
     {
-      const { data: existing, error } = await supabase.from("suppliers").select("id, name, gstin");
+      const { data: existing, error } = await supabase
+        .from("suppliers")
+        .select("id, name, gstin, tally_name");
       if (error) throw new Error(`Read suppliers failed: ${error.message}`);
       const byName = new Map<string, string>();
       const byGstin = new Map<string, string>();
       (existing ?? []).forEach((s) => {
         byName.set(norm(s.name), s.id);
+        if (s.tally_name) byName.set(norm(s.tally_name), s.id);
         if (s.gstin) byGstin.set(norm(s.gstin), s.id);
       });
 
@@ -103,22 +176,37 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         const existingId = (v.gstin && byGstin.get(norm(v.gstin))) || byName.get(norm(v.name));
         const row = {
           name: v.name,
+          tally_name: v.name,
           gstin: v.gstin ?? null,
           phone: v.phone ?? null,
           email: v.email ?? null,
           address: v.address ?? null,
-          notes: v.opening_balance ? `Tally opening balance: ${v.opening_balance.toFixed(2)}` : null,
+          opening_balance: v.opening_balance,
+          current_balance: v.closing_balance,
         };
         if (existingId) {
           const { error: uErr } = await supabase.from("suppliers").update(row).eq("id", existingId);
           if (uErr) result.errors.push(`Vendor ${v.name}: ${uErr.message}`);
           else result.vendors.updated++;
+          supplierByName.set(norm(v.name), existingId);
         } else {
-          const { error: iErr } = await supabase.from("suppliers").insert(row);
-          if (iErr) result.errors.push(`Vendor ${v.name}: ${iErr.message}`);
-          else result.vendors.inserted++;
+          const { data: ins, error: iErr } = await supabase
+            .from("suppliers")
+            .insert(row)
+            .select("id")
+            .single();
+          if (iErr || !ins) result.errors.push(`Vendor ${v.name}: ${iErr?.message ?? "insert failed"}`);
+          else {
+            result.vendors.inserted++;
+            supplierByName.set(norm(v.name), ins.id);
+          }
         }
       }
+
+      (existing ?? []).forEach((s) => {
+        if (!supplierByName.has(norm(s.name))) supplierByName.set(norm(s.name), s.id);
+        if (s.tally_name && !supplierByName.has(norm(s.tally_name))) supplierByName.set(norm(s.tally_name), s.id);
+      });
     }
 
     /* ---------------- raw_materials ---------------- */
@@ -171,6 +259,90 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           if (iErr) result.errors.push(`Finished good ${f.name}: ${iErr.message}`);
           else result.finishedGoods.inserted++;
         }
+      }
+    }
+
+    /* ---------------- ledger entries (vouchers) ---------------- */
+    if (data.ledgerEntries.length > 0) {
+      const partyRows: Record<string, unknown>[] = [];
+      const supplierRows: Record<string, unknown>[] = [];
+      const unmatched = new Set<string>();
+
+      for (const e of data.ledgerEntries) {
+        const key = norm(e.party_name);
+        const pid = partyByName.get(key);
+        const sid = supplierByName.get(key);
+        const base = {
+          entry_date: e.entry_date,
+          voucher_type: e.voucher_type,
+          voucher_number: e.voucher_number,
+          debit: e.debit,
+          credit: e.credit,
+          narration: e.narration,
+          source: "tally",
+          external_ref: e.external_ref,
+        };
+        if (pid) partyRows.push({ ...base, party_id: pid });
+        else if (sid) supplierRows.push({ ...base, supplier_id: sid });
+        else unmatched.add(e.party_name);
+      }
+
+      if (partyRows.length > 0) {
+        const r = await chunkInsert(supabase, "party_ledger_entries", partyRows);
+        result.partyLedgerEntries.inserted = r.inserted;
+        result.partyLedgerEntries.skipped = partyRows.length - r.inserted;
+        result.errors.push(...r.errors);
+      }
+      if (supplierRows.length > 0) {
+        const r = await chunkInsert(supabase, "supplier_ledger_entries", supplierRows);
+        result.supplierLedgerEntries.inserted = r.inserted;
+        result.supplierLedgerEntries.skipped = supplierRows.length - r.inserted;
+        result.errors.push(...r.errors);
+      }
+      result.unmatchedLedgerNames = Array.from(unmatched).slice(0, 100);
+
+      /* ---------------- recompute current_balance from ledger ----------------
+         current_balance = opening_balance + sum(debit) - sum(credit)
+         (Dr increases receivable from customers / decreases payable to vendors;
+          Tally's ISDEEMEDPOSITIVE convention already normalised that above.)
+      */
+      const partyIds = Array.from(new Set(partyRows.map((r) => r.party_id as string)));
+      for (const id of partyIds) {
+        const { data: sums } = await supabase
+          .from("party_ledger_entries")
+          .select("debit, credit")
+          .eq("party_id", id);
+        const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
+        const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
+        const { data: p } = await supabase
+          .from("parties")
+          .select("opening_balance")
+          .eq("id", id)
+          .single();
+        const opening = Number(p?.opening_balance ?? 0);
+        await supabase
+          .from("parties")
+          .update({ current_balance: opening + totalDr - totalCr })
+          .eq("id", id);
+      }
+      const supplierIds = Array.from(new Set(supplierRows.map((r) => r.supplier_id as string)));
+      for (const id of supplierIds) {
+        const { data: sums } = await supabase
+          .from("supplier_ledger_entries")
+          .select("debit, credit")
+          .eq("supplier_id", id);
+        const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
+        const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
+        const { data: s } = await supabase
+          .from("suppliers")
+          .select("opening_balance")
+          .eq("id", id)
+          .single();
+        const opening = Number(s?.opening_balance ?? 0);
+        await supabase
+          .from("suppliers")
+          .update({ current_balance: opening + totalDr - totalCr })
+          .eq("id", id);
       }
     }
 

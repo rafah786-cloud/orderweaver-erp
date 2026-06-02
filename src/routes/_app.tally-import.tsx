@@ -94,9 +94,9 @@ function TallyImportPage() {
         <Card className="mb-4">
           <CardHeader><CardTitle className="text-base">How to export from Tally</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-1">
-            <p>1. In Tally Prime: <b>Gateway of Tally → Display More Reports → List of Accounts</b>, then press <b>Alt + E → Export</b>. Choose <b>XML</b> format.</p>
-            <p>2. In Tally ERP 9: <b>Gateway of Tally → Display → List of Accounts</b>, then <b>Alt + E</b>, select <b>XML (data interchange)</b>.</p>
-            <p>3. Tip: Export Masters (not Vouchers) for the best results. Stock items will be auto-classified as raw or finished using the group names below.</p>
+            <p><b>Masters (customers, vendors, stock, opening balances):</b> Gateway of Tally → Display More Reports → List of Accounts → <b>Alt + E → Export</b> as XML.</p>
+            <p><b>Ledger / current balances (voucher entries):</b> Gateway of Tally → Display More Reports → Day Book (or open a specific party's Ledger) → <b>Alt + E → Export</b> as XML. Upload that XML here too — the importer will read both masters and vouchers from any Tally XML.</p>
+            <p className="text-xs">After import, each customer's and vendor's <b>current balance</b> is recalculated as <code>opening balance + sum of debits − sum of credits</code> from the imported ledger entries. Outstanding values across dashboards update automatically.</p>
           </CardContent>
         </Card>
 
@@ -138,11 +138,12 @@ function TallyImportPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-4">
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-5 mb-4">
                 <Stat label="Customers" value={parsed.customers.length} />
                 <Stat label="Vendors" value={parsed.vendors.length} />
                 <Stat label="Raw materials" value={parsed.rawMaterials.length} />
                 <Stat label="Finished goods" value={parsed.finishedGoods.length} />
+                <Stat label="Ledger entries" value={parsed.ledgerEntries.length} />
               </div>
 
               <Tabs defaultValue="customers">
@@ -151,11 +152,13 @@ function TallyImportPage() {
                   <TabsTrigger value="vendors">Vendors</TabsTrigger>
                   <TabsTrigger value="raw">Raw materials</TabsTrigger>
                   <TabsTrigger value="finished">Finished goods</TabsTrigger>
+                  <TabsTrigger value="ledger">Ledger entries</TabsTrigger>
                 </TabsList>
                 <TabsContent value="customers"><PartyTable rows={parsed.customers} /></TabsContent>
                 <TabsContent value="vendors"><PartyTable rows={parsed.vendors} /></TabsContent>
                 <TabsContent value="raw"><StockTable rows={parsed.rawMaterials} /></TabsContent>
                 <TabsContent value="finished"><StockTable rows={parsed.finishedGoods} /></TabsContent>
+                <TabsContent value="ledger"><LedgerTable rows={parsed.ledgerEntries} /></TabsContent>
               </Tabs>
             </CardContent>
           </Card>
@@ -171,6 +174,32 @@ function TallyImportPage() {
                 <ResultStat label="Raw materials" inserted={result.rawMaterials.inserted} updated={result.rawMaterials.updated} />
                 <ResultStat label="Finished goods" inserted={result.finishedGoods.inserted} updated={result.finishedGoods.updated} />
               </div>
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2 mb-3">
+                <div className="rounded-xl glass-sm p-3">
+                  <div className="text-xs text-muted-foreground">Customer ledger entries</div>
+                  <div className="mt-1 text-sm">
+                    <span className="text-emerald-500 font-medium">+{result.partyLedgerEntries.inserted}</span> inserted ·{" "}
+                    <span className="text-muted-foreground">{result.partyLedgerEntries.skipped}</span> already present
+                  </div>
+                </div>
+                <div className="rounded-xl glass-sm p-3">
+                  <div className="text-xs text-muted-foreground">Vendor ledger entries</div>
+                  <div className="mt-1 text-sm">
+                    <span className="text-emerald-500 font-medium">+{result.supplierLedgerEntries.inserted}</span> inserted ·{" "}
+                    <span className="text-muted-foreground">{result.supplierLedgerEntries.skipped}</span> already present
+                  </div>
+                </div>
+              </div>
+              {result.unmatchedLedgerNames.length > 0 && (
+                <div className="rounded-md border border-warning/30 bg-warning/5 p-3 mb-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-warning mb-2">
+                    <AlertTriangle className="h-4 w-4" /> {result.unmatchedLedgerNames.length} ledger name(s) had no matching customer/vendor — entries skipped
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-0.5 max-h-32 overflow-y-auto">
+                    {result.unmatchedLedgerNames.slice(0, 30).map((n, i) => <li key={i}>• {n}</li>)}
+                  </ul>
+                </div>
+              )}
               {result.errors.length > 0 && (
                 <div className="rounded-md border border-warning/30 bg-warning/5 p-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-warning mb-2">
@@ -207,19 +236,42 @@ function ResultStat({ label, inserted, updated }: { label: string; inserted: num
   );
 }
 
-function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | null; phone?: string | null; opening_balance: number }> }) {
+function LedgerTable({ rows }: { rows: Array<{ party_name: string; entry_date: string; voucher_type: string | null; voucher_number: string | null; debit: number; credit: number }> }) {
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No voucher entries found in this XML. Export a Day Book or Ledger XML to bring in transactions.</p>;
+  return (
+    <div className="max-h-[420px] overflow-y-auto">
+      <Table>
+        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Party</TableHead><TableHead>Voucher</TableHead><TableHead className="text-right">Debit</TableHead><TableHead className="text-right">Credit</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.slice(0, 200).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="text-xs">{r.entry_date}</TableCell>
+              <TableCell className="font-medium">{r.party_name}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.voucher_type ?? "—"} {r.voucher_number ?? ""}</TableCell>
+              <TableCell className="text-right">{r.debit.toFixed(2)}</TableCell>
+              <TableCell className="text-right">{r.credit.toFixed(2)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {rows.length > 200 && <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>}
+    </div>
+  );
+}
+
+function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | null; phone?: string | null; opening_balance: number; closing_balance: number }> }) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>GSTIN</TableHead><TableHead>Phone</TableHead><TableHead className="text-right">Opening Bal</TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>GSTIN</TableHead><TableHead className="text-right">Opening</TableHead><TableHead className="text-right">Closing</TableHead></TableRow></TableHeader>
         <TableBody>
           {rows.slice(0, 200).map((r, i) => (
             <TableRow key={i}>
               <TableCell className="font-medium">{r.name}</TableCell>
               <TableCell className="text-xs text-muted-foreground">{r.gstin ?? "—"}</TableCell>
-              <TableCell className="text-xs">{r.phone ?? "—"}</TableCell>
               <TableCell className="text-right">{r.opening_balance.toFixed(2)}</TableCell>
+              <TableCell className="text-right">{r.closing_balance.toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
