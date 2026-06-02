@@ -1,19 +1,50 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { inr, daysBetween } from "@/lib/format";
-import { IndianRupee, AlertTriangle, Factory, Users } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { inr, daysBetween, formatDate } from "@/lib/format";
+import {
+  IndianRupee, AlertTriangle, Factory, Users, ShoppingCart, ReceiptText,
+  CalendarCheck, FileText, TrendingUp, Wallet,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const { profile, roles } = useAuth();
+  const { profile, roles, hasAnyRole, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
+  const isSales = hasAnyRole(["sales"]);
+  const isProduction = hasAnyRole(["production"]);
+  const isHR = hasAnyRole(["hr"]);
+  const isCustomer = hasAnyRole(["customer"]);
+  const isEmployee = hasAnyRole(["employee"]) && !isAdmin && !isHR;
 
+  return (
+    <>
+      <PageHeader
+        title={`Welcome, ${profile?.full_name?.split(" ")[0] ?? ""}`}
+        description={`Role: ${roles.join(", ") || "—"}`}
+      />
+      <PageBody>
+        {isAdmin && <AdminPanels />}
+        {isSales && !isAdmin && <SalesPanels />}
+        {isProduction && !isAdmin && <ProductionPanels />}
+        {isHR && !isAdmin && <HRPanels />}
+        {isCustomer && !isAdmin && <CustomerPanels />}
+        {isEmployee && <EmployeePanels />}
+      </PageBody>
+    </>
+  );
+}
+
+/* ------------------------------ ADMIN ------------------------------ */
+
+function AdminPanels() {
   const { data: outstanding } = useQuery({
     queryKey: ["dash-outstanding"],
     queryFn: async () => {
@@ -22,7 +53,6 @@ function DashboardPage() {
       return data ?? [];
     },
   });
-
   const { data: production } = useQuery({
     queryKey: ["dash-production"],
     queryFn: async () => {
@@ -31,7 +61,6 @@ function DashboardPage() {
       return data ?? [];
     },
   });
-
   const { data: employees } = useQuery({
     queryKey: ["dash-employees"],
     queryFn: async () => {
@@ -58,50 +87,434 @@ function DashboardPage() {
 
   return (
     <>
-      <PageHeader title={`Welcome, ${profile?.full_name?.split(" ")[0] ?? ""}`} description={`Role: ${roles.join(", ") || "—"}`} />
-      <PageBody>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-          <KpiCard label="Total Outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
-          <KpiCard label="Overdue >90d" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
-          <KpiCard label="In Production" value={String((pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0))} icon={Factory} />
-          <KpiCard label="Active Employees" value={String(employees ?? 0)} icon={Users} />
-        </div>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <KpiCard label="Total Outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
+        <KpiCard label="Overdue >90d" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
+        <KpiCard label="In Production" value={String((pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0))} icon={Factory} />
+        <KpiCard label="Active Employees" value={String(employees ?? 0)} icon={Users} />
+      </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader><CardTitle>Production Pipeline</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {["received", "in_production", "qc", "ready", "dispatched"].map((s) => (
-                  <div key={s} className="flex items-center justify-between text-sm">
-                    <span className="capitalize text-muted-foreground">{s.replace("_", " ")}</span>
-                    <span className="font-medium">{pipeline[s] ?? 0}</span>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ProductionPipelineCard pipeline={pipeline} />
+        <Card>
+          <CardHeader><CardTitle>Top Customers by Outstanding</CardTitle></CardHeader>
+          <CardContent>
+            {topCustomers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No data yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {topCustomers.map((c) => (
+                  <div key={c.party_id} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{c.name}</span>
+                    <span className="font-medium">{inr(Number(c.outstanding ?? 0))}</span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Top Customers by Outstanding</CardTitle></CardHeader>
-            <CardContent>
-              {topCustomers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No data yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {topCustomers.map((c) => (
-                    <div key={c.party_id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{c.name}</span>
-                      <span className="font-medium">{inr(Number(c.outstanding ?? 0))}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </PageBody>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </>
+  );
+}
+
+/* ------------------------------ SALES ------------------------------ */
+
+function SalesPanels() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+
+  // My sales orders (RLS already restricts to created_by = me)
+  const { data: myOrders = [] } = useQuery({
+    queryKey: ["sales-my-orders", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales_orders")
+        .select("id, order_number, party_id, order_date, total_amount")
+        .order("order_date", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // My invoices for collection KPIs
+  const { data: myInvoices = [] } = useQuery({
+    queryKey: ["sales-my-invoices", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, party_id, invoice_date, due_date, total_amount, paid_amount, status, updated_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Production status for my orders
+  const orderIds = myOrders.map((o) => o.id);
+  const { data: prodForMyOrders = [] } = useQuery({
+    queryKey: ["sales-prod-status", orderIds.join(",")],
+    enabled: orderIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("production_orders")
+        .select("sales_order_id, status, updated_at")
+        .in("sales_order_id", orderIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Party names
+  const partyIds = Array.from(new Set([
+    ...myOrders.map((o) => o.party_id),
+    ...myInvoices.map((i) => i.party_id),
+  ]));
+  const { data: partyMap = {} } = useQuery({
+    queryKey: ["sales-party-names", partyIds.join(",")],
+    enabled: partyIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("parties").select("id, name").in("id", partyIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((p) => { map[p.id] = p.name; });
+      return map;
+    },
+  });
+
+  // Outstanding (RLS-scoped view); for customers we created
+  const { data: outstanding = [] } = useQuery({
+    queryKey: ["sales-outstanding"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("party_outstanding").select("*");
+      if (error) throw error;
+      return (data ?? []).filter((p) => Number(p.outstanding ?? 0) > 0);
+    },
+  });
+
+  // KPIs
+  const ordersThisMonth = myOrders.filter((o) => o.order_date >= monthStart);
+  const salesThisMonth = ordersThisMonth.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+  const collectionsThisMonth = myInvoices
+    .filter((i) => i.updated_at >= monthStart)
+    .reduce((s, i) => s + Number(i.paid_amount ?? 0), 0);
+  const myOutstandingTotal = outstanding.reduce((s, p) => s + Number(p.outstanding ?? 0), 0);
+  const overdueCount = outstanding.filter(
+    (p) => p.oldest_unpaid_date && daysBetween(p.oldest_unpaid_date) > 30
+  ).length;
+
+  const prodByOrder = new Map(prodForMyOrders.map((p) => [p.sales_order_id, p]));
+  const recentOrders = myOrders.slice(0, 8);
+
+  return (
+    <>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <KpiCard label="My Sales (this month)" value={inr(salesThisMonth)} icon={TrendingUp} />
+        <KpiCard label="My Collections (this month)" value={inr(collectionsThisMonth)} icon={Wallet} />
+        <KpiCard label="My Outstanding" value={inr(myOutstandingTotal)} icon={IndianRupee} />
+        <KpiCard label="Overdue Customers" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2 mb-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>My Order Status</span>
+              <Link to="/sales-orders" className="text-xs text-primary hover:underline">View all</Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Party</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Production</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No orders yet. <Link to="/sales-orders" className="text-primary hover:underline">Place one</Link>.</TableCell></TableRow>
+                ) : recentOrders.map((o) => {
+                  const p = prodByOrder.get(o.id);
+                  return (
+                    <TableRow key={o.id}>
+                      <TableCell className="font-medium">{o.order_number}</TableCell>
+                      <TableCell className="truncate max-w-[140px]">{partyMap[o.party_id] ?? "—"}</TableCell>
+                      <TableCell>{formatDate(o.order_date)}</TableCell>
+                      <TableCell><StatusPill status={p?.status ?? "pending"} /></TableCell>
+                      <TableCell className="text-right">{inr(Number(o.total_amount ?? 0))}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Customer Outstanding (Aging)</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="text-right">Outstanding</TableHead>
+                  <TableHead className="text-right">Since Invoice</TableHead>
+                  <TableHead className="text-right">Past Due</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {outstanding.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="py-6 text-center text-muted-foreground">No outstanding balances.</TableCell></TableRow>
+                ) : outstanding
+                    .slice()
+                    .sort((a, b) => Number(b.outstanding ?? 0) - Number(a.outstanding ?? 0))
+                    .slice(0, 10)
+                    .map((c) => {
+                      const sinceInv = c.oldest_unpaid_date ? daysBetween(c.oldest_unpaid_date) : null;
+                      // Past due derived from earliest matching invoice's due_date (best effort)
+                      const inv = myInvoices
+                        .filter((i) => i.party_id === c.party_id && (i.status === "unpaid" || i.status === "partial") && Number(i.total_amount) - Number(i.paid_amount) > 0)
+                        .sort((a, b) => (a.due_date ?? a.invoice_date).localeCompare(b.due_date ?? b.invoice_date))[0];
+                      const pastDue = inv?.due_date ? daysBetween(inv.due_date) : null;
+                      return (
+                        <TableRow key={c.party_id}>
+                          <TableCell className="truncate max-w-[160px]">{c.name}</TableCell>
+                          <TableCell className="text-right font-medium">{inr(Number(c.outstanding ?? 0))}</TableCell>
+                          <TableCell className="text-right">{sinceInv !== null ? `${sinceInv}d` : "—"}</TableCell>
+                          <TableCell className={`text-right ${pastDue !== null && pastDue > 0 ? "text-warning font-medium" : ""}`}>
+                            {pastDue === null ? "—" : pastDue > 0 ? `${pastDue}d` : "current"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="rounded-xl glass-sm p-4 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">Ready to take a new order?</div>
+        <Link to="/sales-orders" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+          <ShoppingCart className="h-4 w-4" /> New Sales Order
+        </Link>
+      </div>
+    </>
+  );
+}
+
+/* ------------------------------ PRODUCTION ------------------------------ */
+
+function ProductionPanels() {
+  const { data: production = [] } = useQuery({
+    queryKey: ["prod-dash-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("production_orders").select("status");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: lowStock = [] } = useQuery({
+    queryKey: ["prod-dash-stock"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("raw_materials").select("id, name, current_stock, reorder_level, unit");
+      if (error) throw error;
+      return (data ?? []).filter((m) => Number(m.current_stock) <= Number(m.reorder_level));
+    },
+  });
+
+  const pipeline = production.reduce<Record<string, number>>((acc, o) => {
+    acc[o.status] = (acc[o.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  const wip = (pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0);
+
+  return (
+    <>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <KpiCard label="WIP Orders" value={String(wip)} icon={Factory} />
+        <KpiCard label="Ready to Dispatch" value={String(pipeline.ready ?? 0)} icon={ShoppingCart} />
+        <KpiCard label="Dispatched" value={String(pipeline.dispatched ?? 0)} icon={ReceiptText} />
+        <KpiCard label="Low Stock Items" value={String(lowStock.length)} icon={AlertTriangle} accent="warning" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ProductionPipelineCard pipeline={pipeline} />
+        <Card>
+          <CardHeader><CardTitle>Low Stock Alerts</CardTitle></CardHeader>
+          <CardContent>
+            {lowStock.length === 0 ? <p className="text-sm text-muted-foreground">All stock levels are healthy.</p> : (
+              <div className="space-y-2">
+                {lowStock.slice(0, 8).map((m) => (
+                  <div key={m.id} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{m.name}</span>
+                    <span className="font-medium text-warning">{Number(m.current_stock)} {m.unit}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+/* ------------------------------ HR ------------------------------ */
+
+function HRPanels() {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: empCount = 0 } = useQuery({
+    queryKey: ["hr-dash-emp"],
+    queryFn: async () => {
+      const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  const { data: todayAtt = [] } = useQuery({
+    queryKey: ["hr-dash-att", today],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("attendance").select("status, is_late").eq("attendance_date", today);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const present = todayAtt.length;
+  const late = todayAtt.filter((a) => a.is_late).length;
+
+  return (
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <KpiCard label="Active Employees" value={String(empCount)} icon={Users} />
+      <KpiCard label="Present Today" value={String(present)} icon={CalendarCheck} />
+      <KpiCard label="Late Today" value={String(late)} icon={AlertTriangle} accent="warning" />
+      <KpiCard label="Absent" value={String(Math.max(0, empCount - present))} icon={Users} />
+    </div>
+  );
+}
+
+/* ------------------------------ CUSTOMER ------------------------------ */
+
+function CustomerPanels() {
+  const { data: orders = [] } = useQuery({
+    queryKey: ["cust-dash-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sales_orders").select("id, order_number, order_date, total_amount").order("order_date", { ascending: false }).limit(8);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["cust-dash-inv"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("invoices").select("id, invoice_number, total_amount, paid_amount, status, due_date, invoice_date").order("invoice_date", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const outstanding = invoices
+    .filter((i) => i.status === "unpaid" || i.status === "partial")
+    .reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
+
+  return (
+    <>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-6">
+        <KpiCard label="My Orders" value={String(orders.length)} icon={ShoppingCart} />
+        <KpiCard label="My Invoices" value={String(invoices.length)} icon={FileText} />
+        <KpiCard label="Amount Due" value={inr(outstanding)} icon={IndianRupee} accent={outstanding > 0 ? "warning" : undefined} />
+      </div>
+      <Card>
+        <CardHeader><CardTitle>Recent Orders</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader><TableRow><TableHead>Order #</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {orders.length === 0 ? <TableRow><TableCell colSpan={3} className="py-6 text-center text-muted-foreground">No orders yet.</TableCell></TableRow> : orders.map((o) => (
+                <TableRow key={o.id}><TableCell className="font-medium">{o.order_number}</TableCell><TableCell>{formatDate(o.order_date)}</TableCell><TableCell className="text-right">{inr(Number(o.total_amount))}</TableCell></TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+/* ------------------------------ EMPLOYEE ------------------------------ */
+
+function EmployeePanels() {
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+  const { data: myAtt = [] } = useQuery({
+    queryKey: ["emp-dash-att"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("attendance").select("attendance_date, status, hours_worked, is_late").gte("attendance_date", monthStart);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: payslips = [] } = useQuery({
+    queryKey: ["emp-dash-pay"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("payslips").select("period_month, period_year, net_salary").order("period_year", { ascending: false }).order("period_month", { ascending: false }).limit(3);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const present = myAtt.length;
+  const late = myAtt.filter((a) => a.is_late).length;
+  const hours = myAtt.reduce((s, a) => s + Number(a.hours_worked ?? 0), 0);
+  const latest = payslips[0];
+
+  return (
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <KpiCard label="Days Present (MTD)" value={String(present)} icon={CalendarCheck} />
+      <KpiCard label="Late Days (MTD)" value={String(late)} icon={AlertTriangle} accent={late > 0 ? "warning" : undefined} />
+      <KpiCard label="Hours Worked (MTD)" value={hours.toFixed(1)} icon={TrendingUp} />
+      <KpiCard label="Latest Payslip" value={latest ? inr(Number(latest.net_salary)) : "—"} icon={Wallet} />
+    </div>
+  );
+}
+
+/* ------------------------------ shared ------------------------------ */
+
+function ProductionPipelineCard({ pipeline }: { pipeline: Record<string, number> }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle>Production Pipeline</CardTitle></CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {["received", "in_production", "qc", "ready", "dispatched"].map((s) => (
+            <div key={s} className="flex items-center justify-between text-sm">
+              <span className="capitalize text-muted-foreground">{s.replace("_", " ")}</span>
+              <span className="font-medium">{pipeline[s] ?? 0}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    received: "bg-muted text-muted-foreground",
+    in_production: "bg-primary/15 text-primary",
+    qc: "bg-warning/15 text-warning",
+    ready: "bg-emerald-500/15 text-emerald-500",
+    dispatched: "bg-emerald-600/20 text-emerald-600",
+    pending: "bg-muted text-muted-foreground",
+  };
+  return (
+    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${map[status] ?? "bg-muted text-muted-foreground"}`}>
+      {status.replace("_", " ")}
+    </span>
   );
 }
 
