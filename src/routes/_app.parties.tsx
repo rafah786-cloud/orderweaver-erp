@@ -148,7 +148,7 @@ function PartiesPage() {
                   <TableHead className="text-right">Outstanding</TableHead>
                   <TableHead>Oldest Unpaid</TableHead>
                   <TableHead>Status</TableHead>
-                  {canEdit && <TableHead className="w-20" />}
+                  <TableHead className="w-24 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
