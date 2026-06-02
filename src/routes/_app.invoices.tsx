@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle, Printer } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
@@ -313,25 +314,32 @@ function InvoicesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {canManage && !closed && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setPayInv(inv); setPayAmount(String(Math.max(0, Number(inv.total_amount) - Number(inv.paid_amount)))); }}>
-                              <IndianRupee className="h-4 w-4 mr-2" />Record payment
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => { if (confirm(`Cancel invoice ${inv.invoice_number}?`)) cancelInvoice.mutate(inv); }}
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />Cancel invoice
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Print invoice">
+                          <Link to="/print/invoice/$id" params={{ id: inv.id }} target="_blank">
+                            <Printer className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        {canManage && !closed && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => { setPayInv(inv); setPayAmount(String(Math.max(0, Number(inv.total_amount) - Number(inv.paid_amount)))); }}>
+                                <IndianRupee className="h-4 w-4 mr-2" />Record payment
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => { if (confirm(`Cancel invoice ${inv.invoice_number}?`)) cancelInvoice.mutate(inv); }}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />Cancel invoice
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                   );
