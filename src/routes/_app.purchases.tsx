@@ -29,6 +29,7 @@ type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_
 function PurchasesPage() {
   const { hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "production"]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   return (
     <>
@@ -39,10 +40,11 @@ function PurchasesPage() {
             <TabsTrigger value="bills">Purchase Bills</TabsTrigger>
             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
           </TabsList>
-          <TabsContent value="bills"><BillsTab canEdit={canEdit} /></TabsContent>
-          <TabsContent value="suppliers"><SuppliersTab canEdit={canEdit} /></TabsContent>
+          <TabsContent value="bills"><BillsTab canEdit={canEdit} onPreview={setPreviewUrl} /></TabsContent>
+          <TabsContent value="suppliers"><SuppliersTab canEdit={canEdit} onPreview={setPreviewUrl} /></TabsContent>
         </Tabs>
       </PageBody>
+      <PrintPreviewModal url={previewUrl} title="Print Preview" onClose={() => setPreviewUrl(null)} />
     </>
   );
 }
