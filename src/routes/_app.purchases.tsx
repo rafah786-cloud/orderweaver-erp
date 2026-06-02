@@ -51,7 +51,7 @@ function PurchasesPage() {
 
 /* ---------------- Suppliers ---------------- */
 
-function SuppliersTab({ canEdit }: { canEdit: boolean }) {
+function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Supplier | null>(null);
@@ -114,10 +114,9 @@ function SuppliersTab({ canEdit }: { canEdit: boolean }) {
                 <TableCell>{s.phone ?? "—"}</TableCell>
                 <TableCell>{s.email ?? "—"}</TableCell>
                 <TableCell className="text-right">
-                  <Button asChild size="icon" variant="ghost" title="Print ledger">
-                    <Link to="/print/supplier-ledger/$id" params={{ id: s.id }} target="_blank">
-                      <Printer className="h-4 w-4" />
-                    </Link>
+                  <Button size="icon" variant="ghost" title="Print preview"
+                    onClick={() => onPreview(`/print/supplier-ledger/${s.id}`)}>
+                    <Printer className="h-4 w-4" />
                   </Button>
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                 </TableCell>
@@ -158,7 +157,7 @@ function SuppliersTab({ canEdit }: { canEdit: boolean }) {
 
 type BillItem = { raw_material_id: string; quantity: number; unit_price: number };
 
-function BillsTab({ canEdit }: { canEdit: boolean }) {
+function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
