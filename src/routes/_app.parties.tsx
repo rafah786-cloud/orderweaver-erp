@@ -57,6 +57,7 @@ function PartiesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { data: parties = [], isLoading } = useQuery({
     queryKey: ["parties"],
