@@ -317,10 +317,9 @@ function InvoicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Print invoice">
-                          <Link to="/print/invoice/$id" params={{ id: inv.id }} target="_blank">
-                            <Printer className="h-4 w-4" />
-                          </Link>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
+                          onClick={() => setPreviewUrl(`/print/invoice/${inv.id}`)}>
+                          <Printer className="h-4 w-4" />
                         </Button>
                         {canManage && !closed && (
                           <DropdownMenu>
