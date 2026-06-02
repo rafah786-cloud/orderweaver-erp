@@ -94,9 +94,9 @@ function TallyImportPage() {
         <Card className="mb-4">
           <CardHeader><CardTitle className="text-base">How to export from Tally</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-1">
-            <p>1. In Tally Prime: <b>Gateway of Tally → Display More Reports → List of Accounts</b>, then press <b>Alt + E → Export</b>. Choose <b>XML</b> format.</p>
-            <p>2. In Tally ERP 9: <b>Gateway of Tally → Display → List of Accounts</b>, then <b>Alt + E</b>, select <b>XML (data interchange)</b>.</p>
-            <p>3. Tip: Export Masters (not Vouchers) for the best results. Stock items will be auto-classified as raw or finished using the group names below.</p>
+            <p><b>Masters (customers, vendors, stock, opening balances):</b> Gateway of Tally → Display More Reports → List of Accounts → <b>Alt + E → Export</b> as XML.</p>
+            <p><b>Ledger / current balances (voucher entries):</b> Gateway of Tally → Display More Reports → Day Book (or open a specific party's Ledger) → <b>Alt + E → Export</b> as XML. Upload that XML here too — the importer will read both masters and vouchers from any Tally XML.</p>
+            <p className="text-xs">After import, each customer's and vendor's <b>current balance</b> is recalculated as <code>opening balance + sum of debits − sum of credits</code> from the imported ledger entries. Outstanding values across dashboards update automatically.</p>
           </CardContent>
         </Card>
 
