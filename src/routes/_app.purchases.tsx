@@ -251,10 +251,9 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
                 <TableCell>{formatDate(b.bill_date)}</TableCell>
                 <TableCell className="text-right font-medium">{inr(b.total_amount)}</TableCell>
                 <TableCell>
-                  <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Print bill">
-                    <Link to="/print/purchase/$id" params={{ id: b.id }} target="_blank">
-                      <Printer className="h-4 w-4" />
-                    </Link>
+                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
+                    onClick={() => onPreview(`/print/purchase/${b.id}`)}>
+                    <Printer className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
