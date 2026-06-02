@@ -225,6 +225,12 @@ function PartiesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PrintPreviewModal
+        url={previewUrl}
+        title="Ledger Preview"
+        onClose={() => setPreviewUrl(null)}
+      />
     </>
   );
 }
