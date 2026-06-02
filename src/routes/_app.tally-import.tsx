@@ -138,11 +138,12 @@ function TallyImportPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-4">
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-5 mb-4">
                 <Stat label="Customers" value={parsed.customers.length} />
                 <Stat label="Vendors" value={parsed.vendors.length} />
                 <Stat label="Raw materials" value={parsed.rawMaterials.length} />
                 <Stat label="Finished goods" value={parsed.finishedGoods.length} />
+                <Stat label="Ledger entries" value={parsed.ledgerEntries.length} />
               </div>
 
               <Tabs defaultValue="customers">
@@ -151,11 +152,13 @@ function TallyImportPage() {
                   <TabsTrigger value="vendors">Vendors</TabsTrigger>
                   <TabsTrigger value="raw">Raw materials</TabsTrigger>
                   <TabsTrigger value="finished">Finished goods</TabsTrigger>
+                  <TabsTrigger value="ledger">Ledger entries</TabsTrigger>
                 </TabsList>
                 <TabsContent value="customers"><PartyTable rows={parsed.customers} /></TabsContent>
                 <TabsContent value="vendors"><PartyTable rows={parsed.vendors} /></TabsContent>
                 <TabsContent value="raw"><StockTable rows={parsed.rawMaterials} /></TabsContent>
                 <TabsContent value="finished"><StockTable rows={parsed.finishedGoods} /></TabsContent>
+                <TabsContent value="ledger"><LedgerTable rows={parsed.ledgerEntries} /></TabsContent>
               </Tabs>
             </CardContent>
           </Card>
@@ -171,6 +174,32 @@ function TallyImportPage() {
                 <ResultStat label="Raw materials" inserted={result.rawMaterials.inserted} updated={result.rawMaterials.updated} />
                 <ResultStat label="Finished goods" inserted={result.finishedGoods.inserted} updated={result.finishedGoods.updated} />
               </div>
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2 mb-3">
+                <div className="rounded-xl glass-sm p-3">
+                  <div className="text-xs text-muted-foreground">Customer ledger entries</div>
+                  <div className="mt-1 text-sm">
+                    <span className="text-emerald-500 font-medium">+{result.partyLedgerEntries.inserted}</span> inserted ·{" "}
+                    <span className="text-muted-foreground">{result.partyLedgerEntries.skipped}</span> already present
+                  </div>
+                </div>
+                <div className="rounded-xl glass-sm p-3">
+                  <div className="text-xs text-muted-foreground">Vendor ledger entries</div>
+                  <div className="mt-1 text-sm">
+                    <span className="text-emerald-500 font-medium">+{result.supplierLedgerEntries.inserted}</span> inserted ·{" "}
+                    <span className="text-muted-foreground">{result.supplierLedgerEntries.skipped}</span> already present
+                  </div>
+                </div>
+              </div>
+              {result.unmatchedLedgerNames.length > 0 && (
+                <div className="rounded-md border border-warning/30 bg-warning/5 p-3 mb-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-warning mb-2">
+                    <AlertTriangle className="h-4 w-4" /> {result.unmatchedLedgerNames.length} ledger name(s) had no matching customer/vendor — entries skipped
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-0.5 max-h-32 overflow-y-auto">
+                    {result.unmatchedLedgerNames.slice(0, 30).map((n, i) => <li key={i}>• {n}</li>)}
+                  </ul>
+                </div>
+              )}
               {result.errors.length > 0 && (
                 <div className="rounded-md border border-warning/30 bg-warning/5 p-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-warning mb-2">
