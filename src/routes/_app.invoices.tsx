@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle, Printer } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
