@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, AlertTriangle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 
@@ -148,7 +148,7 @@ function PartiesPage() {
                   <TableHead className="text-right">Outstanding</TableHead>
                   <TableHead>Oldest Unpaid</TableHead>
                   <TableHead>Status</TableHead>
-                  {canEdit && <TableHead className="w-20" />}
+                  <TableHead className="w-24 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,13 +178,20 @@ function PartiesPage() {
                           <Badge variant="secondary">OK</Badge>
                         )}
                       </TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
-                            <Pencil className="h-4 w-4" />
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button asChild size="icon" variant="ghost" title="Print ledger">
+                            <Link to="/print/party-ledger/$id" params={{ id: p.id }} target="_blank">
+                              <Printer className="h-4 w-4" />
+                            </Link>
                           </Button>
-                        </TableCell>
-                      )}
+                          {canEdit && (
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
