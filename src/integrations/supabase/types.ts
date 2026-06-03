@@ -76,6 +76,41 @@ export type Database = {
           },
         ]
       }
+      cost_centers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_centers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_settings: {
         Row: {
           api_key_hash: string
@@ -267,6 +302,39 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_years: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          is_current: boolean
+          is_locked: boolean
+          name: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          is_current?: boolean
+          is_locked?: boolean
+          name: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_current?: boolean
+          is_locked?: boolean
+          name?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           amount: number | null
@@ -389,6 +457,106 @@ export type Database = {
             columns: ["sales_order_id"]
             isOneToOne: false
             referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_accounts: {
+        Row: {
+          created_at: string
+          group_id: string
+          gstin: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          mapped_bank_account_id: string | null
+          mapped_party_id: string | null
+          mapped_supplier_id: string | null
+          name: string
+          notes: string | null
+          opening_balance: number
+          opening_balance_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          gstin?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          mapped_bank_account_id?: string | null
+          mapped_party_id?: string | null
+          mapped_supplier_id?: string | null
+          name: string
+          notes?: string | null
+          opening_balance?: number
+          opening_balance_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          gstin?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          mapped_bank_account_id?: string | null
+          mapped_party_id?: string | null
+          mapped_supplier_id?: string | null
+          name?: string
+          notes?: string | null
+          opening_balance?: number
+          opening_balance_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_accounts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_groups: {
+        Row: {
+          affects_gross_profit: boolean
+          created_at: string
+          id: string
+          is_system: boolean
+          name: string
+          nature: Database["public"]["Enums"]["ledger_nature"]
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          affects_gross_profit?: boolean
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          name: string
+          nature: Database["public"]["Enums"]["ledger_nature"]
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affects_gross_profit?: boolean
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          nature?: Database["public"]["Enums"]["ledger_nature"]
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_groups_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -1165,8 +1333,182 @@ export type Database = {
         }
         Relationships: []
       }
+      voucher_entries: {
+        Row: {
+          cost_center_id: string | null
+          created_at: string
+          credit: number
+          debit: number
+          id: string
+          ledger_account_id: string
+          line_order: number
+          narration: string | null
+          voucher_id: string
+        }
+        Insert: {
+          cost_center_id?: string | null
+          created_at?: string
+          credit?: number
+          debit?: number
+          id?: string
+          ledger_account_id: string
+          line_order?: number
+          narration?: string | null
+          voucher_id: string
+        }
+        Update: {
+          cost_center_id?: string | null
+          created_at?: string
+          credit?: number
+          debit?: number
+          id?: string
+          ledger_account_id?: string
+          line_order?: number
+          narration?: string | null
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_entries_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_entries_ledger_account_id_fkey"
+            columns: ["ledger_account_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_entries_ledger_account_id_fkey"
+            columns: ["ledger_account_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_balances"
+            referencedColumns: ["ledger_id"]
+          },
+          {
+            foreignKeyName: "voucher_entries_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voucher_number_series: {
+        Row: {
+          id: string
+          next_number: number
+          prefix: string
+          suffix: string
+          updated_at: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+          width: number
+        }
+        Insert: {
+          id?: string
+          next_number?: number
+          prefix?: string
+          suffix?: string
+          updated_at?: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+          width?: number
+        }
+        Update: {
+          id?: string
+          next_number?: number
+          prefix?: string
+          suffix?: string
+          updated_at?: string
+          voucher_type?: Database["public"]["Enums"]["voucher_type"]
+          width?: number
+        }
+        Relationships: []
+      }
+      vouchers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          financial_year_id: string | null
+          id: string
+          is_locked: boolean
+          narration: string | null
+          reference: string | null
+          source_id: string | null
+          source_table: string | null
+          updated_at: string
+          voucher_date: string
+          voucher_number: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          financial_year_id?: string | null
+          id?: string
+          is_locked?: boolean
+          narration?: string | null
+          reference?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          updated_at?: string
+          voucher_date?: string
+          voucher_number: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          financial_year_id?: string | null
+          id?: string
+          is_locked?: boolean
+          narration?: string | null
+          reference?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          updated_at?: string
+          voucher_date?: string
+          voucher_number?: string
+          voucher_type?: Database["public"]["Enums"]["voucher_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_financial_year_id_fkey"
+            columns: ["financial_year_id"]
+            isOneToOne: false
+            referencedRelation: "financial_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
+      ledger_balances: {
+        Row: {
+          closing_balance: number | null
+          group_id: string | null
+          group_name: string | null
+          ledger_id: string | null
+          name: string | null
+          nature: Database["public"]["Enums"]["ledger_nature"] | null
+          opening_balance: number | null
+          opening_balance_type: string | null
+          total_credit: number | null
+          total_debit: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_accounts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       party_outstanding: {
         Row: {
           credit_limit: number | null
@@ -1179,9 +1521,21 @@ export type Database = {
       }
     }
     Functions: {
+      check_voucher_balanced: {
+        Args: { _voucher_id: string }
+        Returns: undefined
+      }
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      get_or_create_party_ledger: {
+        Args: { _party_id: string }
+        Returns: string
+      }
+      get_or_create_supplier_ledger: {
+        Args: { _supplier_id: string }
+        Returns: string
       }
       has_role: {
         Args: {
@@ -1191,6 +1545,10 @@ export type Database = {
         Returns: boolean
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
+      next_voucher_number: {
+        Args: { _type: Database["public"]["Enums"]["voucher_type"] }
+        Returns: string
+      }
       recalc_attendance_day: {
         Args: { _date: string; _employee_id: string }
         Returns: undefined
@@ -1204,8 +1562,10 @@ export type Database = {
         | "hr"
         | "customer"
         | "employee"
+        | "accountant"
       attendance_status: "present" | "absent" | "half_day" | "leave" | "holiday"
       invoice_status: "draft" | "unpaid" | "partial" | "paid" | "cancelled"
+      ledger_nature: "assets" | "liabilities" | "income" | "expenses"
       production_status:
         | "received"
         | "in_production"
@@ -1214,6 +1574,16 @@ export type Database = {
         | "dispatched"
       punch_type: "in" | "out"
       user_status: "pending" | "approved" | "rejected"
+      voucher_type:
+        | "sales"
+        | "purchase"
+        | "receipt"
+        | "payment"
+        | "contra"
+        | "journal"
+        | "debit_note"
+        | "credit_note"
+        | "stock_journal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1341,9 +1711,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "sales", "production", "hr", "customer", "employee"],
+      app_role: [
+        "admin",
+        "sales",
+        "production",
+        "hr",
+        "customer",
+        "employee",
+        "accountant",
+      ],
       attendance_status: ["present", "absent", "half_day", "leave", "holiday"],
       invoice_status: ["draft", "unpaid", "partial", "paid", "cancelled"],
+      ledger_nature: ["assets", "liabilities", "income", "expenses"],
       production_status: [
         "received",
         "in_production",
@@ -1353,6 +1732,17 @@ export const Constants = {
       ],
       punch_type: ["in", "out"],
       user_status: ["pending", "approved", "rejected"],
+      voucher_type: [
+        "sales",
+        "purchase",
+        "receipt",
+        "payment",
+        "contra",
+        "journal",
+        "debit_note",
+        "credit_note",
+        "stock_journal",
+      ],
     },
   },
 } as const

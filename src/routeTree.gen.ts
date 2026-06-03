@@ -30,11 +30,20 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
+import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
+import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
+import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
+import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
+import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
 import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
+import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
+import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
+import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -140,6 +149,38 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountingRoute = AppAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountingTrialBalanceRoute =
+  AppAccountingTrialBalanceRouteImport.update({
+    id: '/trial-balance',
+    path: '/trial-balance',
+    getParentRoute: () => AppAccountingRoute,
+  } as any)
+const AppAccountingProfitLossRoute = AppAccountingProfitLossRouteImport.update({
+  id: '/profit-loss',
+  path: '/profit-loss',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
+  id: '/ledgers',
+  path: '/ledgers',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingDayBookRoute = AppAccountingDayBookRouteImport.update({
+  id: '/day-book',
+  path: '/day-book',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingBalanceSheetRoute =
+  AppAccountingBalanceSheetRouteImport.update({
+    id: '/balance-sheet',
+    path: '/balance-sheet',
+    getParentRoute: () => AppAccountingRoute,
+  } as any)
 const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   id: '/api/public/biometric/punch',
   path: '/api/public/biometric/punch',
@@ -166,6 +207,22 @@ const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
   path: '/print/invoice/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountingVouchersNewRoute =
+  AppAccountingVouchersNewRouteImport.update({
+    id: '/vouchers/new',
+    path: '/vouchers/new',
+    getParentRoute: () => AppAccountingRoute,
+  } as any)
+const AppAccountingVoucherIdRoute = AppAccountingVoucherIdRouteImport.update({
+  id: '/voucher/$id',
+  path: '/voucher/$id',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingLedgerIdRoute = AppAccountingLedgerIdRouteImport.update({
+  id: '/ledger/$id',
+  path: '/ledger/$id',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -174,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/boq': typeof AppBoqRoute
@@ -188,6 +246,14 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
+  '/accounting/day-book': typeof AppAccountingDayBookRoute
+  '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
+  '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
+  '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
+  '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -201,6 +267,7 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/boq': typeof AppBoqRoute
@@ -215,6 +282,14 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
+  '/accounting/day-book': typeof AppAccountingDayBookRoute
+  '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
+  '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
+  '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
+  '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -230,6 +305,7 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_app/accounting': typeof AppAccountingRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/boq': typeof AppBoqRoute
@@ -244,6 +320,14 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
+  '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
+  '/_app/accounting/day-book': typeof AppAccountingDayBookRoute
+  '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
+  '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
+  '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
+  '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -259,6 +343,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/accounting'
     | '/approvals'
     | '/attendance'
     | '/boq'
@@ -273,6 +358,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/balance-sheet'
+    | '/accounting/day-book'
+    | '/accounting/ledgers'
+    | '/accounting/profit-loss'
+    | '/accounting/trial-balance'
+    | '/accounting/ledger/$id'
+    | '/accounting/voucher/$id'
+    | '/accounting/vouchers/new'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -286,6 +379,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/accounting'
     | '/approvals'
     | '/attendance'
     | '/boq'
@@ -300,6 +394,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/balance-sheet'
+    | '/accounting/day-book'
+    | '/accounting/ledgers'
+    | '/accounting/profit-loss'
+    | '/accounting/trial-balance'
+    | '/accounting/ledger/$id'
+    | '/accounting/voucher/$id'
+    | '/accounting/vouchers/new'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -314,6 +416,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/_app/accounting'
     | '/_app/approvals'
     | '/_app/attendance'
     | '/_app/boq'
@@ -328,6 +431,14 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tally-import'
     | '/_app/whatsapp'
+    | '/_app/accounting/balance-sheet'
+    | '/_app/accounting/day-book'
+    | '/_app/accounting/ledgers'
+    | '/_app/accounting/profit-loss'
+    | '/_app/accounting/trial-balance'
+    | '/_app/accounting/ledger/$id'
+    | '/_app/accounting/voucher/$id'
+    | '/_app/accounting/vouchers/new'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
     | '/_app/print/purchase/$id'
@@ -495,6 +606,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounting': {
+      id: '/_app/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AppAccountingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounting/trial-balance': {
+      id: '/_app/accounting/trial-balance'
+      path: '/trial-balance'
+      fullPath: '/accounting/trial-balance'
+      preLoaderRoute: typeof AppAccountingTrialBalanceRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/profit-loss': {
+      id: '/_app/accounting/profit-loss'
+      path: '/profit-loss'
+      fullPath: '/accounting/profit-loss'
+      preLoaderRoute: typeof AppAccountingProfitLossRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/ledgers': {
+      id: '/_app/accounting/ledgers'
+      path: '/ledgers'
+      fullPath: '/accounting/ledgers'
+      preLoaderRoute: typeof AppAccountingLedgersRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/day-book': {
+      id: '/_app/accounting/day-book'
+      path: '/day-book'
+      fullPath: '/accounting/day-book'
+      preLoaderRoute: typeof AppAccountingDayBookRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/balance-sheet': {
+      id: '/_app/accounting/balance-sheet'
+      path: '/balance-sheet'
+      fullPath: '/accounting/balance-sheet'
+      preLoaderRoute: typeof AppAccountingBalanceSheetRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
     '/api/public/biometric/punch': {
       id: '/api/public/biometric/punch'
       path: '/api/public/biometric/punch'
@@ -530,10 +683,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounting/vouchers/new': {
+      id: '/_app/accounting/vouchers/new'
+      path: '/vouchers/new'
+      fullPath: '/accounting/vouchers/new'
+      preLoaderRoute: typeof AppAccountingVouchersNewRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/voucher/$id': {
+      id: '/_app/accounting/voucher/$id'
+      path: '/voucher/$id'
+      fullPath: '/accounting/voucher/$id'
+      preLoaderRoute: typeof AppAccountingVoucherIdRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/ledger/$id': {
+      id: '/_app/accounting/ledger/$id'
+      path: '/ledger/$id'
+      fullPath: '/accounting/ledger/$id'
+      preLoaderRoute: typeof AppAccountingLedgerIdRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
   }
 }
 
+interface AppAccountingRouteChildren {
+  AppAccountingBalanceSheetRoute: typeof AppAccountingBalanceSheetRoute
+  AppAccountingDayBookRoute: typeof AppAccountingDayBookRoute
+  AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
+  AppAccountingProfitLossRoute: typeof AppAccountingProfitLossRoute
+  AppAccountingTrialBalanceRoute: typeof AppAccountingTrialBalanceRoute
+  AppAccountingLedgerIdRoute: typeof AppAccountingLedgerIdRoute
+  AppAccountingVoucherIdRoute: typeof AppAccountingVoucherIdRoute
+  AppAccountingVouchersNewRoute: typeof AppAccountingVouchersNewRoute
+}
+
+const AppAccountingRouteChildren: AppAccountingRouteChildren = {
+  AppAccountingBalanceSheetRoute: AppAccountingBalanceSheetRoute,
+  AppAccountingDayBookRoute: AppAccountingDayBookRoute,
+  AppAccountingLedgersRoute: AppAccountingLedgersRoute,
+  AppAccountingProfitLossRoute: AppAccountingProfitLossRoute,
+  AppAccountingTrialBalanceRoute: AppAccountingTrialBalanceRoute,
+  AppAccountingLedgerIdRoute: AppAccountingLedgerIdRoute,
+  AppAccountingVoucherIdRoute: AppAccountingVoucherIdRoute,
+  AppAccountingVouchersNewRoute: AppAccountingVouchersNewRoute,
+}
+
+const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
+  AppAccountingRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBoqRoute: typeof AppBoqRoute
@@ -555,6 +756,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAccountingRoute: AppAccountingRouteWithChildren,
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBoqRoute: AppBoqRoute,
