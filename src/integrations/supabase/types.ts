@@ -2359,6 +2359,45 @@ export type Database = {
         }
         Relationships: []
       }
+      voucher_audit_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          entry_id: string | null
+          id: string
+          new_data: Json | null
+          note: string | null
+          old_data: Json | null
+          table_name: string
+          voucher_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          entry_id?: string | null
+          id?: string
+          new_data?: Json | null
+          note?: string | null
+          old_data?: Json | null
+          table_name: string
+          voucher_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          entry_id?: string | null
+          id?: string
+          new_data?: Json | null
+          note?: string | null
+          old_data?: Json | null
+          table_name?: string
+          voucher_id?: string | null
+        }
+        Relationships: []
+      }
       voucher_entries: {
         Row: {
           cost_center_id: string | null
@@ -2605,6 +2644,7 @@ export type Database = {
         Returns: boolean
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
+      is_period_locked: { Args: { _d: string }; Returns: boolean }
       next_voucher_number: {
         Args: { _type: Database["public"]["Enums"]["voucher_type"] }
         Returns: string
