@@ -51,9 +51,11 @@ import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.che
 import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
 import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
+import { Route as AppAccountingPeriodsRouteImport } from './routes/_app.accounting.periods'
 import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
 import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
+import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
@@ -276,6 +278,11 @@ const AppAccountingProfitLossRoute = AppAccountingProfitLossRouteImport.update({
   path: '/profit-loss',
   getParentRoute: () => AppAccountingRoute,
 } as any)
+const AppAccountingPeriodsRoute = AppAccountingPeriodsRouteImport.update({
+  id: '/periods',
+  path: '/periods',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
   id: '/ledgers',
   path: '/ledgers',
@@ -292,6 +299,11 @@ const AppAccountingBalanceSheetRoute =
     path: '/balance-sheet',
     getParentRoute: () => AppAccountingRoute,
   } as any)
+const AppAccountingAuditLogRoute = AppAccountingAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   id: '/api/public/biometric/punch',
   path: '/api/public/biometric/punch',
@@ -375,9 +387,11 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/periods': typeof AppAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
@@ -432,9 +446,11 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/periods': typeof AppAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
@@ -491,9 +507,11 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
+  '/_app/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
   '/_app/accounting/day-book': typeof AppAccountingDayBookRoute
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/_app/accounting/periods': typeof AppAccountingPeriodsRoute
   '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/_app/banking/accounts': typeof AppBankingAccountsRoute
@@ -550,9 +568,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/audit-log'
     | '/accounting/balance-sheet'
     | '/accounting/day-book'
     | '/accounting/ledgers'
+    | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
     | '/banking/accounts'
@@ -607,9 +627,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/audit-log'
     | '/accounting/balance-sheet'
     | '/accounting/day-book'
     | '/accounting/ledgers'
+    | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
     | '/banking/accounts'
@@ -665,9 +687,11 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tally-import'
     | '/_app/whatsapp'
+    | '/_app/accounting/audit-log'
     | '/_app/accounting/balance-sheet'
     | '/_app/accounting/day-book'
     | '/_app/accounting/ledgers'
+    | '/_app/accounting/periods'
     | '/_app/accounting/profit-loss'
     | '/_app/accounting/trial-balance'
     | '/_app/banking/accounts'
@@ -1005,6 +1029,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountingProfitLossRouteImport
       parentRoute: typeof AppAccountingRoute
     }
+    '/_app/accounting/periods': {
+      id: '/_app/accounting/periods'
+      path: '/periods'
+      fullPath: '/accounting/periods'
+      preLoaderRoute: typeof AppAccountingPeriodsRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
     '/_app/accounting/ledgers': {
       id: '/_app/accounting/ledgers'
       path: '/ledgers'
@@ -1024,6 +1055,13 @@ declare module '@tanstack/react-router' {
       path: '/balance-sheet'
       fullPath: '/accounting/balance-sheet'
       preLoaderRoute: typeof AppAccountingBalanceSheetRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/audit-log': {
+      id: '/_app/accounting/audit-log'
+      path: '/audit-log'
+      fullPath: '/accounting/audit-log'
+      preLoaderRoute: typeof AppAccountingAuditLogRouteImport
       parentRoute: typeof AppAccountingRoute
     }
     '/api/public/biometric/punch': {
@@ -1107,9 +1145,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAccountingRouteChildren {
+  AppAccountingAuditLogRoute: typeof AppAccountingAuditLogRoute
   AppAccountingBalanceSheetRoute: typeof AppAccountingBalanceSheetRoute
   AppAccountingDayBookRoute: typeof AppAccountingDayBookRoute
   AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
+  AppAccountingPeriodsRoute: typeof AppAccountingPeriodsRoute
   AppAccountingProfitLossRoute: typeof AppAccountingProfitLossRoute
   AppAccountingTrialBalanceRoute: typeof AppAccountingTrialBalanceRoute
   AppAccountingLedgerIdRoute: typeof AppAccountingLedgerIdRoute
@@ -1118,9 +1158,11 @@ interface AppAccountingRouteChildren {
 }
 
 const AppAccountingRouteChildren: AppAccountingRouteChildren = {
+  AppAccountingAuditLogRoute: AppAccountingAuditLogRoute,
   AppAccountingBalanceSheetRoute: AppAccountingBalanceSheetRoute,
   AppAccountingDayBookRoute: AppAccountingDayBookRoute,
   AppAccountingLedgersRoute: AppAccountingLedgersRoute,
+  AppAccountingPeriodsRoute: AppAccountingPeriodsRoute,
   AppAccountingProfitLossRoute: AppAccountingProfitLossRoute,
   AppAccountingTrialBalanceRoute: AppAccountingTrialBalanceRoute,
   AppAccountingLedgerIdRoute: AppAccountingLedgerIdRoute,
