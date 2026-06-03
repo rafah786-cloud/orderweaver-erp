@@ -110,6 +110,10 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
             <Button size="sm" variant="outline" onClick={handleOpenFull}>
               <Maximize2 className="h-4 w-4 mr-1" /> Open
             </Button>
+            <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exporting || !loaded}>
+              {exporting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileDown className="h-4 w-4 mr-1" />}
+              Export PDF
+            </Button>
             <Button size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" /> Print
             </Button>
