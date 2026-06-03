@@ -51,7 +51,7 @@ function BankAccounts() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader title="Bank Accounts" description="Manage bank account master">
+      <PageHeader title="Bank Accounts" description="Manage bank account master" actions={<>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New Account</Button></DialogTrigger>
           <DialogContent className="max-w-2xl">
