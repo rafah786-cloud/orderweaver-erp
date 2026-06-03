@@ -101,8 +101,8 @@ function BsSide({
           </TableHeader>
           <TableBody>
             {groups.map(([groupName, g]) => (
-              <>
-                <TableRow key={groupName} className="bg-muted/20">
+              <Fragment key={groupName}>
+                <TableRow className="bg-muted/20">
                   <TableCell className="font-medium text-sm">{groupName}</TableCell>
                   <TableCell className="text-right tabular-nums">{inr(g.total)}</TableCell>
                 </TableRow>
@@ -117,7 +117,7 @@ function BsSide({
                     </TableRow>
                   );
                 })}
-              </>
+              </Fragment>
             ))}
             {extraRow && (
               <TableRow className="font-medium italic bg-emerald-50 dark:bg-emerald-950/20">
