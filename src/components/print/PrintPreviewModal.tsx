@@ -64,7 +64,7 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
     try {
       const html2pdf = (await import("html2pdf.js")).default;
       const filename = `${(title || "document").replace(/[^\w.-]+/g, "_")}.pdf`;
-      await html2pdf()
+      await (html2pdf() as any)
         .set({
           margin: 0,
           filename,
@@ -72,7 +72,7 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
           html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
-        } as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
+        })
         .from(body)
         .save();
     } catch (e) {
