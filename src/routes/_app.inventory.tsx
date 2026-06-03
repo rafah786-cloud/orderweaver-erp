@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
-import { Package, Warehouse, Boxes, ClipboardEdit, ArrowLeftRight, AlertTriangle } from "lucide-react";
+import { Package, Warehouse, Boxes, ClipboardEdit, ArrowLeftRight, AlertTriangle, Calculator } from "lucide-react";
 
 export const Route = createFileRoute("/_app/inventory")({
   component: InventoryHome,
@@ -11,6 +11,7 @@ const TILES = [
   { to: "/inventory/items", label: "Stock Items", desc: "Items with units, HSN, valuation", Icon: Package },
   { to: "/inventory/godowns", label: "Godowns", desc: "Warehouses & locations", Icon: Warehouse },
   { to: "/inventory/summary", label: "Stock Summary", desc: "Current quantity & value", Icon: Boxes },
+  { to: "/inventory/valuation", label: "Stock Valuation", desc: "Per-godown value by valuation method", Icon: Calculator },
   { to: "/inventory/movements", label: "Stock Movements", desc: "Every in/out, drill to source", Icon: ArrowLeftRight },
   { to: "/inventory/journals", label: "Stock Journals", desc: "Adjustments, transfers, consumption", Icon: ClipboardEdit },
   { to: "/inventory/reorder", label: "Reorder Status", desc: "Items below reorder level", Icon: AlertTriangle },
