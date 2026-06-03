@@ -39,6 +39,7 @@ import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purc
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
 import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
+import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -190,6 +191,11 @@ const AppAccountingVoucherIdRoute = AppAccountingVoucherIdRouteImport.update({
   path: '/voucher/$id',
   getParentRoute: () => AppAccountingRoute,
 } as any)
+const AppAccountingLedgerIdRoute = AppAccountingLedgerIdRouteImport.update({
+  id: '/ledger/$id',
+  path: '/ledger/$id',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/_app/whatsapp': typeof AppWhatsappRoute
   '/_app/accounting/day-book': typeof AppAccountingDayBookRoute
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/accounting/day-book'
     | '/accounting/ledgers'
+    | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/accounting/day-book'
     | '/accounting/ledgers'
+    | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/_app/whatsapp'
     | '/_app/accounting/day-book'
     | '/_app/accounting/ledgers'
+    | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
@@ -606,18 +618,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountingVoucherIdRouteImport
       parentRoute: typeof AppAccountingRoute
     }
+    '/_app/accounting/ledger/$id': {
+      id: '/_app/accounting/ledger/$id'
+      path: '/ledger/$id'
+      fullPath: '/accounting/ledger/$id'
+      preLoaderRoute: typeof AppAccountingLedgerIdRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
   }
 }
 
 interface AppAccountingRouteChildren {
   AppAccountingDayBookRoute: typeof AppAccountingDayBookRoute
   AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
+  AppAccountingLedgerIdRoute: typeof AppAccountingLedgerIdRoute
   AppAccountingVoucherIdRoute: typeof AppAccountingVoucherIdRoute
 }
 
 const AppAccountingRouteChildren: AppAccountingRouteChildren = {
   AppAccountingDayBookRoute: AppAccountingDayBookRoute,
   AppAccountingLedgersRoute: AppAccountingLedgersRoute,
+  AppAccountingLedgerIdRoute: AppAccountingLedgerIdRoute,
   AppAccountingVoucherIdRoute: AppAccountingVoucherIdRoute,
 }
 
