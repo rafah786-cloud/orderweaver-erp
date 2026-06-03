@@ -55,46 +55,46 @@ function LoginPage() {
       <div aria-hidden className="ambient-blob h-[420px] w-[420px] top-1/3 -right-32" style={{ background: "oklch(0.70 0.14 85 / 0.35)" }} />
       <div aria-hidden className="ambient-blob h-[360px] w-[360px] bottom-[-120px] left-1/3" style={{ background: "oklch(0.50 0.16 250 / 0.45)" }} />
 
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-10 px-4 py-12 lg:flex-row lg:gap-16">
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-start gap-6 px-4 py-6 sm:justify-center sm:gap-10 sm:py-12 lg:flex-row lg:gap-16">
         {/* Brand showcase */}
-        <div className="w-full max-w-xl space-y-8">
+        <div className="w-full max-w-xl space-y-5 sm:space-y-8">
           <div className="text-center lg:text-left">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">From the House of Abood Tradings</p>
-            <h1 className="mt-3 text-3xl sm:text-4xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">From the House of Abood Tradings</p>
+            <h1 className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
               The <span className="gold-text">Zizz</span> Family of Brands
             </h1>
           </div>
 
           {/* Zizz hero */}
-          <div className="glass hover-lift rounded-3xl p-6 gold-ring">
+          <div className="glass hover-lift rounded-2xl sm:rounded-3xl p-4 sm:p-6 gold-ring">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary border border-primary/30">
                   Flagship Brand
                 </span>
-                <p className="mt-3 text-sm text-muted-foreground max-w-xs">
+                <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground max-w-xs">
                   Mattress · Pillow · Duvets · Protector · Topper
                 </p>
               </div>
             </div>
-            <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-white">
-              <img src={zizz.url} alt="Zizz Mattress — flagship brand" className="w-full h-44 object-contain p-3" />
+            <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
+              <img src={zizz.url} alt="Zizz Mattress — flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain p-2 sm:p-3" />
             </div>
           </div>
 
           {/* Sub-brand grid */}
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.25em] text-muted-foreground text-center lg:text-left">
+            <p className="mb-2 sm:mb-3 text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground text-center lg:text-left">
               Sister Brands
             </p>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
               {subBrands.map((b) => (
                 <div
                   key={b.name}
-                  className="glass-sm rounded-xl overflow-hidden bg-white/95 aspect-square flex items-center justify-center hover-lift"
+                  className="glass-sm rounded-lg sm:rounded-xl overflow-hidden bg-white/95 aspect-square flex items-center justify-center hover-lift"
                   title={b.name}
                 >
-                  <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1.5" loading="lazy" />
+                  <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1 sm:p-1.5" loading="lazy" />
                 </div>
               ))}
             </div>
@@ -102,12 +102,12 @@ function LoginPage() {
         </div>
 
         {/* Login card */}
-        <div className="glass w-full max-w-md rounded-2xl p-8">
-          <div className="text-center space-y-2 mb-6">
-            <div className="mx-auto h-14 w-14 rounded-2xl btn-gold flex items-center justify-center overflow-hidden bg-white">
+        <div className="glass w-full max-w-md rounded-2xl p-6 sm:p-8">
+          <div className="text-center space-y-2 mb-5 sm:mb-6">
+            <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden bg-white">
               <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain" />
             </div>
-            <h2 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</h2>
             <p className="text-sm text-muted-foreground">Sign in to your account</p>
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
