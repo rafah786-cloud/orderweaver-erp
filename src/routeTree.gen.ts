@@ -32,6 +32,7 @@ import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
+import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
 import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
 import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
@@ -158,6 +159,11 @@ const AppAccountingTrialBalanceRoute =
     path: '/trial-balance',
     getParentRoute: () => AppAccountingRoute,
   } as any)
+const AppAccountingProfitLossRoute = AppAccountingProfitLossRouteImport.update({
+  id: '/profit-loss',
+  path: '/profit-loss',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
   id: '/ledgers',
   path: '/ledgers',
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/_app/whatsapp': typeof AppWhatsappRoute
   '/_app/accounting/day-book': typeof AppAccountingDayBookRoute
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
+  '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/accounting/day-book'
     | '/accounting/ledgers'
+    | '/accounting/profit-loss'
     | '/accounting/trial-balance'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/accounting/day-book'
     | '/accounting/ledgers'
+    | '/accounting/profit-loss'
     | '/accounting/trial-balance'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/_app/whatsapp'
     | '/_app/accounting/day-book'
     | '/_app/accounting/ledgers'
+    | '/_app/accounting/profit-loss'
     | '/_app/accounting/trial-balance'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
@@ -595,6 +607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountingTrialBalanceRouteImport
       parentRoute: typeof AppAccountingRoute
     }
+    '/_app/accounting/profit-loss': {
+      id: '/_app/accounting/profit-loss'
+      path: '/profit-loss'
+      fullPath: '/accounting/profit-loss'
+      preLoaderRoute: typeof AppAccountingProfitLossRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
     '/_app/accounting/ledgers': {
       id: '/_app/accounting/ledgers'
       path: '/ledgers'
@@ -671,6 +690,7 @@ declare module '@tanstack/react-router' {
 interface AppAccountingRouteChildren {
   AppAccountingDayBookRoute: typeof AppAccountingDayBookRoute
   AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
+  AppAccountingProfitLossRoute: typeof AppAccountingProfitLossRoute
   AppAccountingTrialBalanceRoute: typeof AppAccountingTrialBalanceRoute
   AppAccountingLedgerIdRoute: typeof AppAccountingLedgerIdRoute
   AppAccountingVoucherIdRoute: typeof AppAccountingVoucherIdRoute
@@ -680,6 +700,7 @@ interface AppAccountingRouteChildren {
 const AppAccountingRouteChildren: AppAccountingRouteChildren = {
   AppAccountingDayBookRoute: AppAccountingDayBookRoute,
   AppAccountingLedgersRoute: AppAccountingLedgersRoute,
+  AppAccountingProfitLossRoute: AppAccountingProfitLossRoute,
   AppAccountingTrialBalanceRoute: AppAccountingTrialBalanceRoute,
   AppAccountingLedgerIdRoute: AppAccountingLedgerIdRoute,
   AppAccountingVoucherIdRoute: AppAccountingVoucherIdRoute,
