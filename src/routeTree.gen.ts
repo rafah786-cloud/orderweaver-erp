@@ -30,6 +30,8 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
+import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
@@ -140,6 +142,16 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountingRoute = AppAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
+  id: '/ledgers',
+  path: '/ledgers',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   id: '/api/public/biometric/punch',
   path: '/api/public/biometric/punch',
@@ -174,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/boq': typeof AppBoqRoute
@@ -188,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -201,6 +215,7 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/boq': typeof AppBoqRoute
@@ -215,6 +230,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -230,6 +246,7 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_app/accounting': typeof AppAccountingRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/boq': typeof AppBoqRoute
@@ -244,6 +261,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
+  '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -259,6 +277,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/accounting'
     | '/approvals'
     | '/attendance'
     | '/boq'
@@ -273,6 +292,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/ledgers'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -286,6 +306,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/accounting'
     | '/approvals'
     | '/attendance'
     | '/boq'
@@ -300,6 +321,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/ledgers'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -314,6 +336,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/_app/accounting'
     | '/_app/approvals'
     | '/_app/attendance'
     | '/_app/boq'
@@ -328,6 +351,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tally-import'
     | '/_app/whatsapp'
+    | '/_app/accounting/ledgers'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
     | '/_app/print/purchase/$id'
@@ -495,6 +519,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounting': {
+      id: '/_app/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AppAccountingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounting/ledgers': {
+      id: '/_app/accounting/ledgers'
+      path: '/ledgers'
+      fullPath: '/accounting/ledgers'
+      preLoaderRoute: typeof AppAccountingLedgersRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
     '/api/public/biometric/punch': {
       id: '/api/public/biometric/punch'
       path: '/api/public/biometric/punch'
@@ -533,7 +571,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppAccountingRouteChildren {
+  AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
+}
+
+const AppAccountingRouteChildren: AppAccountingRouteChildren = {
+  AppAccountingLedgersRoute: AppAccountingLedgersRoute,
+}
+
+const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
+  AppAccountingRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBoqRoute: typeof AppBoqRoute
@@ -555,6 +606,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAccountingRoute: AppAccountingRouteWithChildren,
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBoqRoute: AppBoqRoute,
@@ -590,3 +642,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
