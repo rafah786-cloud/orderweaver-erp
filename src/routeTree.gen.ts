@@ -25,12 +25,16 @@ import { Route as AppProductionRouteImport } from './routes/_app.production'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
+import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
+import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
 import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
 import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
@@ -41,6 +45,7 @@ import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.prin
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
 import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
+import { Route as AppGstReturnsIdRouteImport } from './routes/_app.gst.returns.$id'
 import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
 import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
@@ -124,6 +129,11 @@ const AppInvoicesRoute = AppInvoicesRouteImport.update({
   path: '/invoices',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGstRoute = AppGstRouteImport.update({
+  id: '/gst',
+  path: '/gst',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeesRoute = AppEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
@@ -153,6 +163,21 @@ const AppAccountingRoute = AppAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
   getParentRoute: () => AppRoute,
+} as any)
+const AppGstReturnsRoute = AppGstReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => AppGstRoute,
+} as any)
+const AppGstHsnRoute = AppGstHsnRouteImport.update({
+  id: '/hsn',
+  path: '/hsn',
+  getParentRoute: () => AppGstRoute,
+} as any)
+const AppGstEinvoicesRoute = AppGstEinvoicesRouteImport.update({
+  id: '/einvoices',
+  path: '/einvoices',
+  getParentRoute: () => AppGstRoute,
 } as any)
 const AppAccountingTrialBalanceRoute =
   AppAccountingTrialBalanceRouteImport.update({
@@ -207,6 +232,11 @@ const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
   path: '/print/invoice/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGstReturnsIdRoute = AppGstReturnsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppGstReturnsRoute,
+} as any)
 const AppAccountingVouchersNewRoute =
   AppAccountingVouchersNewRouteImport.update({
     id: '/vouchers/new',
@@ -237,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
+  '/gst': typeof AppGstRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -251,9 +282,13 @@ export interface FileRoutesByFullPath {
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/gst/einvoices': typeof AppGstEinvoicesRoute
+  '/gst/hsn': typeof AppGstHsnRoute
+  '/gst/returns': typeof AppGstReturnsRouteWithChildren
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
+  '/gst/returns/$id': typeof AppGstReturnsIdRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -273,6 +308,7 @@ export interface FileRoutesByTo {
   '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
+  '/gst': typeof AppGstRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -287,9 +323,13 @@ export interface FileRoutesByTo {
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/gst/einvoices': typeof AppGstEinvoicesRoute
+  '/gst/hsn': typeof AppGstHsnRoute
+  '/gst/returns': typeof AppGstReturnsRouteWithChildren
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
+  '/gst/returns/$id': typeof AppGstReturnsIdRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -311,6 +351,7 @@ export interface FileRoutesById {
   '/_app/boq': typeof AppBoqRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
+  '/_app/gst': typeof AppGstRouteWithChildren
   '/_app/invoices': typeof AppInvoicesRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
@@ -325,9 +366,13 @@ export interface FileRoutesById {
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/_app/gst/einvoices': typeof AppGstEinvoicesRoute
+  '/_app/gst/hsn': typeof AppGstHsnRoute
+  '/_app/gst/returns': typeof AppGstReturnsRouteWithChildren
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
+  '/_app/gst/returns/$id': typeof AppGstReturnsIdRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -349,6 +394,7 @@ export interface FileRouteTypes {
     | '/boq'
     | '/dashboard'
     | '/employees'
+    | '/gst'
     | '/invoices'
     | '/parties'
     | '/payslips'
@@ -363,9 +409,13 @@ export interface FileRouteTypes {
     | '/accounting/ledgers'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/gst/einvoices'
+    | '/gst/hsn'
+    | '/gst/returns'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
+    | '/gst/returns/$id'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -385,6 +435,7 @@ export interface FileRouteTypes {
     | '/boq'
     | '/dashboard'
     | '/employees'
+    | '/gst'
     | '/invoices'
     | '/parties'
     | '/payslips'
@@ -399,9 +450,13 @@ export interface FileRouteTypes {
     | '/accounting/ledgers'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/gst/einvoices'
+    | '/gst/hsn'
+    | '/gst/returns'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
+    | '/gst/returns/$id'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -422,6 +477,7 @@ export interface FileRouteTypes {
     | '/_app/boq'
     | '/_app/dashboard'
     | '/_app/employees'
+    | '/_app/gst'
     | '/_app/invoices'
     | '/_app/parties'
     | '/_app/payslips'
@@ -436,9 +492,13 @@ export interface FileRouteTypes {
     | '/_app/accounting/ledgers'
     | '/_app/accounting/profit-loss'
     | '/_app/accounting/trial-balance'
+    | '/_app/gst/einvoices'
+    | '/_app/gst/hsn'
+    | '/_app/gst/returns'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/accounting/vouchers/new'
+    | '/_app/gst/returns/$id'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
     | '/_app/print/purchase/$id'
@@ -571,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInvoicesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/gst': {
+      id: '/_app/gst'
+      path: '/gst'
+      fullPath: '/gst'
+      preLoaderRoute: typeof AppGstRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/employees': {
       id: '/_app/employees'
       path: '/employees'
@@ -612,6 +679,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting'
       preLoaderRoute: typeof AppAccountingRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/gst/returns': {
+      id: '/_app/gst/returns'
+      path: '/returns'
+      fullPath: '/gst/returns'
+      preLoaderRoute: typeof AppGstReturnsRouteImport
+      parentRoute: typeof AppGstRoute
+    }
+    '/_app/gst/hsn': {
+      id: '/_app/gst/hsn'
+      path: '/hsn'
+      fullPath: '/gst/hsn'
+      preLoaderRoute: typeof AppGstHsnRouteImport
+      parentRoute: typeof AppGstRoute
+    }
+    '/_app/gst/einvoices': {
+      id: '/_app/gst/einvoices'
+      path: '/einvoices'
+      fullPath: '/gst/einvoices'
+      preLoaderRoute: typeof AppGstEinvoicesRouteImport
+      parentRoute: typeof AppGstRoute
     }
     '/_app/accounting/trial-balance': {
       id: '/_app/accounting/trial-balance'
@@ -683,6 +771,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/gst/returns/$id': {
+      id: '/_app/gst/returns/$id'
+      path: '/$id'
+      fullPath: '/gst/returns/$id'
+      preLoaderRoute: typeof AppGstReturnsIdRouteImport
+      parentRoute: typeof AppGstReturnsRoute
+    }
     '/_app/accounting/vouchers/new': {
       id: '/_app/accounting/vouchers/new'
       path: '/vouchers/new'
@@ -733,6 +828,33 @@ const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
   AppAccountingRouteChildren,
 )
 
+interface AppGstReturnsRouteChildren {
+  AppGstReturnsIdRoute: typeof AppGstReturnsIdRoute
+}
+
+const AppGstReturnsRouteChildren: AppGstReturnsRouteChildren = {
+  AppGstReturnsIdRoute: AppGstReturnsIdRoute,
+}
+
+const AppGstReturnsRouteWithChildren = AppGstReturnsRoute._addFileChildren(
+  AppGstReturnsRouteChildren,
+)
+
+interface AppGstRouteChildren {
+  AppGstEinvoicesRoute: typeof AppGstEinvoicesRoute
+  AppGstHsnRoute: typeof AppGstHsnRoute
+  AppGstReturnsRoute: typeof AppGstReturnsRouteWithChildren
+}
+
+const AppGstRouteChildren: AppGstRouteChildren = {
+  AppGstEinvoicesRoute: AppGstEinvoicesRoute,
+  AppGstHsnRoute: AppGstHsnRoute,
+  AppGstReturnsRoute: AppGstReturnsRouteWithChildren,
+}
+
+const AppGstRouteWithChildren =
+  AppGstRoute._addFileChildren(AppGstRouteChildren)
+
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
@@ -740,6 +862,7 @@ interface AppRouteChildren {
   AppBoqRoute: typeof AppBoqRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
+  AppGstRoute: typeof AppGstRouteWithChildren
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -762,6 +885,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBoqRoute: AppBoqRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
+  AppGstRoute: AppGstRouteWithChildren,
   AppInvoicesRoute: AppInvoicesRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
