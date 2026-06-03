@@ -52,6 +52,37 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
     if (url) window.open(url, "_blank");
   };
 
+  const handleExportPdf = async () => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    const body = doc?.body;
+    if (!iframe || !doc || !body) {
+      toast.error("Preview not ready");
+      return;
+    }
+    setExporting(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const filename = `${(title || "document").replace(/[^\w.-]+/g, "_")}.pdf`;
+      await html2pdf()
+        .set({
+          margin: 0,
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"] },
+        })
+        .from(body)
+        .save();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to export PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const zoomPercent = Math.round(zoom * 100);
 
   return (
