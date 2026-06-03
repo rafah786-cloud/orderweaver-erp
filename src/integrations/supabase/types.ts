@@ -1204,6 +1204,7 @@ export type Database = {
         | "hr"
         | "customer"
         | "employee"
+        | "accountant"
       attendance_status: "present" | "absent" | "half_day" | "leave" | "holiday"
       invoice_status: "draft" | "unpaid" | "partial" | "paid" | "cancelled"
       production_status:
@@ -1341,7 +1342,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "sales", "production", "hr", "customer", "employee"],
+      app_role: [
+        "admin",
+        "sales",
+        "production",
+        "hr",
+        "customer",
+        "employee",
+        "accountant",
+      ],
       attendance_status: ["present", "absent", "half_day", "leave", "holiday"],
       invoice_status: ["draft", "unpaid", "partial", "paid", "cancelled"],
       production_status: [
