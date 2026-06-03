@@ -45,6 +45,7 @@ function VoucherDetailPage() {
       : voucher.source_table === "purchase_bills" && voucher.source_id
       ? { to: "/print/purchase/$id" as const, params: { id: voucher.source_id }, label: "View Bill", Icon: Truck }
       : null;
+  const SourceIcon = sourceLink?.Icon;
 
   return (
     <>
@@ -54,9 +55,9 @@ function VoucherDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             {voucher.is_locked && <Badge variant="secondary"><Lock className="h-3 w-3 mr-1" /> Locked</Badge>}
-            {sourceLink && (
+            {sourceLink && SourceIcon && (
               <Button asChild variant="outline">
-                <Link to={sourceLink.to} params={sourceLink.params}><sourceLink.Icon className="h-4 w-4 mr-1" /> {sourceLink.label}</Link>
+                <Link to={sourceLink.to} params={sourceLink.params}><SourceIcon className="h-4 w-4 mr-1" /> {sourceLink.label}</Link>
               </Button>
             )}
             <Button asChild variant="ghost">
