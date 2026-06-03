@@ -32,6 +32,7 @@ import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
+import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
@@ -152,6 +153,11 @@ const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
   path: '/ledgers',
   getParentRoute: () => AppAccountingRoute,
 } as any)
+const AppAccountingDayBookRoute = AppAccountingDayBookRouteImport.update({
+  id: '/day-book',
+  path: '/day-book',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   id: '/api/public/biometric/punch',
   path: '/api/public/biometric/punch',
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
+  '/_app/accounting/day-book': typeof AppAccountingDayBookRoute
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/day-book'
     | '/accounting/ledgers'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/whatsapp'
+    | '/accounting/day-book'
     | '/accounting/ledgers'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tally-import'
     | '/_app/whatsapp'
+    | '/_app/accounting/day-book'
     | '/_app/accounting/ledgers'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
@@ -533,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountingLedgersRouteImport
       parentRoute: typeof AppAccountingRoute
     }
+    '/_app/accounting/day-book': {
+      id: '/_app/accounting/day-book'
+      path: '/day-book'
+      fullPath: '/accounting/day-book'
+      preLoaderRoute: typeof AppAccountingDayBookRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
     '/api/public/biometric/punch': {
       id: '/api/public/biometric/punch'
       path: '/api/public/biometric/punch'
@@ -572,10 +591,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAccountingRouteChildren {
+  AppAccountingDayBookRoute: typeof AppAccountingDayBookRoute
   AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
 }
 
 const AppAccountingRouteChildren: AppAccountingRouteChildren = {
+  AppAccountingDayBookRoute: AppAccountingDayBookRoute,
   AppAccountingLedgersRoute: AppAccountingLedgersRoute,
 }
 
