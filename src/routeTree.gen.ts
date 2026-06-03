@@ -33,6 +33,7 @@ import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
 import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
 import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
 import { Route as AppInventoryMovementsRouteImport } from './routes/_app.inventory.movements'
@@ -175,6 +176,11 @@ const AppAccountingRoute = AppAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
   getParentRoute: () => AppRoute,
+} as any)
+const AppInventoryValuationRoute = AppInventoryValuationRouteImport.update({
+  id: '/valuation',
+  path: '/valuation',
+  getParentRoute: () => AppInventoryRoute,
 } as any)
 const AppInventorySummaryRoute = AppInventorySummaryRouteImport.update({
   id: '/summary',
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/inventory/movements': typeof AppInventoryMovementsRoute
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
+  '/inventory/valuation': typeof AppInventoryValuationRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -382,6 +389,7 @@ export interface FileRoutesByTo {
   '/inventory/movements': typeof AppInventoryMovementsRoute
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
+  '/inventory/valuation': typeof AppInventoryValuationRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_app/inventory/movements': typeof AppInventoryMovementsRoute
   '/_app/inventory/reorder': typeof AppInventoryReorderRoute
   '/_app/inventory/summary': typeof AppInventorySummaryRoute
+  '/_app/inventory/valuation': typeof AppInventoryValuationRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -482,6 +491,7 @@ export interface FileRouteTypes {
     | '/inventory/movements'
     | '/inventory/reorder'
     | '/inventory/summary'
+    | '/inventory/valuation'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/inventory/movements'
     | '/inventory/reorder'
     | '/inventory/summary'
+    | '/inventory/valuation'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -579,6 +590,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/movements'
     | '/_app/inventory/reorder'
     | '/_app/inventory/summary'
+    | '/_app/inventory/valuation'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/accounting/vouchers/new'
@@ -770,6 +782,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting'
       preLoaderRoute: typeof AppAccountingRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/inventory/valuation': {
+      id: '/_app/inventory/valuation'
+      path: '/valuation'
+      fullPath: '/inventory/valuation'
+      preLoaderRoute: typeof AppInventoryValuationRouteImport
+      parentRoute: typeof AppInventoryRoute
     }
     '/_app/inventory/summary': {
       id: '/_app/inventory/summary'
@@ -995,6 +1014,7 @@ interface AppInventoryRouteChildren {
   AppInventoryMovementsRoute: typeof AppInventoryMovementsRoute
   AppInventoryReorderRoute: typeof AppInventoryReorderRoute
   AppInventorySummaryRoute: typeof AppInventorySummaryRoute
+  AppInventoryValuationRoute: typeof AppInventoryValuationRoute
 }
 
 const AppInventoryRouteChildren: AppInventoryRouteChildren = {
@@ -1004,6 +1024,7 @@ const AppInventoryRouteChildren: AppInventoryRouteChildren = {
   AppInventoryMovementsRoute: AppInventoryMovementsRoute,
   AppInventoryReorderRoute: AppInventoryReorderRoute,
   AppInventorySummaryRoute: AppInventorySummaryRoute,
+  AppInventoryValuationRoute: AppInventoryValuationRoute,
 }
 
 const AppInventoryRouteWithChildren = AppInventoryRoute._addFileChildren(
