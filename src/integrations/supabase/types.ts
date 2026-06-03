@@ -386,6 +386,54 @@ export type Database = {
         }
         Relationships: []
       }
+      godowns: {
+        Row: {
+          address: string | null
+          code: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "godowns_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "godowns_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+        ]
+      }
       gst_rate_changes: {
         Row: {
           created_at: string
@@ -1409,6 +1457,456 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_batches: {
+        Row: {
+          batch_number: string
+          created_at: string
+          expiry_date: string | null
+          godown_id: string | null
+          id: string
+          mfg_date: string | null
+          notes: string | null
+          opening_qty: number
+          opening_rate: number
+          stock_item_id: string
+          updated_at: string
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string
+          expiry_date?: string | null
+          godown_id?: string | null
+          id?: string
+          mfg_date?: string | null
+          notes?: string | null
+          opening_qty?: number
+          opening_rate?: number
+          stock_item_id: string
+          updated_at?: string
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string
+          expiry_date?: string | null
+          godown_id?: string | null
+          id?: string
+          mfg_date?: string | null
+          notes?: string | null
+          opening_qty?: number
+          opening_rate?: number
+          stock_item_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_batches_godown_id_fkey"
+            columns: ["godown_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_batches_godown_id_fkey"
+            columns: ["godown_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+          {
+            foreignKeyName: "stock_batches_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+          {
+            foreignKeyName: "stock_batches_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_batches_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+        ]
+      }
+      stock_items: {
+        Row: {
+          alternate_unit: string | null
+          code: string | null
+          conversion_factor: number
+          created_at: string
+          gst_rate: number
+          hsn_code: string | null
+          id: string
+          is_active: boolean
+          mapped_model_id: string | null
+          mapped_raw_material_id: string | null
+          max_stock: number | null
+          min_stock: number
+          name: string
+          notes: string | null
+          reorder_level: number
+          reorder_quantity: number
+          standard_cost: number
+          standard_price: number
+          track_batches: boolean
+          unit: string
+          updated_at: string
+          valuation_method: Database["public"]["Enums"]["valuation_method"]
+        }
+        Insert: {
+          alternate_unit?: string | null
+          code?: string | null
+          conversion_factor?: number
+          created_at?: string
+          gst_rate?: number
+          hsn_code?: string | null
+          id?: string
+          is_active?: boolean
+          mapped_model_id?: string | null
+          mapped_raw_material_id?: string | null
+          max_stock?: number | null
+          min_stock?: number
+          name: string
+          notes?: string | null
+          reorder_level?: number
+          reorder_quantity?: number
+          standard_cost?: number
+          standard_price?: number
+          track_batches?: boolean
+          unit?: string
+          updated_at?: string
+          valuation_method?: Database["public"]["Enums"]["valuation_method"]
+        }
+        Update: {
+          alternate_unit?: string | null
+          code?: string | null
+          conversion_factor?: number
+          created_at?: string
+          gst_rate?: number
+          hsn_code?: string | null
+          id?: string
+          is_active?: boolean
+          mapped_model_id?: string | null
+          mapped_raw_material_id?: string | null
+          max_stock?: number | null
+          min_stock?: number
+          name?: string
+          notes?: string | null
+          reorder_level?: number
+          reorder_quantity?: number
+          standard_cost?: number
+          standard_price?: number
+          track_batches?: boolean
+          unit?: string
+          updated_at?: string
+          valuation_method?: Database["public"]["Enums"]["valuation_method"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_mapped_model_id_fkey"
+            columns: ["mapped_model_id"]
+            isOneToOne: false
+            referencedRelation: "product_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_items_mapped_raw_material_id_fkey"
+            columns: ["mapped_raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_journal_entries: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          direction: string
+          from_godown_id: string | null
+          id: string
+          journal_id: string
+          line_order: number
+          quantity: number
+          rate: number
+          stock_item_id: string
+          to_godown_id: string | null
+        }
+        Insert: {
+          amount?: number
+          batch_id?: string | null
+          direction: string
+          from_godown_id?: string | null
+          id?: string
+          journal_id: string
+          line_order?: number
+          quantity: number
+          rate?: number
+          stock_item_id: string
+          to_godown_id?: string | null
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          direction?: string
+          from_godown_id?: string | null
+          id?: string
+          journal_id?: string
+          line_order?: number
+          quantity?: number
+          rate?: number
+          stock_item_id?: string
+          to_godown_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_journal_entries_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "stock_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_from_godown_id_fkey"
+            columns: ["from_godown_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_from_godown_id_fkey"
+            columns: ["from_godown_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "stock_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_to_godown_id_fkey"
+            columns: ["to_godown_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_journal_entries_to_godown_id_fkey"
+            columns: ["to_godown_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+        ]
+      }
+      stock_journals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_date: string
+          journal_number: string
+          journal_type: string
+          narration: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_date?: string
+          journal_number: string
+          journal_type?: string
+          narration?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_date?: string
+          journal_number?: string
+          journal_type?: string
+          narration?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          created_at: string
+          created_by: string | null
+          godown_id: string | null
+          id: string
+          movement_date: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          narration: string | null
+          quantity: number
+          rate: number
+          source_id: string | null
+          source_table: string | null
+          stock_item_id: string
+          voucher_id: string | null
+        }
+        Insert: {
+          amount?: number
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          godown_id?: string | null
+          id?: string
+          movement_date?: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          narration?: string | null
+          quantity: number
+          rate?: number
+          source_id?: string | null
+          source_table?: string | null
+          stock_item_id: string
+          voucher_id?: string | null
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          godown_id?: string | null
+          id?: string
+          movement_date?: string
+          movement_type?: Database["public"]["Enums"]["stock_movement_type"]
+          narration?: string | null
+          quantity?: number
+          rate?: number
+          source_id?: string | null
+          source_table?: string | null
+          stock_item_id?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "stock_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_godown_id_fkey"
+            columns: ["godown_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_godown_id_fkey"
+            columns: ["godown_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_valuation_settings: {
+        Row: {
+          allow_negative_stock: boolean
+          default_godown_id: string | null
+          default_method: Database["public"]["Enums"]["valuation_method"]
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          allow_negative_stock?: boolean
+          default_godown_id?: string | null
+          default_method?: Database["public"]["Enums"]["valuation_method"]
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_negative_stock?: boolean
+          default_godown_id?: string | null
+          default_method?: Database["public"]["Enums"]["valuation_method"]
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_valuation_settings_default_godown_id_fkey"
+            columns: ["default_godown_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_valuation_settings_default_godown_id_fkey"
+            columns: ["default_godown_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+        ]
+      }
       supplier_ledger_entries: {
         Row: {
           created_at: string
@@ -1711,6 +2209,34 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_godown_summary: {
+        Row: {
+          code: string | null
+          godown_id: string | null
+          godown_name: string | null
+          name: string | null
+          qty: number | null
+          stock_item_id: string | null
+          unit: string | null
+          value: number | null
+        }
+        Relationships: []
+      }
+      stock_summary: {
+        Row: {
+          avg_rate: number | null
+          code: string | null
+          current_qty: number | null
+          max_stock: number | null
+          min_stock: number | null
+          name: string | null
+          reorder_level: number | null
+          stock_item_id: string | null
+          stock_value: number | null
+          unit: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_voucher_balanced: {
@@ -1765,7 +2291,17 @@ export type Database = {
         | "ready"
         | "dispatched"
       punch_type: "in" | "out"
+      stock_movement_type:
+        | "purchase"
+        | "sale"
+        | "production_in"
+        | "production_out"
+        | "transfer_in"
+        | "transfer_out"
+        | "adjustment"
+        | "opening"
       user_status: "pending" | "approved" | "rejected"
+      valuation_method: "fifo" | "lifo" | "weighted_avg" | "standard_cost"
       voucher_type:
         | "sales"
         | "purchase"
@@ -1923,7 +2459,18 @@ export const Constants = {
         "dispatched",
       ],
       punch_type: ["in", "out"],
+      stock_movement_type: [
+        "purchase",
+        "sale",
+        "production_in",
+        "production_out",
+        "transfer_in",
+        "transfer_out",
+        "adjustment",
+        "opening",
+      ],
       user_status: ["pending", "approved", "rejected"],
+      valuation_method: ["fifo", "lifo", "weighted_avg", "standard_cost"],
       voucher_type: [
         "sales",
         "purchase",
