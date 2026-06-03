@@ -72,7 +72,7 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
           html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
-        })
+        } as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
         .from(body)
         .save();
     } catch (e) {
