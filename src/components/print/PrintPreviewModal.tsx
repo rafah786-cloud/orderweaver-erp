@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Maximize2, ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
+import { Printer, X, Maximize2, ZoomIn, ZoomOut, Maximize, RotateCcw, FileDown, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface PrintPreviewModalProps {
   url: string | null;
