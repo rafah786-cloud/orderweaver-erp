@@ -69,7 +69,7 @@ function ReturnDetail() {
     <>
       <PageHeader
         title={`${ret.return_type} · ${periodLabel}`}
-        description={<>GSTIN <span className="font-mono">{ret.gstin}</span> · <Badge variant={ret.status === "filed" ? "default" : "secondary"}>{ret.status}</Badge></>}
+        description={`GSTIN ${ret.gstin} · status: ${ret.status}`}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => regen.mutate()} disabled={regen.isPending}>
