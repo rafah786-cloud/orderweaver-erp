@@ -30,6 +30,7 @@ import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
+import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
@@ -43,6 +44,11 @@ import { Route as AppInventoryGodownsRouteImport } from './routes/_app.inventory
 import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
 import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
 import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
+import { Route as AppBankingReconcileRouteImport } from './routes/_app.banking.reconcile'
+import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banking.payment-advice'
+import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
+import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
+import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
 import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
 import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
@@ -54,6 +60,8 @@ import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purc
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
 import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
 import { Route as AppGstReturnsIdRouteImport } from './routes/_app.gst.returns.$id'
+import { Route as AppBankingReconcileIdRouteImport } from './routes/_app.banking.reconcile.$id'
+import { Route as AppBankingChequePrintIdRouteImport } from './routes/_app.banking.cheque-print.$id'
 import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
 import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
@@ -162,6 +170,11 @@ const AppBoqRoute = AppBoqRouteImport.update({
   path: '/boq',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBankingRoute = AppBankingRouteImport.update({
+  id: '/banking',
+  path: '/banking',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -227,6 +240,31 @@ const AppGstEinvoicesRoute = AppGstEinvoicesRouteImport.update({
   path: '/einvoices',
   getParentRoute: () => AppGstRoute,
 } as any)
+const AppBankingReconcileRoute = AppBankingReconcileRouteImport.update({
+  id: '/reconcile',
+  path: '/reconcile',
+  getParentRoute: () => AppBankingRoute,
+} as any)
+const AppBankingPaymentAdviceRoute = AppBankingPaymentAdviceRouteImport.update({
+  id: '/payment-advice',
+  path: '/payment-advice',
+  getParentRoute: () => AppBankingRoute,
+} as any)
+const AppBankingCurrenciesRoute = AppBankingCurrenciesRouteImport.update({
+  id: '/currencies',
+  path: '/currencies',
+  getParentRoute: () => AppBankingRoute,
+} as any)
+const AppBankingChequesRoute = AppBankingChequesRouteImport.update({
+  id: '/cheques',
+  path: '/cheques',
+  getParentRoute: () => AppBankingRoute,
+} as any)
+const AppBankingAccountsRoute = AppBankingAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AppBankingRoute,
+} as any)
 const AppAccountingTrialBalanceRoute =
   AppAccountingTrialBalanceRouteImport.update({
     id: '/trial-balance',
@@ -285,6 +323,16 @@ const AppGstReturnsIdRoute = AppGstReturnsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppGstReturnsRoute,
 } as any)
+const AppBankingReconcileIdRoute = AppBankingReconcileIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppBankingReconcileRoute,
+} as any)
+const AppBankingChequePrintIdRoute = AppBankingChequePrintIdRouteImport.update({
+  id: '/cheque-print/$id',
+  path: '/cheque-print/$id',
+  getParentRoute: () => AppBankingRoute,
+} as any)
 const AppAccountingVouchersNewRoute =
   AppAccountingVouchersNewRouteImport.update({
     id: '/vouchers/new',
@@ -312,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
@@ -331,6 +380,11 @@ export interface FileRoutesByFullPath {
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/banking/accounts': typeof AppBankingAccountsRoute
+  '/banking/cheques': typeof AppBankingChequesRoute
+  '/banking/currencies': typeof AppBankingCurrenciesRoute
+  '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
+  '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -344,6 +398,8 @@ export interface FileRoutesByFullPath {
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
+  '/banking/cheque-print/$id': typeof AppBankingChequePrintIdRoute
+  '/banking/reconcile/$id': typeof AppBankingReconcileIdRoute
   '/gst/returns/$id': typeof AppGstReturnsIdRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -361,6 +417,7 @@ export interface FileRoutesByTo {
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
@@ -380,6 +437,11 @@ export interface FileRoutesByTo {
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/banking/accounts': typeof AppBankingAccountsRoute
+  '/banking/cheques': typeof AppBankingChequesRoute
+  '/banking/currencies': typeof AppBankingCurrenciesRoute
+  '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
+  '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -393,6 +455,8 @@ export interface FileRoutesByTo {
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
+  '/banking/cheque-print/$id': typeof AppBankingChequePrintIdRoute
+  '/banking/reconcile/$id': typeof AppBankingReconcileIdRoute
   '/gst/returns/$id': typeof AppGstReturnsIdRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -412,6 +476,7 @@ export interface FileRoutesById {
   '/_app/accounting': typeof AppAccountingRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
+  '/_app/banking': typeof AppBankingRouteWithChildren
   '/_app/boq': typeof AppBoqRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
@@ -431,6 +496,11 @@ export interface FileRoutesById {
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/_app/banking/accounts': typeof AppBankingAccountsRoute
+  '/_app/banking/cheques': typeof AppBankingChequesRoute
+  '/_app/banking/currencies': typeof AppBankingCurrenciesRoute
+  '/_app/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
+  '/_app/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
   '/_app/gst/einvoices': typeof AppGstEinvoicesRoute
   '/_app/gst/hsn': typeof AppGstHsnRoute
   '/_app/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -444,6 +514,8 @@ export interface FileRoutesById {
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
+  '/_app/banking/cheque-print/$id': typeof AppBankingChequePrintIdRoute
+  '/_app/banking/reconcile/$id': typeof AppBankingReconcileIdRoute
   '/_app/gst/returns/$id': typeof AppGstReturnsIdRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
@@ -463,6 +535,7 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/approvals'
     | '/attendance'
+    | '/banking'
     | '/boq'
     | '/dashboard'
     | '/employees'
@@ -482,6 +555,11 @@ export interface FileRouteTypes {
     | '/accounting/ledgers'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/banking/accounts'
+    | '/banking/cheques'
+    | '/banking/currencies'
+    | '/banking/payment-advice'
+    | '/banking/reconcile'
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
@@ -495,6 +573,8 @@ export interface FileRouteTypes {
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
+    | '/banking/cheque-print/$id'
+    | '/banking/reconcile/$id'
     | '/gst/returns/$id'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
@@ -512,6 +592,7 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/approvals'
     | '/attendance'
+    | '/banking'
     | '/boq'
     | '/dashboard'
     | '/employees'
@@ -531,6 +612,11 @@ export interface FileRouteTypes {
     | '/accounting/ledgers'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/banking/accounts'
+    | '/banking/cheques'
+    | '/banking/currencies'
+    | '/banking/payment-advice'
+    | '/banking/reconcile'
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
@@ -544,6 +630,8 @@ export interface FileRouteTypes {
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
+    | '/banking/cheque-print/$id'
+    | '/banking/reconcile/$id'
     | '/gst/returns/$id'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
@@ -562,6 +650,7 @@ export interface FileRouteTypes {
     | '/_app/accounting'
     | '/_app/approvals'
     | '/_app/attendance'
+    | '/_app/banking'
     | '/_app/boq'
     | '/_app/dashboard'
     | '/_app/employees'
@@ -581,6 +670,11 @@ export interface FileRouteTypes {
     | '/_app/accounting/ledgers'
     | '/_app/accounting/profit-loss'
     | '/_app/accounting/trial-balance'
+    | '/_app/banking/accounts'
+    | '/_app/banking/cheques'
+    | '/_app/banking/currencies'
+    | '/_app/banking/payment-advice'
+    | '/_app/banking/reconcile'
     | '/_app/gst/einvoices'
     | '/_app/gst/hsn'
     | '/_app/gst/returns'
@@ -594,6 +688,8 @@ export interface FileRouteTypes {
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/accounting/vouchers/new'
+    | '/_app/banking/cheque-print/$id'
+    | '/_app/banking/reconcile/$id'
     | '/_app/gst/returns/$id'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
@@ -762,6 +858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBoqRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/banking': {
+      id: '/_app/banking'
+      path: '/banking'
+      fullPath: '/banking'
+      preLoaderRoute: typeof AppBankingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/attendance': {
       id: '/_app/attendance'
       path: '/attendance'
@@ -853,6 +956,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGstEinvoicesRouteImport
       parentRoute: typeof AppGstRoute
     }
+    '/_app/banking/reconcile': {
+      id: '/_app/banking/reconcile'
+      path: '/reconcile'
+      fullPath: '/banking/reconcile'
+      preLoaderRoute: typeof AppBankingReconcileRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/payment-advice': {
+      id: '/_app/banking/payment-advice'
+      path: '/payment-advice'
+      fullPath: '/banking/payment-advice'
+      preLoaderRoute: typeof AppBankingPaymentAdviceRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/currencies': {
+      id: '/_app/banking/currencies'
+      path: '/currencies'
+      fullPath: '/banking/currencies'
+      preLoaderRoute: typeof AppBankingCurrenciesRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/cheques': {
+      id: '/_app/banking/cheques'
+      path: '/cheques'
+      fullPath: '/banking/cheques'
+      preLoaderRoute: typeof AppBankingChequesRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/accounts': {
+      id: '/_app/banking/accounts'
+      path: '/accounts'
+      fullPath: '/banking/accounts'
+      preLoaderRoute: typeof AppBankingAccountsRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
     '/_app/accounting/trial-balance': {
       id: '/_app/accounting/trial-balance'
       path: '/trial-balance'
@@ -930,6 +1068,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGstReturnsIdRouteImport
       parentRoute: typeof AppGstReturnsRoute
     }
+    '/_app/banking/reconcile/$id': {
+      id: '/_app/banking/reconcile/$id'
+      path: '/$id'
+      fullPath: '/banking/reconcile/$id'
+      preLoaderRoute: typeof AppBankingReconcileIdRouteImport
+      parentRoute: typeof AppBankingReconcileRoute
+    }
+    '/_app/banking/cheque-print/$id': {
+      id: '/_app/banking/cheque-print/$id'
+      path: '/cheque-print/$id'
+      fullPath: '/banking/cheque-print/$id'
+      preLoaderRoute: typeof AppBankingChequePrintIdRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
     '/_app/accounting/vouchers/new': {
       id: '/_app/accounting/vouchers/new'
       path: '/vouchers/new'
@@ -978,6 +1130,39 @@ const AppAccountingRouteChildren: AppAccountingRouteChildren = {
 
 const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
   AppAccountingRouteChildren,
+)
+
+interface AppBankingReconcileRouteChildren {
+  AppBankingReconcileIdRoute: typeof AppBankingReconcileIdRoute
+}
+
+const AppBankingReconcileRouteChildren: AppBankingReconcileRouteChildren = {
+  AppBankingReconcileIdRoute: AppBankingReconcileIdRoute,
+}
+
+const AppBankingReconcileRouteWithChildren =
+  AppBankingReconcileRoute._addFileChildren(AppBankingReconcileRouteChildren)
+
+interface AppBankingRouteChildren {
+  AppBankingAccountsRoute: typeof AppBankingAccountsRoute
+  AppBankingChequesRoute: typeof AppBankingChequesRoute
+  AppBankingCurrenciesRoute: typeof AppBankingCurrenciesRoute
+  AppBankingPaymentAdviceRoute: typeof AppBankingPaymentAdviceRoute
+  AppBankingReconcileRoute: typeof AppBankingReconcileRouteWithChildren
+  AppBankingChequePrintIdRoute: typeof AppBankingChequePrintIdRoute
+}
+
+const AppBankingRouteChildren: AppBankingRouteChildren = {
+  AppBankingAccountsRoute: AppBankingAccountsRoute,
+  AppBankingChequesRoute: AppBankingChequesRoute,
+  AppBankingCurrenciesRoute: AppBankingCurrenciesRoute,
+  AppBankingPaymentAdviceRoute: AppBankingPaymentAdviceRoute,
+  AppBankingReconcileRoute: AppBankingReconcileRouteWithChildren,
+  AppBankingChequePrintIdRoute: AppBankingChequePrintIdRoute,
+}
+
+const AppBankingRouteWithChildren = AppBankingRoute._addFileChildren(
+  AppBankingRouteChildren,
 )
 
 interface AppGstReturnsRouteChildren {
@@ -1035,6 +1220,7 @@ interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
+  AppBankingRoute: typeof AppBankingRouteWithChildren
   AppBoqRoute: typeof AppBoqRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
@@ -1059,6 +1245,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccountingRoute: AppAccountingRouteWithChildren,
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
+  AppBankingRoute: AppBankingRouteWithChildren,
   AppBoqRoute: AppBoqRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
