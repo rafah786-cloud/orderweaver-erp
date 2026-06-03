@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Maximize2, ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
+import { Printer, X, Maximize2, ZoomIn, ZoomOut, Maximize, RotateCcw, FileDown, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface PrintPreviewModalProps {
   url: string | null;
@@ -18,6 +19,7 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (url) {
@@ -50,6 +52,37 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
     if (url) window.open(url, "_blank");
   };
 
+  const handleExportPdf = async () => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    const body = doc?.body;
+    if (!iframe || !doc || !body) {
+      toast.error("Preview not ready");
+      return;
+    }
+    setExporting(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const filename = `${(title || "document").replace(/[^\w.-]+/g, "_")}.pdf`;
+      await (html2pdf() as any)
+        .set({
+          margin: 0,
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"] },
+        })
+        .from(body)
+        .save();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to export PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const zoomPercent = Math.round(zoom * 100);
 
   return (
@@ -76,6 +109,10 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
             <div className="h-5 w-px bg-border mx-1" />
             <Button size="sm" variant="outline" onClick={handleOpenFull}>
               <Maximize2 className="h-4 w-4 mr-1" /> Open
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exporting || !loaded}>
+              {exporting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileDown className="h-4 w-4 mr-1" />}
+              Export PDF
             </Button>
             <Button size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" /> Print
