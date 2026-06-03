@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Users, FileText, ShoppingCart, Factory,
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
-  MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet,
+  MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROUTE_ROLES } from "@/lib/permissions";
@@ -24,6 +24,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/tally-import": Database,
   "/accounting": BookOpen,
   "/gst": FileSpreadsheet,
+  "/inventory": Boxes,
   "/settings": Settings,
 };
 
@@ -43,6 +44,7 @@ const LABELS: Record<string, string> = {
   "/tally-import": "Tally Import",
   "/accounting": "Accounting",
   "/gst": "GST",
+  "/inventory": "Inventory",
   "/settings": "Settings",
 };
 
