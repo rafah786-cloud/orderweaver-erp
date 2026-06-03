@@ -76,6 +76,283 @@ export type Database = {
           },
         ]
       }
+      bank_accounts: {
+        Row: {
+          account_number: string
+          account_type: string
+          bank_name: string
+          branch: string | null
+          cheque_print_template: Json | null
+          created_at: string
+          currency_code: string
+          id: string
+          ifsc_code: string | null
+          is_active: boolean
+          ledger_account_id: string | null
+          name: string
+          notes: string | null
+          opening_balance: number
+          opening_balance_date: string
+          updated_at: string
+        }
+        Insert: {
+          account_number: string
+          account_type?: string
+          bank_name: string
+          branch?: string | null
+          cheque_print_template?: Json | null
+          created_at?: string
+          currency_code?: string
+          id?: string
+          ifsc_code?: string | null
+          is_active?: boolean
+          ledger_account_id?: string | null
+          name: string
+          notes?: string | null
+          opening_balance?: number
+          opening_balance_date?: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          account_type?: string
+          bank_name?: string
+          branch?: string | null
+          cheque_print_template?: Json | null
+          created_at?: string
+          currency_code?: string
+          id?: string
+          ifsc_code?: string | null
+          is_active?: boolean
+          ledger_account_id?: string | null
+          name?: string
+          notes?: string | null
+          opening_balance?: number
+          opening_balance_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "bank_accounts_ledger_account_id_fkey"
+            columns: ["ledger_account_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_ledger_account_id_fkey"
+            columns: ["ledger_account_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_balances"
+            referencedColumns: ["ledger_id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          balance: number | null
+          bank_account_id: string
+          bank_date: string | null
+          created_at: string
+          created_by: string | null
+          credit: number
+          debit: number
+          description: string | null
+          id: string
+          reconciled_at: string | null
+          reconciled_with: string | null
+          reference: string | null
+          source: string
+          txn_date: string
+          value_date: string | null
+          voucher_id: string | null
+        }
+        Insert: {
+          balance?: number | null
+          bank_account_id: string
+          bank_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          reconciled_at?: string | null
+          reconciled_with?: string | null
+          reference?: string | null
+          source?: string
+          txn_date: string
+          value_date?: string | null
+          voucher_id?: string | null
+        }
+        Update: {
+          balance?: number | null
+          bank_account_id?: string
+          bank_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          reconciled_at?: string | null
+          reconciled_with?: string | null
+          reference?: string | null
+          source?: string
+          txn_date?: string
+          value_date?: string | null
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_reconciled_with_fkey"
+            columns: ["reconciled_with"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cheques: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          bank_name: string | null
+          branch: string | null
+          cheque_date: string
+          cheque_number: string
+          cleared_date: string | null
+          created_at: string
+          created_by: string | null
+          direction: string
+          id: string
+          invoice_id: string | null
+          narration: string | null
+          party_id: string | null
+          party_name: string
+          purchase_bill_id: string | null
+          status: string
+          supplier_id: string | null
+          updated_at: string
+          voucher_id: string | null
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          bank_name?: string | null
+          branch?: string | null
+          cheque_date: string
+          cheque_number: string
+          cleared_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction: string
+          id?: string
+          invoice_id?: string | null
+          narration?: string | null
+          party_id?: string | null
+          party_name: string
+          purchase_bill_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          bank_name?: string | null
+          branch?: string | null
+          cheque_date?: string
+          cheque_number?: string
+          cleared_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          id?: string
+          invoice_id?: string | null
+          narration?: string | null
+          party_id?: string | null
+          party_name?: string
+          purchase_bill_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheques_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "party_outstanding"
+            referencedColumns: ["party_id"]
+          },
+          {
+            foreignKeyName: "cheques_purchase_bill_id_fkey"
+            columns: ["purchase_bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_centers: {
         Row: {
           created_at: string
@@ -110,6 +387,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      currencies: {
+        Row: {
+          code: string
+          created_at: string
+          is_active: boolean
+          is_base: boolean
+          name: string
+          symbol: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          is_active?: boolean
+          is_base?: boolean
+          name: string
+          symbol?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          is_active?: boolean
+          is_base?: boolean
+          name?: string
+          symbol?: string | null
+        }
+        Relationships: []
       }
       device_settings: {
         Row: {
@@ -352,6 +656,38 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      exchange_rates: {
+        Row: {
+          created_at: string
+          currency_code: string
+          id: string
+          rate: number
+          rate_date: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code: string
+          id?: string
+          rate: number
+          rate_date: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          id?: string
+          rate?: number
+          rate_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rates_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       financial_years: {
         Row: {
@@ -2122,6 +2458,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency_code: string | null
+          exchange_rate: number
           financial_year_id: string | null
           id: string
           is_locked: boolean
@@ -2137,6 +2475,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency_code?: string | null
+          exchange_rate?: number
           financial_year_id?: string | null
           id?: string
           is_locked?: boolean
@@ -2152,6 +2492,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          currency_code?: string | null
+          exchange_rate?: number
           financial_year_id?: string | null
           id?: string
           is_locked?: boolean
