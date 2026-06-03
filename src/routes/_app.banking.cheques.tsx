@@ -95,7 +95,7 @@ function Cheques() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader title="Cheque Register" description="Issued and received cheques (PDC support)" actions={<></>} />
+      <PageHeader title="Cheque Register" description="Issued and received cheques (PDC support)" actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New Cheque</Button></DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -124,7 +124,7 @@ function Cheques() {
             <Button onClick={save}>Save</Button>
           </DialogContent>
         </Dialog>
-      </PageHeader>
+      } />
 
       <Tabs defaultValue="issued">
         <TabsList>

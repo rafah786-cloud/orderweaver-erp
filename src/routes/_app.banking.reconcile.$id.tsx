@@ -68,7 +68,7 @@ function Reconcile() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader title={`Reconcile · ${account?.name ?? ""}`} description={`${account?.bank_name ?? ""} · ${account?.account_number ?? ""}`}>
+      <PageHeader title={`Reconcile · ${account?.name ?? ""}`} description={`${account?.bank_name ?? ""} · ${account?.account_number ?? ""}`} actions={<>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button variant="outline"><Plus className="h-4 w-4 mr-2" />Add Statement Line</Button></DialogTrigger>
           <DialogContent>
@@ -84,7 +84,7 @@ function Reconcile() {
           </DialogContent>
         </Dialog>
         <Button onClick={match} disabled={!bookSel || !stmtSel}><Link2 className="h-4 w-4 mr-2" />Match Selected</Button>
-      </PageHeader>
+      </>} />
 
       <div className="grid grid-cols-3 gap-4">
         <div className="glass p-4 rounded-xl"><div className="text-xs text-muted-foreground">Book Balance</div><div className="text-xl font-semibold tabular-nums">₹{bookBalance.toLocaleString("en-IN")}</div></div>

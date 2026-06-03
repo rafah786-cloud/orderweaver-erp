@@ -22,8 +22,8 @@ function PaymentAdvice() {
   const [account, setAccount] = useState<any>(null);
 
   useEffect(() => {
-    sb.from("suppliers").select("id,name,gstin,address").order("name").then(({ data }) => setSuppliers(data ?? []));
-    sb.from("bank_accounts").select("*").eq("is_active", true).order("name").then(({ data }) => setAccounts(data ?? []));
+    sb.from("suppliers").select("id,name,gstin,address").order("name").then(({ data }: { data: any }) => setSuppliers(data ?? []));
+    sb.from("bank_accounts").select("*").eq("is_active", true).order("name").then(({ data }: { data: any }) => setAccounts(data ?? []));
   }, []);
 
   useEffect(() => { setSupplier(suppliers.find((s) => s.id === adv.supplier_id) ?? null); }, [adv.supplier_id, suppliers]);

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_app/banking/reconcile")({ component: Rec
 
 function ReconcileIndex() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
-  useEffect(() => { sb.from("bank_accounts").select("*").eq("is_active", true).order("name").then(({ data }) => setAccounts(data ?? [])); }, []);
+  useEffect(() => { sb.from("bank_accounts").select("*").eq("is_active", true).order("name").then(({ data }: { data: any }) => setAccounts(data ?? [])); }, []);
   return (
     <div className="p-6 space-y-6">
       <PageHeader title="Bank Reconciliation" description="Select an account to reconcile" />

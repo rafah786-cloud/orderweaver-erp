@@ -25,7 +25,7 @@ function ChequePrint() {
   const [acc, setAcc] = useState<BankAccount | null>(null);
 
   useEffect(() => {
-    sb.from("cheques").select("*").eq("id", id).maybeSingle().then(async ({ data }) => {
+    sb.from("cheques").select("*").eq("id", id).maybeSingle().then(async ({ data }: { data: any }) => {
       setC(data);
       if (data?.bank_account_id) {
         const { data: a } = await sb.from("bank_accounts").select("*").eq("id", data.bank_account_id).maybeSingle();
