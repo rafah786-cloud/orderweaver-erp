@@ -40,6 +40,7 @@ const LABELS: Record<string, string> = {
   "/approvals": "User Approvals",
   "/whatsapp": "WhatsApp",
   "/tally-import": "Tally Import",
+  "/accounting": "Accounting",
   "/settings": "Settings",
 };
 
