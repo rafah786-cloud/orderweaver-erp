@@ -52,7 +52,7 @@ function StockItemsPage() {
 
   return (
     <>
-      <PageHeader title="Stock Items" description={`${itemsQ.data?.length ?? 0} items`}>
+      <PageHeader title="Stock Items" description={`${itemsQ.data?.length ?? 0} items`} actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Item</Button>
@@ -88,7 +88,7 @@ function StockItemsPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </PageHeader>
+      } />
       <PageBody>
         <div className="mb-4 max-w-md">
           <Input placeholder="Search items..." value={search} onChange={(e) => setSearch(e.target.value)} />

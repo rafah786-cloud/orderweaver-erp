@@ -40,7 +40,7 @@ function GodownsPage() {
 
   return (
     <>
-      <PageHeader title="Godowns" description={`${q.data?.length ?? 0} godowns`}>
+      <PageHeader title="Godowns" description={`${q.data?.length ?? 0} godowns`} actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Godown</Button></DialogTrigger>
           <DialogContent>
@@ -53,7 +53,7 @@ function GodownsPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </PageHeader>
+      } />
       <PageBody>
         <Card>
           <CardContent className="p-0">
