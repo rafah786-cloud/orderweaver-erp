@@ -25,6 +25,7 @@ import { Route as AppProductionRouteImport } from './routes/_app.production'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
@@ -32,6 +33,12 @@ import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
+import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
+import { Route as AppInventoryMovementsRouteImport } from './routes/_app.inventory.movements'
+import { Route as AppInventoryJournalsRouteImport } from './routes/_app.inventory.journals'
+import { Route as AppInventoryItemsRouteImport } from './routes/_app.inventory.items'
+import { Route as AppInventoryGodownsRouteImport } from './routes/_app.inventory.godowns'
 import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
 import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
 import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
@@ -129,6 +136,11 @@ const AppInvoicesRoute = AppInvoicesRouteImport.update({
   path: '/invoices',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInventoryRoute = AppInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGstRoute = AppGstRouteImport.update({
   id: '/gst',
   path: '/gst',
@@ -163,6 +175,36 @@ const AppAccountingRoute = AppAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
   getParentRoute: () => AppRoute,
+} as any)
+const AppInventorySummaryRoute = AppInventorySummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryReorderRoute = AppInventoryReorderRouteImport.update({
+  id: '/reorder',
+  path: '/reorder',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryMovementsRoute = AppInventoryMovementsRouteImport.update({
+  id: '/movements',
+  path: '/movements',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryJournalsRoute = AppInventoryJournalsRouteImport.update({
+  id: '/journals',
+  path: '/journals',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryGodownsRoute = AppInventoryGodownsRouteImport.update({
+  id: '/godowns',
+  path: '/godowns',
+  getParentRoute: () => AppInventoryRoute,
 } as any)
 const AppGstReturnsRoute = AppGstReturnsRouteImport.update({
   id: '/returns',
@@ -268,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
+  '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -285,6 +328,12 @@ export interface FileRoutesByFullPath {
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
+  '/inventory/godowns': typeof AppInventoryGodownsRoute
+  '/inventory/items': typeof AppInventoryItemsRoute
+  '/inventory/journals': typeof AppInventoryJournalsRoute
+  '/inventory/movements': typeof AppInventoryMovementsRoute
+  '/inventory/reorder': typeof AppInventoryReorderRoute
+  '/inventory/summary': typeof AppInventorySummaryRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -309,6 +358,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
+  '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -326,6 +376,12 @@ export interface FileRoutesByTo {
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
+  '/inventory/godowns': typeof AppInventoryGodownsRoute
+  '/inventory/items': typeof AppInventoryItemsRoute
+  '/inventory/journals': typeof AppInventoryJournalsRoute
+  '/inventory/movements': typeof AppInventoryMovementsRoute
+  '/inventory/reorder': typeof AppInventoryReorderRoute
+  '/inventory/summary': typeof AppInventorySummaryRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -352,6 +408,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/gst': typeof AppGstRouteWithChildren
+  '/_app/inventory': typeof AppInventoryRouteWithChildren
   '/_app/invoices': typeof AppInvoicesRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
@@ -369,6 +426,12 @@ export interface FileRoutesById {
   '/_app/gst/einvoices': typeof AppGstEinvoicesRoute
   '/_app/gst/hsn': typeof AppGstHsnRoute
   '/_app/gst/returns': typeof AppGstReturnsRouteWithChildren
+  '/_app/inventory/godowns': typeof AppInventoryGodownsRoute
+  '/_app/inventory/items': typeof AppInventoryItemsRoute
+  '/_app/inventory/journals': typeof AppInventoryJournalsRoute
+  '/_app/inventory/movements': typeof AppInventoryMovementsRoute
+  '/_app/inventory/reorder': typeof AppInventoryReorderRoute
+  '/_app/inventory/summary': typeof AppInventorySummaryRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -395,6 +458,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/employees'
     | '/gst'
+    | '/inventory'
     | '/invoices'
     | '/parties'
     | '/payslips'
@@ -412,6 +476,12 @@ export interface FileRouteTypes {
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
+    | '/inventory/godowns'
+    | '/inventory/items'
+    | '/inventory/journals'
+    | '/inventory/movements'
+    | '/inventory/reorder'
+    | '/inventory/summary'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -436,6 +506,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/employees'
     | '/gst'
+    | '/inventory'
     | '/invoices'
     | '/parties'
     | '/payslips'
@@ -453,6 +524,12 @@ export interface FileRouteTypes {
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
+    | '/inventory/godowns'
+    | '/inventory/items'
+    | '/inventory/journals'
+    | '/inventory/movements'
+    | '/inventory/reorder'
+    | '/inventory/summary'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -478,6 +555,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/gst'
+    | '/_app/inventory'
     | '/_app/invoices'
     | '/_app/parties'
     | '/_app/payslips'
@@ -495,6 +573,12 @@ export interface FileRouteTypes {
     | '/_app/gst/einvoices'
     | '/_app/gst/hsn'
     | '/_app/gst/returns'
+    | '/_app/inventory/godowns'
+    | '/_app/inventory/items'
+    | '/_app/inventory/journals'
+    | '/_app/inventory/movements'
+    | '/_app/inventory/reorder'
+    | '/_app/inventory/summary'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/accounting/vouchers/new'
@@ -631,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInvoicesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/inventory': {
+      id: '/_app/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AppInventoryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/gst': {
       id: '/_app/gst'
       path: '/gst'
@@ -679,6 +770,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting'
       preLoaderRoute: typeof AppAccountingRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/inventory/summary': {
+      id: '/_app/inventory/summary'
+      path: '/summary'
+      fullPath: '/inventory/summary'
+      preLoaderRoute: typeof AppInventorySummaryRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/reorder': {
+      id: '/_app/inventory/reorder'
+      path: '/reorder'
+      fullPath: '/inventory/reorder'
+      preLoaderRoute: typeof AppInventoryReorderRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/movements': {
+      id: '/_app/inventory/movements'
+      path: '/movements'
+      fullPath: '/inventory/movements'
+      preLoaderRoute: typeof AppInventoryMovementsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/journals': {
+      id: '/_app/inventory/journals'
+      path: '/journals'
+      fullPath: '/inventory/journals'
+      preLoaderRoute: typeof AppInventoryJournalsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/items': {
+      id: '/_app/inventory/items'
+      path: '/items'
+      fullPath: '/inventory/items'
+      preLoaderRoute: typeof AppInventoryItemsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/godowns': {
+      id: '/_app/inventory/godowns'
+      path: '/godowns'
+      fullPath: '/inventory/godowns'
+      preLoaderRoute: typeof AppInventoryGodownsRouteImport
+      parentRoute: typeof AppInventoryRoute
     }
     '/_app/gst/returns': {
       id: '/_app/gst/returns'
@@ -855,6 +988,28 @@ const AppGstRouteChildren: AppGstRouteChildren = {
 const AppGstRouteWithChildren =
   AppGstRoute._addFileChildren(AppGstRouteChildren)
 
+interface AppInventoryRouteChildren {
+  AppInventoryGodownsRoute: typeof AppInventoryGodownsRoute
+  AppInventoryItemsRoute: typeof AppInventoryItemsRoute
+  AppInventoryJournalsRoute: typeof AppInventoryJournalsRoute
+  AppInventoryMovementsRoute: typeof AppInventoryMovementsRoute
+  AppInventoryReorderRoute: typeof AppInventoryReorderRoute
+  AppInventorySummaryRoute: typeof AppInventorySummaryRoute
+}
+
+const AppInventoryRouteChildren: AppInventoryRouteChildren = {
+  AppInventoryGodownsRoute: AppInventoryGodownsRoute,
+  AppInventoryItemsRoute: AppInventoryItemsRoute,
+  AppInventoryJournalsRoute: AppInventoryJournalsRoute,
+  AppInventoryMovementsRoute: AppInventoryMovementsRoute,
+  AppInventoryReorderRoute: AppInventoryReorderRoute,
+  AppInventorySummaryRoute: AppInventorySummaryRoute,
+}
+
+const AppInventoryRouteWithChildren = AppInventoryRoute._addFileChildren(
+  AppInventoryRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
@@ -863,6 +1018,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppGstRoute: typeof AppGstRouteWithChildren
+  AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -886,6 +1042,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppGstRoute: AppGstRouteWithChildren,
+  AppInventoryRoute: AppInventoryRouteWithChildren,
   AppInvoicesRoute: AppInvoicesRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
