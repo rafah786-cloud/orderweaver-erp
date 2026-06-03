@@ -19,6 +19,7 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (url) {
