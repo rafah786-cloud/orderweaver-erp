@@ -153,6 +153,57 @@ export type Database = {
         }
         Relationships: []
       }
+      e_invoices: {
+        Row: {
+          ack_date: string | null
+          ack_no: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          invoice_id: string
+          irn: string | null
+          request_payload: Json | null
+          response_payload: Json | null
+          signed_invoice: string | null
+          signed_qr: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ack_date?: string | null
+          ack_no?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          invoice_id: string
+          irn?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          signed_invoice?: string | null
+          signed_qr?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ack_date?: string | null
+          ack_no?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          irn?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          signed_invoice?: string | null
+          signed_qr?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       e_way_bills: {
         Row: {
           created_at: string
@@ -335,6 +386,114 @@ export type Database = {
         }
         Relationships: []
       }
+      gst_rate_changes: {
+        Row: {
+          created_at: string
+          effective_from: string
+          hsn_code: string
+          id: string
+          new_rate: number
+          notes: string | null
+          old_rate: number
+        }
+        Insert: {
+          created_at?: string
+          effective_from: string
+          hsn_code: string
+          id?: string
+          new_rate: number
+          notes?: string | null
+          old_rate: number
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          hsn_code?: string
+          id?: string
+          new_rate?: number
+          notes?: string | null
+          old_rate?: number
+        }
+        Relationships: []
+      }
+      gst_returns: {
+        Row: {
+          created_at: string
+          filed_at: string | null
+          filed_by: string | null
+          gstin: string
+          id: string
+          payload: Json | null
+          period_month: number | null
+          period_year: number
+          return_type: string
+          status: string
+          summary: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          filed_at?: string | null
+          filed_by?: string | null
+          gstin: string
+          id?: string
+          payload?: Json | null
+          period_month?: number | null
+          period_year: number
+          return_type: string
+          status?: string
+          summary?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          filed_at?: string | null
+          filed_by?: string | null
+          gstin?: string
+          id?: string
+          payload?: Json | null
+          period_month?: number | null
+          period_year?: number
+          return_type?: string
+          status?: string
+          summary?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hsn_codes: {
+        Row: {
+          code: string
+          created_at: string
+          default_tax_rate: number
+          description: string
+          id: string
+          is_active: boolean
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          default_tax_rate?: number
+          description: string
+          id?: string
+          is_active?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          default_tax_rate?: number
+          description?: string
+          id?: string
+          is_active?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           amount: number | null
@@ -383,12 +542,16 @@ export type Database = {
           dispatch_pincode: string | null
           dispatch_state_code: string | null
           due_date: string | null
+          export_type: string | null
           id: string
           invoice_date: string
           invoice_number: string
+          invoice_type: string
           notes: string | null
           paid_amount: number
           party_id: string
+          place_of_supply: string | null
+          reverse_charge: boolean
           sales_order_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
@@ -403,12 +566,16 @@ export type Database = {
           dispatch_pincode?: string | null
           dispatch_state_code?: string | null
           due_date?: string | null
+          export_type?: string | null
           id?: string
           invoice_date?: string
           invoice_number: string
+          invoice_type?: string
           notes?: string | null
           paid_amount?: number
           party_id: string
+          place_of_supply?: string | null
+          reverse_charge?: boolean
           sales_order_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -423,12 +590,16 @@ export type Database = {
           dispatch_pincode?: string | null
           dispatch_state_code?: string | null
           due_date?: string | null
+          export_type?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: string
+          invoice_type?: string
           notes?: string | null
           paid_amount?: number
           party_id?: string
+          place_of_supply?: string | null
+          reverse_charge?: boolean
           sales_order_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -1005,9 +1176,16 @@ export type Database = {
           bill_number: string
           created_at: string
           created_by: string | null
+          eligibility_for_itc: string
           id: string
+          invoice_type: string
           notes: string | null
+          place_of_supply: string | null
+          reverse_charge: boolean
+          subtotal: number
+          supplier_gstin: string | null
           supplier_id: string | null
+          tax_amount: number
           total_amount: number
           updated_at: string
         }
@@ -1016,9 +1194,16 @@ export type Database = {
           bill_number: string
           created_at?: string
           created_by?: string | null
+          eligibility_for_itc?: string
           id?: string
+          invoice_type?: string
           notes?: string | null
+          place_of_supply?: string | null
+          reverse_charge?: boolean
+          subtotal?: number
+          supplier_gstin?: string | null
           supplier_id?: string | null
+          tax_amount?: number
           total_amount?: number
           updated_at?: string
         }
@@ -1027,9 +1212,16 @@ export type Database = {
           bill_number?: string
           created_at?: string
           created_by?: string | null
+          eligibility_for_itc?: string
           id?: string
+          invoice_type?: string
           notes?: string | null
+          place_of_supply?: string | null
+          reverse_charge?: boolean
+          subtotal?: number
+          supplier_gstin?: string | null
           supplier_id?: string | null
+          tax_amount?: number
           total_amount?: number
           updated_at?: string
         }
