@@ -38,6 +38,7 @@ import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.prin
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
 import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
+import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
 import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 
@@ -186,6 +187,12 @@ const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
   path: '/print/invoice/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountingVouchersNewRoute =
+  AppAccountingVouchersNewRouteImport.update({
+    id: '/vouchers/new',
+    path: '/vouchers/new',
+    getParentRoute: () => AppAccountingRoute,
+  } as any)
 const AppAccountingVoucherIdRoute = AppAccountingVoucherIdRouteImport.update({
   id: '/voucher/$id',
   path: '/voucher/$id',
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
+  '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
+  '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
   '/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -289,6 +298,7 @@ export interface FileRoutesById {
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
+  '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
   '/_app/print/invoice/$id': typeof AppPrintInvoiceIdRoute
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/accounting/ledgers'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
+    | '/accounting/vouchers/new'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/accounting/ledgers'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
+    | '/accounting/vouchers/new'
     | '/print/invoice/$id'
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
@@ -388,6 +400,7 @@ export interface FileRouteTypes {
     | '/_app/accounting/ledgers'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
+    | '/_app/accounting/vouchers/new'
     | '/_app/print/invoice/$id'
     | '/_app/print/party-ledger/$id'
     | '/_app/print/purchase/$id'
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounting/vouchers/new': {
+      id: '/_app/accounting/vouchers/new'
+      path: '/vouchers/new'
+      fullPath: '/accounting/vouchers/new'
+      preLoaderRoute: typeof AppAccountingVouchersNewRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
     '/_app/accounting/voucher/$id': {
       id: '/_app/accounting/voucher/$id'
       path: '/voucher/$id'
@@ -633,6 +653,7 @@ interface AppAccountingRouteChildren {
   AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
   AppAccountingLedgerIdRoute: typeof AppAccountingLedgerIdRoute
   AppAccountingVoucherIdRoute: typeof AppAccountingVoucherIdRoute
+  AppAccountingVouchersNewRoute: typeof AppAccountingVouchersNewRoute
 }
 
 const AppAccountingRouteChildren: AppAccountingRouteChildren = {
@@ -640,6 +661,7 @@ const AppAccountingRouteChildren: AppAccountingRouteChildren = {
   AppAccountingLedgersRoute: AppAccountingLedgersRoute,
   AppAccountingLedgerIdRoute: AppAccountingLedgerIdRoute,
   AppAccountingVoucherIdRoute: AppAccountingVoucherIdRoute,
+  AppAccountingVouchersNewRoute: AppAccountingVouchersNewRoute,
 }
 
 const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
