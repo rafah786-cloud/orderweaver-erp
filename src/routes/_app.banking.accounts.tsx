@@ -91,7 +91,7 @@ function BankAccounts() {
             <Button onClick={save}>Save</Button>
           </DialogContent>
         </Dialog>
-      </PageHeader>
+      </>} />
 
       <div className="glass rounded-2xl p-4 overflow-x-auto">
         <Table>
