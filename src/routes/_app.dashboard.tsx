@@ -114,6 +114,26 @@ function AdminPanels() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-4 w-4" /> Import Tally Master Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Import customers, vendors, raw materials, finished goods and ledger entries from a Tally XML export.
+            Existing records are matched by GSTIN or name and updated in place.
+          </p>
+          <Link
+            to="/tally-import"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
+          >
+            <Upload className="h-4 w-4" /> Open Importer
+          </Link>
+        </CardContent>
+      </Card>
     </>
   );
 }
