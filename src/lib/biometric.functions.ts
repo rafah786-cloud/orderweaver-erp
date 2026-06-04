@@ -15,6 +15,11 @@ async function assertAdmin(userId: string) {
   if (!data) throw new Error("Admin only");
 }
 
+function fail(tag: string, err: unknown, userMsg: string): never {
+  console.error(`[biometric] ${tag}`, err);
+  throw new Error(userMsg);
+}
+
 const DeviceSchema = z.object({
   device_id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/),
   name: z.string().min(1).max(120),
@@ -32,7 +37,7 @@ export const createDevice = createServerFn({ method: "POST" })
     const apiKey = randomBytes(24).toString("hex");
     const api_key_hash = await bcrypt.hash(apiKey, 10);
     const { error } = await supabaseAdmin.from("device_settings").insert({ ...data, api_key_hash });
-    if (error) throw new Error(error.message);
+    if (error) fail("createDevice", error, "Failed to create device. Please try again.");
     return { apiKey };
   });
 
@@ -47,7 +52,7 @@ export const rotateDeviceKey = createServerFn({ method: "POST" })
       .from("device_settings")
       .update({ api_key_hash })
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) fail("rotateDeviceKey", error, "Failed to rotate device key. Please try again.");
     return { apiKey };
   });
 
@@ -57,6 +62,6 @@ export const deleteDevice = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { error } = await supabaseAdmin.from("device_settings").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) fail("deleteDevice", error, "Failed to delete device. Please try again.");
     return { ok: true };
   });
