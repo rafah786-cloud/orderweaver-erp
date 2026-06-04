@@ -1,6 +1,6 @@
 import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppSidebar, MobileTopBar } from "@/components/AppSidebar";
 import { allowedRolesFor } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
