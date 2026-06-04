@@ -12,6 +12,11 @@ async function assertHrOrAdmin(userId: string) {
   if (!data || data.length === 0) throw new Error("Admin or HR only");
 }
 
+function fail(tag: string, err: unknown, userMsg: string): never {
+  console.error(`[attendance] ${tag}`, err);
+  throw new Error(userMsg);
+}
+
 const PunchSchema = z.object({
   employee_id: z.string().uuid(),
   punch_type: z.enum(["in", "out"]),
@@ -39,7 +44,7 @@ export const addManualPunch = createServerFn({ method: "POST" })
       device_id: "manual",
       raw_payload: { source: "manual", by: context.userId, note: data.note ?? null },
     });
-    if (error) throw new Error(error.message);
+    if (error) fail("addManualPunch insert", error, "Failed to record punch. Please try again.");
     return { ok: true };
   });
 
@@ -48,14 +53,13 @@ export const deletePunchEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertHrOrAdmin(context.userId);
-    // Find the punch to know which (employee, date) to recalc
     const { data: row } = await supabaseAdmin
       .from("punch_events")
       .select("employee_id, punch_time")
       .eq("id", data.id)
       .maybeSingle();
     const { error } = await supabaseAdmin.from("punch_events").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) fail("deletePunchEvent", error, "Failed to delete punch. Please try again.");
     if (row?.employee_id) {
       const d = new Date(row.punch_time).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       await supabaseAdmin.rpc("recalc_attendance_day", { _employee_id: row.employee_id, _date: d });
@@ -72,7 +76,7 @@ export const recalcAttendance = createServerFn({ method: "POST" })
       _employee_id: data.employee_id,
       _date: data.date,
     });
-    if (error) throw new Error(error.message);
+    if (error) fail("recalcAttendance", error, "Failed to recalculate attendance. Please try again.");
     return { ok: true };
   });
 
