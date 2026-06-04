@@ -111,15 +111,79 @@ function parseTallyDate(raw: string): string {
   return "";
 }
 
+export class TallyXmlError extends Error {
+  hint?: string;
+  constructor(message: string, hint?: string) {
+    super(message);
+    this.name = "TallyXmlError";
+    this.hint = hint;
+  }
+}
+
 export function parseTallyMasters(
   xml: string,
   opts: { rawGroups: string[]; finishedGroups: string[] }
 ): TallyParsed {
-  const json = parser.parse(xml);
+  if (!xml || !xml.trim()) {
+    throw new TallyXmlError(
+      "The uploaded file is empty.",
+      "Re-export from Tally (Alt + E → XML) and try again."
+    );
+  }
+  const head = xml.trimStart().slice(0, 200).toLowerCase();
+  if (!head.startsWith("<?xml") && !head.startsWith("<envelope")) {
+    throw new TallyXmlError(
+      "This file does not look like an XML document.",
+      "Make sure you chose the .xml file exported by Tally, not a PDF, Excel, or backup file."
+    );
+  }
+
+  let json: Record<string, unknown>;
+  try {
+    json = parser.parse(xml) as Record<string, unknown>;
+  } catch (e) {
+    throw new TallyXmlError(
+      "The XML file is malformed and could not be parsed.",
+      `Re-export from Tally without modifying the file. (${(e as Error).message})`
+    );
+  }
+
+  const envelope = (json as { ENVELOPE?: Record<string, unknown> })?.ENVELOPE;
+  if (!envelope) {
+    throw new TallyXmlError(
+      "This XML is missing the required <ENVELOPE> root element used by Tally exports.",
+      "In Tally: Display More Reports → List of Accounts (or Day Book) → Alt + E → Export as XML."
+    );
+  }
+  const body = (envelope as { BODY?: Record<string, unknown> }).BODY;
+  if (!body) {
+    throw new TallyXmlError(
+      "This Tally XML is missing the <BODY> section.",
+      "Re-export the report from Tally — the file may be incomplete or truncated."
+    );
+  }
+
+  const rawMessages =
+    ((body as { DATA?: { TALLYMESSAGE?: unknown } }).DATA?.TALLYMESSAGE) ??
+    ((body as { IMPORTDATA?: { REQUESTDATA?: { TALLYMESSAGE?: unknown } } }).IMPORTDATA?.REQUESTDATA?.TALLYMESSAGE);
+
+  if (rawMessages == null) {
+    throw new TallyXmlError(
+      "No <TALLYMESSAGE> records found in this XML.",
+      "Export Masters (List of Accounts) or a Day Book / Ledger report from Tally — other report formats are not supported."
+    );
+  }
 
   const messages = arr<Record<string, unknown>>(
-    json?.ENVELOPE?.BODY?.DATA?.TALLYMESSAGE ?? json?.ENVELOPE?.BODY?.IMPORTDATA?.REQUESTDATA?.TALLYMESSAGE
+    rawMessages as Record<string, unknown> | Record<string, unknown>[]
   );
+  if (messages.length === 0) {
+    throw new TallyXmlError(
+      "The XML contains no master or voucher records.",
+      "Check the date range and filters in Tally before exporting, then try again."
+    );
+  }
+
 
   const customers: TallyParty[] = [];
   const vendors: TallyParty[] = [];
@@ -241,6 +305,19 @@ export function parseTallyMasters(
         });
       }
     }
+  }
+
+  if (
+    customers.length === 0 &&
+    vendors.length === 0 &&
+    rawMaterials.length === 0 &&
+    finishedGoods.length === 0 &&
+    ledgerEntries.length === 0
+  ) {
+    throw new TallyXmlError(
+      "The XML was valid but contained no customers, vendors, stock items, or voucher entries.",
+      "Make sure you exported the right report from Tally: Masters (List of Accounts) for parties and stock, or Day Book / Ledger for transactions."
+    );
   }
 
   return { customers, vendors, rawMaterials, finishedGoods, ledgerEntries };
