@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import {
   IndianRupee, AlertTriangle, Factory, Users, ShoppingCart, ReceiptText,
-  CalendarCheck, FileText, TrendingUp, Wallet,
+  CalendarCheck, FileText, TrendingUp, Wallet, Upload,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/dashboard")({
