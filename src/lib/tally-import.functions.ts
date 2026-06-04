@@ -74,7 +74,8 @@ async function chunkInsert(
         const { error: e1 } = await supabase.from(table).insert(row);
         if (!e1) inserted++;
         else if (!/duplicate key|unique constraint/i.test(e1.message)) {
-          errors.push(`${table}: ${e1.message}`);
+          console.error(`[tally-import] insert error in ${table}`, e1);
+          errors.push(`${table}: row could not be inserted`);
         }
       }
     } else {
@@ -123,7 +124,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       const { data: existing, error } = await supabase
         .from("parties")
         .select("id, name, gstin, tally_name");
-      if (error) throw new Error(`Read parties failed: ${error.message}`);
+      if (error) { console.error("[tally-import] read parties", error); throw new Error("Failed to read existing parties"); };
       const byName = new Map<string, string>();
       const byGstin = new Map<string, string>();
       (existing ?? []).forEach((p) => {
@@ -148,7 +149,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         };
         if (existingId) {
           const { error: uErr } = await supabase.from("parties").update(row).eq("id", existingId);
-          if (uErr) result.errors.push(`Customer ${c.name}: ${uErr.message}`);
+          if (uErr) { console.error("[tally-import] customer update", uErr); result.errors.push(`Customer ${c.name}: update failed`); };
           else result.customers.updated++;
           partyByName.set(norm(c.name), existingId);
         } else {
@@ -157,7 +158,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .insert(row)
             .select("id")
             .single();
-          if (iErr || !ins) result.errors.push(`Customer ${c.name}: ${iErr?.message ?? "insert failed"}`);
+          if (iErr || !ins) { console.error("[tally-import] customer insert", iErr); result.errors.push(`Customer ${c.name}: insert failed`); };
           else {
             result.customers.inserted++;
             partyByName.set(norm(c.name), ins.id);
@@ -177,7 +178,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       const { data: existing, error } = await supabase
         .from("suppliers")
         .select("id, name, gstin, tally_name");
-      if (error) throw new Error(`Read suppliers failed: ${error.message}`);
+      if (error) { console.error("[tally-import] read suppliers", error); throw new Error("Failed to read existing suppliers"); };
       const byName = new Map<string, string>();
       const byGstin = new Map<string, string>();
       (existing ?? []).forEach((s) => {
@@ -200,7 +201,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         };
         if (existingId) {
           const { error: uErr } = await supabase.from("suppliers").update(row).eq("id", existingId);
-          if (uErr) result.errors.push(`Vendor ${v.name}: ${uErr.message}`);
+          if (uErr) { console.error("[tally-import] vendor update", uErr); result.errors.push(`Vendor ${v.name}: update failed`); };
           else result.vendors.updated++;
           supplierByName.set(norm(v.name), existingId);
         } else {
@@ -209,7 +210,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .insert(row)
             .select("id")
             .single();
-          if (iErr || !ins) result.errors.push(`Vendor ${v.name}: ${iErr?.message ?? "insert failed"}`);
+          if (iErr || !ins) { console.error("[tally-import] vendor insert", iErr); result.errors.push(`Vendor ${v.name}: insert failed`); };
           else {
             result.vendors.inserted++;
             supplierByName.set(norm(v.name), ins.id);
@@ -226,7 +227,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
     /* ---------------- raw_materials ---------------- */
     {
       const { data: existing, error } = await supabase.from("raw_materials").select("id, name");
-      if (error) throw new Error(`Read raw_materials failed: ${error.message}`);
+      if (error) { console.error("[tally-import] read raw_materials", error); throw new Error("Failed to read existing raw_materials"); };
       const byName = new Map<string, string>();
       (existing ?? []).forEach((r) => byName.set(norm(r.name), r.id));
 
@@ -240,11 +241,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         };
         if (existingId) {
           const { error: uErr } = await supabase.from("raw_materials").update(row).eq("id", existingId);
-          if (uErr) result.errors.push(`Raw material ${m.name}: ${uErr.message}`);
+          if (uErr) { console.error("[tally-import] raw update", uErr); result.errors.push(`Raw material ${m.name}: update failed`); };
           else result.rawMaterials.updated++;
         } else {
           const { error: iErr } = await supabase.from("raw_materials").insert(row);
-          if (iErr) result.errors.push(`Raw material ${m.name}: ${iErr.message}`);
+          if (iErr) { console.error("[tally-import] raw insert", iErr); result.errors.push(`Raw material ${m.name}: insert failed`); };
           else result.rawMaterials.inserted++;
         }
       }
@@ -253,7 +254,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
     /* ---------------- product_models (finished goods) ---------------- */
     {
       const { data: existing, error } = await supabase.from("product_models").select("id, name");
-      if (error) throw new Error(`Read product_models failed: ${error.message}`);
+      if (error) { console.error("[tally-import] read product_models", error); throw new Error("Failed to read existing product_models"); };
       const byName = new Map<string, string>();
       (existing ?? []).forEach((p) => byName.set(norm(p.name), p.id));
 
@@ -266,11 +267,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         };
         if (existingId) {
           const { error: uErr } = await supabase.from("product_models").update(row).eq("id", existingId);
-          if (uErr) result.errors.push(`Finished good ${f.name}: ${uErr.message}`);
+          if (uErr) { console.error("[tally-import] finished update", uErr); result.errors.push(`Finished good ${f.name}: update failed`); };
           else result.finishedGoods.updated++;
         } else {
           const { error: iErr } = await supabase.from("product_models").insert(row);
-          if (iErr) result.errors.push(`Finished good ${f.name}: ${iErr.message}`);
+          if (iErr) { console.error("[tally-import] finished insert", iErr); result.errors.push(`Finished good ${f.name}: insert failed`); };
           else result.finishedGoods.inserted++;
         }
       }

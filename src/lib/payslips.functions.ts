@@ -30,7 +30,10 @@ export const generatePayslips = createServerFn({ method: "POST" })
     let empQ = supabaseAdmin.from("employees").select("*").eq("is_active", true);
     if (data.employee_id) empQ = empQ.eq("id", data.employee_id);
     const { data: employees, error: eErr } = await empQ;
-    if (eErr) throw new Error(eErr.message);
+    if (eErr) {
+      console.error("[payslips] employees fetch failed", eErr);
+      throw new Error("Failed to load employees. Please try again.");
+    }
 
     const results: Array<{ employee_id: string; net_salary: number }> = [];
     for (const emp of employees ?? []) {
