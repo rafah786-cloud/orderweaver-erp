@@ -113,8 +113,8 @@ function LoginPage() {
         {/* Login card */}
         <section aria-labelledby="login-heading" className="glass w-full max-w-md rounded-2xl p-6 sm:p-8">
           <div className="text-center space-y-2 mb-5 sm:mb-6">
-            <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden bg-white">
-              <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain" />
+            <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden">
+              <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain p-1" />
             </div>
             <h2 id="login-heading" className="text-xl sm:text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</h2>
             <p className="text-sm text-muted-foreground">Sign in to your account</p>
