@@ -88,7 +88,21 @@ export const importTallyMasters = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+
+    // Server-side admin gate. The UI also restricts this, but the client
+    // check alone is insufficient because authenticated non-admins could call
+    // this server function directly.
+    const { data: roles, error: rolesErr } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (rolesErr) {
+      console.error("[tally-import] role lookup failed", rolesErr);
+      throw new Error("Authorization check failed");
+    }
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    if (!isAdmin) throw new Error("Admin only");
     const result: TallyImportResult = {
       customers: { inserted: 0, updated: 0 },
       vendors: { inserted: 0, updated: 0 },

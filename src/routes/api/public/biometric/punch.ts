@@ -51,7 +51,10 @@ export const Route = createFileRoute("/api/public/biometric/punch")({
           punch_time,
           raw_payload: body,
         });
-        if (insErr) return new Response(insErr.message, { status: 500 });
+        if (insErr) {
+          console.error("[biometric/punch] insert failed", insErr);
+          return new Response("Internal error", { status: 500 });
+        }
 
         await supabaseAdmin
           .from("device_settings")
