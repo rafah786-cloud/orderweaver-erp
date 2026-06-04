@@ -23,16 +23,19 @@ function AppLayout() {
   const denied = allowed !== null && !hasAnyRole(allowed);
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <div className="relative flex h-dvh overflow-hidden">
       {/* Ambient 3D atmosphere */}
       <div aria-hidden className="ambient-blob h-[520px] w-[520px] -top-40 -left-40" style={{ background: "oklch(0.55 0.18 280 / 0.55)" }} />
       <div aria-hidden className="ambient-blob h-[420px] w-[420px] top-1/3 -right-32" style={{ background: "oklch(0.70 0.14 85 / 0.35)" }} />
       <div aria-hidden className="ambient-blob h-[360px] w-[360px] bottom-[-120px] left-1/3" style={{ background: "oklch(0.50 0.16 250 / 0.45)" }} />
 
       <AppSidebar />
-      <main className="relative flex-1 overflow-y-auto">
-        {denied ? <AccessDenied allowed={allowed!} have={roles} /> : <Outlet />}
-      </main>
+      <div className="relative flex flex-1 flex-col min-w-0">
+        <MobileTopBar />
+        <main className="relative flex-1 overflow-y-auto overflow-x-auto">
+          {denied ? <AccessDenied allowed={allowed!} have={roles} /> : <Outlet />}
+        </main>
+      </div>
     </div>
   );
 }
