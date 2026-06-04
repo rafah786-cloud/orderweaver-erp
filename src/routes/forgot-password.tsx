@@ -42,13 +42,12 @@ function ForgotPasswordPage() {
     setLookupResult(null);
     try {
       const r = await findEmail({ data: { fullName, phone } });
-      if (!r.found) {
-        setLookupResult("No matching account found. Please contact your administrator.");
-      } else {
-        setLookupResult(`Your registered email is: ${r.maskedEmail}`);
-      }
-    } catch (err) {
-      toast.error((err as Error).message);
+      setLookupResult(
+        r.message ??
+          "For your security, registered emails cannot be looked up here. Please contact your administrator.",
+      );
+    } catch {
+      toast.error("Something went wrong. Please try again later.");
     } finally {
       setLookupLoading(false);
     }
