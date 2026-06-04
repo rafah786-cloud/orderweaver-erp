@@ -74,7 +74,8 @@ async function chunkInsert(
         const { error: e1 } = await supabase.from(table).insert(row);
         if (!e1) inserted++;
         else if (!/duplicate key|unique constraint/i.test(e1.message)) {
-          errors.push(`${table}: ${e1.message}`);
+          console.error(`[tally-import] insert error in ${table}`, e1);
+          errors.push(`${table}: row could not be inserted`);
         }
       }
     } else {
