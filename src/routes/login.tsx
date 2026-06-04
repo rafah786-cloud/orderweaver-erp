@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import zizz from "@/assets/brands/zizz.png.asset.json";
-import softnights from "@/assets/brands/softnights.jpeg.asset.json";
-import mrcoir from "@/assets/brands/mrcoir.jpeg.asset.json";
-import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
-import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
-import drspine from "@/assets/brands/drspine.jpeg.asset.json";
+import zizz from "@/assets/brands/zizz-t.png.asset.json";
+import softnights from "@/assets/brands/softnights-t.png.asset.json";
+import mrcoir from "@/assets/brands/mrcoir-t.png.asset.json";
+import byz from "@/assets/brands/byzbedding-t.png.asset.json";
+import ortho from "@/assets/brands/orthomedic-t.png.asset.json";
+import drspine from "@/assets/brands/drspine-t.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -79,8 +79,8 @@ function LoginPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
-              <img src={zizz.url} alt="Zizz — premium flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain p-2 sm:p-3" />
+            <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl flex items-center justify-center">
+              <img src={zizz.url} alt="Zizz — premium flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain" />
             </div>
           </div>
 
@@ -96,8 +96,8 @@ function LoginPage() {
                     className="glass-sm rounded-lg sm:rounded-xl overflow-hidden flex flex-col"
                     title={b.name}
                   >
-                    <div className="bg-white/95 aspect-square flex items-center justify-center">
-                      <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1 sm:p-1.5" loading="lazy" />
+                    <div className="aspect-square flex items-center justify-center p-3">
+                      <img src={b.src} alt={b.name} className="w-full h-full object-contain" loading="lazy" />
                     </div>
                     <div className="px-1.5 py-1.5 text-center">
                       <div className="text-[11px] sm:text-xs font-semibold leading-tight truncate">{b.name}</div>
@@ -113,8 +113,8 @@ function LoginPage() {
         {/* Login card */}
         <section aria-labelledby="login-heading" className="glass w-full max-w-md rounded-2xl p-6 sm:p-8">
           <div className="text-center space-y-2 mb-5 sm:mb-6">
-            <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden bg-white">
-              <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain" />
+            <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden">
+              <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain p-1" />
             </div>
             <h2 id="login-heading" className="text-xl sm:text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</h2>
             <p className="text-sm text-muted-foreground">Sign in to your account</p>
