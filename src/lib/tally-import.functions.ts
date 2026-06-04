@@ -42,15 +42,15 @@ const inputSchema = z.object({
 });
 
 export type TallyImportResult = {
-  customers: { inserted: number; updated: number };
-  vendors: { inserted: number; updated: number };
-  rawMaterials: { inserted: number; updated: number };
-  finishedGoods: { inserted: number; updated: number };
-  partyLedgerEntries: { inserted: number; skipped: number };
-  supplierLedgerEntries: { inserted: number; skipped: number };
+  customers: { inserted: number; updated: number }
+  vendors: { inserted: number; updated: number }
+  rawMaterials: { inserted: number; updated: number }
+  finishedGoods: { inserted: number; updated: number }
+  partyLedgerEntries: { inserted: number; skipped: number }
+  supplierLedgerEntries: { inserted: number; skipped: number }
   unmatchedLedgerNames: string[];
   errors: string[];
-};
+}
 
 function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
@@ -82,7 +82,7 @@ async function chunkInsert(
       inserted += slice.length;
     }
   }
-  return { inserted, errors };
+  return { inserted, errors }
 }
 
 export const importTallyMasters = createServerFn({ method: "POST" })
@@ -113,7 +113,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       supplierLedgerEntries: { inserted: 0, skipped: 0 },
       unmatchedLedgerNames: [],
       errors: [],
-    };
+    }
 
     // Maps populated below for ledger entry matching
     const partyByName = new Map<string, string>(); // lowercased name → id
@@ -124,7 +124,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       const { data: existing, error } = await supabase
         .from("parties")
         .select("id, name, gstin, tally_name");
-      if (error) { console.error("[tally-import] read parties", error); throw new Error("Failed to read existing parties"); };
+      if (error) { console.error("[tally-import] read parties", error); throw new Error("Failed to read existing parties"); }
       const byName = new Map<string, string>();
       const byGstin = new Map<string, string>();
       (existing ?? []).forEach((p) => {
@@ -146,10 +146,10 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           pin_code: c.pin_code ?? null,
           opening_balance: c.opening_balance,
           current_balance: c.closing_balance,
-        };
+        }
         if (existingId) {
           const { error: uErr } = await supabase.from("parties").update(row).eq("id", existingId);
-          if (uErr) { console.error("[tally-import] customer update", uErr); result.errors.push(`Customer ${c.name}: update failed`); };
+          if (uErr) { console.error("[tally-import] customer update", uErr); result.errors.push(`Customer ${c.name}: update failed`); }
           else result.customers.updated++;
           partyByName.set(norm(c.name), existingId);
         } else {
@@ -158,7 +158,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .insert(row)
             .select("id")
             .single();
-          if (iErr || !ins) { console.error("[tally-import] customer insert", iErr); result.errors.push(`Customer ${c.name}: insert failed`); };
+          if (iErr || !ins) { console.error("[tally-import] customer insert", iErr); result.errors.push(`Customer ${c.name}: insert failed`); }
           else {
             result.customers.inserted++;
             partyByName.set(norm(c.name), ins.id);
@@ -178,7 +178,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       const { data: existing, error } = await supabase
         .from("suppliers")
         .select("id, name, gstin, tally_name");
-      if (error) { console.error("[tally-import] read suppliers", error); throw new Error("Failed to read existing suppliers"); };
+      if (error) { console.error("[tally-import] read suppliers", error); throw new Error("Failed to read existing suppliers"); }
       const byName = new Map<string, string>();
       const byGstin = new Map<string, string>();
       (existing ?? []).forEach((s) => {
@@ -198,10 +198,10 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           address: v.address ?? null,
           opening_balance: v.opening_balance,
           current_balance: v.closing_balance,
-        };
+        }
         if (existingId) {
           const { error: uErr } = await supabase.from("suppliers").update(row).eq("id", existingId);
-          if (uErr) { console.error("[tally-import] vendor update", uErr); result.errors.push(`Vendor ${v.name}: update failed`); };
+          if (uErr) { console.error("[tally-import] vendor update", uErr); result.errors.push(`Vendor ${v.name}: update failed`); }
           else result.vendors.updated++;
           supplierByName.set(norm(v.name), existingId);
         } else {
@@ -210,7 +210,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .insert(row)
             .select("id")
             .single();
-          if (iErr || !ins) { console.error("[tally-import] vendor insert", iErr); result.errors.push(`Vendor ${v.name}: insert failed`); };
+          if (iErr || !ins) { console.error("[tally-import] vendor insert", iErr); result.errors.push(`Vendor ${v.name}: insert failed`); }
           else {
             result.vendors.inserted++;
             supplierByName.set(norm(v.name), ins.id);
@@ -227,7 +227,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
     /* ---------------- raw_materials ---------------- */
     {
       const { data: existing, error } = await supabase.from("raw_materials").select("id, name");
-      if (error) { console.error("[tally-import] read raw_materials", error); throw new Error("Failed to read existing raw_materials"); };
+      if (error) { console.error("[tally-import] read raw_materials", error); throw new Error("Failed to read existing raw_materials"); }
       const byName = new Map<string, string>();
       (existing ?? []).forEach((r) => byName.set(norm(r.name), r.id));
 
@@ -238,14 +238,14 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           unit: m.unit || "pcs",
           current_stock: m.opening_qty,
           notes: m.group ? `Tally group: ${m.group}` : null,
-        };
+        }
         if (existingId) {
           const { error: uErr } = await supabase.from("raw_materials").update(row).eq("id", existingId);
-          if (uErr) { console.error("[tally-import] raw update", uErr); result.errors.push(`Raw material ${m.name}: update failed`); };
+          if (uErr) { console.error("[tally-import] raw update", uErr); result.errors.push(`Raw material ${m.name}: update failed`); }
           else result.rawMaterials.updated++;
         } else {
           const { error: iErr } = await supabase.from("raw_materials").insert(row);
-          if (iErr) { console.error("[tally-import] raw insert", iErr); result.errors.push(`Raw material ${m.name}: insert failed`); };
+          if (iErr) { console.error("[tally-import] raw insert", iErr); result.errors.push(`Raw material ${m.name}: insert failed`); }
           else result.rawMaterials.inserted++;
         }
       }
@@ -254,7 +254,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
     /* ---------------- product_models (finished goods) ---------------- */
     {
       const { data: existing, error } = await supabase.from("product_models").select("id, name");
-      if (error) { console.error("[tally-import] read product_models", error); throw new Error("Failed to read existing product_models"); };
+      if (error) { console.error("[tally-import] read product_models", error); throw new Error("Failed to read existing product_models"); }
       const byName = new Map<string, string>();
       (existing ?? []).forEach((p) => byName.set(norm(p.name), p.id));
 
@@ -264,14 +264,14 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           name: f.name,
           default_price: f.opening_rate,
           notes: f.group ? `Tally group: ${f.group}` : null,
-        };
+        }
         if (existingId) {
           const { error: uErr } = await supabase.from("product_models").update(row).eq("id", existingId);
-          if (uErr) { console.error("[tally-import] finished update", uErr); result.errors.push(`Finished good ${f.name}: update failed`); };
+          if (uErr) { console.error("[tally-import] finished update", uErr); result.errors.push(`Finished good ${f.name}: update failed`); }
           else result.finishedGoods.updated++;
         } else {
           const { error: iErr } = await supabase.from("product_models").insert(row);
-          if (iErr) { console.error("[tally-import] finished insert", iErr); result.errors.push(`Finished good ${f.name}: insert failed`); };
+          if (iErr) { console.error("[tally-import] finished insert", iErr); result.errors.push(`Finished good ${f.name}: insert failed`); }
           else result.finishedGoods.inserted++;
         }
       }
@@ -296,7 +296,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           narration: e.narration,
           source: "tally",
           external_ref: e.external_ref,
-        };
+        }
         if (pid) partyRows.push({ ...base, party_id: pid });
         else if (sid) supplierRows.push({ ...base, supplier_id: sid });
         else unmatched.add(e.party_name);
