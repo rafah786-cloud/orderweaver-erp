@@ -4,9 +4,12 @@ import {
   LayoutDashboard, Users, FileText, ShoppingCart, Factory,
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
   MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { ROUTE_ROLES } from "@/lib/permissions";
+import { useState, useEffect } from "react";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard": LayoutDashboard,
@@ -57,15 +60,14 @@ const NAV = ROUTE_ROLES.map((r) => ({
   roles: r.roles,
 }));
 
-export function AppSidebar() {
+function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const { profile, roles, signOut, hasAnyRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-
   const items = NAV.filter((n) => hasAnyRole(n.roles));
 
   return (
-    <aside className="relative z-10 flex h-screen w-64 flex-col text-sidebar-foreground glass border-0 border-r border-white/10 rounded-none">
+    <div className="flex h-full flex-col text-sidebar-foreground">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
         <div className="relative flex h-10 w-10 items-center justify-center rounded-xl btn-gold">
           <Building2 className="h-5 w-5" />
@@ -84,6 +86,7 @@ export function AppSidebar() {
             <Link
               key={item.to}
               to={item.to}
+              onClick={onNavigate}
               className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_1px_0_oklch(1_0_0/.15)_inset,0_-1px_0_oklch(0_0_0/.25)_inset,0_8px_18px_-8px_oklch(0.80_0.14_85/.35)]"
@@ -112,11 +115,48 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           className="w-full justify-start"
-          onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
+          onClick={async () => { onNavigate?.(); await signOut(); navigate({ to: "/login" }); }}
         >
           <LogOut className="h-4 w-4 mr-2" /> Sign out
         </Button>
       </div>
+    </div>
+  );
+}
+
+export function AppSidebar() {
+  return (
+    <aside className="relative z-10 hidden md:flex h-screen w-64 flex-col glass border-0 border-r border-white/10 rounded-none">
+      <SidebarBody />
     </aside>
+  );
+}
+
+export function MobileTopBar() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  return (
+    <header className="md:hidden sticky top-0 z-20 flex items-center justify-between gap-3 px-3 py-2 glass border-0 border-b border-white/10 rounded-none">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label="Open navigation menu">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-72 glass border-0 border-r border-white/10">
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SidebarBody onNavigate={() => setOpen(false)} />
+        </SheetContent>
+      </Sheet>
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg btn-gold">
+          <Building2 className="h-4 w-4" />
+        </div>
+        <div className="font-semibold text-sm gold-text" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings</div>
+      </div>
+      <div className="w-9" aria-hidden />
+    </header>
   );
 }
