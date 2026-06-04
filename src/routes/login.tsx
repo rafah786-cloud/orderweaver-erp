@@ -79,8 +79,8 @@ function LoginPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
-              <img src={zizz.url} alt="Zizz — premium flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain p-2 sm:p-3" />
+            <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl flex items-center justify-center">
+              <img src={zizz.url} alt="Zizz — premium flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain" />
             </div>
           </div>
 
