@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-function maskEmail(email: string) {
-  const [u, d] = email.split("@");
-  if (!u || !d) return email;
-  const head = u.slice(0, Math.min(2, u.length));
-  return `${head}${"•".repeat(Math.max(1, u.length - 2))}@${d}`;
-}
-
+// SECURITY: This endpoint intentionally does not reveal whether an account
+// exists or any portion of a registered email address. Unauthenticated email
+// enumeration via name+phone has been removed. Users who cannot recall their
+// email must contact an administrator.
 export const lookupEmailByNamePhone = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -18,19 +14,10 @@ export const lookupEmailByNamePhone = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
-    const { data: rows, error } = await supabaseAdmin
-      .from("profiles")
-      .select("email, full_name, phone")
-      .ilike("full_name", data.fullName)
-      .eq("phone", data.phone)
-      .limit(2);
-    if (error) throw new Error(error.message);
-    if (!rows || rows.length === 0) {
-      return { found: false as const };
-    }
-    if (rows.length > 1) {
-      return { found: false as const, ambiguous: true };
-    }
-    return { found: true as const, maskedEmail: maskEmail(rows[0].email) };
+  .handler(async () => {
+    return {
+      found: false as const,
+      message:
+        "For your security, registered emails cannot be looked up here. Please contact your administrator to recover your account.",
+    };
   });
