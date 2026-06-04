@@ -59,10 +59,11 @@ function LoginPage() {
         {/* Brand showcase */}
         <section aria-labelledby="brand-heading" className="w-full max-w-xl space-y-5 sm:space-y-8">
           <div className="text-center lg:text-left">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">From the House of Abood Tradings</p>
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">Est. Premium Sleep & Comfort</p>
             <h1 id="brand-heading" className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
-              The <span className="gold-text">Zizz</span> Family of Brands
+              House of <span className="gold-text">Abood Tradings</span>
             </h1>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">Premium Sleep & Comfort Solutions</p>
           </div>
 
           {/* Zizz hero */}
@@ -70,31 +71,38 @@ function LoginPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary border border-primary/30">
-                  Flagship Brand
+                  Premium Flagship Brand
                 </span>
-                <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground max-w-xs">
-                  Mattress · Pillow · Duvets · Protector · Topper
+                <h2 className="mt-2 text-xl sm:text-2xl font-semibold gold-text" style={{ fontFamily: "var(--font-display)" }}>ZIZZ</h2>
+                <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-xs">
+                  Mattresses · Pillows · Protectors
                 </p>
               </div>
             </div>
             <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
-              <img src={zizz.url} alt="Zizz Mattress — flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain p-2 sm:p-3" />
+              <img src={zizz.url} alt="Zizz — premium flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain p-2 sm:p-3" />
             </div>
           </div>
 
           {/* Sub-brand grid */}
           <div>
             <p className="mb-2 sm:mb-3 text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground text-center lg:text-left">
-              Sister Brands
+              Our Specialized Brands
             </p>
-            <ul className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3" role="list">
+            <ul className="grid grid-cols-3 gap-2 sm:gap-3" role="list">
               {subBrands.map((b) => (
                 <li key={b.name}>
                   <div
-                    className="glass-sm rounded-lg sm:rounded-xl overflow-hidden bg-white/95 aspect-square flex items-center justify-center"
+                    className="glass-sm rounded-lg sm:rounded-xl overflow-hidden flex flex-col"
                     title={b.name}
                   >
-                    <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1 sm:p-1.5" loading="lazy" />
+                    <div className="bg-white/95 aspect-square flex items-center justify-center">
+                      <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1 sm:p-1.5" loading="lazy" />
+                    </div>
+                    <div className="px-1.5 py-1.5 text-center">
+                      <div className="text-[11px] sm:text-xs font-semibold leading-tight truncate">{b.name}</div>
+                      <div className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight truncate">{b.desc}</div>
+                    </div>
                   </div>
                 </li>
               ))}
