@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import zizz from "@/assets/brands/zizz.png.asset.json";
-import softnights from "@/assets/brands/softnights.jpeg.asset.json";
-import mrcoir from "@/assets/brands/mrcoir.jpeg.asset.json";
-import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
-import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
-import drspine from "@/assets/brands/drspine.jpeg.asset.json";
+import zizz from "@/assets/brands/zizz-t.png.asset.json";
+import softnights from "@/assets/brands/softnights-t.png.asset.json";
+import mrcoir from "@/assets/brands/mrcoir-t.png.asset.json";
+import byz from "@/assets/brands/byzbedding-t.png.asset.json";
+import ortho from "@/assets/brands/orthomedic-t.png.asset.json";
+import drspine from "@/assets/brands/drspine-t.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
