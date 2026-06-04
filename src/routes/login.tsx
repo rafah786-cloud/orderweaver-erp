@@ -18,11 +18,11 @@ export const Route = createFileRoute("/login")({
 });
 
 const subBrands = [
-  { name: "Soft Nights", src: softnights.url },
-  { name: "Mr. Coir", src: mrcoir.url },
-  { name: "byz bedding", src: byz.url },
-  { name: "OrthoMedic Rest", src: ortho.url },
-  { name: "Dr. Spine", src: drspine.url },
+  { name: "OrthoMedic", desc: "Orthopedic", src: ortho.url },
+  { name: "Dr. Spine", desc: "Spine Care", src: drspine.url },
+  { name: "Mr. Coir", desc: "Coir Range", src: mrcoir.url },
+  { name: "Soft Nights", desc: "Comfort", src: softnights.url },
+  { name: "BYZ Bedding", desc: "Bedding", src: byz.url },
 ];
 
 function LoginPage() {
