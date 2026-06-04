@@ -57,7 +57,14 @@ function TallyImportPage() {
       if (total === 0) toast.warning("No masters found in this XML. Make sure you exported Masters from Tally.");
       else toast.success(`Parsed ${total} records. Review and import.`);
     } catch (err) {
-      toast.error(`Failed to parse XML: ${(err as Error).message}`);
+      if (err instanceof TallyXmlError) {
+        toast.error(err.message, { description: err.hint, duration: 10000 });
+      } else {
+        toast.error("Could not read this file.", {
+          description: "Please upload a valid Tally XML export (Alt + E → XML).",
+          duration: 8000,
+        });
+      }
       setParsed(null);
     } finally {
       setParsing(false);
