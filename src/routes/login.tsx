@@ -96,8 +96,8 @@ function LoginPage() {
                     className="glass-sm rounded-lg sm:rounded-xl overflow-hidden flex flex-col"
                     title={b.name}
                   >
-                    <div className="bg-white/95 aspect-square flex items-center justify-center">
-                      <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1 sm:p-1.5" loading="lazy" />
+                    <div className="aspect-square flex items-center justify-center p-3">
+                      <img src={b.src} alt={b.name} className="w-full h-full object-contain" loading="lazy" />
                     </div>
                     <div className="px-1.5 py-1.5 text-center">
                       <div className="text-[11px] sm:text-xs font-semibold leading-tight truncate">{b.name}</div>
