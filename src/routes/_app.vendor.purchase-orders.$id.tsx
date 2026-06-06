@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Download, CheckCircle2, XCircle } from "lucide-react";
+import { notifyAdminPurchaseAck } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/vendor/purchase-orders/$id")({ component: VendorPODetail });
 
