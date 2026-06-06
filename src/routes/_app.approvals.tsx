@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { setUserStatus, assignUserRole, removeUserRole } from "@/lib/approvals.functions";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 type UserStatus = Database["public"]["Enums"]["user_status"];
@@ -22,6 +24,9 @@ export const Route = createFileRoute("/_app/approvals")({
 
 function ApprovalsPage() {
   const qc = useQueryClient();
+  const setStatusFn = useServerFn(setUserStatus);
+  const assignRoleFn = useServerFn(assignUserRole);
+  const removeRoleFn = useServerFn(removeUserRole);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["all-profiles"],
@@ -31,7 +36,6 @@ function ApprovalsPage() {
         .select("id, full_name, email, status, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      // fetch roles for each
       const { data: rolesData } = await supabase.from("user_roles").select("user_id, role");
       const rolesByUser: Record<string, AppRole[]> = {};
       (rolesData ?? []).forEach((r) => {
@@ -42,26 +46,32 @@ function ApprovalsPage() {
   });
 
   const setStatus = async (id: string, status: UserStatus) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ status, approved_at: status === "approved" ? new Date().toISOString() : null })
-      .eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`User ${status}`);
-    qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    try {
+      await setStatusFn({ data: { user_id: id, status } });
+      toast.success(`User ${status}`);
+      qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const assignRole = async (userId: string, role: AppRole) => {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
-    if (error) { toast.error(error.message); return; }
-    toast.success("Role assigned");
-    qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    try {
+      await assignRoleFn({ data: { user_id: userId, role } });
+      toast.success("Role assigned");
+      qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const removeRole = async (userId: string, role: AppRole) => {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
-    if (error) { toast.error(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    try {
+      await removeRoleFn({ data: { user_id: userId, role } });
+      qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   return (
