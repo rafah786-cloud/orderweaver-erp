@@ -272,17 +272,23 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           <TableHeader><TableRow>
             <TableHead>Bill #</TableHead><TableHead>Supplier</TableHead><TableHead>Date</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            <TableHead>Vendor Ack</TableHead>
+            <TableHead>WhatsApp</TableHead>
             <TableHead className="w-12" />
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            : bills.length === 0 ? <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">No purchase bills yet.</TableCell></TableRow>
-            : bills.map((b) => (
+            {isLoading ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+            : bills.length === 0 ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No purchase bills yet.</TableCell></TableRow>
+            : bills.map((b) => {
+              const n = latestNotif.get(b.id);
+              return (
               <TableRow key={b.id}>
                 <TableCell className="font-medium">{b.bill_number}</TableCell>
                 <TableCell>{b.supplier_id ? (supplierMap.get(b.supplier_id) ?? "—") : "—"}</TableCell>
                 <TableCell>{formatDate(b.bill_date)}</TableCell>
                 <TableCell className="text-right font-medium">{inr(b.total_amount)}</TableCell>
+                <TableCell><AckBadge bill={b} /></TableCell>
+                <TableCell><NotifBadge notif={n} /></TableCell>
                 <TableCell>
                   <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
                     onClick={() => onPreview(`/print/purchase/${b.id}`)}>
@@ -290,7 +296,8 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
