@@ -203,7 +203,7 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id, whatsapp_number, phone, whatsapp_opt_in, user_roles!inner(role)")
       .eq("whatsapp_opt_in", true)
-      .in("user_roles.role", ["admin", "purchase"]);
+      .in("user_roles.role", ["admin"]);
     const list = (recipients ?? []) as any[];
     if (list.length === 0) {
       await logNotification({ party_kind: "admin", event_type: `purchase_bill.${data.status}`, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", error: "no recipients" });
