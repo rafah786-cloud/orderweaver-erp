@@ -67,20 +67,13 @@ function LoginPage() {
           </div>
 
           {/* Zizz hero */}
-          <div className="glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 gold-ring">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary border border-primary/30">
-                  Premium Flagship Brand
-                </span>
-                <h2 className="mt-2 text-xl sm:text-2xl font-semibold gold-text" style={{ fontFamily: "var(--font-display)" }}>ZIZZ</h2>
-                <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-xs">
-                  Mattresses · Pillows · Protectors
-                </p>
-              </div>
-            </div>
-            <div className="mt-3 sm:mt-5 overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
-              <img src={zizz.url} alt="Zizz — premium flagship brand" className="w-full h-32 sm:h-40 md:h-44 object-contain p-2 sm:p-3" />
+          <div className="glass rounded-2xl sm:rounded-3xl p-3 sm:p-4 gold-ring">
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
+              <img
+                src={zizz.url}
+                alt="Zizz — premium flagship brand"
+                className="w-full aspect-[16/6] object-contain p-2 sm:p-3"
+              />
             </div>
           </div>
 
