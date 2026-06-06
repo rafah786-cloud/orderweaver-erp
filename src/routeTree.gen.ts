@@ -38,6 +38,7 @@ import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
+import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
 import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
 import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
@@ -215,6 +216,11 @@ const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
 const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
   id: '/purchase-orders',
   path: '/purchase-orders',
+  getParentRoute: () => AppVendorRoute,
+} as any)
+const AppVendorLedgerRoute = AppVendorLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
   getParentRoute: () => AppVendorRoute,
 } as any)
 const AppInventoryValuationRoute = AppInventoryValuationRouteImport.update({
@@ -442,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
+  '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
   '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -505,6 +512,7 @@ export interface FileRoutesByTo {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
+  '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
   '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -571,6 +579,7 @@ export interface FileRoutesById {
   '/_app/inventory/reorder': typeof AppInventoryReorderRoute
   '/_app/inventory/summary': typeof AppInventorySummaryRoute
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
+  '/_app/vendor/ledger': typeof AppVendorLedgerRoute
   '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
   '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -637,6 +646,7 @@ export interface FileRouteTypes {
     | '/inventory/reorder'
     | '/inventory/summary'
     | '/inventory/valuation'
+    | '/vendor/ledger'
     | '/vendor/purchase-orders'
     | '/vendor/'
     | '/accounting/ledger/$id'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/inventory/reorder'
     | '/inventory/summary'
     | '/inventory/valuation'
+    | '/vendor/ledger'
     | '/vendor/purchase-orders'
     | '/vendor'
     | '/accounting/ledger/$id'
@@ -765,6 +776,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/reorder'
     | '/_app/inventory/summary'
     | '/_app/inventory/valuation'
+    | '/_app/vendor/ledger'
     | '/_app/vendor/purchase-orders'
     | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
@@ -996,6 +1008,13 @@ declare module '@tanstack/react-router' {
       path: '/purchase-orders'
       fullPath: '/vendor/purchase-orders'
       preLoaderRoute: typeof AppVendorPurchaseOrdersRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
+    '/_app/vendor/ledger': {
+      id: '/_app/vendor/ledger'
+      path: '/ledger'
+      fullPath: '/vendor/ledger'
+      preLoaderRoute: typeof AppVendorLedgerRouteImport
       parentRoute: typeof AppVendorRoute
     }
     '/_app/inventory/valuation': {
@@ -1368,11 +1387,13 @@ const AppVendorPurchaseOrdersRouteWithChildren =
   )
 
 interface AppVendorRouteChildren {
+  AppVendorLedgerRoute: typeof AppVendorLedgerRoute
   AppVendorPurchaseOrdersRoute: typeof AppVendorPurchaseOrdersRouteWithChildren
   AppVendorIndexRoute: typeof AppVendorIndexRoute
 }
 
 const AppVendorRouteChildren: AppVendorRouteChildren = {
+  AppVendorLedgerRoute: AppVendorLedgerRoute,
   AppVendorPurchaseOrdersRoute: AppVendorPurchaseOrdersRouteWithChildren,
   AppVendorIndexRoute: AppVendorIndexRoute,
 }
