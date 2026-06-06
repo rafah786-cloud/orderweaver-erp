@@ -51,6 +51,7 @@ const LABELS: Record<string, string> = {
   "/gst": "GST",
   "/inventory": "Inventory",
   "/banking": "Banking",
+  "/vendor": "Vendor Portal",
   "/settings": "Settings",
 };
 
