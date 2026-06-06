@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Download, CheckCircle2, XCircle } from "lucide-react";
+import { notifyAdminPurchaseAck } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/vendor/purchase-orders/$id")({ component: VendorPODetail });
 
@@ -54,6 +56,7 @@ function VendorPODetail() {
     if (bill?.vendor_ack_note) setNote(bill.vendor_ack_note);
   }, [bill]);
 
+  const notifyAdmin = useServerFn(notifyAdminPurchaseAck);
   const ack = useMutation({
     mutationFn: async (status: "accepted" | "rejected") => {
       const { error } = await supabase.from("purchase_bills").update({
@@ -63,12 +66,17 @@ function VendorPODetail() {
         expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : null,
       }).eq("id", id);
       if (error) throw error;
+      return status;
     },
-    onSuccess: (_d, status) => {
+    onSuccess: async (status) => {
       toast.success(`Purchase order ${status}`);
       qc.invalidateQueries({ queryKey: ["vendor-po", id] });
       qc.invalidateQueries({ queryKey: ["vendor-po-list"] });
       qc.invalidateQueries({ queryKey: ["vendor-pos"] });
+      try {
+        const r = await notifyAdmin({ data: { bill_id: id, status, note: note || undefined, expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : undefined } });
+        if (r?.ok) toast.success("Buyer notified via WhatsApp");
+      } catch { /* non-fatal */ }
     },
     onError: (e: Error) => toast.error(e.message),
   });

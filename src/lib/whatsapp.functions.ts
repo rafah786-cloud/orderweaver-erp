@@ -169,6 +169,67 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
     return { ok: result.ok };
   });
 
+/** Vendor → notify admin/purchase staff that a vendor acted on a PO */
+export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      bill_id: z.string().uuid(),
+      status: z.enum(["accepted", "rejected"]),
+      note: z.string().max(500).optional(),
+      expected_dispatch_date: z.string().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: bill } = await supabaseAdmin
+      .from("purchase_bills")
+      .select("id, bill_number, total_amount, suppliers(name)")
+      .eq("id", data.bill_id)
+      .maybeSingle();
+    if (!bill) throw new Error("Bill not found");
+    const vendorName = (bill as any).suppliers?.name ?? "Vendor";
+    const verb = data.status === "accepted" ? "ACCEPTED" : "REJECTED";
+    const body =
+      `Zizz Mattress — PO ${verb} by Vendor\n` +
+      `PO #: ${bill.bill_number}\n` +
+      `Vendor: ${vendorName}\n` +
+      `Amount: ₹${Number(bill.total_amount ?? 0).toFixed(2)}\n` +
+      (data.expected_dispatch_date ? `Expected dispatch: ${data.expected_dispatch_date}\n` : ``) +
+      (data.note ? `Note: ${data.note}` : ``);
+
+    // Find admin/purchase staff with WhatsApp opted-in
+    const { data: recipients } = await supabaseAdmin
+      .from("profiles")
+      .select("id, whatsapp_number, phone, whatsapp_opt_in, user_roles!inner(role)")
+      .eq("whatsapp_opt_in", true)
+      .in("user_roles.role", ["admin"]);
+    const list = (recipients ?? []) as any[];
+    if (list.length === 0) {
+      await logNotification({ party_kind: "admin", event_type: `purchase_bill.${data.status}`, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", error: "no recipients" });
+      return { ok: false, reason: "no_recipients" };
+    }
+    let sent = 0;
+    for (const r of list) {
+      const to = normalizeWa(r.whatsapp_number ?? r.phone);
+      if (!to) continue;
+      const result = await sendViaTwilio(to, body);
+      await logNotification({
+        party_kind: "admin",
+        party_id: r.id,
+        recipient_phone: to,
+        event_type: `purchase_bill.${data.status}`,
+        ref_table: "purchase_bills",
+        ref_id: bill.id,
+        status: result.ok ? "sent" : result.status,
+        error: result.ok ? null : result.error,
+        payload: { body },
+      });
+      if (result.ok) sent += 1;
+    }
+    return { ok: sent > 0, sent };
+  });
+
 export const getWhatsAppStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
