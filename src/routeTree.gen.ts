@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorSignupRouteImport } from './routes/vendor-signup'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PendingRouteImport } from './routes/pending'
@@ -17,6 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
+import { Route as AppVendorRouteImport } from './routes/_app.vendor'
 import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
@@ -68,6 +70,11 @@ import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.acco
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
 import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 
+const VendorSignupRoute = VendorSignupRouteImport.update({
+  id: '/vendor-signup',
+  path: '/vendor-signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -105,6 +112,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppWhatsappRoute = AppWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVendorRoute = AppVendorRouteImport.update({
+  id: '/vendor',
+  path: '/vendor',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTallyImportRoute = AppTallyImportRouteImport.update({
@@ -369,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
@@ -386,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
+  '/vendor': typeof AppVendorRoute
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -428,6 +442,7 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
@@ -445,6 +460,7 @@ export interface FileRoutesByTo {
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
+  '/vendor': typeof AppVendorRoute
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -489,6 +505,7 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-signup': typeof VendorSignupRoute
   '/_app/accounting': typeof AppAccountingRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
@@ -506,6 +523,7 @@ export interface FileRoutesById {
   '/_app/sales-orders': typeof AppSalesOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
+  '/_app/vendor': typeof AppVendorRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
   '/_app/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -550,6 +568,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/vendor-signup'
     | '/accounting'
     | '/approvals'
     | '/attendance'
@@ -567,6 +586,7 @@ export interface FileRouteTypes {
     | '/sales-orders'
     | '/settings'
     | '/tally-import'
+    | '/vendor'
     | '/whatsapp'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
@@ -609,6 +629,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/vendor-signup'
     | '/accounting'
     | '/approvals'
     | '/attendance'
@@ -626,6 +647,7 @@ export interface FileRouteTypes {
     | '/sales-orders'
     | '/settings'
     | '/tally-import'
+    | '/vendor'
     | '/whatsapp'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
@@ -669,6 +691,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/vendor-signup'
     | '/_app/accounting'
     | '/_app/approvals'
     | '/_app/attendance'
@@ -686,6 +709,7 @@ export interface FileRouteTypes {
     | '/_app/sales-orders'
     | '/_app/settings'
     | '/_app/tally-import'
+    | '/_app/vendor'
     | '/_app/whatsapp'
     | '/_app/accounting/audit-log'
     | '/_app/accounting/balance-sheet'
@@ -730,11 +754,19 @@ export interface RootRouteChildren {
   PendingRoute: typeof PendingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  VendorSignupRoute: typeof VendorSignupRoute
   ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendor-signup': {
+      id: '/vendor-signup'
+      path: '/vendor-signup'
+      fullPath: '/vendor-signup'
+      preLoaderRoute: typeof VendorSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -789,6 +821,13 @@ declare module '@tanstack/react-router' {
       path: '/whatsapp'
       fullPath: '/whatsapp'
       preLoaderRoute: typeof AppWhatsappRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vendor': {
+      id: '/_app/vendor'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof AppVendorRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tally-import': {
@@ -1276,6 +1315,7 @@ interface AppRouteChildren {
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
+  AppVendorRoute: typeof AppVendorRoute
   AppWhatsappRoute: typeof AppWhatsappRoute
   AppPrintInvoiceIdRoute: typeof AppPrintInvoiceIdRoute
   AppPrintPartyLedgerIdRoute: typeof AppPrintPartyLedgerIdRoute
@@ -1301,6 +1341,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTallyImportRoute: AppTallyImportRoute,
+  AppVendorRoute: AppVendorRoute,
   AppWhatsappRoute: AppWhatsappRoute,
   AppPrintInvoiceIdRoute: AppPrintInvoiceIdRoute,
   AppPrintPartyLedgerIdRoute: AppPrintPartyLedgerIdRoute,
@@ -1318,8 +1359,19 @@ const rootRouteChildren: RootRouteChildren = {
   PendingRoute: PendingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  VendorSignupRoute: VendorSignupRoute,
   ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
