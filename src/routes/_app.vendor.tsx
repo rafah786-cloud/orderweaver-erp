@@ -8,11 +8,11 @@ import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/vendor")({ component: VendorShell });
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/vendor", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/vendor/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
   { to: "/vendor/ledger", label: "Ledger", icon: BookOpen },
-] as const;
+];
 
 function VendorShell() {
   const { hasAnyRole, profile } = useAuth();
