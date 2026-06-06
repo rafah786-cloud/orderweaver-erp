@@ -91,7 +91,8 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       event: z.enum(["created", "updated", "cancelled"]).default("created"),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertHasAnyRole(context.userId, ["admin", "sales", "production"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: bill, error } = await supabaseAdmin
       .from("purchase_bills")
@@ -153,7 +154,8 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       message: z.string().min(1).max(1500),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: party } = await supabaseAdmin
       .from("parties")
