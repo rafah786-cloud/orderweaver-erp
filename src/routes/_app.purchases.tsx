@@ -354,3 +354,75 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     </Card>
   );
 }
+
+/* ---------------- Vendor Invite ---------------- */
+
+function InviteVendorButton({ supplier }: { supplier: Supplier }) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState(supplier.email ?? "");
+  const [link, setLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const create = useServerFn(createVendorInvite);
+
+  const already = !!supplier.user_id;
+
+  const generate = async () => {
+    if (!email.trim()) {
+      toast.error("Enter vendor email");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { token } = await create({ data: { supplier_id: supplier.id, email } });
+      const url = `${window.location.origin}/vendor-signup?token=${encodeURIComponent(token)}`;
+      setLink(url);
+      toast.success("Invite link generated — share it with the vendor");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        size="icon"
+        variant="ghost"
+        title={already ? "Vendor portal already linked" : "Invite to vendor portal"}
+        onClick={() => setOpen(true)}
+        disabled={already}
+      >
+        {already ? <Send className="h-4 w-4 text-emerald-600" /> : <Mail className="h-4 w-4" />}
+      </Button>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setLink(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite {supplier.name} to the Vendor Portal</DialogTitle>
+            <DialogDescription>
+              Generates a one-time signup link valid for 14 days. The vendor will be able to view POs, acknowledge them, download invoices, and see their ledger.
+            </DialogDescription>
+          </DialogHeader>
+          {!link ? (
+            <div className="space-y-3 py-2">
+              <Label className="text-xs">Vendor email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vendor@example.com" />
+            </div>
+          ) : (
+            <div className="space-y-2 py-2">
+              <Label className="text-xs">Share this link with the vendor</Label>
+              <Textarea readOnly rows={3} value={link} className="font-mono text-xs" />
+              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
+                Copy link
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            {!link && <Button onClick={generate} disabled={loading}>{loading ? "Generating…" : "Generate invite"}</Button>}
+            {link && <Button onClick={() => setOpen(false)}>Done</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
