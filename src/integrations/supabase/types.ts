@@ -1152,6 +1152,51 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          channel: string
+          error: string | null
+          event_type: string
+          id: string
+          party_id: string | null
+          party_kind: string
+          payload: Json | null
+          recipient_phone: string | null
+          ref_id: string | null
+          ref_table: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          channel?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          party_id?: string | null
+          party_kind: string
+          payload?: Json | null
+          recipient_phone?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          channel?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          party_id?: string | null
+          party_kind?: string
+          payload?: Json | null
+          recipient_phone?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       parties: {
         Row: {
           address: string | null
@@ -1561,6 +1606,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           eligibility_for_itc: string
+          expected_dispatch_date: string | null
           id: string
           invoice_type: string
           notes: string | null
@@ -1572,6 +1618,9 @@ export type Database = {
           tax_amount: number
           total_amount: number
           updated_at: string
+          vendor_ack_at: string | null
+          vendor_ack_note: string | null
+          vendor_ack_status: string
         }
         Insert: {
           bill_date?: string
@@ -1579,6 +1628,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           eligibility_for_itc?: string
+          expected_dispatch_date?: string | null
           id?: string
           invoice_type?: string
           notes?: string | null
@@ -1590,6 +1640,9 @@ export type Database = {
           tax_amount?: number
           total_amount?: number
           updated_at?: string
+          vendor_ack_at?: string | null
+          vendor_ack_note?: string | null
+          vendor_ack_status?: string
         }
         Update: {
           bill_date?: string
@@ -1597,6 +1650,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           eligibility_for_itc?: string
+          expected_dispatch_date?: string | null
           id?: string
           invoice_type?: string
           notes?: string | null
@@ -1608,6 +1662,9 @@ export type Database = {
           tax_amount?: number
           total_amount?: number
           updated_at?: string
+          vendor_ack_at?: string | null
+          vendor_ack_note?: string | null
+          vendor_ack_status?: string
         }
         Relationships: [
           {
@@ -2296,6 +2353,7 @@ export type Database = {
       suppliers: {
         Row: {
           address: string | null
+          contact_person: string | null
           created_at: string
           current_balance: number
           email: string | null
@@ -2305,11 +2363,17 @@ export type Database = {
           notes: string | null
           opening_balance: number
           phone: string | null
+          pin_code: string | null
+          state_code: string | null
           tally_name: string | null
           updated_at: string
+          user_id: string | null
+          whatsapp_number: string | null
+          whatsapp_opt_in: boolean
         }
         Insert: {
           address?: string | null
+          contact_person?: string | null
           created_at?: string
           current_balance?: number
           email?: string | null
@@ -2319,11 +2383,17 @@ export type Database = {
           notes?: string | null
           opening_balance?: number
           phone?: string | null
+          pin_code?: string | null
+          state_code?: string | null
           tally_name?: string | null
           updated_at?: string
+          user_id?: string | null
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
         }
         Update: {
           address?: string | null
+          contact_person?: string | null
           created_at?: string
           current_balance?: number
           email?: string | null
@@ -2333,8 +2403,13 @@ export type Database = {
           notes?: string | null
           opening_balance?: number
           phone?: string | null
+          pin_code?: string | null
+          state_code?: string | null
           tally_name?: string | null
           updated_at?: string
+          user_id?: string | null
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
         }
         Relationships: []
       }
@@ -2358,6 +2433,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vendor_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          supplier_id: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          supplier_id: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          supplier_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invites_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voucher_audit_log: {
         Row: {
