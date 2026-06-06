@@ -206,6 +206,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     setNotes(""); setItems([{ raw_material_id: "", quantity: 1, unit_price: 0 }]);
   };
 
+  const notifyVendor = useServerFn(notifyVendorPurchaseBill);
   const create = useMutation({
     mutationFn: async () => {
       if (!billNumber.trim()) throw new Error("Bill number required");
@@ -220,12 +221,21 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           quantity: Number(i.quantity), unit_price: Number(i.unit_price) })),
       );
       if (iErr) throw iErr;
+      return bill.id as string;
     },
-    onSuccess: () => {
+    onSuccess: async (billId) => {
       toast.success("Purchase bill saved. Raw-material stock updated.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
       setOpen(false); resetForm();
+      if (supplierId) {
+        try {
+          const r = await notifyVendor({ data: { bill_id: billId, event: "created" } });
+          if (r?.ok) toast.success("Vendor notified via WhatsApp");
+        } catch {
+          // notification failure is non-fatal
+        }
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
