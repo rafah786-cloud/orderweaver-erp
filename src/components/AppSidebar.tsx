@@ -29,6 +29,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/gst": FileSpreadsheet,
   "/inventory": Boxes,
   "/banking": Landmark,
+  "/vendor": Truck,
   "/settings": Settings,
 };
 
