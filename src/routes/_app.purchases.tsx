@@ -121,6 +121,7 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
                     onClick={() => onPreview(`/print/supplier-ledger/${s.id}`)}>
                     <Printer className="h-4 w-4" />
                   </Button>
+                  {canEdit && <InviteVendorButton supplier={s} />}
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                 </TableCell>
               </TableRow>
