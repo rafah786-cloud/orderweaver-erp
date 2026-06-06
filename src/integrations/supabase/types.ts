@@ -2663,6 +2663,7 @@ export type Database = {
         | "customer"
         | "employee"
         | "accountant"
+        | "vendor"
       attendance_status: "present" | "absent" | "half_day" | "leave" | "holiday"
       invoice_status: "draft" | "unpaid" | "partial" | "paid" | "cancelled"
       ledger_nature: "assets" | "liabilities" | "income" | "expenses"
@@ -2829,6 +2830,7 @@ export const Constants = {
         "customer",
         "employee",
         "accountant",
+        "vendor",
       ],
       attendance_status: ["present", "absent", "half_day", "leave", "holiday"],
       invoice_status: ["draft", "unpaid", "partial", "paid", "cancelled"],
