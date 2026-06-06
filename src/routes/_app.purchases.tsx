@@ -15,15 +15,18 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Printer } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Send, Mail } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, formatDate } from "@/lib/format";
+import { useServerFn } from "@tanstack/react-start";
+import { createVendorInvite } from "@/lib/vendor-invite.functions";
+import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
-type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null };
+type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null };
 type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null };
 
 function PurchasesPage() {
@@ -118,6 +121,7 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
                     onClick={() => onPreview(`/print/supplier-ledger/${s.id}`)}>
                     <Printer className="h-4 w-4" />
                   </Button>
+                  {canEdit && <InviteVendorButton supplier={s} />}
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                 </TableCell>
               </TableRow>
@@ -202,6 +206,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     setNotes(""); setItems([{ raw_material_id: "", quantity: 1, unit_price: 0 }]);
   };
 
+  const notifyVendor = useServerFn(notifyVendorPurchaseBill);
   const create = useMutation({
     mutationFn: async () => {
       if (!billNumber.trim()) throw new Error("Bill number required");
@@ -216,12 +221,21 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           quantity: Number(i.quantity), unit_price: Number(i.unit_price) })),
       );
       if (iErr) throw iErr;
+      return bill.id as string;
     },
-    onSuccess: () => {
+    onSuccess: async (billId) => {
       toast.success("Purchase bill saved. Raw-material stock updated.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
       setOpen(false); resetForm();
+      if (supplierId) {
+        try {
+          const r = await notifyVendor({ data: { bill_id: billId, event: "created" } });
+          if (r?.ok) toast.success("Vendor notified via WhatsApp");
+        } catch {
+          // notification failure is non-fatal
+        }
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -338,5 +352,77 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+/* ---------------- Vendor Invite ---------------- */
+
+function InviteVendorButton({ supplier }: { supplier: Supplier }) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState(supplier.email ?? "");
+  const [link, setLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const create = useServerFn(createVendorInvite);
+
+  const already = !!supplier.user_id;
+
+  const generate = async () => {
+    if (!email.trim()) {
+      toast.error("Enter vendor email");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { token } = await create({ data: { supplier_id: supplier.id, email } });
+      const url = `${window.location.origin}/vendor-signup?token=${encodeURIComponent(token)}`;
+      setLink(url);
+      toast.success("Invite link generated — share it with the vendor");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        size="icon"
+        variant="ghost"
+        title={already ? "Vendor portal already linked" : "Invite to vendor portal"}
+        onClick={() => setOpen(true)}
+        disabled={already}
+      >
+        {already ? <Send className="h-4 w-4 text-emerald-600" /> : <Mail className="h-4 w-4" />}
+      </Button>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setLink(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite {supplier.name} to the Vendor Portal</DialogTitle>
+            <DialogDescription>
+              Generates a one-time signup link valid for 14 days. The vendor will be able to view POs, acknowledge them, download invoices, and see their ledger.
+            </DialogDescription>
+          </DialogHeader>
+          {!link ? (
+            <div className="space-y-3 py-2">
+              <Label className="text-xs">Vendor email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vendor@example.com" />
+            </div>
+          ) : (
+            <div className="space-y-2 py-2">
+              <Label className="text-xs">Share this link with the vendor</Label>
+              <Textarea readOnly rows={3} value={link} className="font-mono text-xs" />
+              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
+                Copy link
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            {!link && <Button onClick={generate} disabled={loading}>{loading ? "Generating…" : "Generate invite"}</Button>}
+            {link && <Button onClick={() => setOpen(false)}>Done</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

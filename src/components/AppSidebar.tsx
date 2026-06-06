@@ -29,6 +29,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/gst": FileSpreadsheet,
   "/inventory": Boxes,
   "/banking": Landmark,
+  "/vendor": Truck,
   "/settings": Settings,
 };
 
@@ -50,6 +51,7 @@ const LABELS: Record<string, string> = {
   "/gst": "GST",
   "/inventory": "Inventory",
   "/banking": "Banking",
+  "/vendor": "Vendor Portal",
   "/settings": "Settings",
 };
 

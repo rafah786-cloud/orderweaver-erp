@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorSignupRouteImport } from './routes/vendor-signup'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PendingRouteImport } from './routes/pending'
@@ -17,6 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
+import { Route as AppVendorRouteImport } from './routes/_app.vendor'
 import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
@@ -34,6 +36,9 @@ import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
+import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
+import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
 import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
 import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
@@ -57,6 +62,7 @@ import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounti
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
 import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
+import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
@@ -68,6 +74,11 @@ import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.acco
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
 import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 
+const VendorSignupRoute = VendorSignupRouteImport.update({
+  id: '/vendor-signup',
+  path: '/vendor-signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -105,6 +116,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppWhatsappRoute = AppWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVendorRoute = AppVendorRouteImport.update({
+  id: '/vendor',
+  path: '/vendor',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTallyImportRoute = AppTallyImportRouteImport.update({
@@ -191,6 +207,21 @@ const AppAccountingRoute = AppAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
   getParentRoute: () => AppRoute,
+} as any)
+const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppVendorRoute,
+} as any)
+const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
+  id: '/purchase-orders',
+  path: '/purchase-orders',
+  getParentRoute: () => AppVendorRoute,
+} as any)
+const AppVendorLedgerRoute = AppVendorLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
+  getParentRoute: () => AppVendorRoute,
 } as any)
 const AppInventoryValuationRoute = AppInventoryValuationRouteImport.update({
   id: '/valuation',
@@ -309,6 +340,12 @@ const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   path: '/api/public/biometric/punch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppVendorPurchaseOrdersIdRoute =
+  AppVendorPurchaseOrdersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AppVendorPurchaseOrdersRoute,
+  } as any)
 const AppPrintSupplierLedgerIdRoute =
   AppPrintSupplierLedgerIdRouteImport.update({
     id: '/print/supplier-ledger/$id',
@@ -369,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
@@ -386,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
+  '/vendor': typeof AppVendorRouteWithChildren
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -409,6 +448,9 @@ export interface FileRoutesByFullPath {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
+  '/vendor/ledger': typeof AppVendorLedgerRoute
+  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -419,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
+  '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesByTo {
@@ -428,6 +471,7 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
@@ -468,6 +512,9 @@ export interface FileRoutesByTo {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
+  '/vendor/ledger': typeof AppVendorLedgerRoute
+  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -478,6 +525,7 @@ export interface FileRoutesByTo {
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
+  '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesById {
@@ -489,6 +537,7 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/vendor-signup': typeof VendorSignupRoute
   '/_app/accounting': typeof AppAccountingRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
@@ -506,6 +555,7 @@ export interface FileRoutesById {
   '/_app/sales-orders': typeof AppSalesOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
+  '/_app/vendor': typeof AppVendorRouteWithChildren
   '/_app/whatsapp': typeof AppWhatsappRoute
   '/_app/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -529,6 +579,9 @@ export interface FileRoutesById {
   '/_app/inventory/reorder': typeof AppInventoryReorderRoute
   '/_app/inventory/summary': typeof AppInventorySummaryRoute
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
+  '/_app/vendor/ledger': typeof AppVendorLedgerRoute
+  '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -539,6 +592,7 @@ export interface FileRoutesById {
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
   '/_app/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
+  '/_app/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRouteTypes {
@@ -550,6 +604,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/vendor-signup'
     | '/accounting'
     | '/approvals'
     | '/attendance'
@@ -567,6 +622,7 @@ export interface FileRouteTypes {
     | '/sales-orders'
     | '/settings'
     | '/tally-import'
+    | '/vendor'
     | '/whatsapp'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
@@ -590,6 +646,9 @@ export interface FileRouteTypes {
     | '/inventory/reorder'
     | '/inventory/summary'
     | '/inventory/valuation'
+    | '/vendor/ledger'
+    | '/vendor/purchase-orders'
+    | '/vendor/'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -600,6 +659,7 @@ export interface FileRouteTypes {
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
     | '/print/supplier-ledger/$id'
+    | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -609,6 +669,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/vendor-signup'
     | '/accounting'
     | '/approvals'
     | '/attendance'
@@ -649,6 +710,9 @@ export interface FileRouteTypes {
     | '/inventory/reorder'
     | '/inventory/summary'
     | '/inventory/valuation'
+    | '/vendor/ledger'
+    | '/vendor/purchase-orders'
+    | '/vendor'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -659,6 +723,7 @@ export interface FileRouteTypes {
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
     | '/print/supplier-ledger/$id'
+    | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
   id:
     | '__root__'
@@ -669,6 +734,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/vendor-signup'
     | '/_app/accounting'
     | '/_app/approvals'
     | '/_app/attendance'
@@ -686,6 +752,7 @@ export interface FileRouteTypes {
     | '/_app/sales-orders'
     | '/_app/settings'
     | '/_app/tally-import'
+    | '/_app/vendor'
     | '/_app/whatsapp'
     | '/_app/accounting/audit-log'
     | '/_app/accounting/balance-sheet'
@@ -709,6 +776,9 @@ export interface FileRouteTypes {
     | '/_app/inventory/reorder'
     | '/_app/inventory/summary'
     | '/_app/inventory/valuation'
+    | '/_app/vendor/ledger'
+    | '/_app/vendor/purchase-orders'
+    | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/accounting/vouchers/new'
@@ -719,6 +789,7 @@ export interface FileRouteTypes {
     | '/_app/print/party-ledger/$id'
     | '/_app/print/purchase/$id'
     | '/_app/print/supplier-ledger/$id'
+    | '/_app/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
   fileRoutesById: FileRoutesById
 }
@@ -730,11 +801,19 @@ export interface RootRouteChildren {
   PendingRoute: typeof PendingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  VendorSignupRoute: typeof VendorSignupRoute
   ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendor-signup': {
+      id: '/vendor-signup'
+      path: '/vendor-signup'
+      fullPath: '/vendor-signup'
+      preLoaderRoute: typeof VendorSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -789,6 +868,13 @@ declare module '@tanstack/react-router' {
       path: '/whatsapp'
       fullPath: '/whatsapp'
       preLoaderRoute: typeof AppWhatsappRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vendor': {
+      id: '/_app/vendor'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof AppVendorRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tally-import': {
@@ -909,6 +995,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting'
       preLoaderRoute: typeof AppAccountingRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/vendor/': {
+      id: '/_app/vendor/'
+      path: '/'
+      fullPath: '/vendor/'
+      preLoaderRoute: typeof AppVendorIndexRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
+    '/_app/vendor/purchase-orders': {
+      id: '/_app/vendor/purchase-orders'
+      path: '/purchase-orders'
+      fullPath: '/vendor/purchase-orders'
+      preLoaderRoute: typeof AppVendorPurchaseOrdersRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
+    '/_app/vendor/ledger': {
+      id: '/_app/vendor/ledger'
+      path: '/ledger'
+      fullPath: '/vendor/ledger'
+      preLoaderRoute: typeof AppVendorLedgerRouteImport
+      parentRoute: typeof AppVendorRoute
     }
     '/_app/inventory/valuation': {
       id: '/_app/inventory/valuation'
@@ -1070,6 +1177,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/biometric/punch'
       preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/vendor/purchase-orders/$id': {
+      id: '/_app/vendor/purchase-orders/$id'
+      path: '/$id'
+      fullPath: '/vendor/purchase-orders/$id'
+      preLoaderRoute: typeof AppVendorPurchaseOrdersIdRouteImport
+      parentRoute: typeof AppVendorPurchaseOrdersRoute
     }
     '/_app/print/supplier-ledger/$id': {
       id: '/_app/print/supplier-ledger/$id'
@@ -1258,6 +1372,36 @@ const AppInventoryRouteWithChildren = AppInventoryRoute._addFileChildren(
   AppInventoryRouteChildren,
 )
 
+interface AppVendorPurchaseOrdersRouteChildren {
+  AppVendorPurchaseOrdersIdRoute: typeof AppVendorPurchaseOrdersIdRoute
+}
+
+const AppVendorPurchaseOrdersRouteChildren: AppVendorPurchaseOrdersRouteChildren =
+  {
+    AppVendorPurchaseOrdersIdRoute: AppVendorPurchaseOrdersIdRoute,
+  }
+
+const AppVendorPurchaseOrdersRouteWithChildren =
+  AppVendorPurchaseOrdersRoute._addFileChildren(
+    AppVendorPurchaseOrdersRouteChildren,
+  )
+
+interface AppVendorRouteChildren {
+  AppVendorLedgerRoute: typeof AppVendorLedgerRoute
+  AppVendorPurchaseOrdersRoute: typeof AppVendorPurchaseOrdersRouteWithChildren
+  AppVendorIndexRoute: typeof AppVendorIndexRoute
+}
+
+const AppVendorRouteChildren: AppVendorRouteChildren = {
+  AppVendorLedgerRoute: AppVendorLedgerRoute,
+  AppVendorPurchaseOrdersRoute: AppVendorPurchaseOrdersRouteWithChildren,
+  AppVendorIndexRoute: AppVendorIndexRoute,
+}
+
+const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
+  AppVendorRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
@@ -1276,6 +1420,7 @@ interface AppRouteChildren {
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
+  AppVendorRoute: typeof AppVendorRouteWithChildren
   AppWhatsappRoute: typeof AppWhatsappRoute
   AppPrintInvoiceIdRoute: typeof AppPrintInvoiceIdRoute
   AppPrintPartyLedgerIdRoute: typeof AppPrintPartyLedgerIdRoute
@@ -1301,6 +1446,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTallyImportRoute: AppTallyImportRoute,
+  AppVendorRoute: AppVendorRouteWithChildren,
   AppWhatsappRoute: AppWhatsappRoute,
   AppPrintInvoiceIdRoute: AppPrintInvoiceIdRoute,
   AppPrintPartyLedgerIdRoute: AppPrintPartyLedgerIdRoute,
@@ -1318,18 +1464,9 @@ const rootRouteChildren: RootRouteChildren = {
   PendingRoute: PendingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  VendorSignupRoute: VendorSignupRoute,
   ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
