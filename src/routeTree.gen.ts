@@ -36,6 +36,8 @@ import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
+import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
+import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
 import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
 import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
@@ -203,6 +205,16 @@ const AppAccountingRoute = AppAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
   getParentRoute: () => AppRoute,
+} as any)
+const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppVendorRoute,
+} as any)
+const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
+  id: '/purchase-orders',
+  path: '/purchase-orders',
+  getParentRoute: () => AppVendorRoute,
 } as any)
 const AppInventoryValuationRoute = AppInventoryValuationRouteImport.update({
   id: '/valuation',
@@ -399,7 +411,7 @@ export interface FileRoutesByFullPath {
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
-  '/vendor': typeof AppVendorRoute
+  '/vendor': typeof AppVendorRouteWithChildren
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -423,6 +435,8 @@ export interface FileRoutesByFullPath {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
+  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRoute
+  '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -460,7 +474,6 @@ export interface FileRoutesByTo {
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
-  '/vendor': typeof AppVendorRoute
   '/whatsapp': typeof AppWhatsappRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -484,6 +497,8 @@ export interface FileRoutesByTo {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
+  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRoute
+  '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -523,7 +538,7 @@ export interface FileRoutesById {
   '/_app/sales-orders': typeof AppSalesOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
-  '/_app/vendor': typeof AppVendorRoute
+  '/_app/vendor': typeof AppVendorRouteWithChildren
   '/_app/whatsapp': typeof AppWhatsappRoute
   '/_app/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -547,6 +562,8 @@ export interface FileRoutesById {
   '/_app/inventory/reorder': typeof AppInventoryReorderRoute
   '/_app/inventory/summary': typeof AppInventorySummaryRoute
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
+  '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRoute
+  '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
   '/_app/accounting/vouchers/new': typeof AppAccountingVouchersNewRoute
@@ -610,6 +627,8 @@ export interface FileRouteTypes {
     | '/inventory/reorder'
     | '/inventory/summary'
     | '/inventory/valuation'
+    | '/vendor/purchase-orders'
+    | '/vendor/'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -647,7 +666,6 @@ export interface FileRouteTypes {
     | '/sales-orders'
     | '/settings'
     | '/tally-import'
-    | '/vendor'
     | '/whatsapp'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
@@ -671,6 +689,8 @@ export interface FileRouteTypes {
     | '/inventory/reorder'
     | '/inventory/summary'
     | '/inventory/valuation'
+    | '/vendor/purchase-orders'
+    | '/vendor'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
     | '/accounting/vouchers/new'
@@ -733,6 +753,8 @@ export interface FileRouteTypes {
     | '/_app/inventory/reorder'
     | '/_app/inventory/summary'
     | '/_app/inventory/valuation'
+    | '/_app/vendor/purchase-orders'
+    | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
     | '/_app/accounting/vouchers/new'
@@ -948,6 +970,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting'
       preLoaderRoute: typeof AppAccountingRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/vendor/': {
+      id: '/_app/vendor/'
+      path: '/'
+      fullPath: '/vendor/'
+      preLoaderRoute: typeof AppVendorIndexRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
+    '/_app/vendor/purchase-orders': {
+      id: '/_app/vendor/purchase-orders'
+      path: '/purchase-orders'
+      fullPath: '/vendor/purchase-orders'
+      preLoaderRoute: typeof AppVendorPurchaseOrdersRouteImport
+      parentRoute: typeof AppVendorRoute
     }
     '/_app/inventory/valuation': {
       id: '/_app/inventory/valuation'
@@ -1297,6 +1333,20 @@ const AppInventoryRouteWithChildren = AppInventoryRoute._addFileChildren(
   AppInventoryRouteChildren,
 )
 
+interface AppVendorRouteChildren {
+  AppVendorPurchaseOrdersRoute: typeof AppVendorPurchaseOrdersRoute
+  AppVendorIndexRoute: typeof AppVendorIndexRoute
+}
+
+const AppVendorRouteChildren: AppVendorRouteChildren = {
+  AppVendorPurchaseOrdersRoute: AppVendorPurchaseOrdersRoute,
+  AppVendorIndexRoute: AppVendorIndexRoute,
+}
+
+const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
+  AppVendorRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
@@ -1315,7 +1365,7 @@ interface AppRouteChildren {
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
-  AppVendorRoute: typeof AppVendorRoute
+  AppVendorRoute: typeof AppVendorRouteWithChildren
   AppWhatsappRoute: typeof AppWhatsappRoute
   AppPrintInvoiceIdRoute: typeof AppPrintInvoiceIdRoute
   AppPrintPartyLedgerIdRoute: typeof AppPrintPartyLedgerIdRoute
@@ -1341,7 +1391,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTallyImportRoute: AppTallyImportRoute,
-  AppVendorRoute: AppVendorRoute,
+  AppVendorRoute: AppVendorRouteWithChildren,
   AppWhatsappRoute: AppWhatsappRoute,
   AppPrintInvoiceIdRoute: AppPrintInvoiceIdRoute,
   AppPrintPartyLedgerIdRoute: AppPrintPartyLedgerIdRoute,
@@ -1365,3 +1415,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
