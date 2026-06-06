@@ -209,6 +209,11 @@ function PartiesPage() {
                             onClick={() => setPreviewUrl(`/print/party-ledger/${p.id}`)}>
                             <Printer className="h-4 w-4" />
                           </Button>
+                          <Button size="icon" variant="ghost" title="Send statement on WhatsApp"
+                            disabled={sendingId === p.id}
+                            onClick={() => sendStatement(p)}>
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
                           {canEdit && (
                             <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                               <Pencil className="h-4 w-4" />
