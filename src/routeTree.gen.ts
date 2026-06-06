@@ -61,6 +61,7 @@ import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounti
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
 import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
+import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
 import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
@@ -333,6 +334,12 @@ const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   path: '/api/public/biometric/punch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppVendorPurchaseOrdersIdRoute =
+  AppVendorPurchaseOrdersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AppVendorPurchaseOrdersRoute,
+  } as any)
 const AppPrintSupplierLedgerIdRoute =
   AppPrintSupplierLedgerIdRouteImport.update({
     id: '/print/supplier-ledger/$id',
@@ -435,7 +442,7 @@ export interface FileRoutesByFullPath {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
-  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRoute
+  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
   '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -447,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
+  '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesByTo {
@@ -497,7 +505,7 @@ export interface FileRoutesByTo {
   '/inventory/reorder': typeof AppInventoryReorderRoute
   '/inventory/summary': typeof AppInventorySummaryRoute
   '/inventory/valuation': typeof AppInventoryValuationRoute
-  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRoute
+  '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
   '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -509,6 +517,7 @@ export interface FileRoutesByTo {
   '/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/print/purchase/$id': typeof AppPrintPurchaseIdRoute
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
+  '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRoutesById {
@@ -562,7 +571,7 @@ export interface FileRoutesById {
   '/_app/inventory/reorder': typeof AppInventoryReorderRoute
   '/_app/inventory/summary': typeof AppInventorySummaryRoute
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
-  '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRoute
+  '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
   '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -574,6 +583,7 @@ export interface FileRoutesById {
   '/_app/print/party-ledger/$id': typeof AppPrintPartyLedgerIdRoute
   '/_app/print/purchase/$id': typeof AppPrintPurchaseIdRoute
   '/_app/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
+  '/_app/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
 }
 export interface FileRouteTypes {
@@ -639,6 +649,7 @@ export interface FileRouteTypes {
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
     | '/print/supplier-ledger/$id'
+    | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/print/party-ledger/$id'
     | '/print/purchase/$id'
     | '/print/supplier-ledger/$id'
+    | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
   id:
     | '__root__'
@@ -765,6 +777,7 @@ export interface FileRouteTypes {
     | '/_app/print/party-ledger/$id'
     | '/_app/print/purchase/$id'
     | '/_app/print/supplier-ledger/$id'
+    | '/_app/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
   fileRoutesById: FileRoutesById
 }
@@ -1146,6 +1159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/vendor/purchase-orders/$id': {
+      id: '/_app/vendor/purchase-orders/$id'
+      path: '/$id'
+      fullPath: '/vendor/purchase-orders/$id'
+      preLoaderRoute: typeof AppVendorPurchaseOrdersIdRouteImport
+      parentRoute: typeof AppVendorPurchaseOrdersRoute
+    }
     '/_app/print/supplier-ledger/$id': {
       id: '/_app/print/supplier-ledger/$id'
       path: '/print/supplier-ledger/$id'
@@ -1333,13 +1353,27 @@ const AppInventoryRouteWithChildren = AppInventoryRoute._addFileChildren(
   AppInventoryRouteChildren,
 )
 
+interface AppVendorPurchaseOrdersRouteChildren {
+  AppVendorPurchaseOrdersIdRoute: typeof AppVendorPurchaseOrdersIdRoute
+}
+
+const AppVendorPurchaseOrdersRouteChildren: AppVendorPurchaseOrdersRouteChildren =
+  {
+    AppVendorPurchaseOrdersIdRoute: AppVendorPurchaseOrdersIdRoute,
+  }
+
+const AppVendorPurchaseOrdersRouteWithChildren =
+  AppVendorPurchaseOrdersRoute._addFileChildren(
+    AppVendorPurchaseOrdersRouteChildren,
+  )
+
 interface AppVendorRouteChildren {
-  AppVendorPurchaseOrdersRoute: typeof AppVendorPurchaseOrdersRoute
+  AppVendorPurchaseOrdersRoute: typeof AppVendorPurchaseOrdersRouteWithChildren
   AppVendorIndexRoute: typeof AppVendorIndexRoute
 }
 
 const AppVendorRouteChildren: AppVendorRouteChildren = {
-  AppVendorPurchaseOrdersRoute: AppVendorPurchaseOrdersRoute,
+  AppVendorPurchaseOrdersRoute: AppVendorPurchaseOrdersRouteWithChildren,
   AppVendorIndexRoute: AppVendorIndexRoute,
 }
 
