@@ -160,6 +160,39 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
 
 /* ---------------- Bills ---------------- */
 
+function AckBadge({ bill }: { bill: Bill }) {
+  const s = bill.vendor_ack_status || "pending";
+  const cls = s === "accepted" ? "bg-green-100 text-green-800"
+    : s === "rejected" ? "bg-red-100 text-red-800"
+    : "bg-amber-100 text-amber-800";
+  const label = s.charAt(0).toUpperCase() + s.slice(1);
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex w-fit rounded px-2 py-0.5 text-xs font-medium ${cls}`} title={bill.vendor_ack_note ?? ""}>{label}</span>
+      {bill.vendor_ack_at && <span className="text-[10px] text-muted-foreground">{formatDate(bill.vendor_ack_at)}</span>}
+      {bill.expected_dispatch_date && s === "accepted" && (
+        <span className="text-[10px] text-muted-foreground">Dispatch: {formatDate(bill.expected_dispatch_date)}</span>
+      )}
+    </div>
+  );
+}
+
+function NotifBadge({ notif }: { notif?: { status: string; error: string | null; sent_at: string; recipient_phone: string | null } }) {
+  if (!notif) return <span className="text-xs text-muted-foreground">—</span>;
+  const s = notif.status;
+  const cls = s === "sent" ? "bg-green-100 text-green-800"
+    : s === "skipped" ? "bg-slate-100 text-slate-700"
+    : s === "failed" ? "bg-red-100 text-red-800"
+    : "bg-amber-100 text-amber-800";
+  const label = s === "sent" ? "Delivered" : s.charAt(0).toUpperCase() + s.slice(1);
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex w-fit rounded px-2 py-0.5 text-xs font-medium ${cls}`} title={notif.error ?? notif.recipient_phone ?? ""}>{label}</span>
+      <span className="text-[10px] text-muted-foreground">{formatDate(notif.sent_at)}</span>
+    </div>
+  );
+}
+
 type BillItem = { raw_material_id: string; quantity: number; unit_price: number };
 
 function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
