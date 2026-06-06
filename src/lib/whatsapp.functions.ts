@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type AllowedRole = "admin" | "sales" | "production" | "accountant" | "hr" | "vendor";
+
+async function assertHasAnyRole(userId: string, roles: AllowedRole[]) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", roles as any);
+  if (!data || data.length === 0) throw new Error("Forbidden");
+}
+
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 
 type LogParams = {
