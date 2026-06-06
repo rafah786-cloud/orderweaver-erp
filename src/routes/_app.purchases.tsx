@@ -27,7 +27,8 @@ import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
 type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null };
-type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null };
+type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null };
+type NotifLog = { ref_id: string | null; event_type: string; status: string; error: string | null; sent_at: string; recipient_phone: string | null };
 
 function PurchasesPage() {
   const { hasAnyRole } = useAuth();
@@ -159,6 +160,39 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
 
 /* ---------------- Bills ---------------- */
 
+function AckBadge({ bill }: { bill: Bill }) {
+  const s = bill.vendor_ack_status || "pending";
+  const cls = s === "accepted" ? "bg-green-100 text-green-800"
+    : s === "rejected" ? "bg-red-100 text-red-800"
+    : "bg-amber-100 text-amber-800";
+  const label = s.charAt(0).toUpperCase() + s.slice(1);
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex w-fit rounded px-2 py-0.5 text-xs font-medium ${cls}`} title={bill.vendor_ack_note ?? ""}>{label}</span>
+      {bill.vendor_ack_at && <span className="text-[10px] text-muted-foreground">{formatDate(bill.vendor_ack_at)}</span>}
+      {bill.expected_dispatch_date && s === "accepted" && (
+        <span className="text-[10px] text-muted-foreground">Dispatch: {formatDate(bill.expected_dispatch_date)}</span>
+      )}
+    </div>
+  );
+}
+
+function NotifBadge({ notif }: { notif?: { status: string; error: string | null; sent_at: string; recipient_phone: string | null } }) {
+  if (!notif) return <span className="text-xs text-muted-foreground">—</span>;
+  const s = notif.status;
+  const cls = s === "sent" ? "bg-green-100 text-green-800"
+    : s === "skipped" ? "bg-slate-100 text-slate-700"
+    : s === "failed" ? "bg-red-100 text-red-800"
+    : "bg-amber-100 text-amber-800";
+  const label = s === "sent" ? "Delivered" : s.charAt(0).toUpperCase() + s.slice(1);
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex w-fit rounded px-2 py-0.5 text-xs font-medium ${cls}`} title={notif.error ?? notif.recipient_phone ?? ""}>{label}</span>
+      <span className="text-[10px] text-muted-foreground">{formatDate(notif.sent_at)}</span>
+    </div>
+  );
+}
+
 type BillItem = { raw_material_id: string; quantity: number; unit_price: number };
 
 function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
@@ -175,12 +209,30 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     queryKey: ["purchase-bills"],
     queryFn: async () => {
       const { data, error } = await supabase.from("purchase_bills")
-        .select("id, bill_number, supplier_id, bill_date, total_amount, notes")
+        .select("id, bill_number, supplier_id, bill_date, total_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date")
         .order("bill_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Bill[];
     },
   });
+  const billIds = bills.map((b) => b.id);
+  const { data: notifs = [] } = useQuery({
+    queryKey: ["purchase-bill-notifs", billIds.join(",")],
+    enabled: billIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("notification_log")
+        .select("ref_id, event_type, status, error, sent_at, recipient_phone")
+        .eq("ref_table", "purchase_bills")
+        .in("ref_id", billIds)
+        .order("sent_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as NotifLog[];
+    },
+  });
+  const latestNotif = new Map<string, NotifLog>();
+  for (const n of notifs) {
+    if (n.ref_id && !latestNotif.has(n.ref_id)) latestNotif.set(n.ref_id, n);
+  }
   const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers-list"],
     queryFn: async () => {
@@ -226,6 +278,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     onSuccess: async (billId) => {
       toast.success("Purchase bill saved. Raw-material stock updated.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
+      qc.invalidateQueries({ queryKey: ["purchase-bill-notifs"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
       setOpen(false); resetForm();
       if (supplierId) {
@@ -253,17 +306,23 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           <TableHeader><TableRow>
             <TableHead>Bill #</TableHead><TableHead>Supplier</TableHead><TableHead>Date</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            <TableHead>Vendor Ack</TableHead>
+            <TableHead>WhatsApp</TableHead>
             <TableHead className="w-12" />
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            : bills.length === 0 ? <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">No purchase bills yet.</TableCell></TableRow>
-            : bills.map((b) => (
+            {isLoading ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+            : bills.length === 0 ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No purchase bills yet.</TableCell></TableRow>
+            : bills.map((b) => {
+              const n = latestNotif.get(b.id);
+              return (
               <TableRow key={b.id}>
                 <TableCell className="font-medium">{b.bill_number}</TableCell>
                 <TableCell>{b.supplier_id ? (supplierMap.get(b.supplier_id) ?? "—") : "—"}</TableCell>
                 <TableCell>{formatDate(b.bill_date)}</TableCell>
                 <TableCell className="text-right font-medium">{inr(b.total_amount)}</TableCell>
+                <TableCell><AckBadge bill={b} /></TableCell>
+                <TableCell><NotifBadge notif={n} /></TableCell>
                 <TableCell>
                   <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
                     onClick={() => onPreview(`/print/purchase/${b.id}`)}>
@@ -271,7 +330,8 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
