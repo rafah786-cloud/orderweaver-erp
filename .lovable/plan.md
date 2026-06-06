@@ -1,160 +1,50 @@
+# Vendor Portal & WhatsApp Notifications
 
-# Tally-Parity Buildout Plan
+## Goal
+Mirror the customer experience for vendors: registered vendors log in to a portal, view/acknowledge purchase orders, download PO PDFs, view their ledger, and receive WhatsApp notifications when a PO is placed, modified, or cancelled. Customer-side WhatsApp triggers (orders, invoices, ledger updates) are wired up in the same pass since the Twilio plumbing is shared.
 
-Bring the ERP to Tally-grade depth across four pillars: **Double-entry Accounting**, **GST Compliance**, **Inventory & Godowns**, and **Banking**. Every report drills down to the source voucher. Existing modules (invoices, purchases, parties, suppliers, payroll, Tally import, print preview) stay intact and become *sources* feeding the new general ledger.
+## 1. Schema changes (one migration)
+- `suppliers`: add `user_id uuid` (links to `auth.users`), `owner_id uuid`, `contact_person`, `state_code`, `pin_code`, `whatsapp_number`, `whatsapp_opt_in bool default true`, `credit_limit`.
+- `purchase_bills`: add `vendor_ack_status text default 'pending'` (`pending|accepted|rejected`), `vendor_ack_at timestamptz`, `vendor_ack_note text`, `expected_dispatch_date date`.
+- New `notification_log` table: `id, channel('whatsapp'), recipient_phone, party_kind('customer'|'vendor'|'staff'), party_id, event_type, ref_table, ref_id, status, error, payload jsonb, sent_at`.
+- Update RLS on `suppliers`, `purchase_bills`, `purchase_bill_items`, `supplier_ledger_entries` so a user with the `vendor` role sees only rows where `suppliers.user_id = auth.uid()`. Keep existing admin/production policies.
+- New `vendor_invites` table for admin-issued invites (email, token hash, supplier_id, expires_at, accepted_at).
 
----
+## 2. Vendor auth
+- Admin "Invite vendor" action on the Suppliers/Vendors page → generates a one-time signup link (`/vendor-signup?token=…`).
+- Signup page consumes the token via a server fn, creates the auth user, assigns `vendor` role, and sets `suppliers.user_id`.
+- `vendor` role already exists in `app_role` enum from the earlier user-categories work; if not, add it in the same migration.
 
-## Guiding principles
+## 3. Vendor portal (under `_authenticated/vendor/…`)
+- `vendor/index.tsx` — dashboard: open POs, outstanding balance.
+- `vendor/purchase-orders.tsx` — list POs with status + acknowledge buttons.
+- `vendor/purchase-orders.$id.tsx` — PO detail with line items, accept/reject + expected dispatch date, "Download PDF" button.
+- `vendor/ledger.tsx` — supplier ledger with date range filter and CSV export.
+- Sidebar entries shown only when role = `vendor`.
 
-- **One general ledger** is the source of truth. Existing tables (invoices, purchase_bills, payslips, party/supplier_ledger_entries) auto-post into it via triggers — no double-entry by humans for existing flows.
-- **Drill-down everywhere**: every figure in TB / P&L / BS / GSTR clicks through to the voucher → to the source document.
-- **No destructive schema changes** to current tables. New tables sit alongside; triggers backfill.
-- **Roles**: `accountant` role added; admin gets everything; sales/production keep current access.
+## 4. PDF generation
+- Reuse existing PDF approach if present; otherwise client-side `jspdf` + `jspdf-autotable` for PO and ledger PDFs (kept in `src/lib/pdf/`).
 
----
+## 5. WhatsApp via Twilio
+- New server fn `sendWhatsAppMessage` in `src/lib/whatsapp.functions.ts` posting to the Twilio gateway (`POST /Messages.json`, `From=whatsapp:<sandbox>`, `To=whatsapp:<recipient>`).
+- Reads `LOVABLE_API_KEY` + `TWILIO_API_KEY` from server env (Twilio connector). If `TWILIO_API_KEY` is missing the fn logs to `notification_log` with status `skipped` so the app keeps working until the connector is linked.
+- Helper `notifyEvent({event, ref})` resolves recipient, formats message body from a template, calls the send fn, and writes to `notification_log`.
+- Triggers (called from existing create/update server fns):
+  - **Vendor**: `purchase_bill.created`, `purchase_bill.updated`, `purchase_bill.cancelled`.
+  - **Customer**: `sales_order.created`, `production_order.ready`, `invoice.issued`, `invoice.paid`, `ledger.statement_ready`.
+- Each template ≤ 1024 chars, plain text, includes doc number + amount + a deep link to the portal.
 
-## Phase 1 — Accounting Core (Week 1–2)
+## 6. Settings UI
+- Extend the existing WhatsApp settings page so admins can toggle vendor/customer notification categories on/off and preview templates. Per-recipient opt-in still respected via `whatsapp_opt_in`.
+- Surface a "Twilio not connected" banner with a button that triggers the Twilio connector flow if `TWILIO_API_KEY` env var is absent.
 
-Foundation. Everything else depends on it.
+## 7. Out of scope (ask before adding)
+- Inbound WhatsApp webhooks / two-way chat.
+- Bulk marketing sends.
+- Per-user role-based PO approval workflow inside the vendor portal beyond accept/reject.
 
-**Schema (new tables)**
-- `ledger_groups` — Tally-style group tree (Assets, Liabilities, Income, Expenses, with parent_id and nature). Seeded with the 28 default Tally groups.
-- `ledger_accounts` — chart of accounts. Each party / supplier / bank / tax / stock account is a ledger. `mapped_party_id`, `mapped_supplier_id`, `mapped_bank_id` for linkage.
-- `vouchers` — header for every accounting entry. Types: `sales`, `purchase`, `receipt`, `payment`, `contra`, `journal`, `debit_note`, `credit_note`, `stock_journal`. Has `voucher_number`, `voucher_date`, `narration`, `source_table`, `source_id`, `is_locked`.
-- `voucher_entries` — debit/credit lines. Must balance (trigger-enforced). Each line links to a `ledger_account_id` and optional `cost_center_id`.
-- `cost_centers` — optional tagging dimension.
-- `financial_years` — open/close periods; locks vouchers after year-end.
-- `voucher_number_series` — per-type auto-numbering with prefix/suffix.
-
-**Auto-posting triggers**
-- `invoices` insert → sales voucher (Dr Party, Cr Sales, Cr Output CGST/SGST/IGST).
-- `purchase_bills` insert → purchase voucher (Dr Purchase, Dr Input GST, Cr Supplier).
-- `payslips` finalize → journal voucher (Dr Salary, Cr Employee/PF/ESI payable).
-- Existing `party_ledger_entries` / `supplier_ledger_entries` from Tally import → vouchers with `source='tally_import'`.
-
-**UI**
-- `/accounting/ledgers` — chart of accounts tree view; create/edit ledgers, assign group.
-- `/accounting/vouchers/new` — manual voucher entry (Tally-like single-screen form for journal/receipt/payment/contra).
-- `/accounting/day-book` — chronological voucher list with filters; click row → voucher detail → click line → ledger.
-- `/accounting/ledger/$id` — running balance statement for any ledger with date range.
-
-**Reports (with drill-down)**
-- Trial Balance — every figure clicks to the ledger statement → to vouchers → to source document.
-- Profit & Loss — grouped by income/expense; click any line → ledger.
-- Balance Sheet — assets/liabilities tree; click → ledger.
-
----
-
-## Phase 2 — GST Compliance (Week 3)
-
-Builds on Phase 1 ledgers.
-
-**Schema**
-- `hsn_codes` — HSN/SAC master with default rates.
-- `gst_returns` — period (month/quarter), type (GSTR-1, GSTR-3B, GSTR-9), status, JSON payload, filed_at.
-- `gst_rate_changes` — historical rate validity (so old invoices keep old rates).
-- Add to `invoices` / `purchase_bills`: `place_of_supply`, `reverse_charge`, `invoice_type` (regular / export / sez / bill_of_supply), `eligibility_for_itc`.
-
-**Engine**
-- Aggregator over invoices + purchase_bills, partitioned by GSTIN and tax type, producing:
-  - **GSTR-1**: B2B, B2C-L, B2C-S, exports, credit/debit notes, HSN summary, document summary.
-  - **GSTR-3B**: outward + inward + ITC tables 4A/4B, tax liability ledger.
-  - **HSN summary** report.
-
-**UI**
-- `/gst/returns` — list of periods + status; "Generate" button.
-- `/gst/returns/$id` — full preview, drill into every B2B row → invoice → print preview.
-- "Export JSON for GST Portal" button (offline filing format).
-- "Export Excel" for accountant review.
-
-**E-invoicing** (existing `e_way_bills` extended)
-- Add `e_invoices` table: IRN, ack_no, ack_date, signed_qr, signed_invoice. Stub for IRP integration (manual upload now, API later).
-- QR code rendered on invoice print preview when IRN exists.
-
----
-
-## Phase 3 — Inventory & Godowns (Week 4)
-
-Existing `raw_materials` and stock movement triggers stay; we add multi-location and batches.
-
-**Schema**
-- `godowns` — warehouses/locations (with parent_id for hierarchy).
-- `stock_items` — replaces ad-hoc usage; raw_materials and finished products both become stock_items with `category` flag. Backward-compatible view kept.
-- `stock_batches` — batch/lot tracking with mfg_date, expiry_date, batch_number.
-- `stock_movements` — every in/out with godown, batch, qty, rate, value. Source = voucher_id.
-- `stock_journals` — stock transfers, conversions (raw → finished), wastage.
-- `stock_valuation_settings` — per-item method: FIFO / Weighted Avg / Standard Cost.
-
-**Triggers**
-- Existing purchase/sales stock triggers extended to write `stock_movements` with correct godown + batch.
-
-**UI**
-- `/inventory/godowns` — godown master.
-- `/inventory/stock-items` — unified item master (replaces separate raw_materials list, keeps it as a tab filter).
-- `/inventory/stock-journal/new` — transfer / convert / wastage entry.
-- `/inventory/reports`:
-  - **Stock Summary** — qty + value per item per godown.
-  - **Movement Analysis** — for any item, every in/out with running balance. Drill → voucher → source.
-  - **Batch-wise Stock** — expiry alerts.
-  - **Reorder Status** — items below reorder level.
-  - **Ageing Analysis** — stock held > 30/60/90/180 days.
-
----
-
-## Phase 4 — Banking (Week 5)
-
-**Schema**
-- `bank_accounts` — bank name, account no, IFSC, branch, opening_balance. Maps to a ledger_account.
-- `bank_transactions` — every debit/credit with date, amount, reference, narration, voucher_id (nullable for unreconciled bank-statement lines).
-- `bank_reconciliation` — match status per transaction; `bank_date` vs `book_date`.
-- `cheques_issued` / `cheques_received` — post-dated cheque register with status (pending/cleared/bounced/cancelled).
-- `currencies` + `exchange_rates` (date-wise) for multi-currency. Add `currency_code` + `exchange_rate` to vouchers.
-
-**UI**
-- `/banking/accounts` — bank account master.
-- `/banking/reconcile/$account` — split-screen: book entries (left) vs bank statement upload/manual entries (right); click to match. Auto-suggest by amount + date proximity.
-- `/banking/payment-advice/new` — generate printable payment advice (uses existing print preview modal).
-- `/banking/cheques` — PDC register with calendar view; trigger ledger entry on clearing.
-- `/banking/cheque-print` — cheque layout template (configurable per bank). Uses existing print preview modal.
-- Payment voucher already in Phase 1; bank reco closes the loop.
-
----
-
-## Phase 5 — Drill-down & Polish (Week 6)
-
-- Universal drill-down hook: every numeric cell in every report → ledger → voucher → source document (invoice/bill/payslip/stock journal).
-- "Lock period" UI for accountants after GSTR filing.
-- Audit trail: `voucher_audit_log` table; every edit logged (Tally Audit feature).
-- Print preview integrated into every new report (already built).
-- Permission matrix: `accountant` role added with full ledger access; existing roles unaffected.
-
----
-
-## Technical Notes (for reviewers)
-
-- New `accountant` role added to `app_role` enum; permissions wired into `src/lib/permissions.ts`.
-- All new tables use the standard `GRANT SELECT/INSERT/UPDATE/DELETE … TO authenticated; GRANT ALL … TO service_role;` + RLS via `has_role()`.
-- Voucher balance constraint enforced by `BEFORE INSERT/UPDATE` trigger on `voucher_entries` (sum of debits = sum of credits per voucher).
-- Auto-posting triggers are `AFTER INSERT` and idempotent (check by `source_table` + `source_id`).
-- Reports built as TanStack server functions returning DTOs; UI uses `useSuspenseQuery` + `ensureQueryData` per project conventions.
-- No edge functions; everything is `createServerFn`.
-- Existing Tally import (`party_ledger_entries`, `supplier_ledger_entries`, opening balances) is bridged into vouchers — re-importing produces no duplicates.
-
----
-
-## What I will NOT touch
-
-- Existing invoice / purchase / payroll / attendance / production-order UIs and schemas (they keep working; only triggers added).
-- Existing print preview system (only used as-is for new reports).
-- Existing Tally import flow (only adds a bridge to vouchers).
-
----
-
-## Delivery order — confirm before I start
-
-I'll ship **Phase 1 (Accounting Core)** as the first migration + UI batch. Each phase is one or two large turns. After each phase you review and approve before I move on. Reply with:
-
-1. **"Start Phase 1"** to begin, or
-2. Any phase reordering (e.g. "do GST first because filing is due"), or
-3. Anything to drop from scope.
+## Technical notes
+- All Twilio calls go through `https://connector-gateway.lovable.dev/twilio/Messages.json` with `Authorization: Bearer ${LOVABLE_API_KEY}` and `X-Connection-Api-Key: ${TWILIO_API_KEY}`. Never call api.twilio.com directly.
+- All sends happen inside `createServerFn` handlers — never from the browser.
+- `notification_log` is admin-readable; vendors/customers see only their own rows via RLS.
+- `vendor` portal routes live under `src/routes/_authenticated/vendor/` so the integration-managed auth gate covers them.
