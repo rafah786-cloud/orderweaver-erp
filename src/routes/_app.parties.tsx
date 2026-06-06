@@ -60,6 +60,27 @@ function PartiesPage() {
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const notifyCustomer = useServerFn(notifyCustomerEvent);
+
+  const sendStatement = async (p: PartyRow) => {
+    setSendingId(p.id);
+    try {
+      const out = Number(outstandingMap.get(p.id)?.outstanding ?? 0);
+      const body =
+        `Zizz Mattress — Statement of Account\n` +
+        `Account: ${p.name}\n` +
+        `Closing balance: ₹${out.toFixed(2)}\n` +
+        `Login to the portal to download your full ledger statement.`;
+      const r = await notifyCustomer({ data: { party_id: p.id, event: "ledger.statement_ready", ref_table: "parties", ref_id: p.id, message: body } });
+      if (r?.ok) toast.success("Statement sent on WhatsApp");
+      else toast.error("Couldn't send WhatsApp statement");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Send failed");
+    } finally {
+      setSendingId(null);
+    }
+  };
 
   const { data: parties = [], isLoading } = useQuery({
     queryKey: ["parties"],
