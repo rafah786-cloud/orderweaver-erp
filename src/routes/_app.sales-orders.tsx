@@ -100,6 +100,7 @@ function SalesOrdersPage() {
     } : x));
   };
 
+  const notifyCustomer = useServerFn(notifyCustomerEvent);
   const create = useMutation({
     mutationFn: async () => {
       if (!partyId) throw new Error("Select a party");
@@ -134,13 +135,27 @@ function SalesOrdersPage() {
         })),
       );
       if (itemErr) throw itemErr;
+      return { id: so.id as string, orderNumber };
     },
-    onSuccess: () => {
+    onSuccess: async (res) => {
       toast.success("Sales order created. Production order generated automatically.");
       qc.invalidateQueries({ queryKey: ["sales-orders"] });
       qc.invalidateQueries({ queryKey: ["production-orders"] });
       setOpen(false);
+      const savedParty = partyId;
       resetForm();
+      try {
+        const body =
+          `Zizz Mattress — Order Confirmed\n` +
+          `Order #: ${res.orderNumber}\n` +
+          `Date: ${orderDate}\n` +
+          `Amount: ₹${total.toFixed(2)}\n` +
+          `We'll notify you when it's ready for dispatch.`;
+        const r = await notifyCustomer({ data: { party_id: savedParty, event: "sales_order.created", ref_table: "sales_orders", ref_id: res.id, message: body } });
+        if (r?.ok) toast.success("Customer notified via WhatsApp");
+      } catch {
+        // non-fatal
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
