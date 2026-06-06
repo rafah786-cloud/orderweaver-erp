@@ -194,14 +194,20 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       expected_dispatch_date: z.string().optional(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertHasAnyRole(context.userId, ["vendor", "admin"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: bill } = await supabaseAdmin
       .from("purchase_bills")
-      .select("id, bill_number, total_amount, suppliers(name)")
+      .select("id, bill_number, total_amount, supplier_id, suppliers(name, user_id)")
       .eq("id", data.bill_id)
       .maybeSingle();
     if (!bill) throw new Error("Bill not found");
+    // Non-admin vendors may only ack bills belonging to their own supplier
+    const supUserId = (bill as any).suppliers?.user_id ?? null;
+    const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
+    const { data: adminRow } = await sa.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
+    if (!adminRow && supUserId !== context.userId) throw new Error("Forbidden");
     const vendorName = (bill as any).suppliers?.name ?? "Vendor";
     const verb = data.status === "accepted" ? "ACCEPTED" : "REJECTED";
     const body =
