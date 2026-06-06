@@ -47,6 +47,10 @@ function VendorSignupPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token || !invite) return;
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
     setSubmitting(true);
     const { data, error: sErr } = await supabase.auth.signUp({
       email: invite.email,
@@ -126,7 +130,7 @@ function VendorSignupPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? "Creating account…" : "Create vendor account"}

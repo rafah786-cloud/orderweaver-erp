@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type AllowedRole = "admin" | "sales" | "production" | "accountant" | "hr" | "vendor";
+
+async function assertHasAnyRole(userId: string, roles: AllowedRole[]) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", roles as any);
+  if (!data || data.length === 0) throw new Error("Forbidden");
+}
+
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 
 type LogParams = {
@@ -79,7 +91,8 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       event: z.enum(["created", "updated", "cancelled"]).default("created"),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertHasAnyRole(context.userId, ["admin", "sales", "production"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: bill, error } = await supabaseAdmin
       .from("purchase_bills")
@@ -141,7 +154,8 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       message: z.string().min(1).max(1500),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: party } = await supabaseAdmin
       .from("parties")
@@ -180,14 +194,20 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       expected_dispatch_date: z.string().optional(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertHasAnyRole(context.userId, ["vendor", "admin"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: bill } = await supabaseAdmin
       .from("purchase_bills")
-      .select("id, bill_number, total_amount, suppliers(name)")
+      .select("id, bill_number, total_amount, supplier_id, suppliers(name, user_id)")
       .eq("id", data.bill_id)
       .maybeSingle();
     if (!bill) throw new Error("Bill not found");
+    // Non-admin vendors may only ack bills belonging to their own supplier
+    const supUserId = (bill as any).suppliers?.user_id ?? null;
+    const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
+    const { data: adminRow } = await sa.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
+    if (!adminRow && supUserId !== context.userId) throw new Error("Forbidden");
     const vendorName = (bill as any).suppliers?.name ?? "Vendor";
     const verb = data.status === "accepted" ? "ACCEPTED" : "REJECTED";
     const body =

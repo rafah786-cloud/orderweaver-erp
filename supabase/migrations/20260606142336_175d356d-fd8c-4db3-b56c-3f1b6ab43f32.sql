@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.guard_vendor_purchase_bill_update() FROM PUBLIC, anon, authenticated;
