@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
@@ -20,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
+import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/invoices")({
   component: InvoicesPage,
@@ -125,6 +127,7 @@ function InvoicesPage() {
     return null;
   };
 
+  const notifyCustomer = useServerFn(notifyCustomerEvent);
   const create = useMutation({
     mutationFn: async () => {
       if (!partyId) throw new Error("Select a party");
@@ -165,13 +168,27 @@ function InvoicesPage() {
         }))
       );
       if (itemErr) throw itemErr;
+      return { id: inv.id as string, invoiceNumber };
     },
-    onSuccess: () => {
+    onSuccess: async (res) => {
       toast.success("Invoice created");
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["party-outstanding"] });
+      const savedParty = partyId;
+      const savedTotal = total;
+      const savedDue = dueDate;
       setOpen(false);
       resetForm();
+      try {
+        const body =
+          `Zizz Mattress — Invoice Issued\n` +
+          `Invoice #: ${res.invoiceNumber}\n` +
+          `Amount: ₹${savedTotal.toFixed(2)}\n` +
+          (savedDue ? `Due: ${savedDue}\n` : ``) +
+          `Login to the portal to download your invoice.`;
+        const r = await notifyCustomer({ data: { party_id: savedParty, event: "invoice.issued", ref_table: "invoices", ref_id: res.id, message: body } });
+        if (r?.ok) toast.success("Customer notified via WhatsApp");
+      } catch { /* non-fatal */ }
     },
     onError: (e: Error) => {
       if (!blockMsg) toast.error(e.message);
@@ -191,13 +208,25 @@ function InvoicesPage() {
         .update({ paid_amount: newPaid, status })
         .eq("id", payInv.id);
       if (error) throw error;
+      return { inv: payInv, amt, status };
     },
-    onSuccess: () => {
+    onSuccess: async (res) => {
       toast.success("Payment recorded");
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["dash-outstanding"] });
       setPayInv(null);
       setPayAmount("");
+      if (res && res.status === "paid") {
+        try {
+          const body =
+            `Zizz Mattress — Payment Received, Thank You!\n` +
+            `Invoice #: ${res.inv.invoice_number}\n` +
+            `Amount: ₹${Number(res.inv.total_amount).toFixed(2)}\n` +
+            `Invoice marked paid. Login for receipt.`;
+          const r = await notifyCustomer({ data: { party_id: res.inv.party_id, event: "invoice.paid", ref_table: "invoices", ref_id: res.inv.id, message: body } });
+          if (r?.ok) toast.success("Customer notified via WhatsApp");
+        } catch { /* non-fatal */ }
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });

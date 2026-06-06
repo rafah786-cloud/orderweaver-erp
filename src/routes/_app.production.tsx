@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 
 type Status = "received" | "in_production" | "qc" | "ready" | "dispatched";
 
@@ -42,20 +44,21 @@ type Order = {
   id: string;
   production_number: string;
   status: Status;
-  sales_orders: { order_number: string; parties: { name: string } | null } | null;
+  sales_orders: { order_number: string; party_id: string; parties: { name: string } | null } | null;
 };
 
 function ProductionPage() {
   const { hasAnyRole } = useAuth();
   const canAdvance = hasAnyRole(["admin", "production"]);
   const qc = useQueryClient();
+  const notifyCustomer = useServerFn(notifyCustomerEvent);
 
   const { data = [] } = useQuery({
     queryKey: ["production-orders"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("production_orders")
-        .select("id, production_number, status, sales_orders(order_number, parties(name))")
+        .select("id, production_number, status, sales_orders(order_number, party_id, parties(name))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Order[];
@@ -65,15 +68,27 @@ function ProductionPage() {
   const advance = useMutation({
     mutationFn: async (o: Order) => {
       const next = NEXT[o.status];
-      if (!next) return;
+      if (!next) return null;
       const col = STAMP[next];
       const patch = { status: next, ...(col ? { [col]: new Date().toISOString() } : {}) };
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
       if (error) throw error;
+      return { next, order: o };
     },
-    onSuccess: () => {
+    onSuccess: async (res) => {
       toast.success("Status advanced");
       qc.invalidateQueries({ queryKey: ["production-orders"] });
+      if (res && res.next === "ready" && res.order.sales_orders?.party_id) {
+        try {
+          const body =
+            `Zizz Mattress — Order Ready for Dispatch\n` +
+            `Order #: ${res.order.sales_orders.order_number}\n` +
+            `Production #: ${res.order.production_number}\n` +
+            `Your order has cleared QC and is ready. We'll update you on dispatch.`;
+          const r = await notifyCustomer({ data: { party_id: res.order.sales_orders.party_id, event: "production_order.ready", ref_table: "production_orders", ref_id: res.order.id, message: body } });
+          if (r?.ok) toast.success("Customer notified via WhatsApp");
+        } catch { /* non-fatal */ }
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });

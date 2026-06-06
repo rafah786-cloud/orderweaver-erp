@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
@@ -12,10 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, AlertTriangle, Printer } from "lucide-react";
+import { Plus, Pencil, AlertTriangle, Printer, MessageCircle } from "lucide-react";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
+import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/parties")({
   component: PartiesPage,
@@ -58,6 +60,27 @@ function PartiesPage() {
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const notifyCustomer = useServerFn(notifyCustomerEvent);
+
+  const sendStatement = async (p: PartyRow) => {
+    setSendingId(p.id);
+    try {
+      const out = Number(outstandingMap.get(p.id)?.outstanding ?? 0);
+      const body =
+        `Zizz Mattress — Statement of Account\n` +
+        `Account: ${p.name}\n` +
+        `Closing balance: ₹${out.toFixed(2)}\n` +
+        `Login to the portal to download your full ledger statement.`;
+      const r = await notifyCustomer({ data: { party_id: p.id, event: "ledger.statement_ready", ref_table: "parties", ref_id: p.id, message: body } });
+      if (r?.ok) toast.success("Statement sent on WhatsApp");
+      else toast.error("Couldn't send WhatsApp statement");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Send failed");
+    } finally {
+      setSendingId(null);
+    }
+  };
 
   const { data: parties = [], isLoading } = useQuery({
     queryKey: ["parties"],
@@ -185,6 +208,11 @@ function PartiesPage() {
                           <Button size="icon" variant="ghost" title="Print preview"
                             onClick={() => setPreviewUrl(`/print/party-ledger/${p.id}`)}>
                             <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" title="Send statement on WhatsApp"
+                            disabled={sendingId === p.id}
+                            onClick={() => sendStatement(p)}>
+                            <MessageCircle className="h-4 w-4" />
                           </Button>
                           {canEdit && (
                             <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
