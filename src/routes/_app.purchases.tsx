@@ -26,7 +26,7 @@ import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
-type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null };
+type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null };
 type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null };
 
 function PurchasesPage() {
