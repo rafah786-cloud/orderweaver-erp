@@ -28,7 +28,7 @@ async function logNotification(p: LogParams) {
     ref_id: p.ref_id ?? null,
     status: p.status,
     error: p.error ?? null,
-    payload: p.payload ?? null,
+    payload: (p.payload ?? null) as any,
   });
 }
 
