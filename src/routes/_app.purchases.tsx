@@ -278,6 +278,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     onSuccess: async (billId) => {
       toast.success("Purchase bill saved. Raw-material stock updated.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
+      qc.invalidateQueries({ queryKey: ["purchase-bill-notifs"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
       setOpen(false); resetForm();
       if (supplierId) {
