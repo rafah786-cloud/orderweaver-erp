@@ -176,12 +176,30 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     queryKey: ["purchase-bills"],
     queryFn: async () => {
       const { data, error } = await supabase.from("purchase_bills")
-        .select("id, bill_number, supplier_id, bill_date, total_amount, notes")
+        .select("id, bill_number, supplier_id, bill_date, total_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date")
         .order("bill_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Bill[];
     },
   });
+  const billIds = bills.map((b) => b.id);
+  const { data: notifs = [] } = useQuery({
+    queryKey: ["purchase-bill-notifs", billIds.join(",")],
+    enabled: billIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("notification_log")
+        .select("ref_id, event_type, status, error, sent_at, recipient_phone")
+        .eq("ref_table", "purchase_bills")
+        .in("ref_id", billIds)
+        .order("sent_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as NotifLog[];
+    },
+  });
+  const latestNotif = new Map<string, NotifLog>();
+  for (const n of notifs) {
+    if (n.ref_id && !latestNotif.has(n.ref_id)) latestNotif.set(n.ref_id, n);
+  }
   const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers-list"],
     queryFn: async () => {
