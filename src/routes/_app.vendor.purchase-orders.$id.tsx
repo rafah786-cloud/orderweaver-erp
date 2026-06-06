@@ -56,6 +56,7 @@ function VendorPODetail() {
     if (bill?.vendor_ack_note) setNote(bill.vendor_ack_note);
   }, [bill]);
 
+  const notifyAdmin = useServerFn(notifyAdminPurchaseAck);
   const ack = useMutation({
     mutationFn: async (status: "accepted" | "rejected") => {
       const { error } = await supabase.from("purchase_bills").update({
@@ -65,12 +66,17 @@ function VendorPODetail() {
         expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : null,
       }).eq("id", id);
       if (error) throw error;
+      return status;
     },
-    onSuccess: (_d, status) => {
+    onSuccess: async (status) => {
       toast.success(`Purchase order ${status}`);
       qc.invalidateQueries({ queryKey: ["vendor-po", id] });
       qc.invalidateQueries({ queryKey: ["vendor-po-list"] });
       qc.invalidateQueries({ queryKey: ["vendor-pos"] });
+      try {
+        const r = await notifyAdmin({ data: { bill_id: id, status, note: note || undefined, expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : undefined } });
+        if (r?.ok) toast.success("Buyer notified via WhatsApp");
+      } catch { /* non-fatal */ }
     },
     onError: (e: Error) => toast.error(e.message),
   });
