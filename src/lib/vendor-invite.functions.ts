@@ -73,6 +73,13 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     if (row.accepted_at) throw new Error("Invite already used");
     if (new Date(row.expires_at) < new Date()) throw new Error("Invite expired");
 
+    // Verify the calling user's email matches the invite target
+    const { data: userRes, error: uErr } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    if (uErr || !userRes?.user?.email) throw new Error("Could not verify account email");
+    if (userRes.user.email.toLowerCase() !== row.email.toLowerCase()) {
+      throw new Error("Invite email does not match your account");
+    }
+
     // Link supplier to this auth user
     const { error: sErr } = await supabaseAdmin
       .from("suppliers")
