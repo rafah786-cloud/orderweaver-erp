@@ -82,9 +82,9 @@ function LoginPage() {
             <p className="mb-2 sm:mb-3 text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground text-center lg:text-left">
               Our Specialized Brands
             </p>
-            <ul className="flex flex-wrap justify-center gap-2 sm:gap-3" role="list">
+            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6" role="list">
               {subBrands.map((b) => (
-                <li key={b.name} className="w-[calc(33.333%-0.5rem)] sm:w-[calc(33.333%-0.75rem)]">
+                <li key={b.name} className="w-[calc(33.333%-0.667rem)] sm:w-[calc(33.333%-1rem)]">
                   <div
                     className="glass-sm rounded-lg sm:rounded-xl overflow-hidden flex flex-col"
                     title={b.name}
