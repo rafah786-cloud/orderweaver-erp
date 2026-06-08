@@ -26,6 +26,7 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   "sms:stub": stubFactory,
   "email:stub": stubFactory,
   "push:stub": stubFactory,
+  "in_app:internal": inAppFactory,
 };
 
 function toRecord(row: any): ProviderRecord {
