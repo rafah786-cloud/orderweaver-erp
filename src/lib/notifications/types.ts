@@ -22,7 +22,7 @@ export type ProviderRecord = {
   is_active: boolean;
   is_default: boolean;
   priority: number;
-  config: Record<string, unknown>;
+  config: Record<string, any>;
   secret_env_keys: string[];
   notes: string | null;
 };
