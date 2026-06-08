@@ -57,6 +57,8 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
         ref_table: z.string().optional(),
         ref_id: z.string().uuid().optional(),
         vars: z.record(z.string(), z.union([z.string(), z.number()])).default({}),
+        customer_party_id: z.string().uuid().optional(),
+        supplier_id: z.string().uuid().optional(),
       })
       .parse(d),
   )
