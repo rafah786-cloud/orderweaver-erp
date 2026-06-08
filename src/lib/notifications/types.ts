@@ -12,7 +12,7 @@
  * resolves the right provider from configuration at runtime.
  */
 
-export type NotificationChannel = "whatsapp" | "sms" | "email" | "push";
+export type NotificationChannel = "whatsapp" | "sms" | "email" | "push" | "in_app";
 
 export type ProviderRecord = {
   id: string;
