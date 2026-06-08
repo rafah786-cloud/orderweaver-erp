@@ -1157,43 +1157,58 @@ export type Database = {
           channel: string
           error: string | null
           event_type: string
+          failure_reason: string | null
           id: string
           party_id: string | null
           party_kind: string
           payload: Json | null
+          read_at: string | null
+          read_status: string
           recipient_phone: string | null
           ref_id: string | null
           ref_table: string | null
           sent_at: string
           status: string
+          template_name: string | null
+          whatsapp_message_id: string | null
         }
         Insert: {
           channel?: string
           error?: string | null
           event_type: string
+          failure_reason?: string | null
           id?: string
           party_id?: string | null
           party_kind: string
           payload?: Json | null
+          read_at?: string | null
+          read_status?: string
           recipient_phone?: string | null
           ref_id?: string | null
           ref_table?: string | null
           sent_at?: string
           status?: string
+          template_name?: string | null
+          whatsapp_message_id?: string | null
         }
         Update: {
           channel?: string
           error?: string | null
           event_type?: string
+          failure_reason?: string | null
           id?: string
           party_id?: string | null
           party_kind?: string
           payload?: Json | null
+          read_at?: string | null
+          read_status?: string
           recipient_phone?: string | null
           ref_id?: string | null
           ref_table?: string | null
           sent_at?: string
           status?: string
+          template_name?: string | null
+          whatsapp_message_id?: string | null
         }
         Relationships: []
       }
@@ -1204,6 +1219,7 @@ export type Database = {
           created_at: string
           credit_limit: number
           current_balance: number
+          customer_code: string | null
           email: string | null
           gstin: string | null
           id: string
@@ -1217,6 +1233,8 @@ export type Database = {
           tally_name: string | null
           updated_at: string
           user_id: string | null
+          whatsapp_number: string | null
+          whatsapp_opt_in: boolean
         }
         Insert: {
           address?: string | null
@@ -1224,6 +1242,7 @@ export type Database = {
           created_at?: string
           credit_limit?: number
           current_balance?: number
+          customer_code?: string | null
           email?: string | null
           gstin?: string | null
           id?: string
@@ -1237,6 +1256,8 @@ export type Database = {
           tally_name?: string | null
           updated_at?: string
           user_id?: string | null
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
         }
         Update: {
           address?: string | null
@@ -1244,6 +1265,7 @@ export type Database = {
           created_at?: string
           credit_limit?: number
           current_balance?: number
+          customer_code?: string | null
           email?: string | null
           gstin?: string | null
           id?: string
@@ -1257,6 +1279,8 @@ export type Database = {
           tally_name?: string | null
           updated_at?: string
           user_id?: string | null
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
         }
         Relationships: []
       }
@@ -2368,6 +2392,7 @@ export type Database = {
           tally_name: string | null
           updated_at: string
           user_id: string | null
+          vendor_code: string | null
           whatsapp_number: string | null
           whatsapp_opt_in: boolean
         }
@@ -2388,6 +2413,7 @@ export type Database = {
           tally_name?: string | null
           updated_at?: string
           user_id?: string | null
+          vendor_code?: string | null
           whatsapp_number?: string | null
           whatsapp_opt_in?: boolean
         }
@@ -2408,6 +2434,7 @@ export type Database = {
           tally_name?: string | null
           updated_at?: string
           user_id?: string | null
+          vendor_code?: string | null
           whatsapp_number?: string | null
           whatsapp_opt_in?: boolean
         }
@@ -2670,6 +2697,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_key: string
+          id: string
+          is_active: boolean
+          language_code: string
+          template_name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_key: string
+          id?: string
+          is_active?: boolean
+          language_code?: string
+          template_name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_key?: string
+          id?: string
+          is_active?: boolean
+          language_code?: string
+          template_name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
       }
     }
     Views: {
