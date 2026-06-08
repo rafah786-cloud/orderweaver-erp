@@ -44,8 +44,11 @@ type Order = {
   id: string;
   production_number: string;
   status: Status;
+  tracking_number: string | null;
+  transporter_name: string | null;
   sales_orders: { order_number: string; party_id: string; parties: { name: string } | null } | null;
 };
+
 
 function ProductionPage() {
   const { hasAnyRole } = useAuth();
