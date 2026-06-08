@@ -126,5 +126,13 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
       data.variables,
       { party_kind: "admin", event_type: "test.send" },
     );
-    return result;
+    // Strip non-serializable fields for the RPC boundary
+    return {
+      ok: result.ok,
+      messageId: result.messageId,
+      status: result.status,
+      attempts: result.attempts,
+      error: result.error ?? null,
+      response_summary: JSON.stringify(result.response ?? null).slice(0, 500),
+    };
   });
