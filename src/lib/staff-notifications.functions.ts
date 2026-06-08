@@ -88,6 +88,26 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
 
     if (!emps || emps.length === 0) return { ok: true, sent: 0, recipients: 0 };
 
+    // 2b. Resolve optional party/supplier names so callers don't need to pre-fetch them
+    const enrichedVars: Record<string, string | number | null | undefined> = { ...data.vars };
+    if (data.customer_party_id && enrichedVars.customer_name === undefined) {
+      const { data: party } = await supabaseAdmin
+        .from("parties")
+        .select("name")
+        .eq("id", data.customer_party_id)
+        .maybeSingle();
+      if (party?.name) enrichedVars.customer_name = party.name;
+    }
+    if (data.supplier_id && enrichedVars.vendor_name === undefined) {
+      const { data: sup } = await supabaseAdmin
+        .from("suppliers")
+        .select("name")
+        .eq("id", data.supplier_id)
+        .maybeSingle();
+      if (sup?.name) enrichedVars.vendor_name = sup.name;
+    }
+
+
     // 3. Resolve template
     const { data: tpl } = await supabaseAdmin
       .from("whatsapp_templates")
