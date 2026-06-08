@@ -58,7 +58,7 @@ function ProductionPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("production_orders")
-        .select("id, production_number, status, sales_orders(order_number, party_id, parties(name))")
+        .select("id, production_number, status, tracking_number, transporter_name, sales_orders(order_number, party_id, parties(name))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Order[];
@@ -70,28 +70,55 @@ function ProductionPage() {
       const next = NEXT[o.status];
       if (!next) return null;
       const col = STAMP[next];
-      const patch = { status: next, ...(col ? { [col]: new Date().toISOString() } : {}) };
+
+      // For Ready For Dispatch / Dispatched, collect tracking + transporter
+      let tracking = o.tracking_number ?? null;
+      let transporter = o.transporter_name ?? null;
+      if (next === "ready" || next === "dispatched") {
+        tracking = window.prompt(`Tracking number for ${o.production_number} (optional)`, tracking ?? "") ?? tracking;
+        transporter = window.prompt(`Transporter name for ${o.production_number} (optional)`, transporter ?? "") ?? transporter;
+      }
+
+      const patch: Record<string, unknown> = {
+        status: next,
+        ...(col ? { [col]: new Date().toISOString() } : {}),
+        ...(tracking !== null ? { tracking_number: tracking || null } : {}),
+        ...(transporter !== null ? { transporter_name: transporter || null } : {}),
+      };
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
       if (error) throw error;
-      return { next, order: o };
+      return { next, order: { ...o, tracking_number: tracking, transporter_name: transporter } };
     },
     onSuccess: async (res) => {
       toast.success("Status advanced");
       qc.invalidateQueries({ queryKey: ["production-orders"] });
-      if (res && res.next === "ready" && res.order.sales_orders?.party_id) {
+      if (!res) return;
+      const partyId = res.order.sales_orders?.party_id;
+      if (!partyId) return;
+
+      // Ready For Dispatch OR Dispatched → ORDER_DISPATCHED (dispatch.update)
+      if (res.next === "ready" || res.next === "dispatched") {
         try {
-          const body =
-            `Zizz Mattress — Order Ready for Dispatch\n` +
-            `Order #: ${res.order.sales_orders.order_number}\n` +
-            `Production #: ${res.order.production_number}\n` +
-            `Your order has cleared QC and is ready. We'll update you on dispatch.`;
-          const r = await notifyCustomer({ data: { party_id: res.order.sales_orders.party_id, event: "production_order.ready", ref_table: "production_orders", ref_id: res.order.id, message: body } });
+          const r = await notifyCustomer({
+            data: {
+              party_id: partyId,
+              event: "dispatch.update",
+              ref_table: "production_orders",
+              ref_id: res.order.id,
+              vars: {
+                order_no: res.order.sales_orders?.order_number ?? res.order.production_number,
+                tracking_no: res.order.tracking_number ?? "",
+                transporter_name: res.order.transporter_name ?? "",
+              },
+            },
+          });
           if (r?.ok) toast.success("Customer notified via WhatsApp");
         } catch { /* non-fatal */ }
       }
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const byStage = (key: Status) => data.filter((o) => o.status === key);
 
