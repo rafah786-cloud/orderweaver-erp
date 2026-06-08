@@ -140,7 +140,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       }
       const allVars: Record<string, string | number | null | undefined> = {
         employee_name: emp.full_name,
-        ...data.vars,
+        ...enrichedVars,
       };
       let result;
       if (tpl?.template_name) {
