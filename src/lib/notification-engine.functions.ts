@@ -1,0 +1,114 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const ChannelEnum = z.enum(["whatsapp", "sms", "email", "push", "in_app"]);
+
+export const listNotificationEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const [events, channels] = await Promise.all([
+      supabase.from("notification_events").select("*").order("category").order("label"),
+      supabase.from("notification_event_channels").select("*"),
+    ]);
+    if (events.error) throw events.error;
+    if (channels.error) throw channels.error;
+    return { events: events.data ?? [], channels: channels.data ?? [] };
+  });
+
+export const setEventChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      event_key: z.string().min(1).max(120),
+      channel: ChannelEnum,
+      is_enabled: z.boolean().optional(),
+      template_name: z.string().max(200).nullable().optional(),
+      subject_template: z.string().max(500).nullable().optional(),
+      body_template: z.string().max(4000).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("notification_event_channels")
+      .upsert(
+        {
+          event_key: data.event_key,
+          channel: data.channel,
+          is_enabled: data.is_enabled ?? false,
+          template_name: data.template_name ?? null,
+          subject_template: data.subject_template ?? null,
+          body_template: data.body_template ?? null,
+        },
+        { onConflict: "event_key,channel" },
+      );
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const toggleEventActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ event_key: z.string(), is_active: z.boolean() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase
+      .from("notification_events")
+      .update({ is_active: data.is_active })
+      .eq("event_key", data.event_key);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const listMyInAppNotifications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("in_app_notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    return data ?? [];
+  });
+
+export const markInAppRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid().optional(), all: z.boolean().optional() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    let q = supabase.from("in_app_notifications").update({ read_at: new Date().toISOString() });
+    if (data.id) q = q.eq("id", data.id);
+    else q = q.is("read_at", null);
+    const { error } = await q;
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const dispatchTestEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      event_key: z.string(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      user_ids: z.array(z.string().uuid()).optional(),
+      variables: z.record(z.string(), z.any()).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { dispatchNotificationEvent } = await import("@/lib/notifications/engine.server");
+    return dispatchNotificationEvent({
+      eventKey: data.event_key,
+      recipients: {
+        phone: data.phone || null,
+        email: data.email || null,
+        userIds: data.user_ids ?? [],
+      },
+      variables: data.variables ?? {},
+    });
+  });
