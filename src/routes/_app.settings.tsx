@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createDevice, rotateDeviceKey, deleteDevice } from "@/lib/biometric.functions";
+import { WhatsAppConfigCard } from "@/components/settings/WhatsAppConfigCard";
 import { Trash2, KeyRound, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
@@ -29,11 +30,12 @@ function SettingsPage() {
   }
   return (
     <>
-      <PageHeader title="Settings" description="Biometric devices and shift configuration." />
+      <PageHeader title="Settings" description="Biometric devices, shift configuration, and WhatsApp messaging." />
       <PageBody>
         <div className="grid gap-6 lg:grid-cols-2">
           <DeviceCard />
           <ShiftCard />
+          <WhatsAppConfigCard />
         </div>
       </PageBody>
     </>
