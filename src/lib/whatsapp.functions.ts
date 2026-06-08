@@ -47,7 +47,7 @@ async function sendForEvent(opts: {
   vars: Record<string, string | number | null | undefined>;
 }) {
   const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
-  const provider = getWhatsAppProvider();
+  const provider = await getWhatsAppProvider();
   if (!provider.isConfigured()) {
     return {
       ok: false as const,
