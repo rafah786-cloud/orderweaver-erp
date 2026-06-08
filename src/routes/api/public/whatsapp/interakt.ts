@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/public/whatsapp/interakt")({
             update.read_status = "sent";
           }
           if (Object.keys(update).length === 0) continue;
-          await supabaseAdmin.from("notification_log").update(update).eq("whatsapp_message_id", messageId);
+          await supabaseAdmin.from("notification_log").update(update as any).eq("whatsapp_message_id", messageId);
         }
 
         return new Response("ok", { status: 200 });

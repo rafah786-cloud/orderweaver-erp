@@ -31,6 +31,7 @@ import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
@@ -61,6 +62,7 @@ import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounti
 import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
 import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
+import { Route as ApiPublicWhatsappInteraktRouteImport } from './routes/api/public/whatsapp/interakt'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
@@ -181,6 +183,11 @@ const AppEmployeesRoute = AppEmployeesRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCommunicationsRoute = AppCommunicationsRouteImport.update({
+  id: '/communications',
+  path: '/communications',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBoqRoute = AppBoqRouteImport.update({
@@ -335,6 +342,12 @@ const AppAccountingAuditLogRoute = AppAccountingAuditLogRouteImport.update({
   path: '/audit-log',
   getParentRoute: () => AppAccountingRoute,
 } as any)
+const ApiPublicWhatsappInteraktRoute =
+  ApiPublicWhatsappInteraktRouteImport.update({
+    id: '/api/public/whatsapp/interakt',
+    path: '/api/public/whatsapp/interakt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   id: '/api/public/biometric/punch',
   path: '/api/public/biometric/punch',
@@ -412,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
+  '/communications': typeof AppCommunicationsRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
@@ -463,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -477,6 +492,7 @@ export interface FileRoutesByTo {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
+  '/communications': typeof AppCommunicationsRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
@@ -527,6 +543,7 @@ export interface FileRoutesByTo {
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -543,6 +560,7 @@ export interface FileRoutesById {
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
   '/_app/boq': typeof AppBoqRoute
+  '/_app/communications': typeof AppCommunicationsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/gst': typeof AppGstRouteWithChildren
@@ -594,6 +612,7 @@ export interface FileRoutesById {
   '/_app/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/_app/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -610,6 +629,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/banking'
     | '/boq'
+    | '/communications'
     | '/dashboard'
     | '/employees'
     | '/gst'
@@ -661,6 +681,7 @@ export interface FileRouteTypes {
     | '/print/supplier-ledger/$id'
     | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/whatsapp/interakt'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -675,6 +696,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/banking'
     | '/boq'
+    | '/communications'
     | '/dashboard'
     | '/employees'
     | '/gst'
@@ -725,6 +747,7 @@ export interface FileRouteTypes {
     | '/print/supplier-ledger/$id'
     | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/whatsapp/interakt'
   id:
     | '__root__'
     | '/'
@@ -740,6 +763,7 @@ export interface FileRouteTypes {
     | '/_app/attendance'
     | '/_app/banking'
     | '/_app/boq'
+    | '/_app/communications'
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/gst'
@@ -791,6 +815,7 @@ export interface FileRouteTypes {
     | '/_app/print/supplier-ledger/$id'
     | '/_app/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/whatsapp/interakt'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -803,6 +828,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   VendorSignupRoute: typeof VendorSignupRoute
   ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
+  ApiPublicWhatsappInteraktRoute: typeof ApiPublicWhatsappInteraktRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -959,6 +985,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/communications': {
+      id: '/_app/communications'
+      path: '/communications'
+      fullPath: '/communications'
+      preLoaderRoute: typeof AppCommunicationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/boq': {
@@ -1170,6 +1203,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting/audit-log'
       preLoaderRoute: typeof AppAccountingAuditLogRouteImport
       parentRoute: typeof AppAccountingRoute
+    }
+    '/api/public/whatsapp/interakt': {
+      id: '/api/public/whatsapp/interakt'
+      path: '/api/public/whatsapp/interakt'
+      fullPath: '/api/public/whatsapp/interakt'
+      preLoaderRoute: typeof ApiPublicWhatsappInteraktRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/biometric/punch': {
       id: '/api/public/biometric/punch'
@@ -1408,6 +1448,7 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
   AppBoqRoute: typeof AppBoqRoute
+  AppCommunicationsRoute: typeof AppCommunicationsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppGstRoute: typeof AppGstRouteWithChildren
@@ -1434,6 +1475,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
   AppBoqRoute: AppBoqRoute,
+  AppCommunicationsRoute: AppCommunicationsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppGstRoute: AppGstRouteWithChildren,
@@ -1466,6 +1508,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   VendorSignupRoute: VendorSignupRoute,
   ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
+  ApiPublicWhatsappInteraktRoute: ApiPublicWhatsappInteraktRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
