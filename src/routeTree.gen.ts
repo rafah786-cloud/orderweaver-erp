@@ -31,12 +31,14 @@ import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
+import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
 import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
@@ -49,6 +51,8 @@ import { Route as AppInventoryGodownsRouteImport } from './routes/_app.inventory
 import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
 import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
 import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
+import { Route as AppCommunicationsWhatsappLogsRouteImport } from './routes/_app.communications.whatsapp-logs'
+import { Route as AppCommunicationsTemplatesRouteImport } from './routes/_app.communications.templates'
 import { Route as AppBankingReconcileRouteImport } from './routes/_app.banking.reconcile'
 import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banking.payment-advice'
 import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
@@ -61,6 +65,7 @@ import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounti
 import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
 import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
+import { Route as ApiPublicWhatsappInteraktRouteImport } from './routes/api/public/whatsapp/interakt'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
 import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
@@ -183,6 +188,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCommunicationsRoute = AppCommunicationsRouteImport.update({
+  id: '/communications',
+  path: '/communications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBoqRoute = AppBoqRouteImport.update({
   id: '/boq',
   path: '/boq',
@@ -212,6 +222,11 @@ const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppVendorRoute,
+} as any)
+const AppCommunicationsIndexRoute = AppCommunicationsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCommunicationsRoute,
 } as any)
 const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
   id: '/purchase-orders',
@@ -273,6 +288,18 @@ const AppGstEinvoicesRoute = AppGstEinvoicesRouteImport.update({
   path: '/einvoices',
   getParentRoute: () => AppGstRoute,
 } as any)
+const AppCommunicationsWhatsappLogsRoute =
+  AppCommunicationsWhatsappLogsRouteImport.update({
+    id: '/whatsapp-logs',
+    path: '/whatsapp-logs',
+    getParentRoute: () => AppCommunicationsRoute,
+  } as any)
+const AppCommunicationsTemplatesRoute =
+  AppCommunicationsTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AppCommunicationsRoute,
+  } as any)
 const AppBankingReconcileRoute = AppBankingReconcileRouteImport.update({
   id: '/reconcile',
   path: '/reconcile',
@@ -335,6 +362,12 @@ const AppAccountingAuditLogRoute = AppAccountingAuditLogRouteImport.update({
   path: '/audit-log',
   getParentRoute: () => AppAccountingRoute,
 } as any)
+const ApiPublicWhatsappInteraktRoute =
+  ApiPublicWhatsappInteraktRouteImport.update({
+    id: '/api/public/whatsapp/interakt',
+    path: '/api/public/whatsapp/interakt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   id: '/api/public/biometric/punch',
   path: '/api/public/biometric/punch',
@@ -412,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
+  '/communications': typeof AppCommunicationsRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
@@ -438,6 +472,8 @@ export interface FileRoutesByFullPath {
   '/banking/currencies': typeof AppBankingCurrenciesRoute
   '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
+  '/communications/templates': typeof AppCommunicationsTemplatesRoute
+  '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -450,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/communications/': typeof AppCommunicationsIndexRoute
   '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -463,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -502,6 +540,8 @@ export interface FileRoutesByTo {
   '/banking/currencies': typeof AppBankingCurrenciesRoute
   '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
+  '/communications/templates': typeof AppCommunicationsTemplatesRoute
+  '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -514,6 +554,7 @@ export interface FileRoutesByTo {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/communications': typeof AppCommunicationsIndexRoute
   '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -527,6 +568,7 @@ export interface FileRoutesByTo {
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -543,6 +585,7 @@ export interface FileRoutesById {
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
   '/_app/boq': typeof AppBoqRoute
+  '/_app/communications': typeof AppCommunicationsRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/gst': typeof AppGstRouteWithChildren
@@ -569,6 +612,8 @@ export interface FileRoutesById {
   '/_app/banking/currencies': typeof AppBankingCurrenciesRoute
   '/_app/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/_app/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
+  '/_app/communications/templates': typeof AppCommunicationsTemplatesRoute
+  '/_app/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/_app/gst/einvoices': typeof AppGstEinvoicesRoute
   '/_app/gst/hsn': typeof AppGstHsnRoute
   '/_app/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -581,6 +626,7 @@ export interface FileRoutesById {
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
   '/_app/vendor/ledger': typeof AppVendorLedgerRoute
   '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/_app/communications/': typeof AppCommunicationsIndexRoute
   '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -594,6 +640,7 @@ export interface FileRoutesById {
   '/_app/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/_app/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -610,6 +657,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/banking'
     | '/boq'
+    | '/communications'
     | '/dashboard'
     | '/employees'
     | '/gst'
@@ -636,6 +684,8 @@ export interface FileRouteTypes {
     | '/banking/currencies'
     | '/banking/payment-advice'
     | '/banking/reconcile'
+    | '/communications/templates'
+    | '/communications/whatsapp-logs'
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
@@ -648,6 +698,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/communications/'
     | '/vendor/'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
@@ -661,6 +712,7 @@ export interface FileRouteTypes {
     | '/print/supplier-ledger/$id'
     | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/whatsapp/interakt'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -700,6 +752,8 @@ export interface FileRouteTypes {
     | '/banking/currencies'
     | '/banking/payment-advice'
     | '/banking/reconcile'
+    | '/communications/templates'
+    | '/communications/whatsapp-logs'
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
@@ -712,6 +766,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/communications'
     | '/vendor'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
@@ -725,6 +780,7 @@ export interface FileRouteTypes {
     | '/print/supplier-ledger/$id'
     | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/whatsapp/interakt'
   id:
     | '__root__'
     | '/'
@@ -740,6 +796,7 @@ export interface FileRouteTypes {
     | '/_app/attendance'
     | '/_app/banking'
     | '/_app/boq'
+    | '/_app/communications'
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/gst'
@@ -766,6 +823,8 @@ export interface FileRouteTypes {
     | '/_app/banking/currencies'
     | '/_app/banking/payment-advice'
     | '/_app/banking/reconcile'
+    | '/_app/communications/templates'
+    | '/_app/communications/whatsapp-logs'
     | '/_app/gst/einvoices'
     | '/_app/gst/hsn'
     | '/_app/gst/returns'
@@ -778,6 +837,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/valuation'
     | '/_app/vendor/ledger'
     | '/_app/vendor/purchase-orders'
+    | '/_app/communications/'
     | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
@@ -791,6 +851,7 @@ export interface FileRouteTypes {
     | '/_app/print/supplier-ledger/$id'
     | '/_app/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/whatsapp/interakt'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -803,6 +864,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   VendorSignupRoute: typeof VendorSignupRoute
   ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
+  ApiPublicWhatsappInteraktRoute: typeof ApiPublicWhatsappInteraktRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -961,6 +1023,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/communications': {
+      id: '/_app/communications'
+      path: '/communications'
+      fullPath: '/communications'
+      preLoaderRoute: typeof AppCommunicationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/boq': {
       id: '/_app/boq'
       path: '/boq'
@@ -1002,6 +1071,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/vendor/'
       preLoaderRoute: typeof AppVendorIndexRouteImport
       parentRoute: typeof AppVendorRoute
+    }
+    '/_app/communications/': {
+      id: '/_app/communications/'
+      path: '/'
+      fullPath: '/communications/'
+      preLoaderRoute: typeof AppCommunicationsIndexRouteImport
+      parentRoute: typeof AppCommunicationsRoute
     }
     '/_app/vendor/purchase-orders': {
       id: '/_app/vendor/purchase-orders'
@@ -1087,6 +1163,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGstEinvoicesRouteImport
       parentRoute: typeof AppGstRoute
     }
+    '/_app/communications/whatsapp-logs': {
+      id: '/_app/communications/whatsapp-logs'
+      path: '/whatsapp-logs'
+      fullPath: '/communications/whatsapp-logs'
+      preLoaderRoute: typeof AppCommunicationsWhatsappLogsRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/templates': {
+      id: '/_app/communications/templates'
+      path: '/templates'
+      fullPath: '/communications/templates'
+      preLoaderRoute: typeof AppCommunicationsTemplatesRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
     '/_app/banking/reconcile': {
       id: '/_app/banking/reconcile'
       path: '/reconcile'
@@ -1170,6 +1260,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting/audit-log'
       preLoaderRoute: typeof AppAccountingAuditLogRouteImport
       parentRoute: typeof AppAccountingRoute
+    }
+    '/api/public/whatsapp/interakt': {
+      id: '/api/public/whatsapp/interakt'
+      path: '/api/public/whatsapp/interakt'
+      fullPath: '/api/public/whatsapp/interakt'
+      preLoaderRoute: typeof ApiPublicWhatsappInteraktRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/biometric/punch': {
       id: '/api/public/biometric/punch'
@@ -1321,6 +1418,21 @@ const AppBankingRouteWithChildren = AppBankingRoute._addFileChildren(
   AppBankingRouteChildren,
 )
 
+interface AppCommunicationsRouteChildren {
+  AppCommunicationsTemplatesRoute: typeof AppCommunicationsTemplatesRoute
+  AppCommunicationsWhatsappLogsRoute: typeof AppCommunicationsWhatsappLogsRoute
+  AppCommunicationsIndexRoute: typeof AppCommunicationsIndexRoute
+}
+
+const AppCommunicationsRouteChildren: AppCommunicationsRouteChildren = {
+  AppCommunicationsTemplatesRoute: AppCommunicationsTemplatesRoute,
+  AppCommunicationsWhatsappLogsRoute: AppCommunicationsWhatsappLogsRoute,
+  AppCommunicationsIndexRoute: AppCommunicationsIndexRoute,
+}
+
+const AppCommunicationsRouteWithChildren =
+  AppCommunicationsRoute._addFileChildren(AppCommunicationsRouteChildren)
+
 interface AppGstReturnsRouteChildren {
   AppGstReturnsIdRoute: typeof AppGstReturnsIdRoute
 }
@@ -1408,6 +1520,7 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
   AppBoqRoute: typeof AppBoqRoute
+  AppCommunicationsRoute: typeof AppCommunicationsRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppGstRoute: typeof AppGstRouteWithChildren
@@ -1434,6 +1547,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
   AppBoqRoute: AppBoqRoute,
+  AppCommunicationsRoute: AppCommunicationsRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppGstRoute: AppGstRouteWithChildren,
@@ -1466,6 +1580,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   VendorSignupRoute: VendorSignupRoute,
   ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
+  ApiPublicWhatsappInteraktRoute: ApiPublicWhatsappInteraktRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
