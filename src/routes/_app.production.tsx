@@ -82,13 +82,14 @@ function ProductionPage() {
         transporter = window.prompt(`Transporter name for ${o.production_number} (optional)`, transporter ?? "") ?? transporter;
       }
 
-      const patch: Record<string, unknown> = {
+      const patch: any = {
         status: next,
         ...(col ? { [col]: new Date().toISOString() } : {}),
         ...(tracking !== null ? { tracking_number: tracking || null } : {}),
         ...(transporter !== null ? { transporter_name: transporter || null } : {}),
       };
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
+
       if (error) throw error;
       return { next, order: { ...o, tracking_number: tracking, transporter_name: transporter } };
     },
