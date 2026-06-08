@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { interaktFactory } from "./providers/interakt.server";
 import { stubFactory } from "./providers/stub.server";
+import { inAppFactory } from "./providers/in-app.server";
 
 /**
  * Registry of available provider implementations.
