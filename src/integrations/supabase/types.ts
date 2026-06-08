@@ -1500,6 +1500,8 @@ export type Database = {
           sales_order_id: string
           started_at: string | null
           status: Database["public"]["Enums"]["production_status"]
+          tracking_number: string | null
+          transporter_name: string | null
           updated_at: string
         }
         Insert: {
@@ -1514,6 +1516,8 @@ export type Database = {
           sales_order_id: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["production_status"]
+          tracking_number?: string | null
+          transporter_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -1528,6 +1532,8 @@ export type Database = {
           sales_order_id?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["production_status"]
+          tracking_number?: string | null
+          transporter_name?: string | null
           updated_at?: string
         }
         Relationships: [
