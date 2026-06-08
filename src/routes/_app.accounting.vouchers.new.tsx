@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { inr } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_app/accounting/vouchers/new")({
   component: NewVoucherPage,
@@ -27,6 +29,7 @@ const MANUAL_TYPES: VoucherType[] = ["receipt", "payment", "contra", "journal", 
 function NewVoucherPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const notifyCustomer = useServerFn(notifyCustomerEvent);
   const [type, setType] = useState<VoucherType>("journal");
   const [voucherDate, setVoucherDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [narration, setNarration] = useState("");
@@ -95,6 +98,44 @@ function NewVoucherPage() {
       if (eErr) throw eErr;
 
       toast.success(`${VOUCHER_TYPE_LABEL[type]} ${voucherNumber} saved`);
+
+      // Customer payment notification: receipt voucher → notify the customer whose ledger was credited
+      if (type === "receipt") {
+        try {
+          const ledgers = ledgersQ.data ?? [];
+          const customerLine = validLines.find((l) => {
+            const la = ledgers.find((x) => x.id === l.ledger_account_id);
+            return la?.mapped_party_id && Number(l.credit || 0) > 0;
+          });
+          if (customerLine) {
+            const la = ledgers.find((x) => x.id === customerLine.ledger_account_id);
+            const partyId = la?.mapped_party_id;
+            const amount = validLines
+              .filter((l) => {
+                const x = ledgers.find((y) => y.id === l.ledger_account_id);
+                return x?.mapped_party_id === partyId;
+              })
+              .reduce((s, l) => s + Number(l.credit || 0), 0);
+            if (partyId && amount > 0) {
+              await notifyCustomer({
+                data: {
+                  party_id: partyId,
+                  event: "payment.received",
+                  ref_table: "vouchers",
+                  ref_id: v.id,
+                  vars: {
+                    receipt_no: voucherNumber,
+                    payment_amount: amount.toFixed(2),
+                  },
+                },
+              }).catch(() => {});
+            }
+          }
+        } catch {
+          // non-blocking
+        }
+      }
+
       navigate({ to: "/accounting/voucher/$id", params: { id: v.id } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to save voucher";
