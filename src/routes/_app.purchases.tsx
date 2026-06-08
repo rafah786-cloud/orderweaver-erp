@@ -23,6 +23,7 @@ import { inr, formatDate } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
+import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
@@ -259,6 +260,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
   };
 
   const notifyVendor = useServerFn(notifyVendorPurchaseBill);
+  const notifyStaff = useServerFn(notifyStaffEvent);
   const create = useMutation({
     mutationFn: async () => {
       if (!billNumber.trim()) throw new Error("Bill number required");
@@ -289,6 +291,16 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           // notification failure is non-fatal
         }
       }
+      // Fan out to staff (Purchase / Management) for new PO
+      notifyStaff({
+        data: {
+          event: "staff.purchase_request.created",
+          ref_table: "purchase_bills",
+          ref_id: billId,
+          supplier_id: supplierId || undefined,
+          vars: { po_number: billNumber, po_value: total.toFixed(2) },
+        },
+      }).catch(() => {});
     },
     onError: (e: Error) => toast.error(e.message),
   });

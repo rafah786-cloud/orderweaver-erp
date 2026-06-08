@@ -16,6 +16,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
+import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 
 export const Route = createFileRoute("/_app/accounting/vouchers/new")({
   component: NewVoucherPage,
@@ -30,6 +31,7 @@ function NewVoucherPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const notifyCustomer = useServerFn(notifyCustomerEvent);
+  const notifyStaff = useServerFn(notifyStaffEvent);
   const [type, setType] = useState<VoucherType>("journal");
   const [voucherDate, setVoucherDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [narration, setNarration] = useState("");
@@ -127,6 +129,16 @@ function NewVoucherPage() {
                     receipt_no: voucherNumber,
                     payment_amount: amount.toFixed(2),
                   },
+                },
+              }).catch(() => {});
+              // Fan out to staff (Accounts / Management)
+              notifyStaff({
+                data: {
+                  event: "staff.payment.received",
+                  ref_table: "vouchers",
+                  ref_id: v.id,
+                  customer_party_id: partyId,
+                  vars: { receipt_no: voucherNumber, payment_amount: amount.toFixed(2) },
                 },
               }).catch(() => {});
             }
