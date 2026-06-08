@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
+import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 
 type Status = "received" | "in_production" | "qc" | "ready" | "dispatched";
 
@@ -55,6 +56,7 @@ function ProductionPage() {
   const canAdvance = hasAnyRole(["admin", "production"]);
   const qc = useQueryClient();
   const notifyCustomer = useServerFn(notifyCustomerEvent);
+  const notifyStaff = useServerFn(notifyStaffEvent);
 
   const { data = [] } = useQuery({
     queryKey: ["production-orders"],
@@ -118,6 +120,22 @@ function ProductionPage() {
           });
           if (r?.ok) toast.success("Customer notified via WhatsApp");
         } catch { /* non-fatal */ }
+        // Fan out to staff (Warehouse/Sales/Management) on Ready For Dispatch
+        if (res.next === "ready") {
+          notifyStaff({
+            data: {
+              event: "staff.dispatch.ready",
+              ref_table: "production_orders",
+              ref_id: res.order.id,
+              customer_party_id: partyId,
+              vars: {
+                order_no: res.order.sales_orders?.order_number ?? res.order.production_number,
+                tracking_no: res.order.tracking_number ?? "",
+                transporter_name: res.order.transporter_name ?? "",
+              },
+            },
+          }).catch(() => {});
+        }
       }
     },
     onError: (e: Error) => toast.error(e.message),

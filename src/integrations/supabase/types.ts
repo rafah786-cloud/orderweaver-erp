@@ -585,6 +585,33 @@ export type Database = {
           },
         ]
       }
+      employee_notification_subscriptions: {
+        Row: {
+          created_at: string
+          department: string
+          event_key: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          event_key: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          event_key?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           basic_salary: number

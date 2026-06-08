@@ -19,6 +19,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { inr, formatDate } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
+import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 
 export const Route = createFileRoute("/_app/sales-orders")({
   component: SalesOrdersPage,
@@ -101,6 +102,7 @@ function SalesOrdersPage() {
   };
 
   const notifyCustomer = useServerFn(notifyCustomerEvent);
+  const notifyStaff = useServerFn(notifyStaffEvent);
   const create = useMutation({
     mutationFn: async () => {
       if (!partyId) throw new Error("Select a party");
@@ -162,6 +164,16 @@ function SalesOrdersPage() {
       } catch {
         // non-fatal
       }
+      // Fan out to subscribed staff departments
+      notifyStaff({
+        data: {
+          event: "staff.sales_order.created",
+          ref_table: "sales_orders",
+          ref_id: res.id,
+          customer_party_id: savedParty,
+          vars: { order_no: res.orderNumber, order_value: total.toFixed(2) },
+        },
+      }).catch(() => {});
 
     },
     onError: (e: Error) => toast.error(e.message),
