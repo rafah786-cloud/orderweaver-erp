@@ -905,6 +905,48 @@ export type Database = {
         }
         Relationships: []
       }
+      in_app_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          event_key: string | null
+          id: string
+          link: string | null
+          payload: Json | null
+          read_at: string | null
+          ref_id: string | null
+          ref_table: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          event_key?: string | null
+          id?: string
+          link?: string | null
+          payload?: Json | null
+          read_at?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          event_key?: string | null
+          id?: string
+          link?: string | null
+          payload?: Json | null
+          read_at?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           amount: number | null
@@ -1178,6 +1220,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_event_channels: {
+        Row: {
+          body_template: string | null
+          channel: string
+          created_at: string
+          event_key: string
+          is_enabled: boolean
+          subject_template: string | null
+          template_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_template?: string | null
+          channel: string
+          created_at?: string
+          event_key: string
+          is_enabled?: boolean
+          subject_template?: string | null
+          template_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string | null
+          channel?: string
+          created_at?: string
+          event_key?: string
+          is_enabled?: boolean
+          subject_template?: string | null
+          template_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_event_channels_event_key_fkey"
+            columns: ["event_key"]
+            isOneToOne: false
+            referencedRelation: "notification_events"
+            referencedColumns: ["event_key"]
+          },
+        ]
+      }
+      notification_events: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          event_key: string
+          is_active: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_key: string
+          is_active?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_key?: string
+          is_active?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_log: {
         Row: {

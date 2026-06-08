@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { interaktFactory } from "./providers/interakt.server";
 import { stubFactory } from "./providers/stub.server";
+import { inAppFactory } from "./providers/in-app.server";
 
 /**
  * Registry of available provider implementations.
@@ -25,6 +26,7 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   "sms:stub": stubFactory,
   "email:stub": stubFactory,
   "push:stub": stubFactory,
+  "in_app:internal": inAppFactory,
 };
 
 function toRecord(row: any): ProviderRecord {

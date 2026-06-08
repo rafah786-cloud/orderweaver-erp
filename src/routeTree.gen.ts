@@ -54,6 +54,8 @@ import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices
 import { Route as AppCommunicationsWhatsappLogsRouteImport } from './routes/_app.communications.whatsapp-logs'
 import { Route as AppCommunicationsTemplatesRouteImport } from './routes/_app.communications.templates'
 import { Route as AppCommunicationsProvidersRouteImport } from './routes/_app.communications.providers'
+import { Route as AppCommunicationsInboxRouteImport } from './routes/_app.communications.inbox'
+import { Route as AppCommunicationsEventsRouteImport } from './routes/_app.communications.events'
 import { Route as AppCommunicationsEmployeeSubscriptionsRouteImport } from './routes/_app.communications.employee-subscriptions'
 import { Route as AppBankingReconcileRouteImport } from './routes/_app.banking.reconcile'
 import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banking.payment-advice'
@@ -308,6 +310,16 @@ const AppCommunicationsProvidersRoute =
     path: '/providers',
     getParentRoute: () => AppCommunicationsRoute,
   } as any)
+const AppCommunicationsInboxRoute = AppCommunicationsInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AppCommunicationsRoute,
+} as any)
+const AppCommunicationsEventsRoute = AppCommunicationsEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AppCommunicationsRoute,
+} as any)
 const AppCommunicationsEmployeeSubscriptionsRoute =
   AppCommunicationsEmployeeSubscriptionsRouteImport.update({
     id: '/employee-subscriptions',
@@ -487,6 +499,8 @@ export interface FileRoutesByFullPath {
   '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
   '/communications/employee-subscriptions': typeof AppCommunicationsEmployeeSubscriptionsRoute
+  '/communications/events': typeof AppCommunicationsEventsRoute
+  '/communications/inbox': typeof AppCommunicationsInboxRoute
   '/communications/providers': typeof AppCommunicationsProvidersRoute
   '/communications/templates': typeof AppCommunicationsTemplatesRoute
   '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
@@ -557,6 +571,8 @@ export interface FileRoutesByTo {
   '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
   '/communications/employee-subscriptions': typeof AppCommunicationsEmployeeSubscriptionsRoute
+  '/communications/events': typeof AppCommunicationsEventsRoute
+  '/communications/inbox': typeof AppCommunicationsInboxRoute
   '/communications/providers': typeof AppCommunicationsProvidersRoute
   '/communications/templates': typeof AppCommunicationsTemplatesRoute
   '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
@@ -631,6 +647,8 @@ export interface FileRoutesById {
   '/_app/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/_app/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
   '/_app/communications/employee-subscriptions': typeof AppCommunicationsEmployeeSubscriptionsRoute
+  '/_app/communications/events': typeof AppCommunicationsEventsRoute
+  '/_app/communications/inbox': typeof AppCommunicationsInboxRoute
   '/_app/communications/providers': typeof AppCommunicationsProvidersRoute
   '/_app/communications/templates': typeof AppCommunicationsTemplatesRoute
   '/_app/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
@@ -705,6 +723,8 @@ export interface FileRouteTypes {
     | '/banking/payment-advice'
     | '/banking/reconcile'
     | '/communications/employee-subscriptions'
+    | '/communications/events'
+    | '/communications/inbox'
     | '/communications/providers'
     | '/communications/templates'
     | '/communications/whatsapp-logs'
@@ -775,6 +795,8 @@ export interface FileRouteTypes {
     | '/banking/payment-advice'
     | '/banking/reconcile'
     | '/communications/employee-subscriptions'
+    | '/communications/events'
+    | '/communications/inbox'
     | '/communications/providers'
     | '/communications/templates'
     | '/communications/whatsapp-logs'
@@ -848,6 +870,8 @@ export interface FileRouteTypes {
     | '/_app/banking/payment-advice'
     | '/_app/banking/reconcile'
     | '/_app/communications/employee-subscriptions'
+    | '/_app/communications/events'
+    | '/_app/communications/inbox'
     | '/_app/communications/providers'
     | '/_app/communications/templates'
     | '/_app/communications/whatsapp-logs'
@@ -1210,6 +1234,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunicationsProvidersRouteImport
       parentRoute: typeof AppCommunicationsRoute
     }
+    '/_app/communications/inbox': {
+      id: '/_app/communications/inbox'
+      path: '/inbox'
+      fullPath: '/communications/inbox'
+      preLoaderRoute: typeof AppCommunicationsInboxRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/events': {
+      id: '/_app/communications/events'
+      path: '/events'
+      fullPath: '/communications/events'
+      preLoaderRoute: typeof AppCommunicationsEventsRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
     '/_app/communications/employee-subscriptions': {
       id: '/_app/communications/employee-subscriptions'
       path: '/employee-subscriptions'
@@ -1460,6 +1498,8 @@ const AppBankingRouteWithChildren = AppBankingRoute._addFileChildren(
 
 interface AppCommunicationsRouteChildren {
   AppCommunicationsEmployeeSubscriptionsRoute: typeof AppCommunicationsEmployeeSubscriptionsRoute
+  AppCommunicationsEventsRoute: typeof AppCommunicationsEventsRoute
+  AppCommunicationsInboxRoute: typeof AppCommunicationsInboxRoute
   AppCommunicationsProvidersRoute: typeof AppCommunicationsProvidersRoute
   AppCommunicationsTemplatesRoute: typeof AppCommunicationsTemplatesRoute
   AppCommunicationsWhatsappLogsRoute: typeof AppCommunicationsWhatsappLogsRoute
@@ -1469,6 +1509,8 @@ interface AppCommunicationsRouteChildren {
 const AppCommunicationsRouteChildren: AppCommunicationsRouteChildren = {
   AppCommunicationsEmployeeSubscriptionsRoute:
     AppCommunicationsEmployeeSubscriptionsRoute,
+  AppCommunicationsEventsRoute: AppCommunicationsEventsRoute,
+  AppCommunicationsInboxRoute: AppCommunicationsInboxRoute,
   AppCommunicationsProvidersRoute: AppCommunicationsProvidersRoute,
   AppCommunicationsTemplatesRoute: AppCommunicationsTemplatesRoute,
   AppCommunicationsWhatsappLogsRoute: AppCommunicationsWhatsappLogsRoute,
