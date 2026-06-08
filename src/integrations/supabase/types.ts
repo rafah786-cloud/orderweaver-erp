@@ -1212,6 +1212,51 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_providers: {
+        Row: {
+          channel: string
+          config: Json
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          notes: string | null
+          priority: number
+          secret_env_keys: Json
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          config?: Json
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          notes?: string | null
+          priority?: number
+          secret_env_keys?: Json
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          config?: Json
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          notes?: string | null
+          priority?: number
+          secret_env_keys?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parties: {
         Row: {
           address: string | null
