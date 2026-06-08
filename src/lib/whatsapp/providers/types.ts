@@ -14,8 +14,8 @@ export type WhatsAppFreeformMessage = {
 };
 
 export type WhatsAppSendResult =
-  | { ok: true; messageId: string; raw?: unknown }
-  | { ok: false; status: "failed" | "skipped"; error: string; raw?: unknown };
+  | { ok: true; messageId: string; attempts?: number; request?: unknown; raw?: unknown }
+  | { ok: false; status: "failed" | "skipped"; error: string; attempts?: number; request?: unknown; raw?: unknown };
 
 export interface WhatsAppProvider {
   readonly name: string;
