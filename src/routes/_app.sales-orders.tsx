@@ -145,17 +145,24 @@ function SalesOrdersPage() {
       const savedParty = partyId;
       resetForm();
       try {
-        const body =
-          `Zizz Mattress — Order Confirmed\n` +
-          `Order #: ${res.orderNumber}\n` +
-          `Date: ${orderDate}\n` +
-          `Amount: ₹${total.toFixed(2)}\n` +
-          `We'll notify you when it's ready for dispatch.`;
-        const r = await notifyCustomer({ data: { party_id: savedParty, event: "sales_order.created", ref_table: "sales_orders", ref_id: res.id, message: body } });
+        const r = await notifyCustomer({
+          data: {
+            party_id: savedParty,
+            event: "sales_order.created",
+            ref_table: "sales_orders",
+            ref_id: res.id,
+            vars: {
+              order_no: res.orderNumber,
+              order_date: orderDate,
+              order_value: total.toFixed(2),
+            },
+          },
+        });
         if (r?.ok) toast.success("Customer notified via WhatsApp");
       } catch {
         // non-fatal
       }
+
     },
     onError: (e: Error) => toast.error(e.message),
   });
