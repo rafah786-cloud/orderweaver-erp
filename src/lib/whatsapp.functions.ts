@@ -119,7 +119,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
         vendor_name: sup.name,
         po_number: bill.bill_number,
         po_date: bill.bill_date,
-        amount: Number(bill.total_amount ?? 0).toFixed(2),
+        po_value: Number(bill.total_amount ?? 0).toFixed(2),
       },
     });
     await logWhatsAppNotification({
