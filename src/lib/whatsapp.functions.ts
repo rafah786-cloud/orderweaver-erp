@@ -14,36 +14,6 @@ async function assertHasAnyRole(userId: string, roles: AllowedRole[]) {
   if (!data || data.length === 0) throw new Error("Forbidden");
 }
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
-
-type LogParams = {
-  party_kind: "customer" | "vendor" | "staff" | "admin";
-  party_id?: string | null;
-  recipient_phone?: string | null;
-  event_type: string;
-  ref_table?: string | null;
-  ref_id?: string | null;
-  status: "sent" | "failed" | "skipped";
-  error?: string | null;
-  payload?: Record<string, unknown> | null;
-};
-
-async function logNotification(p: LogParams) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin.from("notification_log").insert({
-    channel: "whatsapp",
-    party_kind: p.party_kind,
-    party_id: p.party_id ?? null,
-    recipient_phone: p.recipient_phone ?? null,
-    event_type: p.event_type,
-    ref_table: p.ref_table ?? null,
-    ref_id: p.ref_id ?? null,
-    status: p.status,
-    error: p.error ?? null,
-    payload: (p.payload ?? null) as any,
-  });
-}
-
 function normalizeWa(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const trimmed = raw.replace(/[\s\-()]/g, "");
@@ -51,35 +21,61 @@ function normalizeWa(raw: string | null | undefined): string | null {
   return /^\+[1-9]\d{7,14}$/.test(withPlus) ? withPlus : null;
 }
 
-async function sendViaTwilio(toE164: string, body: string): Promise<{ ok: true; sid: string } | { ok: false; error: string; status: "failed" | "skipped" }> {
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  const twilioKey = process.env.TWILIO_API_KEY;
-  const fromNumber = process.env.TWILIO_WHATSAPP_FROM ?? "+14155238886"; // Twilio sandbox default
-  if (!lovableKey || !twilioKey) {
-    return { ok: false, error: "Twilio not configured", status: "skipped" };
+/** Build a freeform fallback body used when no Interakt template is registered for an event. */
+function fallbackBody(event: string, vars: Record<string, string | number | null | undefined>): string {
+  const lines = Object.entries(vars)
+    .filter(([, v]) => v !== null && v !== undefined && String(v).length > 0)
+    .map(([k, v]) => `${k}: ${v}`);
+  return [`Notification: ${event}`, ...lines].join("\n");
+}
+
+async function resolveTemplate(eventKey: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("whatsapp_templates")
+    .select("template_name, language_code, variables, is_active")
+    .eq("event_key", eventKey)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+async function sendForEvent(opts: {
+  to: string;
+  eventKey: string;
+  vars: Record<string, string | number | null | undefined>;
+}) {
+  const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
+  const provider = getWhatsAppProvider();
+  if (!provider.isConfigured()) {
+    return {
+      ok: false as const,
+      status: "skipped" as const,
+      error: "WhatsApp provider not configured",
+      template_name: null as string | null,
+      messageId: "",
+    };
   }
-  try {
-    const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": twilioKey,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        From: `whatsapp:${fromNumber}`,
-        To: `whatsapp:${toE164}`,
-        Body: body.slice(0, 1500),
-      }),
+  const tpl = await resolveTemplate(opts.eventKey);
+  if (tpl?.template_name) {
+    const varNames = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
+    const bodyValues = varNames.map((n) => String(opts.vars[n] ?? ""));
+    const result = await provider.sendTemplate({
+      to: opts.to,
+      templateName: tpl.template_name,
+      languageCode: tpl.language_code ?? "en",
+      bodyVariables: bodyValues,
     });
-    const json: any = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return { ok: false, error: `Twilio ${res.status}: ${json?.message ?? "error"}`, status: "failed" };
-    }
-    return { ok: true, sid: json.sid ?? "" };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "send failed", status: "failed" };
+    return result.ok
+      ? { ok: true as const, messageId: result.messageId, template_name: tpl.template_name }
+      : { ok: false as const, status: result.status, error: result.error, template_name: tpl.template_name, messageId: "" };
   }
+  // No template registered — try freeform (Interakt requires open session window; will likely fail outside 24h)
+  const result = await provider.sendFreeform({ to: opts.to, body: fallbackBody(opts.eventKey, opts.vars) });
+  return result.ok
+    ? { ok: true as const, messageId: result.messageId, template_name: null }
+    : { ok: false as const, status: result.status, error: result.error, template_name: null, messageId: "" };
 }
 
 /** Sales/Admin → notify vendor about a new or updated purchase order */
@@ -93,6 +89,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.userId, ["admin", "sales", "production"]);
+    const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: bill, error } = await supabaseAdmin
       .from("purchase_bills")
@@ -101,42 +98,47 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !bill) throw new Error("Bill not found");
     const sup: any = (bill as any).suppliers;
+    const eventKey = `purchase_order.${data.event}`;
     if (!sup) {
-      await logNotification({ party_kind: "vendor", event_type: `purchase_bill.${data.event}`, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", error: "no supplier" });
+      await logWhatsAppNotification({ party_kind: "vendor", event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "no supplier" });
       return { ok: false, reason: "no_supplier" };
     }
     if (!sup.whatsapp_opt_in) {
-      await logNotification({ party_kind: "vendor", party_id: sup.id, event_type: `purchase_bill.${data.event}`, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", error: "opted out" });
+      await logWhatsAppNotification({ party_kind: "vendor", party_id: sup.id, event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "opted out" });
       return { ok: false, reason: "opt_out" };
     }
     const to = normalizeWa(sup.whatsapp_number ?? sup.phone);
     if (!to) {
-      await logNotification({ party_kind: "vendor", party_id: sup.id, event_type: `purchase_bill.${data.event}`, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", error: "no phone" });
+      await logWhatsAppNotification({ party_kind: "vendor", party_id: sup.id, event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
-    const verb = data.event === "created" ? "placed" : data.event === "cancelled" ? "cancelled" : "updated";
-    const body =
-      `Zizz Mattress — Purchase Order ${verb}\n` +
-      `PO #: ${bill.bill_number}\n` +
-      `Date: ${bill.bill_date}\n` +
-      `Amount: ₹${Number(bill.total_amount ?? 0).toFixed(2)}\n` +
-      (data.event === "created" ? `Please log in to the vendor portal to acknowledge.` : `Login to view details.`);
-    const result = await sendViaTwilio(to, body);
-    await logNotification({
+    const result = await sendForEvent({
+      to,
+      eventKey,
+      vars: {
+        vendor_name: sup.name,
+        po_number: bill.bill_number,
+        po_date: bill.bill_date,
+        amount: Number(bill.total_amount ?? 0).toFixed(2),
+      },
+    });
+    await logWhatsAppNotification({
       party_kind: "vendor",
       party_id: sup.id,
       recipient_phone: to,
-      event_type: `purchase_bill.${data.event}`,
+      event_type: eventKey,
+      template_name: result.template_name,
       ref_table: "purchase_bills",
       ref_id: bill.id,
       status: result.ok ? "sent" : result.status,
-      error: result.ok ? null : result.error,
-      payload: { body },
+      whatsapp_message_id: result.ok ? result.messageId : null,
+      failure_reason: result.ok ? null : result.error,
+      payload: { event: data.event },
     });
     return { ok: result.ok };
   });
 
-/** Sales/Admin → notify customer about a sales-side event */
+/** Generic customer notification — uses templates resolved via event key. */
 export const notifyCustomerEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -147,38 +149,47 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
         "production_order.ready",
         "invoice.issued",
         "invoice.paid",
+        "payment.received",
+        "dispatch.update",
         "ledger.statement_ready",
       ]),
       ref_table: z.string().optional(),
       ref_id: z.string().uuid().optional(),
-      message: z.string().min(1).max(1500),
+      vars: z.record(z.string(), z.union([z.string(), z.number()])).default({}),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
+    const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: party } = await supabaseAdmin
       .from("parties")
-      .select("id, name, phone")
+      .select("id, name, phone, whatsapp_number, whatsapp_opt_in")
       .eq("id", data.party_id)
       .maybeSingle();
     if (!party) throw new Error("Party not found");
-    const to = normalizeWa(party.phone);
+    if ((party as any).whatsapp_opt_in === false) {
+      await logWhatsAppNotification({ party_kind: "customer", party_id: party.id, event_type: data.event, ref_table: data.ref_table ?? null, ref_id: data.ref_id ?? null, status: "skipped", failure_reason: "opted out" });
+      return { ok: false, reason: "opt_out" };
+    }
+    const to = normalizeWa((party as any).whatsapp_number ?? party.phone);
     if (!to) {
-      await logNotification({ party_kind: "customer", party_id: party.id, event_type: data.event, ref_table: data.ref_table ?? null, ref_id: data.ref_id ?? null, status: "skipped", error: "no phone" });
+      await logWhatsAppNotification({ party_kind: "customer", party_id: party.id, event_type: data.event, ref_table: data.ref_table ?? null, ref_id: data.ref_id ?? null, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
-    const result = await sendViaTwilio(to, data.message);
-    await logNotification({
+    const result = await sendForEvent({ to, eventKey: data.event, vars: { customer_name: party.name, ...data.vars } });
+    await logWhatsAppNotification({
       party_kind: "customer",
       party_id: party.id,
       recipient_phone: to,
       event_type: data.event,
+      template_name: result.template_name,
       ref_table: data.ref_table ?? null,
       ref_id: data.ref_id ?? null,
       status: result.ok ? "sent" : result.status,
-      error: result.ok ? null : result.error,
-      payload: { message: data.message },
+      whatsapp_message_id: result.ok ? result.messageId : null,
+      failure_reason: result.ok ? null : result.error,
+      payload: { vars: data.vars },
     });
     return { ok: result.ok };
   });
@@ -196,6 +207,7 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.userId, ["vendor", "admin"]);
+    const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: bill } = await supabaseAdmin
       .from("purchase_bills")
@@ -203,22 +215,11 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       .eq("id", data.bill_id)
       .maybeSingle();
     if (!bill) throw new Error("Bill not found");
-    // Non-admin vendors may only ack bills belonging to their own supplier
     const supUserId = (bill as any).suppliers?.user_id ?? null;
-    const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
-    const { data: adminRow } = await sa.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
+    const { data: adminRow } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
     if (!adminRow && supUserId !== context.userId) throw new Error("Forbidden");
     const vendorName = (bill as any).suppliers?.name ?? "Vendor";
-    const verb = data.status === "accepted" ? "ACCEPTED" : "REJECTED";
-    const body =
-      `Zizz Mattress — PO ${verb} by Vendor\n` +
-      `PO #: ${bill.bill_number}\n` +
-      `Vendor: ${vendorName}\n` +
-      `Amount: ₹${Number(bill.total_amount ?? 0).toFixed(2)}\n` +
-      (data.expected_dispatch_date ? `Expected dispatch: ${data.expected_dispatch_date}\n` : ``) +
-      (data.note ? `Note: ${data.note}` : ``);
-
-    // Find admin/purchase staff with WhatsApp opted-in
+    const eventKey = `purchase_order.${data.status}`;
     const { data: recipients } = await supabaseAdmin
       .from("profiles")
       .select("id, whatsapp_number, phone, whatsapp_opt_in, user_roles!inner(role)")
@@ -226,24 +227,36 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       .in("user_roles.role", ["admin"]);
     const list = (recipients ?? []) as any[];
     if (list.length === 0) {
-      await logNotification({ party_kind: "admin", event_type: `purchase_bill.${data.status}`, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", error: "no recipients" });
+      await logWhatsAppNotification({ party_kind: "admin", event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "no recipients" });
       return { ok: false, reason: "no_recipients" };
     }
     let sent = 0;
     for (const r of list) {
       const to = normalizeWa(r.whatsapp_number ?? r.phone);
       if (!to) continue;
-      const result = await sendViaTwilio(to, body);
-      await logNotification({
+      const result = await sendForEvent({
+        to,
+        eventKey,
+        vars: {
+          po_number: bill.bill_number,
+          vendor_name: vendorName,
+          amount: Number(bill.total_amount ?? 0).toFixed(2),
+          expected_dispatch_date: data.expected_dispatch_date ?? "",
+          note: data.note ?? "",
+        },
+      });
+      await logWhatsAppNotification({
         party_kind: "admin",
         party_id: r.id,
         recipient_phone: to,
-        event_type: `purchase_bill.${data.status}`,
+        event_type: eventKey,
+        template_name: result.template_name,
         ref_table: "purchase_bills",
         ref_id: bill.id,
         status: result.ok ? "sent" : result.status,
-        error: result.ok ? null : result.error,
-        payload: { body },
+        whatsapp_message_id: result.ok ? result.messageId : null,
+        failure_reason: result.ok ? null : result.error,
+        payload: { note: data.note },
       });
       if (result.ok) sent += 1;
     }
@@ -254,7 +267,8 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
     return {
-      configured: Boolean(process.env.LOVABLE_API_KEY && process.env.TWILIO_API_KEY),
-      from: process.env.TWILIO_WHATSAPP_FROM ?? null,
+      provider: (process.env.WHATSAPP_PROVIDER ?? "interakt"),
+      configured: Boolean(process.env.INTERAKT_API_KEY),
+      webhook_configured: Boolean(process.env.INTERAKT_WEBHOOK_SECRET),
     };
   });
