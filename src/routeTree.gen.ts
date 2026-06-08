@@ -50,6 +50,8 @@ import { Route as AppInventoryGodownsRouteImport } from './routes/_app.inventory
 import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
 import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
 import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
+import { Route as AppCommunicationsWhatsappLogsRouteImport } from './routes/_app.communications.whatsapp-logs'
+import { Route as AppCommunicationsTemplatesRouteImport } from './routes/_app.communications.templates'
 import { Route as AppBankingReconcileRouteImport } from './routes/_app.banking.reconcile'
 import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banking.payment-advice'
 import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
@@ -280,6 +282,18 @@ const AppGstEinvoicesRoute = AppGstEinvoicesRouteImport.update({
   path: '/einvoices',
   getParentRoute: () => AppGstRoute,
 } as any)
+const AppCommunicationsWhatsappLogsRoute =
+  AppCommunicationsWhatsappLogsRouteImport.update({
+    id: '/whatsapp-logs',
+    path: '/whatsapp-logs',
+    getParentRoute: () => AppCommunicationsRoute,
+  } as any)
+const AppCommunicationsTemplatesRoute =
+  AppCommunicationsTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AppCommunicationsRoute,
+  } as any)
 const AppBankingReconcileRoute = AppBankingReconcileRouteImport.update({
   id: '/reconcile',
   path: '/reconcile',
@@ -425,7 +439,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
-  '/communications': typeof AppCommunicationsRoute
+  '/communications': typeof AppCommunicationsRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
@@ -452,6 +466,8 @@ export interface FileRoutesByFullPath {
   '/banking/currencies': typeof AppBankingCurrenciesRoute
   '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
+  '/communications/templates': typeof AppCommunicationsTemplatesRoute
+  '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -492,7 +508,7 @@ export interface FileRoutesByTo {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
-  '/communications': typeof AppCommunicationsRoute
+  '/communications': typeof AppCommunicationsRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
@@ -518,6 +534,8 @@ export interface FileRoutesByTo {
   '/banking/currencies': typeof AppBankingCurrenciesRoute
   '/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
+  '/communications/templates': typeof AppCommunicationsTemplatesRoute
+  '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/gst/einvoices': typeof AppGstEinvoicesRoute
   '/gst/hsn': typeof AppGstHsnRoute
   '/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -560,7 +578,7 @@ export interface FileRoutesById {
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
   '/_app/boq': typeof AppBoqRoute
-  '/_app/communications': typeof AppCommunicationsRoute
+  '/_app/communications': typeof AppCommunicationsRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/gst': typeof AppGstRouteWithChildren
@@ -587,6 +605,8 @@ export interface FileRoutesById {
   '/_app/banking/currencies': typeof AppBankingCurrenciesRoute
   '/_app/banking/payment-advice': typeof AppBankingPaymentAdviceRoute
   '/_app/banking/reconcile': typeof AppBankingReconcileRouteWithChildren
+  '/_app/communications/templates': typeof AppCommunicationsTemplatesRoute
+  '/_app/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/_app/gst/einvoices': typeof AppGstEinvoicesRoute
   '/_app/gst/hsn': typeof AppGstHsnRoute
   '/_app/gst/returns': typeof AppGstReturnsRouteWithChildren
@@ -656,6 +676,8 @@ export interface FileRouteTypes {
     | '/banking/currencies'
     | '/banking/payment-advice'
     | '/banking/reconcile'
+    | '/communications/templates'
+    | '/communications/whatsapp-logs'
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
@@ -722,6 +744,8 @@ export interface FileRouteTypes {
     | '/banking/currencies'
     | '/banking/payment-advice'
     | '/banking/reconcile'
+    | '/communications/templates'
+    | '/communications/whatsapp-logs'
     | '/gst/einvoices'
     | '/gst/hsn'
     | '/gst/returns'
@@ -790,6 +814,8 @@ export interface FileRouteTypes {
     | '/_app/banking/currencies'
     | '/_app/banking/payment-advice'
     | '/_app/banking/reconcile'
+    | '/_app/communications/templates'
+    | '/_app/communications/whatsapp-logs'
     | '/_app/gst/einvoices'
     | '/_app/gst/hsn'
     | '/_app/gst/returns'
@@ -1120,6 +1146,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGstEinvoicesRouteImport
       parentRoute: typeof AppGstRoute
     }
+    '/_app/communications/whatsapp-logs': {
+      id: '/_app/communications/whatsapp-logs'
+      path: '/whatsapp-logs'
+      fullPath: '/communications/whatsapp-logs'
+      preLoaderRoute: typeof AppCommunicationsWhatsappLogsRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/templates': {
+      id: '/_app/communications/templates'
+      path: '/templates'
+      fullPath: '/communications/templates'
+      preLoaderRoute: typeof AppCommunicationsTemplatesRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
     '/_app/banking/reconcile': {
       id: '/_app/banking/reconcile'
       path: '/reconcile'
@@ -1361,6 +1401,19 @@ const AppBankingRouteWithChildren = AppBankingRoute._addFileChildren(
   AppBankingRouteChildren,
 )
 
+interface AppCommunicationsRouteChildren {
+  AppCommunicationsTemplatesRoute: typeof AppCommunicationsTemplatesRoute
+  AppCommunicationsWhatsappLogsRoute: typeof AppCommunicationsWhatsappLogsRoute
+}
+
+const AppCommunicationsRouteChildren: AppCommunicationsRouteChildren = {
+  AppCommunicationsTemplatesRoute: AppCommunicationsTemplatesRoute,
+  AppCommunicationsWhatsappLogsRoute: AppCommunicationsWhatsappLogsRoute,
+}
+
+const AppCommunicationsRouteWithChildren =
+  AppCommunicationsRoute._addFileChildren(AppCommunicationsRouteChildren)
+
 interface AppGstReturnsRouteChildren {
   AppGstReturnsIdRoute: typeof AppGstReturnsIdRoute
 }
@@ -1448,7 +1501,7 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
   AppBoqRoute: typeof AppBoqRoute
-  AppCommunicationsRoute: typeof AppCommunicationsRoute
+  AppCommunicationsRoute: typeof AppCommunicationsRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppGstRoute: typeof AppGstRouteWithChildren
@@ -1475,7 +1528,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
   AppBoqRoute: AppBoqRoute,
-  AppCommunicationsRoute: AppCommunicationsRoute,
+  AppCommunicationsRoute: AppCommunicationsRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppGstRoute: AppGstRouteWithChildren,
