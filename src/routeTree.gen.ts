@@ -38,6 +38,7 @@ import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
+import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
 import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
@@ -221,6 +222,11 @@ const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppVendorRoute,
+} as any)
+const AppCommunicationsIndexRoute = AppCommunicationsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCommunicationsRoute,
 } as any)
 const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
   id: '/purchase-orders',
@@ -480,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/communications/': typeof AppCommunicationsIndexRoute
   '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -508,7 +515,6 @@ export interface FileRoutesByTo {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
-  '/communications': typeof AppCommunicationsRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/gst': typeof AppGstRouteWithChildren
@@ -548,6 +554,7 @@ export interface FileRoutesByTo {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/communications': typeof AppCommunicationsIndexRoute
   '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -619,6 +626,7 @@ export interface FileRoutesById {
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
   '/_app/vendor/ledger': typeof AppVendorLedgerRoute
   '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/_app/communications/': typeof AppCommunicationsIndexRoute
   '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
   '/_app/accounting/voucher/$id': typeof AppAccountingVoucherIdRoute
@@ -690,6 +698,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/communications/'
     | '/vendor/'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
@@ -718,7 +727,6 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/banking'
     | '/boq'
-    | '/communications'
     | '/dashboard'
     | '/employees'
     | '/gst'
@@ -758,6 +766,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/communications'
     | '/vendor'
     | '/accounting/ledger/$id'
     | '/accounting/voucher/$id'
@@ -828,6 +837,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/valuation'
     | '/_app/vendor/ledger'
     | '/_app/vendor/purchase-orders'
+    | '/_app/communications/'
     | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
     | '/_app/accounting/voucher/$id'
@@ -1061,6 +1071,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/vendor/'
       preLoaderRoute: typeof AppVendorIndexRouteImport
       parentRoute: typeof AppVendorRoute
+    }
+    '/_app/communications/': {
+      id: '/_app/communications/'
+      path: '/'
+      fullPath: '/communications/'
+      preLoaderRoute: typeof AppCommunicationsIndexRouteImport
+      parentRoute: typeof AppCommunicationsRoute
     }
     '/_app/vendor/purchase-orders': {
       id: '/_app/vendor/purchase-orders'
@@ -1404,11 +1421,13 @@ const AppBankingRouteWithChildren = AppBankingRoute._addFileChildren(
 interface AppCommunicationsRouteChildren {
   AppCommunicationsTemplatesRoute: typeof AppCommunicationsTemplatesRoute
   AppCommunicationsWhatsappLogsRoute: typeof AppCommunicationsWhatsappLogsRoute
+  AppCommunicationsIndexRoute: typeof AppCommunicationsIndexRoute
 }
 
 const AppCommunicationsRouteChildren: AppCommunicationsRouteChildren = {
   AppCommunicationsTemplatesRoute: AppCommunicationsTemplatesRoute,
   AppCommunicationsWhatsappLogsRoute: AppCommunicationsWhatsappLogsRoute,
+  AppCommunicationsIndexRoute: AppCommunicationsIndexRoute,
 }
 
 const AppCommunicationsRouteWithChildren =
