@@ -34,6 +34,13 @@ export type DispatchInput = {
   context?: Omit<SendContext, "event_type">;
   /** Override / supply per-channel template names. */
   templates?: Partial<Record<NotificationChannel, string>>;
+  /**
+   * Idempotency key for this event instance. If omitted, falls back to
+   * `${ref_table}:${ref_id}:${eventKey}` when both are present in context.
+   * The engine derives per-channel/recipient sub-keys so repeated triggers
+   * (e.g. retried webhooks, double-clicks) never resend a successful message.
+   */
+  dedupeKey?: string | null;
 };
 
 export type DispatchOutcome = {
