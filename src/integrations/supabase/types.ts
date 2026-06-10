@@ -1299,6 +1299,7 @@ export type Database = {
           event_type: string
           failure_reason: string | null
           id: string
+          idempotency_key: string | null
           party_id: string | null
           party_kind: string
           payload: Json | null
@@ -1318,6 +1319,7 @@ export type Database = {
           event_type: string
           failure_reason?: string | null
           id?: string
+          idempotency_key?: string | null
           party_id?: string | null
           party_kind: string
           payload?: Json | null
@@ -1337,6 +1339,7 @@ export type Database = {
           event_type?: string
           failure_reason?: string | null
           id?: string
+          idempotency_key?: string | null
           party_id?: string | null
           party_kind?: string
           payload?: Json | null

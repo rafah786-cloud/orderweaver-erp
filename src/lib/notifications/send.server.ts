@@ -13,6 +13,7 @@ export type SendContext = {
   ref_table?: string | null;
   ref_id?: string | null;
   payload?: Record<string, unknown> | null;
+  idempotency_key?: string | null;
 };
 
 async function log(
@@ -37,6 +38,7 @@ async function log(
     failure_reason: result.ok ? null : result.error,
     error: result.ok ? null : result.error,
     payload: (ctx.payload ?? null) as any,
+    idempotency_key: ctx.idempotency_key ?? null,
   });
 }
 
