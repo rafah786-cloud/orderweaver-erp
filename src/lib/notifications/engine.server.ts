@@ -76,82 +76,109 @@ function render(tpl: string | null | undefined, vars: Record<string, any> = {}):
  * Fans out an ERP event to all admin-enabled channels.
  * Never throws — returns per-channel outcomes; full audit lands in notification_log.
  */
+async function alreadySent(idemKey: string | null): Promise<boolean> {
+  if (!idemKey) return false;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("notification_log")
+    .select("id,whatsapp_message_id")
+    .eq("idempotency_key", idemKey)
+    .eq("status", "sent")
+    .limit(1)
+    .maybeSingle();
+  return !!data;
+}
+
 export async function dispatchNotificationEvent(input: DispatchInput): Promise<DispatchOutcome[]> {
   const { eventKey, recipients, variables = {}, context = {}, templates = {} } = input;
   const ctx: SendContext = { ...context, event_type: eventKey };
   const routing = await loadRouting(eventKey);
   const outcomes: DispatchOutcome[] = [];
 
+  // Resolve base idempotency key for this event instance.
+  const baseKey =
+    input.dedupeKey ??
+    (context.ref_table && context.ref_id
+      ? `${context.ref_table}:${context.ref_id}:${eventKey}`
+      : null);
+
+  const subKey = (channel: string, recipient: string) =>
+    baseKey ? `${baseKey}:${channel}:${recipient}` : null;
+
+  async function guarded(
+    channel: NotificationChannel,
+    recipient: string,
+    run: (ctxWithKey: SendContext) => Promise<any>,
+  ) {
+    const key = subKey(channel, recipient);
+    if (await alreadySent(key)) {
+      outcomes.push({ channel, status: "skipped", error: "duplicate (idempotent)" });
+      return;
+    }
+    try {
+      const r = await run({ ...ctx, idempotency_key: key });
+      outcomes.push(toOutcome(channel, r));
+    } catch (e: any) {
+      // Unique-index violation = a concurrent dispatch already sent it.
+      const msg = e?.message ?? "dispatch error";
+      if (/notification_log_idem_sent_uidx|duplicate key/i.test(msg)) {
+        outcomes.push({ channel, status: "skipped", error: "duplicate (idempotent)" });
+      } else {
+        outcomes.push({ channel, status: "failed", error: msg });
+      }
+    }
+  }
+
   for (const row of routing) {
     if (!row.is_enabled) continue;
     const tplName = templates[row.channel] ?? row.template_name ?? eventKey;
 
-    try {
-      if (row.channel === "whatsapp" || row.channel === "sms") {
-        if (!recipients.phone) {
-          outcomes.push({ channel: row.channel, status: "skipped", error: "no phone" });
-          continue;
-        }
-        const r = await sendNotification(row.channel, {
-          to: recipients.phone,
-          templateName: tplName,
-          variables,
-        }, ctx);
-        outcomes.push(toOutcome(row.channel, r));
-      } else if (row.channel === "email") {
-        if (!recipients.email) {
-          outcomes.push({ channel: "email", status: "skipped", error: "no email" });
-          continue;
-        }
-        const subject = render(row.subject_template, variables) || tplName;
-        const body = render(row.body_template, variables);
-        if (body) {
-          const r = await sendFreeformNotification("email", {
-            to: recipients.email, subject, body,
-          }, ctx);
-          outcomes.push(toOutcome("email", r));
-        } else {
-          const r = await sendNotification("email", {
-            to: recipients.email, templateName: tplName, subject, variables,
-          }, ctx);
-          outcomes.push(toOutcome("email", r));
-        }
-      } else if (row.channel === "in_app") {
-        const users = recipients.userIds ?? [];
-        if (users.length === 0) {
-          outcomes.push({ channel: "in_app", status: "skipped", error: "no user ids" });
-          continue;
-        }
-        const subject = render(row.subject_template, variables) || tplName;
-        const body = render(row.body_template, variables);
-        for (const uid of users) {
-          if (body) {
-            const r = await sendFreeformNotification("in_app", {
-              to: uid, subject, body,
-            }, { ...ctx, party_kind: "staff", party_id: null });
-            outcomes.push(toOutcome("in_app", r));
-          } else {
-            const r = await sendNotification("in_app", {
-              to: uid, templateName: tplName, subject, variables,
-            }, { ...ctx, party_kind: "staff", party_id: null });
-            outcomes.push(toOutcome("in_app", r));
-          }
-        }
-      } else if (row.channel === "push") {
-        const tokens = recipients.pushTokens ?? [];
-        if (tokens.length === 0) {
-          outcomes.push({ channel: "push", status: "skipped", error: "no push tokens" });
-          continue;
-        }
-        for (const tok of tokens) {
-          const r = await sendNotification("push", {
-            to: tok, templateName: tplName, variables,
-          }, ctx);
-          outcomes.push(toOutcome("push", r));
-        }
+    if (row.channel === "whatsapp" || row.channel === "sms") {
+      if (!recipients.phone) {
+        outcomes.push({ channel: row.channel, status: "skipped", error: "no phone" });
+        continue;
       }
-    } catch (e: any) {
-      outcomes.push({ channel: row.channel, status: "failed", error: e?.message ?? "dispatch error" });
+      await guarded(row.channel, recipients.phone, (c) =>
+        sendNotification(row.channel, { to: recipients.phone!, templateName: tplName, variables }, c),
+      );
+    } else if (row.channel === "email") {
+      if (!recipients.email) {
+        outcomes.push({ channel: "email", status: "skipped", error: "no email" });
+        continue;
+      }
+      const subject = render(row.subject_template, variables) || tplName;
+      const body = render(row.body_template, variables);
+      await guarded("email", recipients.email, (c) =>
+        body
+          ? sendFreeformNotification("email", { to: recipients.email!, subject, body }, c)
+          : sendNotification("email", { to: recipients.email!, templateName: tplName, subject, variables }, c),
+      );
+    } else if (row.channel === "in_app") {
+      const users = recipients.userIds ?? [];
+      if (users.length === 0) {
+        outcomes.push({ channel: "in_app", status: "skipped", error: "no user ids" });
+        continue;
+      }
+      const subject = render(row.subject_template, variables) || tplName;
+      const body = render(row.body_template, variables);
+      for (const uid of users) {
+        await guarded("in_app", uid, (c) =>
+          body
+            ? sendFreeformNotification("in_app", { to: uid, subject, body }, { ...c, party_kind: "staff", party_id: null })
+            : sendNotification("in_app", { to: uid, templateName: tplName, subject, variables }, { ...c, party_kind: "staff", party_id: null }),
+        );
+      }
+    } else if (row.channel === "push") {
+      const tokens = recipients.pushTokens ?? [];
+      if (tokens.length === 0) {
+        outcomes.push({ channel: "push", status: "skipped", error: "no push tokens" });
+        continue;
+      }
+      for (const tok of tokens) {
+        await guarded("push", tok, (c) =>
+          sendNotification("push", { to: tok, templateName: tplName, variables }, c),
+        );
+      }
     }
   }
   return outcomes;
