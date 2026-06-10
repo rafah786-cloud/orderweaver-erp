@@ -38,6 +38,7 @@ async function log(
     failure_reason: result.ok ? null : result.error,
     error: result.ok ? null : result.error,
     payload: (ctx.payload ?? null) as any,
+    idempotency_key: ctx.idempotency_key ?? null,
   });
 }
 
