@@ -131,7 +131,7 @@ function ApprovalsPage() {
                             className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-destructive hover:text-destructive-foreground"
                             title="Click to remove"
                           >
-                            {r} ×
+                            {roleLabel(r)} ×
                           </button>
                         ))}
                         {u.roles.length === 0 && <span className="text-xs text-muted-foreground">No roles</span>}
@@ -140,12 +140,12 @@ function ApprovalsPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2 items-center">
                         <Select onValueChange={(v) => assignRole(u.id, v as AppRole)}>
-                          <SelectTrigger className="w-32 h-8 text-xs">
+                          <SelectTrigger className="w-40 h-8 text-xs">
                             <SelectValue placeholder="+ Role" />
                           </SelectTrigger>
                           <SelectContent>
-                            {ROLES.filter((r) => !u.roles.includes(r)).map((r) => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
+                            {ROLES.filter((r) => !u.roles.includes(r.value)).map((r) => (
+                              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
