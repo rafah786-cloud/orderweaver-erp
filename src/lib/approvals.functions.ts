@@ -2,7 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const ROLE_VALUES = ["admin", "sales", "production", "hr", "accountant", "customer", "employee"] as const;
+// Assignable roles surfaced in the User Approvals UI.
+// Labels (Admin/Management, Accounts, Sales, Production, Customers, Vendors)
+// map to these underlying enum values. Legacy enum values (hr, employee)
+// remain in the database for historical rows but are no longer assignable.
+const ROLE_VALUES = ["admin", "accountant", "sales", "production", "customer", "vendor"] as const;
 const STATUS_VALUES = ["pending", "approved", "rejected"] as const;
 
 async function assertAdmin(userId: string) {
