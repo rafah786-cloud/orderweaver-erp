@@ -16,9 +16,7 @@ import { setUserStatus, assignUserRole, removeUserRole } from "@/lib/approvals.f
 type AppRole = Database["public"]["Enums"]["app_role"];
 type UserStatus = Database["public"]["Enums"]["user_status"];
 
-// Display order + friendly labels for the 6 active roles.
-// The underlying app_role enum keeps legacy values (hr, employee) for
-// historical rows, but only these 6 are assignable from the UI.
+// Display order + friendly labels for the 8 assignable roles.
 const ROLES: { value: AppRole; label: string }[] = [
   { value: "admin",      label: "Admin/Management" },
   { value: "accountant", label: "Accounts" },
@@ -26,6 +24,8 @@ const ROLES: { value: AppRole; label: string }[] = [
   { value: "production", label: "Production" },
   { value: "customer",   label: "Customers" },
   { value: "vendor",     label: "Vendors" },
+  { value: "hr",         label: "HR" },
+  { value: "employee",   label: "Employee" },
 ];
 const ROLE_LABELS: Record<string, string> = Object.fromEntries(
   ROLES.map((r) => [r.value, r.label]),

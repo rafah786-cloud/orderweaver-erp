@@ -3,10 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Assignable roles surfaced in the User Approvals UI.
-// Labels (Admin/Management, Accounts, Sales, Production, Customers, Vendors)
-// map to these underlying enum values. Legacy enum values (hr, employee)
-// remain in the database for historical rows but are no longer assignable.
-const ROLE_VALUES = ["admin", "accountant", "sales", "production", "customer", "vendor"] as const;
+// Labels (Admin/Management, Accounts, Sales, Production, Customers, Vendors, HR, Employee)
+// map to these underlying enum values.
+const ROLE_VALUES = ["admin", "accountant", "sales", "production", "customer", "vendor", "hr", "employee"] as const;
 const STATUS_VALUES = ["pending", "approved", "rejected"] as const;
 
 async function assertAdmin(userId: string) {
