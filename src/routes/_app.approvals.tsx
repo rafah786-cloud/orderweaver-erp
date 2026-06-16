@@ -16,7 +16,23 @@ import { setUserStatus, assignUserRole, removeUserRole } from "@/lib/approvals.f
 type AppRole = Database["public"]["Enums"]["app_role"];
 type UserStatus = Database["public"]["Enums"]["user_status"];
 
-const ROLES: AppRole[] = ["admin", "sales", "production", "hr", "customer", "employee"];
+// Display order + friendly labels for the 6 active roles.
+// The underlying app_role enum keeps legacy values (hr, employee) for
+// historical rows, but only these 6 are assignable from the UI.
+const ROLES: { value: AppRole; label: string }[] = [
+  { value: "admin",      label: "Admin/Management" },
+  { value: "accountant", label: "Accounts" },
+  { value: "sales",      label: "Sales" },
+  { value: "production", label: "Production" },
+  { value: "customer",   label: "Customers" },
+  { value: "vendor",     label: "Vendors" },
+];
+const ROLE_LABELS: Record<string, string> = Object.fromEntries(
+  ROLES.map((r) => [r.value, r.label]),
+);
+function roleLabel(r: AppRole) {
+  return ROLE_LABELS[r] ?? r;
+}
 
 export const Route = createFileRoute("/_app/approvals")({
   component: ApprovalsPage,
@@ -115,7 +131,7 @@ function ApprovalsPage() {
                             className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-destructive hover:text-destructive-foreground"
                             title="Click to remove"
                           >
-                            {r} ×
+                            {roleLabel(r)} ×
                           </button>
                         ))}
                         {u.roles.length === 0 && <span className="text-xs text-muted-foreground">No roles</span>}
@@ -124,12 +140,12 @@ function ApprovalsPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2 items-center">
                         <Select onValueChange={(v) => assignRole(u.id, v as AppRole)}>
-                          <SelectTrigger className="w-32 h-8 text-xs">
+                          <SelectTrigger className="w-40 h-8 text-xs">
                             <SelectValue placeholder="+ Role" />
                           </SelectTrigger>
                           <SelectContent>
-                            {ROLES.filter((r) => !u.roles.includes(r)).map((r) => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
+                            {ROLES.filter((r) => !u.roles.includes(r.value)).map((r) => (
+                              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
