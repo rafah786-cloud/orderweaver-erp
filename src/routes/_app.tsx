@@ -17,8 +17,7 @@ function AppLayout() {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) {
-    const here = location.pathname + (location.searchStr || "");
-    return <Navigate to="/login" search={{ redirect: here }} replace />;
+    return <Navigate to="/login" search={{ redirect: location.href }} replace />;
   }
   if (profile?.status !== "approved") return <Navigate to="/pending" />;
 
