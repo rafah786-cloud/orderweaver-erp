@@ -93,14 +93,23 @@ export const dispatchTestEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
-      event_key: z.string(),
-      phone: z.string().optional(),
-      email: z.string().optional(),
-      user_ids: z.array(z.string().uuid()).optional(),
+      event_key: z.string().min(1).max(120),
+      phone: z.string().max(32).optional(),
+      email: z.string().email().max(320).optional(),
+      user_ids: z.array(z.string().uuid()).max(50).optional(),
       variables: z.record(z.string(), z.any()).optional(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roleRow } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!roleRow) throw new Error("Forbidden");
+
     const { dispatchNotificationEvent } = await import("@/lib/notifications/engine.server");
     return dispatchNotificationEvent({
       eventKey: data.event_key,
