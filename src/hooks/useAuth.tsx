@@ -63,7 +63,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Keep the session alive across mobile sleep / tab backgrounding / offline gaps.
+    // If autoRefresh missed its window (phone asleep, no network), proactively
+    // refresh when the app regains focus or connectivity so the user is never
+    // unexpectedly signed out.
+    const revive = () => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) return;
+        const exp = (data.session.expires_at ?? 0) * 1000;
+        // Refresh if expiring within 2 minutes or already expired.
+        if (exp - Date.now() < 2 * 60 * 1000) {
+          supabase.auth.refreshSession().catch(() => {
+            /* keep session; do not force sign-out on transient errors */
+          });
+        }
+      });
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") revive(); };
+    window.addEventListener("focus", revive);
+    window.addEventListener("online", revive);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("focus", revive);
+      window.removeEventListener("online", revive);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const value: AuthContextValue = {
