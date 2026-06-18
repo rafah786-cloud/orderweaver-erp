@@ -16,7 +16,9 @@ function AppLayout() {
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
-  if (!session) return <Navigate to="/login" />;
+  if (!session) {
+    return <Navigate to="/login" search={{ redirect: location.href }} replace />;
+  }
   if (profile?.status !== "approved") return <Navigate to="/pending" />;
 
   const allowed = allowedRolesFor(location.pathname);
