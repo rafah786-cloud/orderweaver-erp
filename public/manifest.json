@@ -2,6 +2,8 @@
   "name": "Abood Tradings ERP",
   "short_name": "Zizz ERP",
   "description": "ERP for mattress manufacturing — sales, production, HR",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F0EB",
