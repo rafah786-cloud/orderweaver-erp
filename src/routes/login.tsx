@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,14 @@ import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
 import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
 import drspine from "@/assets/brands/drspine.jpeg.asset.json";
 
+function isSafeRedirect(target: unknown): target is string {
+  return typeof target === "string" && target.startsWith("/") && !target.startsWith("//");
+}
+
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    redirect: isSafeRedirect(s.redirect) ? s.redirect : undefined,
+  }),
   component: LoginPage,
 });
 
@@ -28,13 +35,15 @@ const subBrands = [
 function LoginPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { redirect } = useSearch({ from: "/login" });
+  const target = redirect ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (session) {
-    navigate({ to: "/" });
-  }
+  useEffect(() => {
+    if (session) navigate({ to: target, replace: true });
+  }, [session, target, navigate]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -46,7 +55,7 @@ function LoginPage() {
       return;
     }
     toast.success("Welcome back");
-    navigate({ to: "/" });
+    navigate({ to: target, replace: true });
   };
 
   return (
