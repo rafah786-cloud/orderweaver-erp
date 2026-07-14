@@ -310,25 +310,17 @@ export function parseTallyMasters(
       );
       const lines = [...ledgerLines, ...altLines];
 
+      // First pass: emit entries for lines that directly reference a known party.
+      let matchedParty = false;
       for (const line of lines) {
-        let ledgerName = text(line.LEDGERNAME);
+        const ledgerName = text(line.LEDGERNAME);
         if (!ledgerName) continue;
-        let type = partyType.get(ledgerName.toLowerCase());
-        // Fall back to PARTYLEDGERNAME if the ledger on this line is not a party
-        // (typical for the Sales/Purchase A/c line in Prime vouchers).
-        if (!type && partyLedgerName) {
-          const partyType2 = partyType.get(partyLedgerName.toLowerCase());
-          if (partyType2) {
-            ledgerName = partyLedgerName;
-            type = partyType2;
-          }
-        }
-        if (!type) continue; // only track party/vendor ledger movements
+        const type = partyType.get(ledgerName.toLowerCase());
+        if (!type) continue;
 
         const amount = num(line.AMOUNT);
         const isDeemedPositive = isYes(line.ISDEEMEDPOSITIVE);
-        // Tally convention: ISDEEMEDPOSITIVE=Yes means the ledger is being debited;
-        // sign of AMOUNT reinforces this but ISDEEMEDPOSITIVE is authoritative.
+        // ISDEEMEDPOSITIVE=Yes means the ledger is being debited on this line.
         const debit = isDeemedPositive ? Math.abs(amount) : 0;
         const credit = !isDeemedPositive ? Math.abs(amount) : 0;
 
@@ -342,6 +334,38 @@ export function parseTallyMasters(
           narration,
           external_ref: `${guid}|${ledgerName}`,
         });
+        matchedParty = true;
+      }
+
+      // Fallback: PARTYLEDGERNAME (Prime POS/quick vouchers) — only if no direct party line was found.
+      if (!matchedParty && partyLedgerName) {
+        const t = partyType.get(partyLedgerName.toLowerCase());
+        if (t) {
+          // Net the voucher: sum of non-party lines drives the party movement.
+          let net = 0;
+          for (const line of lines) {
+            const ln = text(line.LEDGERNAME);
+            if (!ln || ln.toLowerCase() === partyLedgerName.toLowerCase()) continue;
+            const amount = num(line.AMOUNT);
+            const isDeemedPositive = isYes(line.ISDEEMEDPOSITIVE);
+            // Opposite side from the party line
+            net += isDeemedPositive ? -Math.abs(amount) : Math.abs(amount);
+          }
+          const debit = net > 0 ? net : 0;
+          const credit = net < 0 ? -net : 0;
+          if (debit || credit) {
+            ledgerEntries.push({
+              party_name: partyLedgerName,
+              entry_date,
+              voucher_type,
+              voucher_number,
+              debit,
+              credit,
+              narration,
+              external_ref: `${guid}|${partyLedgerName}`,
+            });
+          }
+        }
       }
     }
   }
