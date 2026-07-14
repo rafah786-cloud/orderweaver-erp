@@ -133,3 +133,78 @@ describe("Tally import — idempotent re-import", () => {
     expect(balanceAfterSecond).toBe(balanceAfterFirst);
   });
 });
+
+describe("Tally import — TallyPrime 4/5 format", () => {
+  const PRIME_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE><BODY><IMPORTDATA><REQUESTDATA>
+  <TALLYMESSAGE xmlns:UDF="TallyUDF">
+    <LEDGER NAME="Prime Customer Pvt Ltd">
+      <MAILINGNAME>Prime Customer Pvt Ltd</MAILINGNAME>
+      <PARENT>Sundry Debtors</PARENT>
+      <OPENINGBALANCE>5000.00</OPENINGBALANCE>
+      <LEDGERCONTACT>Ravi Kumar</LEDGERCONTACT>
+      <INCOMETAXNUMBER>AAAPL1234C</INCOMETAXNUMBER>
+      <GSTREGDETAILS.LIST>
+        <GSTIN>29ABCDE1234F1Z5</GSTIN>
+      </GSTREGDETAILS.LIST>
+    </LEDGER>
+  </TALLYMESSAGE>
+  <TALLYMESSAGE>
+    <LEDGER NAME="Deleted Old Party">
+      <PARENT>Sundry Debtors</PARENT>
+      <ISDELETED>Yes</ISDELETED>
+      <OPENINGBALANCE>999.00</OPENINGBALANCE>
+    </LEDGER>
+  </TALLYMESSAGE>
+  <TALLYMESSAGE>
+    <VOUCHER VCHTYPE="Sales" REMOTEID="prime-guid-1">
+      <DATE>20250612</DATE>
+      <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+      <VOUCHERNUMBER>SI/001</VOUCHERNUMBER>
+      <GUID>prime-guid-1</GUID>
+      <PARTYLEDGERNAME>Prime Customer Pvt Ltd</PARTYLEDGERNAME>
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>Prime Customer Pvt Ltd</LEDGERNAME>
+        <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+        <AMOUNT>-1180.00</AMOUNT>
+      </ALLLEDGERENTRIES.LIST>
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>Sales A/c</LEDGERNAME>
+        <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+        <AMOUNT>1000.00</AMOUNT>
+      </ALLLEDGERENTRIES.LIST>
+    </VOUCHER>
+  </TALLYMESSAGE>
+  <TALLYMESSAGE>
+    <VOUCHER VCHTYPE="Sales" REMOTEID="prime-guid-cancelled">
+      <DATE>20250613</DATE>
+      <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+      <VOUCHERNUMBER>SI/002</VOUCHERNUMBER>
+      <GUID>prime-guid-cancelled</GUID>
+      <ISCANCELLED>Yes</ISCANCELLED>
+      <PARTYLEDGERNAME>Prime Customer Pvt Ltd</PARTYLEDGERNAME>
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>Prime Customer Pvt Ltd</LEDGERNAME>
+        <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+        <AMOUNT>-9999.00</AMOUNT>
+      </ALLLEDGERENTRIES.LIST>
+    </VOUCHER>
+  </TALLYMESSAGE>
+</REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>`;
+
+  it("reads TallyPrime IMPORTDATA envelope, nested GSTIN, contact person, and skips deleted/cancelled records", () => {
+    const p = parseTallyMasters(PRIME_XML, groups);
+    expect(p.customers).toHaveLength(1); // deleted party skipped
+    const c = p.customers[0];
+    expect(c.name).toBe("Prime Customer Pvt Ltd");
+    expect(c.gstin).toBe("29ABCDE1234F1Z5");
+    expect(c.contact_person).toBe("Ravi Kumar");
+    expect(c.pan).toBe("AAAPL1234C");
+
+    // Only the non-cancelled voucher's party line is imported (Sales A/c is not a party)
+    expect(p.ledgerEntries).toHaveLength(1);
+    expect(p.ledgerEntries[0].external_ref).toBe("prime-guid-1|Prime Customer Pvt Ltd");
+    expect(p.ledgerEntries[0].debit).toBe(1180);
+    expect(p.ledgerEntries[0].credit).toBe(0);
+  });
+});
