@@ -132,13 +132,20 @@ export function parseTallyMasters(
       "Re-export from Tally (Alt + E → XML) and try again."
     );
   }
-  const head = xml.trimStart().slice(0, 200).toLowerCase();
-  if (!head.startsWith("<?xml") && !head.startsWith("<envelope")) {
+  // Strip UTF-8/UTF-16 BOM and leading whitespace before sniffing.
+  const stripped = xml.replace(/^\uFEFF/, "").replace(/^\uFFFE/, "").trimStart();
+  const head = stripped.slice(0, 500).toLowerCase();
+  const looksLikeXml =
+    head.startsWith("<?xml") ||
+    head.startsWith("<!doctype") ||
+    /^<[a-z_][\w:.-]*[\s>/]/.test(head);
+  if (!looksLikeXml) {
     throw new TallyXmlError(
       "This file does not look like an XML document.",
-      "Make sure you chose the .xml file exported by Tally, not a PDF, Excel, or backup file."
+      "Make sure you chose the .xml file exported by Tally, not a PDF, Excel, or backup file.",
     );
   }
+  xml = stripped;
 
   let json: Record<string, unknown>;
   try {
