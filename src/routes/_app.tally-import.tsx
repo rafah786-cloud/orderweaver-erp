@@ -99,11 +99,11 @@ function TallyImportPage() {
       />
       <PageBody>
         <Card className="mb-4">
-          <CardHeader><CardTitle className="text-base">How to export from Tally</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">How to export from Tally (Tally ERP 9 & TallyPrime 3/4/5)</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-1">
-            <p><b>Masters (customers, vendors, stock, opening balances):</b> Gateway of Tally → Display More Reports → List of Accounts → <b>Alt + E → Export</b> as XML.</p>
-            <p><b>Ledger / current balances (voucher entries):</b> Gateway of Tally → Display More Reports → Day Book (or open a specific party's Ledger) → <b>Alt + E → Export</b> as XML. Upload that XML here too — the importer will read both masters and vouchers from any Tally XML.</p>
-            <p className="text-xs">After import, each customer's and vendor's <b>current balance</b> is recalculated as <code>opening balance + sum of debits − sum of credits</code> from the imported ledger entries. Outstanding values across dashboards update automatically.</p>
+            <p><b>Masters (customers, vendors, stock, opening balances):</b> Gateway of Tally → Display More Reports → List of Accounts (TallyPrime: Chart of Accounts) → <b>Alt + E → Export</b> as XML.</p>
+            <p><b>Ledger / current balances (voucher entries):</b> Gateway of Tally → Display More Reports → Day Book (or open a specific party's Ledger) → <b>Alt + E → Export</b> as XML. Upload that XML here too — the importer reads both masters and vouchers from any Tally XML.</p>
+            <p className="text-xs">Cancelled, optional, and deleted vouchers are automatically skipped. GSTIN is picked up from either the flat <code>PARTYGSTIN</code> tag or the nested <code>GSTREGDETAILS.LIST</code> used by TallyPrime 4+. After import, each customer's and vendor's <b>current balance</b> is recalculated as <code>opening balance + sum of debits − sum of credits</code> from the imported ledger entries.</p>
           </CardContent>
         </Card>
 

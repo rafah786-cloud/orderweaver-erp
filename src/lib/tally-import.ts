@@ -8,6 +8,8 @@ export type TallyParty = {
   address?: string | null;
   state_code?: string | null;
   pin_code?: string | null;
+  contact_person?: string | null;
+  pan?: string | null;
   /** Positive = Dr (receivable / asset), negative = Cr (payable / liability) */
   opening_balance: number;
   /** Closing balance from LEDGER export, if present. Falls back to opening when absent. */
@@ -194,13 +196,31 @@ export function parseTallyMasters(
   // Build a map of ledger-name → party type to classify vouchers
   const partyType = new Map<string, "customer" | "vendor">();
 
+  // Extract a GSTIN from either the flat tag or the nested Prime-4+ GSTREGDETAILS.LIST
+  const extractGstin = (l: Record<string, unknown>): string | null => {
+    const flat = text(l.PARTYGSTIN ?? l.GSTREGISTRATIONNUMBER);
+    if (flat) return flat;
+    const details = arr<Record<string, unknown>>(
+      l["GSTREGDETAILS.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined,
+    );
+    for (const d of details) {
+      const v = text(d.GSTIN ?? d.GSTREGISTRATIONNUMBER ?? d.PARTYGSTIN);
+      if (v) return v;
+    }
+    return null;
+  };
+
+  const isYes = (v: unknown) => text(v).toLowerCase() === "yes";
+
   for (const msg of messages) {
     /* ---------------- LEDGER masters ---------------- */
     const ledgers = arr<Record<string, unknown>>(
       msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const l of ledgers) {
-      const name = text(l["@_NAME"] ?? l.NAME);
+      // TallyPrime marks deleted masters with ISDELETED=Yes — skip them
+      if (isYes(l.ISDELETED)) continue;
+      const name = text(l["@_NAME"] ?? l.NAME) || text(l.MAILINGNAME);
       if (!name) continue;
       const parent = text(l.PARENT).toLowerCase();
 
@@ -214,12 +234,14 @@ export function parseTallyMasters(
 
       const party: TallyParty = {
         name,
-        gstin: text(l.PARTYGSTIN ?? l.GSTREGISTRATIONNUMBER) || null,
-        phone: text(l.LEDGERPHONE ?? l.LEDGERMOBILE) || null,
-        email: text(l.EMAIL) || null,
+        gstin: extractGstin(l),
+        phone: text(l.LEDGERPHONE ?? l.LEDGERMOBILE ?? l.LEDGERCONTACT) || null,
+        email: text(l.EMAIL ?? l.EMAILID) || null,
         address: flattenAddress(l["ADDRESS.LIST"]) || null,
-        state_code: text(l.LEDSTATENAME) || null,
-        pin_code: text(l.PINCODE) || null,
+        state_code: text(l.LEDSTATENAME ?? l.STATENAME) || null,
+        pin_code: text(l.PINCODE ?? l.PINCODENUMBER) || null,
+        contact_person: text(l.LEDGERCONTACT ?? l.CONTACTPERSON) || null,
+        pan: text(l.INCOMETAXNUMBER ?? l.PANNUMBER) || null,
         opening_balance: opening,
         closing_balance: closing,
       };
@@ -232,6 +254,7 @@ export function parseTallyMasters(
       msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const it of items) {
+      if (isYes(it.ISDELETED)) continue;
       const name = text(it["@_NAME"] ?? it.NAME);
       if (!name) continue;
       const parent = text(it.PARENT);
@@ -264,6 +287,10 @@ export function parseTallyMasters(
       msg.VOUCHER as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const v of vouchers) {
+      // Skip cancelled, optional, deleted vouchers in TallyPrime exports
+      if (isYes(v.ISCANCELLED) || isYes(v.CANCELLED) || isYes(v.ISOPTIONAL) || isYes(v.ISDELETED)) {
+        continue;
+      }
       const dateRaw = text(v.DATE ?? v["@_DATE"]);
       const entry_date = parseTallyDate(dateRaw);
       if (!entry_date) continue;
@@ -271,25 +298,29 @@ export function parseTallyMasters(
       const voucher_number = text(v.VOUCHERNUMBER) || null;
       const narration = text(v.NARRATION) || null;
       const guid = text(v.GUID ?? v["@_REMOTEID"]) || `${voucher_type ?? ""}|${voucher_number ?? ""}|${entry_date}`;
+      // Prime uses PARTYLEDGERNAME for the bill-to party on Sales/Purchase;
+      // some voucher lines only carry the offsetting account (e.g. Sales A/c).
+      const partyLedgerName = text(v.PARTYLEDGERNAME ?? v.PARTYNAME) || null;
 
       const ledgerLines = arr<Record<string, unknown>>(
         v["ALLLEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
       );
-      // Some exports use LEDGERENTRIES.LIST instead
       const altLines = arr<Record<string, unknown>>(
         v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
       );
       const lines = [...ledgerLines, ...altLines];
 
+      // First pass: emit entries for lines that directly reference a known party.
+      let matchedParty = false;
       for (const line of lines) {
         const ledgerName = text(line.LEDGERNAME);
         if (!ledgerName) continue;
         const type = partyType.get(ledgerName.toLowerCase());
-        if (!type) continue; // only track party/vendor ledger movements
+        if (!type) continue;
 
         const amount = num(line.AMOUNT);
-        // Tally convention: negative AMOUNT = Dr in some contexts; ISDEEMEDPOSITIVE flag clarifies
-        const isDeemedPositive = text(line.ISDEEMEDPOSITIVE).toLowerCase() === "yes";
+        const isDeemedPositive = isYes(line.ISDEEMEDPOSITIVE);
+        // ISDEEMEDPOSITIVE=Yes means the ledger is being debited on this line.
         const debit = isDeemedPositive ? Math.abs(amount) : 0;
         const credit = !isDeemedPositive ? Math.abs(amount) : 0;
 
@@ -303,6 +334,38 @@ export function parseTallyMasters(
           narration,
           external_ref: `${guid}|${ledgerName}`,
         });
+        matchedParty = true;
+      }
+
+      // Fallback: PARTYLEDGERNAME (Prime POS/quick vouchers) — only if no direct party line was found.
+      if (!matchedParty && partyLedgerName) {
+        const t = partyType.get(partyLedgerName.toLowerCase());
+        if (t) {
+          // Net the voucher: sum of non-party lines drives the party movement.
+          let net = 0;
+          for (const line of lines) {
+            const ln = text(line.LEDGERNAME);
+            if (!ln || ln.toLowerCase() === partyLedgerName.toLowerCase()) continue;
+            const amount = num(line.AMOUNT);
+            const isDeemedPositive = isYes(line.ISDEEMEDPOSITIVE);
+            // Opposite side from the party line
+            net += isDeemedPositive ? -Math.abs(amount) : Math.abs(amount);
+          }
+          const debit = net > 0 ? net : 0;
+          const credit = net < 0 ? -net : 0;
+          if (debit || credit) {
+            ledgerEntries.push({
+              party_name: partyLedgerName,
+              entry_date,
+              voucher_type,
+              voucher_number,
+              debit,
+              credit,
+              narration,
+              external_ref: `${guid}|${partyLedgerName}`,
+            });
+          }
+        }
       }
     }
   }

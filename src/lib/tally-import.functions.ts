@@ -10,6 +10,8 @@ const partySchema = z.object({
   address: z.string().max(2000).nullable().optional(),
   state_code: z.string().max(20).nullable().optional(),
   pin_code: z.string().max(20).nullable().optional(),
+  contact_person: z.string().max(255).nullable().optional(),
+  pan: z.string().max(20).nullable().optional(),
   opening_balance: z.number(),
   closing_balance: z.number(),
 });
@@ -144,6 +146,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           address: c.address ?? null,
           state_code: c.state_code ?? null,
           pin_code: c.pin_code ?? null,
+          contact_person: c.contact_person ?? null,
           opening_balance: c.opening_balance,
           current_balance: c.closing_balance,
         }
@@ -196,6 +199,8 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           phone: v.phone ?? null,
           email: v.email ?? null,
           address: v.address ?? null,
+          state_code: v.state_code ?? null,
+          contact_person: v.contact_person ?? null,
           opening_balance: v.opening_balance,
           current_balance: v.closing_balance,
         }
