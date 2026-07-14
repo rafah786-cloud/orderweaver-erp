@@ -172,7 +172,8 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
 /** Admin/HR: list subscriptions */
 export const listSubscriptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertHasAnyRole(context.userId, ["admin", "hr"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("employee_notification_subscriptions")
