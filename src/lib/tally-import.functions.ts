@@ -199,6 +199,8 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           phone: v.phone ?? null,
           email: v.email ?? null,
           address: v.address ?? null,
+          state_code: v.state_code ?? null,
+          contact_person: v.contact_person ?? null,
           opening_balance: v.opening_balance,
           current_balance: v.closing_balance,
         }
