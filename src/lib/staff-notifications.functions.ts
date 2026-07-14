@@ -211,7 +211,8 @@ export const setSubscription = createServerFn({ method: "POST" })
 /** Admin/HR: count active employees per department (for the settings screen) */
 export const departmentEmployeeCounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertHasAnyRole(context.userId, ["admin", "hr"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("employees")
