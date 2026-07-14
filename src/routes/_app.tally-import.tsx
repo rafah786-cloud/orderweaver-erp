@@ -19,6 +19,46 @@ export const Route = createFileRoute("/_app/tally-import")({
   component: TallyImportPage,
 });
 
+/**
+ * Read an uploaded Tally XML file, auto-detecting UTF-8, UTF-16 LE/BE, and
+ * declared encodings so exports from Tally.ERP 9 (UTF-16) and TallyPrime
+ * (UTF-8) both parse. `File.text()` alone always decodes as UTF-8 and
+ * garbles UTF-16 exports.
+ */
+async function readXmlFile(file: File): Promise<string> {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  // BOM sniffing
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+    return new TextDecoder("utf-16le").decode(buf.subarray(2));
+  }
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
+    return new TextDecoder("utf-16be").decode(buf.subarray(2));
+  }
+  if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+    return new TextDecoder("utf-8").decode(buf.subarray(3));
+  }
+  // Heuristic: many zero bytes = UTF-16 without BOM (Tally.ERP 9 default)
+  let zeros = 0;
+  const sample = Math.min(buf.length, 512);
+  for (let i = 0; i < sample; i++) if (buf[i] === 0) zeros++;
+  if (sample > 0 && zeros / sample > 0.2) {
+    const le = new TextDecoder("utf-16le").decode(buf);
+    if (le.includes("<")) return le;
+    return new TextDecoder("utf-16be").decode(buf);
+  }
+  // Default UTF-8; honor an explicit encoding= attribute if present
+  const utf8 = new TextDecoder("utf-8").decode(buf);
+  const enc = utf8.slice(0, 200).match(/encoding=["']([^"']+)["']/i)?.[1]?.toLowerCase();
+  if (enc && enc !== "utf-8" && enc !== "utf8") {
+    try {
+      return new TextDecoder(enc).decode(buf);
+    } catch {
+      // fall through
+    }
+  }
+  return utf8;
+}
+
 function TallyImportPage() {
   const { hasRole } = useAuth();
   const qc = useQueryClient();
