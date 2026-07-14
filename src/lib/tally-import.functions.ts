@@ -56,7 +56,7 @@ function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
 }
 
-async function chunkInsert(
+export async function chunkInsert(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   table: "party_ledger_entries" | "supplier_ledger_entries",
