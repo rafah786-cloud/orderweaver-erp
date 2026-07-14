@@ -10,6 +10,8 @@ const partySchema = z.object({
   address: z.string().max(2000).nullable().optional(),
   state_code: z.string().max(20).nullable().optional(),
   pin_code: z.string().max(20).nullable().optional(),
+  contact_person: z.string().max(255).nullable().optional(),
+  pan: z.string().max(20).nullable().optional(),
   opening_balance: z.number(),
   closing_balance: z.number(),
 });
