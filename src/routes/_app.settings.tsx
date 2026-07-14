@@ -55,7 +55,10 @@ function DeviceCard() {
   const { data: devices } = useQuery({
     queryKey: ["devices"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("device_settings").select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("device_settings")
+        .select("id, device_id, name, ip_address, port, poll_interval_ms, is_active, last_seen_at, created_at, updated_at")
+        .order("created_at");
       if (error) throw error;
       return data ?? [];
     },
