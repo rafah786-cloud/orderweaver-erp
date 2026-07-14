@@ -47,7 +47,7 @@ function TallyImportPage() {
     setResult(null);
     setParsing(true);
     try {
-      const xml = await f.text();
+      const xml = await readXmlFile(f);
       const out = parseTallyMasters(xml, {
         rawGroups: rawGroups.split(",").map((s) => s.trim()).filter(Boolean),
         finishedGroups: finishedGroups.split(",").map((s) => s.trim()).filter(Boolean),
