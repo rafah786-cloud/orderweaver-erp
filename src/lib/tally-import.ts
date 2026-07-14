@@ -8,6 +8,8 @@ export type TallyParty = {
   address?: string | null;
   state_code?: string | null;
   pin_code?: string | null;
+  contact_person?: string | null;
+  pan?: string | null;
   /** Positive = Dr (receivable / asset), negative = Cr (payable / liability) */
   opening_balance: number;
   /** Closing balance from LEDGER export, if present. Falls back to opening when absent. */
