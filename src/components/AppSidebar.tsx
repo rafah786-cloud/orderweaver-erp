@@ -91,10 +91,10 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
               key={item.to}
               to={item.to}
               onClick={onNavigate}
-              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all ${
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_1px_0_oklch(1_0_0/.15)_inset,0_-1px_0_oklch(0_0_0/.25)_inset,0_8px_18px_-8px_oklch(0.80_0.14_85/.35)]"
-                  : "text-sidebar-foreground/75 hover:bg-white/5 hover:text-sidebar-foreground hover:translate-x-0.5"
+                  : "text-sidebar-foreground hover:bg-white/5 hover:text-sidebar-foreground hover:translate-x-0.5"
               }`}
             >
               {active && <span aria-hidden className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full" style={{ background: "var(--gradient-gold)" }} />}
