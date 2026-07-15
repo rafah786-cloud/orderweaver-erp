@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileUp, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { parseTallyMasters, TallyXmlError, type TallyParsed } from "@/lib/tally-import";
-import { importTallyMasters, type TallyImportResult } from "@/lib/tally-import.functions";
+import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } from "@/lib/tally-import.functions";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_app/tally-import")({
   component: TallyImportPage,
