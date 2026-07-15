@@ -73,6 +73,7 @@ function TallyImportPage() {
   const [parsed, setParsed] = useState<TallyParsed | null>(null);
   const [result, setResult] = useState<TallyImportResult | null>(null);
   const [fileName, setFileName] = useState<string>("");
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
 
   if (!hasRole("admin")) {
     return (
