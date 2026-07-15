@@ -41,6 +41,7 @@ function LoginPage() {
   const target = redirect ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -50,12 +51,31 @@ function LoginPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
+    // Persist the preference; useAuth reads it to decide whether to run the
+    // 2-minute inactivity timeout on non-trusted devices.
+    setKeepSignedInPref(keepSignedIn);
+    // If the user opted in, mark this browser as a trusted device for their
+    // account. Trust is per-user, per-device.
+    if (keepSignedIn && data.user) {
+      const { error: tdErr } = await supabase.from("trusted_devices").upsert(
+        {
+          user_id: data.user.id,
+          device_id: getDeviceId(),
+          device_name: getDeviceName(),
+          user_agent: navigator.userAgent,
+          last_used_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,device_id" },
+      );
+      if (tdErr) console.warn("[trusted_devices] upsert failed", tdErr);
+    }
+    setLoading(false);
     toast.success("Welcome back");
     navigate({ to: target, replace: true });
   };
