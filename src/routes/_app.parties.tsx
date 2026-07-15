@@ -33,6 +33,8 @@ type PartyRow = {
   gstin: string | null;
   credit_limit: number;
   notes: string | null;
+  opening_balance: number;
+  current_balance: number;
 };
 
 type OutstandingRow = {
