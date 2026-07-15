@@ -103,6 +103,60 @@
   --shadow-glow-gold: 0 0 0 3px oklch(0.42 0.07 340 / 0.18);
 }
 
+.dark {
+  /* Dark workspace */
+  --background: oklch(0.18 0.02 270);
+  --foreground: oklch(0.96 0.005 260);
+
+  --card: oklch(0.22 0.02 270);
+  --card-foreground: oklch(0.96 0.005 260);
+  --popover: oklch(0.22 0.02 270);
+  --popover-foreground: oklch(0.96 0.005 260);
+
+  --primary: oklch(0.55 0.09 340);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.28 0.02 270);
+  --secondary-foreground: oklch(0.94 0.005 260);
+
+  --muted: oklch(0.25 0.02 270);
+  --muted-foreground: oklch(0.70 0.01 260);
+
+  --accent: oklch(0.30 0.03 340);
+  --accent-foreground: oklch(0.96 0.005 260);
+
+  --destructive: oklch(0.65 0.20 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.65 0.15 155);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.82 0.15 75);
+  --warning-foreground: oklch(0.20 0.05 75);
+
+  --border: oklch(0.30 0.02 270);
+  --input: oklch(0.28 0.02 270);
+  --ring: oklch(0.55 0.09 340 / 0.5);
+
+  /* Sidebar — even deeper in dark mode */
+  --sidebar: oklch(0.16 0.02 320);
+  --sidebar-foreground: oklch(0.97 0.005 260);
+  --sidebar-accent: oklch(0.45 0.08 340 / 0.40);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-active: oklch(0.52 0.10 340);
+  --sidebar-active-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+
+  --gradient-app: linear-gradient(180deg, oklch(0.18 0.02 270), oklch(0.16 0.02 270));
+  --gradient-primary: linear-gradient(135deg, oklch(0.58 0.10 340), oklch(0.46 0.09 330));
+  --gradient-glass: none;
+
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.20);
+  --shadow-md: 0 2px 6px -1px oklch(0 0 0 / 0.25), 0 1px 3px -1px oklch(0 0 0 / 0.18);
+  --shadow-lg: 0 8px 20px -6px oklch(0 0 0 / 0.30), 0 3px 6px -2px oklch(0 0 0 / 0.20);
+  --shadow-3d: var(--shadow-md);
+  --shadow-3d-sm: var(--shadow-sm);
+  --shadow-glow-gold: 0 0 0 3px oklch(0.55 0.09 340 / 0.25);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
