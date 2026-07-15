@@ -75,6 +75,22 @@ function SignupPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="keep-signed-in"
+                checked={keepSignedIn}
+                onCheckedChange={(v) => setKeepSignedIn(v === true)}
+                className="mt-0.5"
+              />
+              <div className="grid gap-0.5 leading-tight">
+                <Label htmlFor="keep-signed-in" className="cursor-pointer text-sm font-medium">
+                  Keep me signed in on this device
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  This device will be marked as trusted after your first sign-in. Untrusted devices are signed out after 2 minutes of inactivity.
+                </p>
+              </div>
+            </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating…" : "Request access"}
             </Button>
