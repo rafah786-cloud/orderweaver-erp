@@ -5,7 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { getDeviceId, getDeviceName, setKeepSignedInPref } from "@/lib/device";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 import softnights from "@/assets/brands/softnights.jpeg.asset.json";
 import mrcoir from "@/assets/brands/mrcoir.jpeg.asset.json";
@@ -39,6 +41,7 @@ function LoginPage() {
   const target = redirect ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -48,12 +51,31 @@ function LoginPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
+    // Persist the preference; useAuth reads it to decide whether to run the
+    // 2-minute inactivity timeout on non-trusted devices.
+    setKeepSignedInPref(keepSignedIn);
+    // If the user opted in, mark this browser as a trusted device for their
+    // account. Trust is per-user, per-device.
+    if (keepSignedIn && data.user) {
+      const { error: tdErr } = await supabase.from("trusted_devices").upsert(
+        {
+          user_id: data.user.id,
+          device_id: getDeviceId(),
+          device_name: getDeviceName(),
+          user_agent: navigator.userAgent,
+          last_used_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,device_id" },
+      );
+      if (tdErr) console.warn("[trusted_devices] upsert failed", tdErr);
+    }
+    setLoading(false);
     toast.success("Welcome back");
     navigate({ to: target, replace: true });
   };
@@ -134,6 +156,22 @@ function LoginPage() {
                 </Link>
               </div>
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="keep-signed-in"
+                checked={keepSignedIn}
+                onCheckedChange={(v) => setKeepSignedIn(v === true)}
+                className="mt-0.5"
+              />
+              <div className="grid gap-0.5 leading-tight">
+                <Label htmlFor="keep-signed-in" className="cursor-pointer text-sm font-medium">
+                  Keep me signed in
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Marks this device as trusted. Untrusted devices are signed out after 2 minutes of inactivity.
+                </p>
+              </div>
             </div>
             <Button type="submit" className="w-full btn-gold" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}

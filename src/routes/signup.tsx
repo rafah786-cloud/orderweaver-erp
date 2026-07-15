@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
+import { setKeepSignedInPref } from "@/lib/device";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -18,6 +20,7 @@ function SignupPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
@@ -36,6 +39,10 @@ function SignupPage() {
       toast.error(error.message);
       return;
     }
+    // Remember the preference on this browser. Once the admin approves the
+    // account and the user signs in, the login flow will honor it and mark
+    // this device as trusted.
+    setKeepSignedInPref(keepSignedIn);
     toast.success("Account requested — pending admin approval");
     navigate({ to: "/pending" });
   };
@@ -67,6 +74,22 @@ function SignupPage() {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="keep-signed-in"
+                checked={keepSignedIn}
+                onCheckedChange={(v) => setKeepSignedIn(v === true)}
+                className="mt-0.5"
+              />
+              <div className="grid gap-0.5 leading-tight">
+                <Label htmlFor="keep-signed-in" className="cursor-pointer text-sm font-medium">
+                  Keep me signed in on this device
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  This device will be marked as trusted after your first sign-in. Untrusted devices are signed out after 2 minutes of inactivity.
+                </p>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating…" : "Request access"}
