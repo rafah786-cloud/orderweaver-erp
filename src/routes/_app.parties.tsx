@@ -254,6 +254,10 @@ function PartiesPage() {
             </div>
             <Field label="Address"><Textarea rows={2} value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} /></Field>
             <Field label="Credit Limit (₹)"><Input type="number" value={form.credit_limit} onChange={(e) => setForm({ ...form, credit_limit: Number(e.target.value) })} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Opening Balance (₹)"><Input type="number" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: Number(e.target.value) })} /></Field>
+              <Field label="Closing Balance (₹)"><Input type="number" value={form.current_balance} onChange={(e) => setForm({ ...form, current_balance: Number(e.target.value) })} /></Field>
+            </div>
             <Field label="Notes"><Textarea rows={2} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
           </div>
           <DialogFooter>
