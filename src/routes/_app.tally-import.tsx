@@ -64,6 +64,7 @@ function TallyImportPage() {
   const { hasRole } = useAuth();
   const qc = useQueryClient();
   const runImport = useServerFn(importTallyMasters);
+  const runRecompute = useServerFn(recomputeTallyBalances);
 
   const [rawGroups, setRawGroups] = useState("Raw Materials, Components, Fabric, Foam");
   const [finishedGroups, setFinishedGroups] = useState("Finished Goods, Mattresses, Products");
