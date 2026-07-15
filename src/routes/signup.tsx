@@ -20,6 +20,7 @@ function SignupPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
@@ -38,6 +39,10 @@ function SignupPage() {
       toast.error(error.message);
       return;
     }
+    // Remember the preference on this browser. Once the admin approves the
+    // account and the user signs in, the login flow will honor it and mark
+    // this device as trusted.
+    setKeepSignedInPref(keepSignedIn);
     toast.success("Account requested — pending admin approval");
     navigate({ to: "/pending" });
   };
