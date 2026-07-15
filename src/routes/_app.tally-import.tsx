@@ -126,7 +126,7 @@ function TallyImportPage() {
     const MASTER_CHUNK = 250;
     const LEDGER_CHUNK = 2000;
 
-    const chunks: Array<{ label: string; payload: Parameters<typeof runImport>[0]["data"] }> = [];
+    const chunks: Array<{ label: string; payload: Record<string, unknown> }> = [];
     const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries", label: string) => {
       for (let i = 0; i < arr.length; i += size) {
         chunks.push({
