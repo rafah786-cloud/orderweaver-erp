@@ -91,7 +91,7 @@ function PartiesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("parties")
-        .select("id, name, contact_person, phone, email, address, gstin, credit_limit, notes")
+        .select("id, name, contact_person, phone, email, address, gstin, credit_limit, notes, opening_balance, current_balance")
         .order("name");
       if (error) throw error;
       return (data ?? []) as PartyRow[];
