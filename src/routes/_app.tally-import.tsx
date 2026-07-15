@@ -274,6 +274,15 @@ function TallyImportPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {progress && (
+                <div className="mb-4 space-y-1.5">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{progress.label}</span>
+                    <span>{progress.done}/{progress.total}</span>
+                  </div>
+                  <Progress value={progress.total ? (progress.done / progress.total) * 100 : 0} />
+                </div>
+              )}
               <div className="grid gap-3 grid-cols-2 md:grid-cols-5 mb-4">
                 <Stat label="Customers" value={parsed.customers.length} />
                 <Stat label="Vendors" value={parsed.vendors.length} />
