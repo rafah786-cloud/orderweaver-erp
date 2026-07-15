@@ -144,6 +144,7 @@ function PartiesPage() {
       name: p.name, contact_person: p.contact_person ?? "", phone: p.phone ?? "",
       email: p.email ?? "", address: p.address ?? "", gstin: p.gstin ?? "",
       credit_limit: p.credit_limit, notes: p.notes ?? "",
+      opening_balance: p.opening_balance ?? 0, current_balance: p.current_balance ?? 0,
     });
     setOpen(true);
   };
