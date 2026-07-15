@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
+import { setKeepSignedInPref } from "@/lib/device";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
