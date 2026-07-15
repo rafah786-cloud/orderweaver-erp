@@ -123,6 +123,8 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       supplierLedgerEntries: { inserted: 0, skipped: 0 },
       unmatchedLedgerNames: [],
       errors: [],
+      touchedPartyIds: [],
+      touchedSupplierIds: [],
     }
 
     // Maps populated below for ledger entry matching
