@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileUp, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { parseTallyMasters, TallyXmlError, type TallyParsed } from "@/lib/tally-import";
-import { importTallyMasters, type TallyImportResult } from "@/lib/tally-import.functions";
+import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } from "@/lib/tally-import.functions";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_app/tally-import")({
   component: TallyImportPage,
@@ -63,6 +64,7 @@ function TallyImportPage() {
   const { hasRole } = useAuth();
   const qc = useQueryClient();
   const runImport = useServerFn(importTallyMasters);
+  const runRecompute = useServerFn(recomputeTallyBalances);
 
   const [rawGroups, setRawGroups] = useState("Raw Materials, Components, Fabric, Foam");
   const [finishedGroups, setFinishedGroups] = useState("Finished Goods, Mattresses, Products");
@@ -71,6 +73,7 @@ function TallyImportPage() {
   const [parsed, setParsed] = useState<TallyParsed | null>(null);
   const [result, setResult] = useState<TallyImportResult | null>(null);
   const [fileName, setFileName] = useState<string>("");
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
 
   if (!hasRole("admin")) {
     return (
@@ -114,20 +117,106 @@ function TallyImportPage() {
   const commit = async () => {
     if (!parsed) return;
     setImporting(true);
+    setResult(null);
+
+    // Chunk sizes chosen so each server-fn call finishes well inside the
+    // edge worker's request budget even on cold starts. Masters loop over
+    // rows one-by-one on the server (needs small slices); ledger entries
+    // use bulk chunk-insert (can be larger).
+    const MASTER_CHUNK = 250;
+    const LEDGER_CHUNK = 2000;
+
+    const chunks: Array<{ label: string; payload: Record<string, unknown> }> = [];
+    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries", label: string) => {
+      for (let i = 0; i < arr.length; i += size) {
+        chunks.push({
+          label: `${label} ${Math.min(i + size, arr.length)}/${arr.length}`,
+          payload: {
+            customers: [], vendors: [], rawMaterials: [], finishedGoods: [], ledgerEntries: [],
+            skipRecompute: true,
+            [key]: arr.slice(i, i + size),
+          } as any,
+        });
+      }
+    };
+    push(parsed.customers, MASTER_CHUNK, "customers", "Customers");
+    push(parsed.vendors, MASTER_CHUNK, "vendors", "Vendors");
+    push(parsed.rawMaterials, MASTER_CHUNK, "rawMaterials", "Raw materials");
+    push(parsed.finishedGoods, MASTER_CHUNK, "finishedGoods", "Finished goods");
+    push(parsed.ledgerEntries, LEDGER_CHUNK, "ledgerEntries", "Ledger entries");
+
+    // Aggregate results across chunks.
+    const agg: TallyImportResult = {
+      customers: { inserted: 0, updated: 0 },
+      vendors: { inserted: 0, updated: 0 },
+      rawMaterials: { inserted: 0, updated: 0 },
+      finishedGoods: { inserted: 0, updated: 0 },
+      partyLedgerEntries: { inserted: 0, skipped: 0 },
+      supplierLedgerEntries: { inserted: 0, skipped: 0 },
+      unmatchedLedgerNames: [],
+      errors: [],
+      touchedPartyIds: [],
+      touchedSupplierIds: [],
+    };
+    const unmatched = new Set<string>();
+    const touchedParties = new Set<string>();
+    const touchedSuppliers = new Set<string>();
+
+    const total = chunks.length + 1; // +1 for the finalize step
+    setProgress({ done: 0, total, label: chunks.length ? chunks[0].label : "Finalize" });
+
     try {
-      const res = await runImport({ data: parsed });
-      setResult(res);
+      for (let i = 0; i < chunks.length; i++) {
+        const { label, payload } = chunks[i];
+        setProgress({ done: i, total, label });
+        const res = await runImport({ data: payload });
+        agg.customers.inserted += res.customers.inserted; agg.customers.updated += res.customers.updated;
+        agg.vendors.inserted += res.vendors.inserted; agg.vendors.updated += res.vendors.updated;
+        agg.rawMaterials.inserted += res.rawMaterials.inserted; agg.rawMaterials.updated += res.rawMaterials.updated;
+        agg.finishedGoods.inserted += res.finishedGoods.inserted; agg.finishedGoods.updated += res.finishedGoods.updated;
+        agg.partyLedgerEntries.inserted += res.partyLedgerEntries.inserted;
+        agg.partyLedgerEntries.skipped += res.partyLedgerEntries.skipped;
+        agg.supplierLedgerEntries.inserted += res.supplierLedgerEntries.inserted;
+        agg.supplierLedgerEntries.skipped += res.supplierLedgerEntries.skipped;
+        agg.errors.push(...res.errors);
+        res.unmatchedLedgerNames.forEach((n) => unmatched.add(n));
+        res.touchedPartyIds.forEach((id) => touchedParties.add(id));
+        res.touchedSupplierIds.forEach((id) => touchedSuppliers.add(id));
+      }
+
+      // Finalize: recompute balances in batches (server caps at 2000 ids/call).
+      setProgress({ done: chunks.length, total, label: "Recomputing balances" });
+      const RECOMP_BATCH = 1000;
+      const partyIds = Array.from(touchedParties);
+      const supplierIds = Array.from(touchedSuppliers);
+      const maxLen = Math.max(partyIds.length, supplierIds.length);
+      for (let i = 0; i < maxLen; i += RECOMP_BATCH) {
+        await runRecompute({
+          data: {
+            partyIds: partyIds.slice(i, i + RECOMP_BATCH),
+            supplierIds: supplierIds.slice(i, i + RECOMP_BATCH),
+          },
+        });
+      }
+
+      agg.unmatchedLedgerNames = Array.from(unmatched).slice(0, 100);
+      agg.touchedPartyIds = partyIds;
+      agg.touchedSupplierIds = supplierIds;
+      setResult(agg);
       qc.invalidateQueries();
       const totals =
-        res.customers.inserted + res.customers.updated +
-        res.vendors.inserted + res.vendors.updated +
-        res.rawMaterials.inserted + res.rawMaterials.updated +
-        res.finishedGoods.inserted + res.finishedGoods.updated;
-      toast.success(`Imported ${totals} records${res.errors.length ? ` with ${res.errors.length} errors` : ""}.`);
+        agg.customers.inserted + agg.customers.updated +
+        agg.vendors.inserted + agg.vendors.updated +
+        agg.rawMaterials.inserted + agg.rawMaterials.updated +
+        agg.finishedGoods.inserted + agg.finishedGoods.updated;
+      toast.success(`Imported ${totals} records${agg.errors.length ? ` with ${agg.errors.length} errors` : ""}.`);
     } catch (err) {
       toast.error(`Import failed: ${(err as Error).message}`);
+      // Preserve whatever progress we made so the admin can inspect it.
+      if (agg.customers.inserted || agg.vendors.inserted || agg.partyLedgerEntries.inserted) setResult(agg);
     } finally {
       setImporting(false);
+      setProgress(null);
     }
   };
 
@@ -185,6 +274,15 @@ function TallyImportPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {progress && (
+                <div className="mb-4 space-y-1.5">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{progress.label}</span>
+                    <span>{progress.done}/{progress.total}</span>
+                  </div>
+                  <Progress value={progress.total ? (progress.done / progress.total) * 100 : 0} />
+                </div>
+              )}
               <div className="grid gap-3 grid-cols-2 md:grid-cols-5 mb-4">
                 <Stat label="Customers" value={parsed.customers.length} />
                 <Stat label="Vendors" value={parsed.vendors.length} />
