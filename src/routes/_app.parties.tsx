@@ -174,6 +174,8 @@ function PartiesPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead className="text-right">Opening</TableHead>
+                  <TableHead className="text-right">Closing</TableHead>
                   <TableHead className="text-right">Credit Limit</TableHead>
                   <TableHead className="text-right">Outstanding</TableHead>
                   <TableHead>Oldest Unpaid</TableHead>
@@ -183,9 +185,9 @@ function PartiesPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : parties.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No parties yet. Click New Party to add one.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="py-10 text-center text-muted-foreground">No parties yet. Click New Party to add one.</TableCell></TableRow>
                 ) : parties.map((p) => {
                   const o = outstandingMap.get(p.id);
                   const out = Number(o?.outstanding ?? 0);
@@ -195,6 +197,8 @@ function PartiesPage() {
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell className="text-muted-foreground">{p.contact_person ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{p.phone ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{inr(Number(p.opening_balance ?? 0))}</TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">{inr(Number(p.current_balance ?? 0))}</TableCell>
                       <TableCell className="text-right">{inr(p.credit_limit)}</TableCell>
                       <TableCell className="text-right font-medium">{inr(out)}</TableCell>
                       <TableCell className="text-muted-foreground">{formatDate(o?.oldest_unpaid_date)}</TableCell>
