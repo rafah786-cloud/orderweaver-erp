@@ -33,6 +33,8 @@ type PartyRow = {
   gstin: string | null;
   credit_limit: number;
   notes: string | null;
+  opening_balance: number;
+  current_balance: number;
 };
 
 type OutstandingRow = {
@@ -50,6 +52,8 @@ const empty: Omit<PartyRow, "id"> = {
   gstin: "",
   credit_limit: 150000,
   notes: "",
+  opening_balance: 0,
+  current_balance: 0,
 };
 
 function PartiesPage() {
@@ -87,7 +91,7 @@ function PartiesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("parties")
-        .select("id, name, contact_person, phone, email, address, gstin, credit_limit, notes")
+        .select("id, name, contact_person, phone, email, address, gstin, credit_limit, notes, opening_balance, current_balance")
         .order("name");
       if (error) throw error;
       return (data ?? []) as PartyRow[];
@@ -140,6 +144,7 @@ function PartiesPage() {
       name: p.name, contact_person: p.contact_person ?? "", phone: p.phone ?? "",
       email: p.email ?? "", address: p.address ?? "", gstin: p.gstin ?? "",
       credit_limit: p.credit_limit, notes: p.notes ?? "",
+      opening_balance: p.opening_balance ?? 0, current_balance: p.current_balance ?? 0,
     });
     setOpen(true);
   };
@@ -169,6 +174,8 @@ function PartiesPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead className="text-right">Opening</TableHead>
+                  <TableHead className="text-right">Closing</TableHead>
                   <TableHead className="text-right">Credit Limit</TableHead>
                   <TableHead className="text-right">Outstanding</TableHead>
                   <TableHead>Oldest Unpaid</TableHead>
@@ -178,9 +185,9 @@ function PartiesPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : parties.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No parties yet. Click New Party to add one.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="py-10 text-center text-muted-foreground">No parties yet. Click New Party to add one.</TableCell></TableRow>
                 ) : parties.map((p) => {
                   const o = outstandingMap.get(p.id);
                   const out = Number(o?.outstanding ?? 0);
@@ -190,6 +197,8 @@ function PartiesPage() {
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell className="text-muted-foreground">{p.contact_person ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{p.phone ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{inr(Number(p.opening_balance ?? 0))}</TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">{inr(Number(p.current_balance ?? 0))}</TableCell>
                       <TableCell className="text-right">{inr(p.credit_limit)}</TableCell>
                       <TableCell className="text-right font-medium">{inr(out)}</TableCell>
                       <TableCell className="text-muted-foreground">{formatDate(o?.oldest_unpaid_date)}</TableCell>
@@ -245,6 +254,10 @@ function PartiesPage() {
             </div>
             <Field label="Address"><Textarea rows={2} value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} /></Field>
             <Field label="Credit Limit (₹)"><Input type="number" value={form.credit_limit} onChange={(e) => setForm({ ...form, credit_limit: Number(e.target.value) })} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Opening Balance (₹)"><Input type="number" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: Number(e.target.value) })} /></Field>
+              <Field label="Closing Balance (₹)"><Input type="number" value={form.current_balance} onChange={(e) => setForm({ ...form, current_balance: Number(e.target.value) })} /></Field>
+            </div>
             <Field label="Notes"><Textarea rows={2} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
           </div>
           <DialogFooter>
