@@ -331,50 +331,118 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       }
       result.unmatchedLedgerNames = Array.from(unmatched).slice(0, 100);
 
-      /* ---------------- recompute current_balance from ledger ----------------
-         current_balance = opening_balance + sum(debit) - sum(credit)
-         (Dr increases receivable from customers / decreases payable to vendors;
-          Tally's ISDEEMEDPOSITIVE convention already normalised that above.)
-      */
       const partyIds = Array.from(new Set(partyRows.map((r) => r.party_id as string)));
-      for (const id of partyIds) {
-        const { data: sums } = await supabase
-          .from("party_ledger_entries")
-          .select("debit, credit")
-          .eq("party_id", id);
-        const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
-        const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
-        const { data: p } = await supabase
-          .from("parties")
-          .select("opening_balance")
-          .eq("id", id)
-          .single();
-        const opening = Number(p?.opening_balance ?? 0);
-        await supabase
-          .from("parties")
-          .update({ current_balance: opening + totalDr - totalCr })
-          .eq("id", id);
-      }
       const supplierIds = Array.from(new Set(supplierRows.map((r) => r.supplier_id as string)));
-      for (const id of supplierIds) {
-        const { data: sums } = await supabase
-          .from("supplier_ledger_entries")
-          .select("debit, credit")
-          .eq("supplier_id", id);
-        const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
-        const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
-        const { data: s } = await supabase
-          .from("suppliers")
-          .select("opening_balance")
-          .eq("id", id)
-          .single();
-        const opening = Number(s?.opening_balance ?? 0);
-        await supabase
-          .from("suppliers")
-          .update({ current_balance: opening + totalDr - totalCr })
-          .eq("id", id);
+      result.touchedPartyIds = partyIds;
+      result.touchedSupplierIds = supplierIds;
+
+      /* ---------------- recompute current_balance from ledger ----------------
+         current_balance = opening_balance + sum(debit) - sum(credit).
+         Skipped for chunked imports — the client calls `recomputeTallyBalances`
+         once at the end with the union of all touched ids so we don't re-scan
+         each party's full ledger for every chunk. */
+      if (!data.skipRecompute) {
+        for (const id of partyIds) {
+          const { data: sums } = await supabase
+            .from("party_ledger_entries")
+            .select("debit, credit")
+            .eq("party_id", id);
+          const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
+          const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
+          const { data: p } = await supabase
+            .from("parties")
+            .select("opening_balance")
+            .eq("id", id)
+            .single();
+          const opening = Number(p?.opening_balance ?? 0);
+          await supabase
+            .from("parties")
+            .update({ current_balance: opening + totalDr - totalCr })
+            .eq("id", id);
+        }
+        for (const id of supplierIds) {
+          const { data: sums } = await supabase
+            .from("supplier_ledger_entries")
+            .select("debit, credit")
+            .eq("supplier_id", id);
+          const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
+          const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
+          const { data: s } = await supabase
+            .from("suppliers")
+            .select("opening_balance")
+            .eq("id", id)
+            .single();
+          const opening = Number(s?.opening_balance ?? 0);
+          await supabase
+            .from("suppliers")
+            .update({ current_balance: opening + totalDr - totalCr })
+            .eq("id", id);
+        }
       }
     }
 
     return result;
+  });
+
+/**
+ * Finalize a chunked Tally import by recomputing `current_balance` on the
+ * given parties/suppliers. Called once after all ledger chunks have been
+ * uploaded so we scan each party's ledger only once regardless of how many
+ * chunks touched it. Bounded to a sane max per call; the client batches.
+ */
+export const recomputeTallyBalances = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      partyIds: z.array(z.string().uuid()).max(2000).default([]),
+      supplierIds: z.array(z.string().uuid()).max(2000).default([]),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+
+    let recomputedParties = 0;
+    let recomputedSuppliers = 0;
+
+    for (const id of data.partyIds) {
+      const { data: sums } = await supabase
+        .from("party_ledger_entries")
+        .select("debit, credit")
+        .eq("party_id", id);
+      const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
+      const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
+      const { data: p } = await supabase
+        .from("parties")
+        .select("opening_balance")
+        .eq("id", id)
+        .single();
+      const opening = Number(p?.opening_balance ?? 0);
+      await supabase
+        .from("parties")
+        .update({ current_balance: opening + totalDr - totalCr })
+        .eq("id", id);
+      recomputedParties++;
+    }
+    for (const id of data.supplierIds) {
+      const { data: sums } = await supabase
+        .from("supplier_ledger_entries")
+        .select("debit, credit")
+        .eq("supplier_id", id);
+      const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
+      const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
+      const { data: s } = await supabase
+        .from("suppliers")
+        .select("opening_balance")
+        .eq("id", id)
+        .single();
+      const opening = Number(s?.opening_balance ?? 0);
+      await supabase
+        .from("suppliers")
+        .update({ current_balance: opening + totalDr - totalCr })
+        .eq("id", id);
+      recomputedSuppliers++;
+    }
+    return { recomputedParties, recomputedSuppliers };
   });
