@@ -157,6 +157,22 @@ function LoginPage() {
               </div>
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="keep-signed-in"
+                checked={keepSignedIn}
+                onCheckedChange={(v) => setKeepSignedIn(v === true)}
+                className="mt-0.5"
+              />
+              <div className="grid gap-0.5 leading-tight">
+                <Label htmlFor="keep-signed-in" className="cursor-pointer text-sm font-medium">
+                  Keep me signed in
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Marks this device as trusted. Untrusted devices are signed out after 2 minutes of inactivity.
+                </p>
+              </div>
+            </div>
             <Button type="submit" className="w-full btn-gold" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
             </Button>
