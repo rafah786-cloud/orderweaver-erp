@@ -36,11 +36,15 @@ const ledgerEntrySchema = z.object({
 });
 
 const inputSchema = z.object({
-  customers: z.array(partySchema).max(20000),
-  vendors: z.array(partySchema).max(20000),
-  rawMaterials: z.array(stockSchema).max(20000),
-  finishedGoods: z.array(stockSchema).max(20000),
-  ledgerEntries: z.array(ledgerEntrySchema).max(200000).default([]),
+  customers: z.array(partySchema).max(2000).default([]),
+  vendors: z.array(partySchema).max(2000).default([]),
+  rawMaterials: z.array(stockSchema).max(2000).default([]),
+  finishedGoods: z.array(stockSchema).max(2000).default([]),
+  ledgerEntries: z.array(ledgerEntrySchema).max(5000).default([]),
+  // When true, the handler skips the O(party_count) balance recompute so the
+  // caller can stream many chunks fast and call `recomputeTallyBalances` once
+  // at the end. Default true — the client always finalizes explicitly.
+  skipRecompute: z.boolean().default(true),
 });
 
 export type TallyImportResult = {
@@ -52,6 +56,10 @@ export type TallyImportResult = {
   supplierLedgerEntries: { inserted: number; skipped: number }
   unmatchedLedgerNames: string[];
   errors: string[];
+  /** Party/supplier ids touched by this chunk's ledger inserts.
+   *  Aggregated by the client and passed to `recomputeTallyBalances`. */
+  touchedPartyIds: string[];
+  touchedSupplierIds: string[];
 }
 
 function norm(s: string | null | undefined): string {
