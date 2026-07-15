@@ -52,6 +52,8 @@ const empty: Omit<PartyRow, "id"> = {
   gstin: "",
   credit_limit: 150000,
   notes: "",
+  opening_balance: 0,
+  current_balance: 0,
 };
 
 function PartiesPage() {
