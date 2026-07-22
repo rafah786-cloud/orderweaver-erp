@@ -138,9 +138,13 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
   return (
     <Card className="mt-4">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 gap-2 flex-wrap">
           <div className="text-sm text-muted-foreground">Suppliers used on purchase bills.</div>
-          {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />New Supplier</Button>}
+          <div className="flex items-center gap-2">
+            {isAdmin && <Button size="sm" variant="outline" onClick={() => setPromoOpen(true)}><Megaphone className="h-4 w-4 mr-1" />Send Promo</Button>}
+            {isAdmin && <Button size="sm" variant="outline" onClick={() => setQuickOpen(true)}><Zap className="h-4 w-4 mr-1" />Quick Add</Button>}
+            {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />New Supplier</Button>}
+          </div>
         </div>
         <Table>
           <TableHeader><TableRow>
@@ -162,6 +166,7 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
                   </Button>
                   {canEdit && <InviteVendorButton supplier={s} />}
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
+                  {isAdmin && <Button size="icon" variant="ghost" title="Delete supplier" onClick={() => doDelete(s)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                 </TableCell>
               </TableRow>
             ))}
