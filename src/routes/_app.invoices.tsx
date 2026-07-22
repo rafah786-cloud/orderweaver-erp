@@ -227,14 +227,19 @@ function InvoicesPage() {
       setPayAmount("");
       if (res && res.status === "paid") {
         try {
-          const body =
-            `Zizz Mattress — Payment Received, Thank You!\n` +
-            `Invoice #: ${res.inv.invoice_number}\n` +
-            `Amount: ₹${Number(res.inv.total_amount).toFixed(2)}\n` +
-            `Invoice marked paid. Login for receipt.`;
-          const r = await notifyCustomer({ data: { party_id: res.inv.party_id, event: "invoice.paid", ref_table: "invoices", ref_id: res.inv.id, message: body } });
+          const r = await notifyCustomer({ data: {
+            party_id: res.inv.party_id,
+            event: "invoice.paid",
+            ref_table: "invoices",
+            ref_id: res.inv.id,
+            vars: {
+              invoice_no: res.inv.invoice_number,
+              payment_amount: Number(res.inv.total_amount).toFixed(2),
+            },
+          } });
           if (r?.ok) toast.success("Customer notified via WhatsApp");
         } catch { /* non-fatal */ }
+
       }
     },
     onError: (e: Error) => toast.error(e.message),
