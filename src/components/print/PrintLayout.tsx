@@ -4,6 +4,8 @@ import { Printer, ArrowLeft } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { COMPANY } from "@/lib/print-config";
 
+export type PrintVariant = "classic" | "modern" | "minimal";
+
 interface PrintLayoutProps {
   /** Document title used in browser tab and PDF filename. */
   title: string;
@@ -14,7 +16,10 @@ interface PrintLayoutProps {
   children: ReactNode;
   /** Optional footer notes below the page footer block. */
   footerNotes?: ReactNode;
+  /** Visual template. Defaults to "classic". */
+  variant?: PrintVariant;
 }
+
 
 /**
  * Shared printable shell. Print button opens the OS print dialog where the
