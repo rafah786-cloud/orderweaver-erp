@@ -316,6 +316,35 @@ function PartiesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Quick Add Customer</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <Field label="Name *"><Input value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} placeholder="Customer name" /></Field>
+            <Field label="Mobile *"><Input value={quickForm.phone} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} placeholder="10-digit mobile or +91…" /></Field>
+            <p className="text-xs text-muted-foreground">A WhatsApp welcome greeting will be sent automatically.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickOpen(false)}>Cancel</Button>
+            <Button onClick={doQuickAdd}>Add & Greet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Send Marketing Promo</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <Field label="Message"><Textarea rows={4} value={promoMsg} onChange={(e) => setPromoMsg(e.target.value)} placeholder="Your promotional message…" /></Field>
+            <p className="text-xs text-muted-foreground">Sent to all customers with WhatsApp opt-in enabled.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoOpen(false)}>Cancel</Button>
+            <Button onClick={doBroadcast}>Send Broadcast</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <PrintPreviewModal
         url={previewUrl}
         title="Ledger Preview"
