@@ -85,6 +85,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     z.object({
       bill_id: z.string().uuid(),
       event: z.enum(["created", "updated", "cancelled"]).default("created"),
+      origin: z.string().url().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -112,6 +113,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       await logWhatsAppNotification({ party_kind: "vendor", party_id: sup.id, event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
+    const po_url = data.origin ? `${data.origin}/print/purchase/${bill.id}` : "";
     const result = await sendForEvent({
       to,
       eventKey,
@@ -120,8 +122,10 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
         po_number: bill.bill_number,
         po_date: bill.bill_date,
         po_value: Number(bill.total_amount ?? 0).toFixed(2),
+        po_url,
       },
     });
+
     await logWhatsAppNotification({
       party_kind: "vendor",
       party_id: sup.id,
