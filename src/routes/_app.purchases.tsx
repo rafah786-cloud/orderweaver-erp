@@ -15,7 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Printer, Send, Mail } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
+import { quickAddSupplier, deleteSupplier, broadcastPromo } from "@/lib/parties-admin.functions";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
