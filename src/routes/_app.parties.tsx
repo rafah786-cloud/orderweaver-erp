@@ -13,11 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, AlertTriangle, Printer, MessageCircle } from "lucide-react";
+import { Plus, Pencil, AlertTriangle, Printer, MessageCircle, Trash2, Zap, Megaphone } from "lucide-react";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
+import { quickAddParty, deleteParty, broadcastPromo } from "@/lib/parties-admin.functions";
 
 export const Route = createFileRoute("/_app/parties")({
   component: PartiesPage,
