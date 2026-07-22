@@ -1417,6 +1417,7 @@ export type Database = {
           owner_id: string | null
           phone: string | null
           pin_code: string | null
+          promo_opt_in: boolean
           state_code: string | null
           tally_name: string | null
           updated_at: string
@@ -1440,6 +1441,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           pin_code?: string | null
+          promo_opt_in?: boolean
           state_code?: string | null
           tally_name?: string | null
           updated_at?: string
@@ -1463,6 +1465,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           pin_code?: string | null
+          promo_opt_in?: boolean
           state_code?: string | null
           tally_name?: string | null
           updated_at?: string
@@ -2582,6 +2585,7 @@ export type Database = {
           opening_balance: number
           phone: string | null
           pin_code: string | null
+          promo_opt_in: boolean
           state_code: string | null
           tally_name: string | null
           updated_at: string
@@ -2603,6 +2607,7 @@ export type Database = {
           opening_balance?: number
           phone?: string | null
           pin_code?: string | null
+          promo_opt_in?: boolean
           state_code?: string | null
           tally_name?: string | null
           updated_at?: string
@@ -2624,6 +2629,7 @@ export type Database = {
           opening_balance?: number
           phone?: string | null
           pin_code?: string | null
+          promo_opt_in?: boolean
           state_code?: string | null
           tally_name?: string | null
           updated_at?: string
@@ -2927,6 +2933,7 @@ export type Database = {
       }
       whatsapp_templates: {
         Row: {
+          body_template: string | null
           created_at: string
           description: string | null
           event_key: string
@@ -2938,6 +2945,7 @@ export type Database = {
           variables: Json
         }
         Insert: {
+          body_template?: string | null
           created_at?: string
           description?: string | null
           event_key: string
@@ -2949,6 +2957,7 @@ export type Database = {
           variables?: Json
         }
         Update: {
+          body_template?: string | null
           created_at?: string
           description?: string | null
           event_key?: string
