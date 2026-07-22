@@ -48,6 +48,7 @@ function PrintPurchase() {
 
   return (
     <PrintLayout
+      variant={variant}
       title={`Purchase Bill ${bill.bill_number}`}
       docLabel="Purchase Bill"
       meta={[
