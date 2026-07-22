@@ -276,6 +276,25 @@ function PartiesPage() {
                             onClick={() => sendStatement(p)}>
                             <MessageCircle className="h-4 w-4" />
                           </Button>
+                          <Button size="icon" variant="ghost" title="Message history"
+                            onClick={() => setMsgFor(p)}>
+                            <MessageCircle className="h-4 w-4 opacity-60" />
+                          </Button>
+                          {isAdmin && (
+                            <Button size="icon" variant="ghost"
+                              title={p.promo_opt_in === false ? "Promo opted-out (click to opt in)" : "Opt-out of promos"}
+                              onClick={async () => {
+                                try {
+                                  await setOptIn({ data: { party_kind: "customer", party_id: p.id, promo_opt_in: !(p.promo_opt_in !== false) } });
+                                  qc.invalidateQueries({ queryKey: ["parties"] });
+                                } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+                              }}>
+                              <Badge variant={p.promo_opt_in === false ? "secondary" : "default"} className="h-5 px-1 text-[10px]">
+                                {p.promo_opt_in === false ? "OFF" : "ON"}
+                              </Badge>
+                            </Button>
+                          )}
+
                           {canEdit && (
                             <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                               <Pencil className="h-4 w-4" />
