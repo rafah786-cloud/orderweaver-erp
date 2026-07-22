@@ -170,8 +170,10 @@ export const broadcastPromo = createServerFn({ method: "POST" })
     const nameVar = data.audience === "parties" ? "customer_name" : "vendor_name";
     const { data: rows } = await supabaseAdmin
       .from(table)
-      .select("id, name, phone, whatsapp_number, whatsapp_opt_in")
-      .eq("whatsapp_opt_in", true);
+      .select("id, name, phone, whatsapp_number, whatsapp_opt_in, promo_opt_in")
+      .eq("whatsapp_opt_in", true)
+      .eq("promo_opt_in", true);
+
     const list = (rows ?? []) as Array<{ id: string; name: string; phone: string | null; whatsapp_number: string | null }>;
     let sent = 0; let skipped = 0;
     for (const r of list) {
