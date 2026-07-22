@@ -55,6 +55,7 @@ function PrintInvoice() {
 
   return (
     <PrintLayout
+      variant={variant}
       title={`Invoice ${inv.invoice_number}`}
       docLabel="Tax Invoice"
       meta={[
