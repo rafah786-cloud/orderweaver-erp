@@ -378,7 +378,15 @@ function PartiesPage() {
         title="Ledger Preview"
         onClose={() => setPreviewUrl(null)}
       />
+      <PartyMessagesDialog
+        open={!!msgFor}
+        onOpenChange={(v) => !v && setMsgFor(null)}
+        party_kind="customer"
+        party_id={msgFor?.id ?? null}
+        party_name={msgFor?.name ?? ""}
+      />
     </>
+
   );
 }
 
