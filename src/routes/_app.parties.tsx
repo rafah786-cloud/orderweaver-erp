@@ -272,6 +272,11 @@ function PartiesPage() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           )}
+                          {isAdmin && (
+                            <Button size="icon" variant="ghost" title="Delete customer" onClick={() => doDelete(p)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
