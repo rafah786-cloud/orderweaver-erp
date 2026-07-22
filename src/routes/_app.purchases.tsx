@@ -197,9 +197,42 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Quick Add Supplier</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div><Label className="text-xs text-muted-foreground">Name *</Label>
+              <Input value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} placeholder="Supplier name" /></div>
+            <div><Label className="text-xs text-muted-foreground">Mobile *</Label>
+              <Input value={quickForm.phone} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} placeholder="10-digit mobile or +91…" /></div>
+            <p className="text-xs text-muted-foreground">A WhatsApp welcome greeting will be sent automatically.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickOpen(false)}>Cancel</Button>
+            <Button onClick={doQuickAdd}>Add & Greet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Send Marketing Promo</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <Label className="text-xs text-muted-foreground">Message</Label>
+            <Textarea rows={4} value={promoMsg} onChange={(e) => setPromoMsg(e.target.value)} placeholder="Your promotional message…" />
+            <p className="text-xs text-muted-foreground">Sent to all suppliers with WhatsApp opt-in enabled.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoOpen(false)}>Cancel</Button>
+            <Button onClick={doBroadcast}>Send Broadcast</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
+
 
 /* ---------------- Bills ---------------- */
 
