@@ -13,11 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, AlertTriangle, Printer, MessageCircle } from "lucide-react";
+import { Plus, Pencil, AlertTriangle, Printer, MessageCircle, Trash2, Zap, Megaphone } from "lucide-react";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
+import { quickAddParty, deleteParty, broadcastPromo } from "@/lib/parties-admin.functions";
 
 export const Route = createFileRoute("/_app/parties")({
   component: PartiesPage,
@@ -57,15 +58,23 @@ const empty: Omit<PartyRow, "id"> = {
 };
 
 function PartiesPage() {
-  const { hasAnyRole } = useAuth();
+  const { hasAnyRole, hasRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "sales"]);
+  const isAdmin = hasRole("admin");
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoMsg, setPromoMsg] = useState("");
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
+  const quickAdd = useServerFn(quickAddParty);
+  const removeParty = useServerFn(deleteParty);
+  const broadcast = useServerFn(broadcastPromo);
 
   const sendStatement = async (p: PartyRow) => {
     setSendingId(p.id);
@@ -158,13 +167,48 @@ function PartiesPage() {
     return null;
   };
 
+  const doQuickAdd = async () => {
+    if (!quickForm.name.trim() || !quickForm.phone.trim()) { toast.error("Name and mobile required"); return; }
+    try {
+      await quickAdd({ data: { name: quickForm.name.trim(), phone: quickForm.phone.trim() } });
+      toast.success("Customer added — welcome message queued");
+      setQuickOpen(false); setQuickForm({ name: "", phone: "" });
+      qc.invalidateQueries({ queryKey: ["parties"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+  };
+
+  const doDelete = async (p: PartyRow) => {
+    if (!confirm(`Delete customer "${p.name}"? This cannot be undone.`)) return;
+    try {
+      await removeParty({ data: { id: p.id } });
+      toast.success("Customer deleted");
+      qc.invalidateQueries({ queryKey: ["parties"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Delete failed"); }
+  };
+
+  const doBroadcast = async () => {
+    if (!promoMsg.trim()) { toast.error("Enter a message"); return; }
+    try {
+      const r = await broadcast({ data: { audience: "parties", message: promoMsg.trim() } });
+      toast.success(`Promo sent to ${r.sent}/${r.total} customers`);
+      setPromoOpen(false); setPromoMsg("");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Broadcast failed"); }
+  };
+
   return (
     <>
       <PageHeader
         title="Parties"
         description="Customer master with outstanding balance tracking."
-        actions={canEdit ? <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />New Party</Button> : undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            {isAdmin && <Button variant="outline" onClick={() => setPromoOpen(true)}><Megaphone className="h-4 w-4 mr-1" />Send Promo</Button>}
+            {isAdmin && <Button variant="outline" onClick={() => setQuickOpen(true)}><Zap className="h-4 w-4 mr-1" />Quick Add</Button>}
+            {canEdit && <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />New Party</Button>}
+          </div>
+        }
       />
+
       <PageBody>
         <Card>
           <CardContent className="p-0">
@@ -228,6 +272,11 @@ function PartiesPage() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           )}
+                          {isAdmin && (
+                            <Button size="icon" variant="ghost" title="Delete customer" onClick={() => doDelete(p)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -263,6 +312,35 @@ function PartiesPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Quick Add Customer</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <Field label="Name *"><Input value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} placeholder="Customer name" /></Field>
+            <Field label="Mobile *"><Input value={quickForm.phone} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} placeholder="10-digit mobile or +91…" /></Field>
+            <p className="text-xs text-muted-foreground">A WhatsApp welcome greeting will be sent automatically.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickOpen(false)}>Cancel</Button>
+            <Button onClick={doQuickAdd}>Add & Greet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Send Marketing Promo</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <Field label="Message"><Textarea rows={4} value={promoMsg} onChange={(e) => setPromoMsg(e.target.value)} placeholder="Your promotional message…" /></Field>
+            <p className="text-xs text-muted-foreground">Sent to all customers with WhatsApp opt-in enabled.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoOpen(false)}>Cancel</Button>
+            <Button onClick={doBroadcast}>Send Broadcast</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

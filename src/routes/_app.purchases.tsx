@@ -15,7 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Printer, Send, Mail } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
+import { quickAddSupplier, deleteSupplier, broadcastPromo } from "@/lib/parties-admin.functions";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
@@ -57,10 +58,46 @@ function PurchasesPage() {
 /* ---------------- Suppliers ---------------- */
 
 function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Supplier | null>(null);
   const [form, setForm] = useState({ name: "", gstin: "", phone: "", email: "", address: "" });
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoMsg, setPromoMsg] = useState("");
+  const quickAdd = useServerFn(quickAddSupplier);
+  const removeSupplier = useServerFn(deleteSupplier);
+  const broadcast = useServerFn(broadcastPromo);
+
+  const doQuickAdd = async () => {
+    if (!quickForm.name.trim() || !quickForm.phone.trim()) { toast.error("Name and mobile required"); return; }
+    try {
+      await quickAdd({ data: { name: quickForm.name.trim(), phone: quickForm.phone.trim() } });
+      toast.success("Supplier added — welcome message queued");
+      setQuickOpen(false); setQuickForm({ name: "", phone: "" });
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+  };
+  const doDelete = async (s: Supplier) => {
+    if (!confirm(`Delete supplier "${s.name}"? This cannot be undone.`)) return;
+    try {
+      await removeSupplier({ data: { id: s.id } });
+      toast.success("Supplier deleted");
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Delete failed"); }
+  };
+  const doBroadcast = async () => {
+    if (!promoMsg.trim()) { toast.error("Enter a message"); return; }
+    try {
+      const r = await broadcast({ data: { audience: "suppliers", message: promoMsg.trim() } });
+      toast.success(`Promo sent to ${r.sent}/${r.total} suppliers`);
+      setPromoOpen(false); setPromoMsg("");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Broadcast failed"); }
+  };
+
 
   const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ["suppliers"],
@@ -101,9 +138,13 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
   return (
     <Card className="mt-4">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 gap-2 flex-wrap">
           <div className="text-sm text-muted-foreground">Suppliers used on purchase bills.</div>
-          {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />New Supplier</Button>}
+          <div className="flex items-center gap-2">
+            {isAdmin && <Button size="sm" variant="outline" onClick={() => setPromoOpen(true)}><Megaphone className="h-4 w-4 mr-1" />Send Promo</Button>}
+            {isAdmin && <Button size="sm" variant="outline" onClick={() => setQuickOpen(true)}><Zap className="h-4 w-4 mr-1" />Quick Add</Button>}
+            {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />New Supplier</Button>}
+          </div>
         </div>
         <Table>
           <TableHeader><TableRow>
@@ -125,6 +166,7 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
                   </Button>
                   {canEdit && <InviteVendorButton supplier={s} />}
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
+                  {isAdmin && <Button size="icon" variant="ghost" title="Delete supplier" onClick={() => doDelete(s)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                 </TableCell>
               </TableRow>
             ))}
@@ -155,9 +197,42 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Quick Add Supplier</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div><Label className="text-xs text-muted-foreground">Name *</Label>
+              <Input value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} placeholder="Supplier name" /></div>
+            <div><Label className="text-xs text-muted-foreground">Mobile *</Label>
+              <Input value={quickForm.phone} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} placeholder="10-digit mobile or +91…" /></div>
+            <p className="text-xs text-muted-foreground">A WhatsApp welcome greeting will be sent automatically.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickOpen(false)}>Cancel</Button>
+            <Button onClick={doQuickAdd}>Add & Greet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Send Marketing Promo</DialogTitle></DialogHeader>
+          <div className="grid gap-3 py-2">
+            <Label className="text-xs text-muted-foreground">Message</Label>
+            <Textarea rows={4} value={promoMsg} onChange={(e) => setPromoMsg(e.target.value)} placeholder="Your promotional message…" />
+            <p className="text-xs text-muted-foreground">Sent to all suppliers with WhatsApp opt-in enabled.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoOpen(false)}>Cancel</Button>
+            <Button onClick={doBroadcast}>Send Broadcast</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
+
 
 /* ---------------- Bills ---------------- */
 
