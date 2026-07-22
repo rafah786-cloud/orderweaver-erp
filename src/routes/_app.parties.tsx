@@ -58,15 +58,23 @@ const empty: Omit<PartyRow, "id"> = {
 };
 
 function PartiesPage() {
-  const { hasAnyRole } = useAuth();
+  const { hasAnyRole, hasRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "sales"]);
+  const isAdmin = hasRole("admin");
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoMsg, setPromoMsg] = useState("");
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
+  const quickAdd = useServerFn(quickAddParty);
+  const removeParty = useServerFn(deleteParty);
+  const broadcast = useServerFn(broadcastPromo);
 
   const sendStatement = async (p: PartyRow) => {
     setSendingId(p.id);
