@@ -167,13 +167,48 @@ function PartiesPage() {
     return null;
   };
 
+  const doQuickAdd = async () => {
+    if (!quickForm.name.trim() || !quickForm.phone.trim()) { toast.error("Name and mobile required"); return; }
+    try {
+      await quickAdd({ data: { name: quickForm.name.trim(), phone: quickForm.phone.trim() } });
+      toast.success("Customer added — welcome message queued");
+      setQuickOpen(false); setQuickForm({ name: "", phone: "" });
+      qc.invalidateQueries({ queryKey: ["parties"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+  };
+
+  const doDelete = async (p: PartyRow) => {
+    if (!confirm(`Delete customer "${p.name}"? This cannot be undone.`)) return;
+    try {
+      await removeParty({ data: { id: p.id } });
+      toast.success("Customer deleted");
+      qc.invalidateQueries({ queryKey: ["parties"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Delete failed"); }
+  };
+
+  const doBroadcast = async () => {
+    if (!promoMsg.trim()) { toast.error("Enter a message"); return; }
+    try {
+      const r = await broadcast({ data: { audience: "parties", message: promoMsg.trim() } });
+      toast.success(`Promo sent to ${r.sent}/${r.total} customers`);
+      setPromoOpen(false); setPromoMsg("");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Broadcast failed"); }
+  };
+
   return (
     <>
       <PageHeader
         title="Parties"
         description="Customer master with outstanding balance tracking."
-        actions={canEdit ? <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />New Party</Button> : undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            {isAdmin && <Button variant="outline" onClick={() => setPromoOpen(true)}><Megaphone className="h-4 w-4 mr-1" />Send Promo</Button>}
+            {isAdmin && <Button variant="outline" onClick={() => setQuickOpen(true)}><Zap className="h-4 w-4 mr-1" />Quick Add</Button>}
+            {canEdit && <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />New Party</Button>}
+          </div>
+        }
       />
+
       <PageBody>
         <Card>
           <CardContent className="p-0">
