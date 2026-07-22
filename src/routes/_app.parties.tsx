@@ -19,6 +19,9 @@ import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { quickAddParty, deleteParty, broadcastPromo } from "@/lib/parties-admin.functions";
+import { setPromoOptIn } from "@/lib/notifications-admin.functions";
+import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
+
 
 export const Route = createFileRoute("/_app/parties")({
   component: PartiesPage,
@@ -36,7 +39,10 @@ type PartyRow = {
   notes: string | null;
   opening_balance: number;
   current_balance: number;
+  whatsapp_opt_in?: boolean;
+  promo_opt_in?: boolean;
 };
+
 
 type OutstandingRow = {
   party_id: string;
@@ -71,10 +77,13 @@ function PartiesPage() {
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [msgFor, setMsgFor] = useState<PartyRow | null>(null);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const quickAdd = useServerFn(quickAddParty);
   const removeParty = useServerFn(deleteParty);
   const broadcast = useServerFn(broadcastPromo);
+  const setOptIn = useServerFn(setPromoOptIn);
+
 
   const sendStatement = async (p: PartyRow) => {
     setSendingId(p.id);
@@ -100,7 +109,7 @@ function PartiesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("parties")
-        .select("id, name, contact_person, phone, email, address, gstin, credit_limit, notes, opening_balance, current_balance")
+        .select("id, name, contact_person, phone, email, address, gstin, credit_limit, notes, opening_balance, current_balance, whatsapp_opt_in, promo_opt_in")
         .order("name");
       if (error) throw error;
       return (data ?? []) as PartyRow[];
@@ -267,6 +276,25 @@ function PartiesPage() {
                             onClick={() => sendStatement(p)}>
                             <MessageCircle className="h-4 w-4" />
                           </Button>
+                          <Button size="icon" variant="ghost" title="Message history"
+                            onClick={() => setMsgFor(p)}>
+                            <MessageCircle className="h-4 w-4 opacity-60" />
+                          </Button>
+                          {isAdmin && (
+                            <Button size="icon" variant="ghost"
+                              title={p.promo_opt_in === false ? "Promo opted-out (click to opt in)" : "Opt-out of promos"}
+                              onClick={async () => {
+                                try {
+                                  await setOptIn({ data: { party_kind: "customer", party_id: p.id, promo_opt_in: !(p.promo_opt_in !== false) } });
+                                  qc.invalidateQueries({ queryKey: ["parties"] });
+                                } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+                              }}>
+                              <Badge variant={p.promo_opt_in === false ? "secondary" : "default"} className="h-5 px-1 text-[10px]">
+                                {p.promo_opt_in === false ? "OFF" : "ON"}
+                              </Badge>
+                            </Button>
+                          )}
+
                           {canEdit && (
                             <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                               <Pencil className="h-4 w-4" />
@@ -350,7 +378,15 @@ function PartiesPage() {
         title="Ledger Preview"
         onClose={() => setPreviewUrl(null)}
       />
+      <PartyMessagesDialog
+        open={!!msgFor}
+        onOpenChange={(v) => !v && setMsgFor(null)}
+        party_kind="customer"
+        party_id={msgFor?.id ?? null}
+        party_name={msgFor?.name ?? ""}
+      />
     </>
+
   );
 }
 
