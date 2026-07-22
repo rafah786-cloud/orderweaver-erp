@@ -58,10 +58,46 @@ function PurchasesPage() {
 /* ---------------- Suppliers ---------------- */
 
 function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: string) => void }) {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Supplier | null>(null);
   const [form, setForm] = useState({ name: "", gstin: "", phone: "", email: "", address: "" });
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoMsg, setPromoMsg] = useState("");
+  const quickAdd = useServerFn(quickAddSupplier);
+  const removeSupplier = useServerFn(deleteSupplier);
+  const broadcast = useServerFn(broadcastPromo);
+
+  const doQuickAdd = async () => {
+    if (!quickForm.name.trim() || !quickForm.phone.trim()) { toast.error("Name and mobile required"); return; }
+    try {
+      await quickAdd({ data: { name: quickForm.name.trim(), phone: quickForm.phone.trim() } });
+      toast.success("Supplier added — welcome message queued");
+      setQuickOpen(false); setQuickForm({ name: "", phone: "" });
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+  };
+  const doDelete = async (s: Supplier) => {
+    if (!confirm(`Delete supplier "${s.name}"? This cannot be undone.`)) return;
+    try {
+      await removeSupplier({ data: { id: s.id } });
+      toast.success("Supplier deleted");
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Delete failed"); }
+  };
+  const doBroadcast = async () => {
+    if (!promoMsg.trim()) { toast.error("Enter a message"); return; }
+    try {
+      const r = await broadcast({ data: { audience: "suppliers", message: promoMsg.trim() } });
+      toast.success(`Promo sent to ${r.sent}/${r.total} suppliers`);
+      setPromoOpen(false); setPromoMsg("");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Broadcast failed"); }
+  };
+
 
   const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ["suppliers"],
