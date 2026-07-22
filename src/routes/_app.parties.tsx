@@ -74,10 +74,13 @@ function PartiesPage() {
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [msgFor, setMsgFor] = useState<PartyRow | null>(null);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const quickAdd = useServerFn(quickAddParty);
   const removeParty = useServerFn(deleteParty);
   const broadcast = useServerFn(broadcastPromo);
+  const setOptIn = useServerFn(setPromoOptIn);
+
 
   const sendStatement = async (p: PartyRow) => {
     setSendingId(p.id);
