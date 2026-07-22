@@ -180,15 +180,24 @@ function InvoicesPage() {
       setOpen(false);
       resetForm();
       try {
-        const body =
-          `Zizz Mattress — Invoice Issued\n` +
-          `Invoice #: ${res.invoiceNumber}\n` +
-          `Amount: ₹${savedTotal.toFixed(2)}\n` +
-          (savedDue ? `Due: ${savedDue}\n` : ``) +
-          `Login to the portal to download your invoice.`;
-        const r = await notifyCustomer({ data: { party_id: savedParty, event: "invoice.issued", ref_table: "invoices", ref_id: res.id, message: body } });
-        if (r?.ok) toast.success("Customer notified via WhatsApp");
+        const tpl = (typeof window !== "undefined" ? localStorage.getItem("invoice_template") : null) ?? "classic";
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const invoice_url = `${origin}/print/invoice/${res.id}?template=${tpl}`;
+        const r = await notifyCustomer({ data: {
+          party_id: savedParty,
+          event: "invoice.issued",
+          ref_table: "invoices",
+          ref_id: res.id,
+          vars: {
+            invoice_no: res.invoiceNumber,
+            invoice_amount: savedTotal.toFixed(2),
+            due_date: savedDue || "",
+            invoice_url,
+          },
+        } });
+        if (r?.ok) toast.success("Customer notified via WhatsApp with invoice link");
       } catch { /* non-fatal */ }
+
     },
     onError: (e: Error) => {
       if (!blockMsg) toast.error(e.message);
@@ -218,14 +227,19 @@ function InvoicesPage() {
       setPayAmount("");
       if (res && res.status === "paid") {
         try {
-          const body =
-            `Zizz Mattress — Payment Received, Thank You!\n` +
-            `Invoice #: ${res.inv.invoice_number}\n` +
-            `Amount: ₹${Number(res.inv.total_amount).toFixed(2)}\n` +
-            `Invoice marked paid. Login for receipt.`;
-          const r = await notifyCustomer({ data: { party_id: res.inv.party_id, event: "invoice.paid", ref_table: "invoices", ref_id: res.inv.id, message: body } });
+          const r = await notifyCustomer({ data: {
+            party_id: res.inv.party_id,
+            event: "invoice.paid",
+            ref_table: "invoices",
+            ref_id: res.inv.id,
+            vars: {
+              invoice_no: res.inv.invoice_number,
+              payment_amount: Number(res.inv.total_amount).toFixed(2),
+            },
+          } });
           if (r?.ok) toast.success("Customer notified via WhatsApp");
         } catch { /* non-fatal */ }
+
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -294,7 +308,21 @@ function InvoicesPage() {
         title="Invoices"
         description="Create invoices with automatic credit-limit and overdue blocking."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Bill layout</Label>
+              <Select
+                value={typeof window !== "undefined" ? (localStorage.getItem("invoice_template") ?? "classic") : "classic"}
+                onValueChange={(v) => { localStorage.setItem("invoice_template", v); toast.success(`Default bill layout: ${v}`); }}
+              >
+                <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="classic">Classic (B/W)</SelectItem>
+                  <SelectItem value="modern">Modern (Color)</SelectItem>
+                  <SelectItem value="minimal">Minimal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {hasAnyRole(["admin", "sales"]) && (
               <Button variant="outline" onClick={() => setExportOpen(true)}>
                 <FileDown className="h-4 w-4 mr-1" />Export GSTR-1 JSON
@@ -306,6 +334,7 @@ function InvoicesPage() {
           </div>
         }
       />
+
 
       <PageBody>
         <Card>

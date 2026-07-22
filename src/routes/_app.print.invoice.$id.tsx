@@ -1,17 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { PrintLayout } from "@/components/print/PrintLayout";
+import { PrintLayout, type PrintVariant } from "@/components/print/PrintLayout";
 import { PartyBlock, PrintTable, Th, Td } from "@/components/print/print-tables";
 import { COMPANY } from "@/lib/print-config";
 import { inr, formatDate } from "@/lib/format";
 
+const templateSchema = z.object({
+  template: z.enum(["classic", "modern", "minimal"]).optional(),
+});
+
 export const Route = createFileRoute("/_app/print/invoice/$id")({
+  validateSearch: (s) => templateSchema.parse(s),
   component: PrintInvoice,
 });
 
 function PrintInvoice() {
   const { id } = Route.useParams();
+  const { template } = Route.useSearch();
+  const variant: PrintVariant = template ?? (typeof window !== "undefined" ? (localStorage.getItem("invoice_template") as PrintVariant) : null) ?? "classic";
+
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["print-invoice", id],
@@ -46,6 +55,7 @@ function PrintInvoice() {
 
   return (
     <PrintLayout
+      variant={variant}
       title={`Invoice ${inv.invoice_number}`}
       docLabel="Tax Invoice"
       meta={[

@@ -4,6 +4,8 @@ import { Printer, ArrowLeft } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { COMPANY } from "@/lib/print-config";
 
+export type PrintVariant = "classic" | "modern" | "minimal";
+
 interface PrintLayoutProps {
   /** Document title used in browser tab and PDF filename. */
   title: string;
@@ -14,7 +16,10 @@ interface PrintLayoutProps {
   children: ReactNode;
   /** Optional footer notes below the page footer block. */
   footerNotes?: ReactNode;
+  /** Visual template. Defaults to "classic". */
+  variant?: PrintVariant;
 }
+
 
 /**
  * Shared printable shell. Print button opens the OS print dialog where the
@@ -22,7 +27,7 @@ interface PrintLayoutProps {
  * PDF". Browsers do not expose printer enumeration to web apps — the native
  * dialog is the supported path.
  */
-export function PrintLayout({ title, docLabel, meta = [], children, footerNotes }: PrintLayoutProps) {
+export function PrintLayout({ title, docLabel, meta = [], children, footerNotes, variant = "classic" }: PrintLayoutProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +38,29 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes 
     };
   }, [title]);
 
+  const isModern = variant === "modern";
+  const isMinimal = variant === "minimal";
+  const accent = isModern ? "#7c3aed" : isMinimal ? "#111827" : "#000000";
+
+  const headerClass = isModern
+    ? "flex items-start justify-between rounded-md px-5 py-4 text-white"
+    : isMinimal
+      ? "flex items-start justify-between pb-3"
+      : "flex items-start justify-between border-b-2 border-black pb-4";
+  const headerStyle = isModern ? { background: accent } : undefined;
+  const docLabelClass = isModern
+    ? "inline-block rounded bg-white px-3 py-1 text-sm font-semibold uppercase tracking-wider text-gray-900"
+    : isMinimal
+      ? "inline-block text-lg font-semibold uppercase tracking-[0.2em] text-gray-800"
+      : "inline-block border border-black px-3 py-1 text-sm font-semibold uppercase tracking-wider";
+  const companyNameClass = isModern
+    ? "text-2xl font-bold text-white"
+    : isMinimal
+      ? "text-3xl font-light tracking-tight text-gray-900"
+      : "text-2xl font-bold";
+  const infoTextClass = isModern ? "text-white/85" : "text-gray-700";
+  const taglineClass = isModern ? "text-white/80" : "text-gray-600";
+
   return (
     <div className="print-root min-h-screen bg-muted/30">
       {/* Screen-only toolbar */}
@@ -42,7 +70,7 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes 
             <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Button>
           <div className="text-sm text-muted-foreground">
-            Choose any installed printer or "Save as PDF" in the print dialog.
+            Template: <span className="font-medium capitalize">{variant}</span> — pick another via <code className="text-xs">?template=classic|modern|minimal</code>
           </div>
           <Button size="sm" onClick={() => window.print()}>
             <Printer className="mr-1 h-4 w-4" /> Print / Save as PDF
@@ -54,11 +82,11 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes 
       <div className="mx-auto my-6 max-w-[210mm] bg-white text-black shadow print:my-0 print:shadow-none">
         <div className="page p-10 print:p-8">
           {/* Header */}
-          <header className="flex items-start justify-between border-b-2 border-black pb-4">
+          <header className={headerClass} style={headerStyle}>
             <div>
-              <div className="text-2xl font-bold">{COMPANY.name}</div>
-              <div className="text-xs text-gray-600">{COMPANY.tagline}</div>
-              <div className="mt-2 text-xs leading-snug text-gray-700">
+              <div className={companyNameClass}>{COMPANY.name}</div>
+              <div className={`text-xs ${taglineClass}`}>{COMPANY.tagline}</div>
+              <div className={`mt-2 text-xs leading-snug ${infoTextClass}`}>
                 {COMPANY.address.map((l) => (
                   <div key={l}>{l}</div>
                 ))}
@@ -67,7 +95,7 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes 
               </div>
             </div>
             <div className="text-right">
-              <div className="inline-block border border-black px-3 py-1 text-sm font-semibold uppercase tracking-wider">
+              <div className={docLabelClass}>
                 {docLabel}
               </div>
               {meta.length > 0 && (
@@ -75,8 +103,8 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes 
                   <tbody>
                     {meta.map(([k, v]) => (
                       <tr key={k}>
-                        <td className="pr-3 text-right text-gray-600">{k}</td>
-                        <td className="text-left font-medium">{v}</td>
+                        <td className={`pr-3 text-right ${isModern ? "text-white/85" : "text-gray-600"}`}>{k}</td>
+                        <td className={`text-left font-medium ${isModern ? "text-white" : ""}`}>{v}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -84,6 +112,9 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes 
               )}
             </div>
           </header>
+
+          {isMinimal && <div className="mt-2 h-px bg-gray-300" />}
+
 
           {/* Body */}
           <main className="mt-5 text-sm">{children}</main>
