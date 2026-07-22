@@ -36,7 +36,10 @@ type PartyRow = {
   notes: string | null;
   opening_balance: number;
   current_balance: number;
+  whatsapp_opt_in?: boolean;
+  promo_opt_in?: boolean;
 };
+
 
 type OutstandingRow = {
   party_id: string;
