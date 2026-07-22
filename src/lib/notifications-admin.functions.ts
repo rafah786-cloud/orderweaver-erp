@@ -188,3 +188,79 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
       ? { ok: true, messageId: result.messageId }
       : { ok: false, reason: result.error };
   });
+
+// ---------- Notification Providers management ----------
+
+export const listNotificationProviders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { listProviders } = await import("./notifications/registry.server");
+    const providers = await listProviders();
+    return { providers };
+  });
+
+const ProviderSchema = z.object({
+  id: z.string().uuid().optional(),
+  channel: z.enum(["whatsapp", "sms", "email", "push", "in_app"]),
+  name: z.string().min(1).max(80).regex(/^[a-z0-9_]+$/i, "Letters, digits, underscores only"),
+  display_name: z.string().min(1).max(200),
+  is_active: z.boolean().default(false),
+  is_default: z.boolean().default(false),
+  priority: z.number().int().min(0).max(1000).default(100),
+  config: z.record(z.any()).default({}),
+  secret_env_keys: z.array(z.string().min(1).max(80)).max(20).default([]),
+  notes: z.string().max(1000).optional().nullable(),
+});
+
+export const upsertNotificationProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => ProviderSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const row = {
+      channel: data.channel,
+      name: data.name,
+      display_name: data.display_name,
+      is_active: data.is_active,
+      is_default: data.is_default,
+      priority: data.priority,
+      config: data.config as any,
+      secret_env_keys: data.secret_env_keys as any,
+      notes: data.notes ?? null,
+    };
+    if (data.is_default) {
+      await supabaseAdmin.from("notification_providers").update({ is_default: false }).eq("channel", data.channel);
+    }
+    if (data.id) {
+      const { error } = await supabaseAdmin.from("notification_providers").update(row).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, id: data.id };
+    }
+    const { data: ins, error } = await supabaseAdmin.from("notification_providers").insert(row).select("id").single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: ins.id };
+  });
+
+export const toggleNotificationProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("notification_providers").update({ is_active: data.is_active }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteNotificationProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("notification_providers").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
