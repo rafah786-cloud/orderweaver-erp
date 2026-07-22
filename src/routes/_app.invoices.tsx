@@ -294,7 +294,21 @@ function InvoicesPage() {
         title="Invoices"
         description="Create invoices with automatic credit-limit and overdue blocking."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Bill layout</Label>
+              <Select
+                value={typeof window !== "undefined" ? (localStorage.getItem("invoice_template") ?? "classic") : "classic"}
+                onValueChange={(v) => { localStorage.setItem("invoice_template", v); toast.success(`Default bill layout: ${v}`); }}
+              >
+                <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="classic">Classic (B/W)</SelectItem>
+                  <SelectItem value="modern">Modern (Color)</SelectItem>
+                  <SelectItem value="minimal">Minimal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {hasAnyRole(["admin", "sales"]) && (
               <Button variant="outline" onClick={() => setExportOpen(true)}>
                 <FileDown className="h-4 w-4 mr-1" />Export GSTR-1 JSON
@@ -306,6 +320,7 @@ function InvoicesPage() {
           </div>
         }
       />
+
 
       <PageBody>
         <Card>
