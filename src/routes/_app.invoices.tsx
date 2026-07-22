@@ -180,15 +180,24 @@ function InvoicesPage() {
       setOpen(false);
       resetForm();
       try {
-        const body =
-          `Zizz Mattress — Invoice Issued\n` +
-          `Invoice #: ${res.invoiceNumber}\n` +
-          `Amount: ₹${savedTotal.toFixed(2)}\n` +
-          (savedDue ? `Due: ${savedDue}\n` : ``) +
-          `Login to the portal to download your invoice.`;
-        const r = await notifyCustomer({ data: { party_id: savedParty, event: "invoice.issued", ref_table: "invoices", ref_id: res.id, message: body } });
-        if (r?.ok) toast.success("Customer notified via WhatsApp");
+        const tpl = (typeof window !== "undefined" ? localStorage.getItem("invoice_template") : null) ?? "classic";
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const invoice_url = `${origin}/print/invoice/${res.id}?template=${tpl}`;
+        const r = await notifyCustomer({ data: {
+          party_id: savedParty,
+          event: "invoice.issued",
+          ref_table: "invoices",
+          ref_id: res.id,
+          vars: {
+            invoice_no: res.invoiceNumber,
+            invoice_amount: savedTotal.toFixed(2),
+            due_date: savedDue || "",
+            invoice_url,
+          },
+        } });
+        if (r?.ok) toast.success("Customer notified via WhatsApp with invoice link");
       } catch { /* non-fatal */ }
+
     },
     onError: (e: Error) => {
       if (!blockMsg) toast.error(e.message);
