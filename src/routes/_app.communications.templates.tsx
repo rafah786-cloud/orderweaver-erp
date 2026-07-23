@@ -34,7 +34,16 @@ type TemplateRow = {
   language_code: string;
   variables: string[];
   is_active: boolean;
+  body_template: string | null;
 };
+
+function renderPreview(body: string, vars: Record<string, string>): string {
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, k) => {
+    const v = vars[k];
+    return v && v.length > 0 ? v : `{{${k}}}`;
+  });
+}
+
 
 function TemplatesPage() {
   const qc = useQueryClient();
