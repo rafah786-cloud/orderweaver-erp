@@ -15,7 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone, MessageCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
