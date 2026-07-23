@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   listWhatsAppLogs,
   listCustomersForFilter,
   listVendorsForFilter,
 } from "@/lib/whatsapp-admin.functions";
+import { retryNotificationLog } from "@/lib/notifications-admin.functions";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, RotateCw } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_app/communications/whatsapp-logs")({
   component: WhatsAppLogsPage,
