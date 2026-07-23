@@ -170,6 +170,24 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
                     onClick={() => onPreview(`/print/supplier-ledger/${s.id}`)}>
                     <Printer className="h-4 w-4" />
                   </Button>
+                  <Button size="icon" variant="ghost" title="Message history"
+                    onClick={() => setMsgFor(s)}>
+                    <MessageCircle className="h-4 w-4 opacity-60" />
+                  </Button>
+                  {isAdmin && (
+                    <Button size="icon" variant="ghost"
+                      title={s.promo_opt_in === false ? "Promo opted-out (click to opt in). Order updates still send." : "Opt-out of promos (order updates still send)"}
+                      onClick={async () => {
+                        try {
+                          await setOptIn({ data: { party_kind: "vendor", party_id: s.id, promo_opt_in: !(s.promo_opt_in !== false) } });
+                          qc.invalidateQueries({ queryKey: ["suppliers"] });
+                        } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+                      }}>
+                      <span className={`inline-flex h-5 items-center rounded px-1.5 text-[10px] font-medium ${s.promo_opt_in === false ? "bg-slate-200 text-slate-700" : "bg-primary text-primary-foreground"}`}>
+                        Promo {s.promo_opt_in === false ? "OFF" : "ON"}
+                      </span>
+                    </Button>
+                  )}
                   {canEdit && <InviteVendorButton supplier={s} />}
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                   {isAdmin && <Button size="icon" variant="ghost" title="Delete supplier" onClick={() => doDelete(s)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
@@ -179,6 +197,7 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
           </TableBody>
         </Table>
       </CardContent>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
