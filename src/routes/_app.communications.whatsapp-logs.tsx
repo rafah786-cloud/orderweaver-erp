@@ -271,13 +271,14 @@ function WhatsAppLogsPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Read</TableHead>
                     <TableHead>Failure reason</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
                   ) : rows.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No messages match the current filters.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">No messages match the current filters.</TableCell></TableRow>
                   ) : (
                     rows.map((r) => (
                       <TableRow key={r.id}>
@@ -294,9 +295,18 @@ function WhatsAppLogsPage() {
                         <TableCell className="text-xs text-muted-foreground max-w-xs truncate" title={r.failure_reason ?? ""}>
                           {r.failure_reason ?? "—"}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {r.status !== "sent" && (
+                            <Button size="sm" variant="outline" disabled={retry.isPending}
+                              onClick={() => retry.mutate(r.id)}>
+                              <RotateCw className="h-3 w-3 mr-1" />Retry
+                            </Button>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
+
                 </TableBody>
               </Table>
             </div>
