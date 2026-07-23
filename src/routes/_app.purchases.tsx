@@ -254,7 +254,16 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PartyMessagesDialog
+        open={!!msgFor}
+        onOpenChange={(v) => { if (!v) setMsgFor(null); }}
+        party_kind="vendor"
+        party_id={msgFor?.id ?? null}
+        party_name={msgFor?.name ?? ""}
+      />
     </Card>
+
   );
 }
 
