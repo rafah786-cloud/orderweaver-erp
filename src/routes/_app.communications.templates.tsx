@@ -178,7 +178,7 @@ function TemplateForm({
 }: {
   initial: TemplateRow | null;
   saving: boolean;
-  onSubmit: (values: { template_name: string; event_key: string; description: string | null; language_code: string; variables: string[]; is_active: boolean }) => void;
+  onSubmit: (values: { template_name: string; event_key: string; description: string | null; language_code: string; variables: string[]; is_active: boolean; body_template: string | null }) => void;
 }) {
   const [templateName, setTemplateName] = useState(initial?.template_name ?? "");
   const [eventKey, setEventKey] = useState(initial?.event_key ?? KNOWN_EVENT_KEYS[0]);
@@ -186,14 +186,18 @@ function TemplateForm({
   const [language, setLanguage] = useState(initial?.language_code ?? "en");
   const [vars, setVars] = useState((initial?.variables ?? []).join(", "));
   const [active, setActive] = useState(initial?.is_active ?? true);
+  const [body, setBody] = useState(initial?.body_template ?? "");
+  const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
 
   const variables = useMemo(
     () => vars.split(",").map((s) => s.trim()).filter(Boolean),
     [vars],
   );
 
+  const preview = useMemo(() => renderPreview(body, previewVars), [body, previewVars]);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
       <div className="space-y-2">
         <Label>Event</Label>
         <Select value={eventKey} onValueChange={setEventKey}>
@@ -223,13 +227,59 @@ function TemplateForm({
         <p className="text-xs text-muted-foreground">Resolved at send time from event payload. Order must match the template body.</p>
       </div>
       <div className="space-y-2">
+        <Label>Message body (fallback / preview)</Label>
+        <Textarea
+          rows={5}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Hello {{customer_name}}, your order {{order_no}} is confirmed."
+        />
+        <p className="text-xs text-muted-foreground">
+          Used when the Interakt template can't be sent (freeform fallback) and to render live previews below.
+        </p>
+      </div>
+
+      {variables.length > 0 && (
+        <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Preview values</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {variables.map((v) => (
+              <div key={v} className="space-y-1">
+                <Label className="text-xs">{v}</Label>
+                <Input
+                  value={previewVars[v] ?? ""}
+                  onChange={(e) => setPreviewVars({ ...previewVars, [v]: e.target.value })}
+                  placeholder={`sample ${v}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label>Live preview</Label>
+        <div className="rounded-md border bg-background p-3 text-sm whitespace-pre-wrap min-h-[80px]">
+          {preview || <span className="text-muted-foreground">Type a message body above to see a preview.</span>}
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label>Description (internal)</Label>
         <Input value={description ?? ""} onChange={(e) => setDescription(e.target.value)} />
       </div>
       <DialogFooter>
         <Button
           disabled={saving || !templateName}
-          onClick={() => onSubmit({ template_name: templateName, event_key: eventKey, description: description || null, language_code: language, variables, is_active: active })}
+          onClick={() => onSubmit({
+            template_name: templateName,
+            event_key: eventKey,
+            description: description || null,
+            language_code: language,
+            variables,
+            is_active: active,
+            body_template: body.trim() ? body : null,
+          })}
         >
           {saving ? "Saving…" : "Save"}
         </Button>
@@ -237,3 +287,4 @@ function TemplateForm({
     </div>
   );
 }
+
