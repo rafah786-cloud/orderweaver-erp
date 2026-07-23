@@ -36,19 +36,20 @@ export const setPromoOptIn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({
-      id: z.string().uuid(),
-      kind: z.enum(["party", "supplier"]),
-      value: z.boolean(),
+      party_kind: z.enum(["customer", "vendor"]),
+      party_id: z.string().uuid(),
+      promo_opt_in: z.boolean(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const table = data.kind === "party" ? "parties" : "suppliers";
-    const { error } = await supabaseAdmin.from(table).update({ promo_opt_in: data.value }).eq("id", data.id);
+    const table = data.party_kind === "customer" ? "parties" : "suppliers";
+    const { error } = await supabaseAdmin.from(table).update({ promo_opt_in: data.promo_opt_in }).eq("id", data.party_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /** List all notification_log rows for a specific party/supplier, newest first. */
 export const listPartyMessages = createServerFn({ method: "POST" })

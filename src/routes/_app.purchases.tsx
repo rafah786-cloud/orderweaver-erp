@@ -15,7 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone, MessageCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
@@ -25,10 +25,13 @@ import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { quickAddSupplier, deleteSupplier, broadcastPromo } from "@/lib/parties-admin.functions";
+import { setPromoOptIn } from "@/lib/notifications-admin.functions";
+import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
-type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null };
+type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null; promo_opt_in?: boolean };
+
 type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null };
 type NotifLog = { ref_id: string | null; event_type: string; status: string; error: string | null; sent_at: string; recipient_phone: string | null };
 
@@ -68,9 +71,12 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
   const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoMsg, setPromoMsg] = useState("");
+  const [msgFor, setMsgFor] = useState<Supplier | null>(null);
   const quickAdd = useServerFn(quickAddSupplier);
   const removeSupplier = useServerFn(deleteSupplier);
   const broadcast = useServerFn(broadcastPromo);
+  const setOptIn = useServerFn(setPromoOptIn);
+
 
   const doQuickAdd = async () => {
     if (!quickForm.name.trim() || !quickForm.phone.trim()) { toast.error("Name and mobile required"); return; }
@@ -164,6 +170,24 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
                     onClick={() => onPreview(`/print/supplier-ledger/${s.id}`)}>
                     <Printer className="h-4 w-4" />
                   </Button>
+                  <Button size="icon" variant="ghost" title="Message history"
+                    onClick={() => setMsgFor(s)}>
+                    <MessageCircle className="h-4 w-4 opacity-60" />
+                  </Button>
+                  {isAdmin && (
+                    <Button size="icon" variant="ghost"
+                      title={s.promo_opt_in === false ? "Promo opted-out (click to opt in). Order updates still send." : "Opt-out of promos (order updates still send)"}
+                      onClick={async () => {
+                        try {
+                          await setOptIn({ data: { party_kind: "vendor", party_id: s.id, promo_opt_in: !(s.promo_opt_in !== false) } });
+                          qc.invalidateQueries({ queryKey: ["suppliers"] });
+                        } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+                      }}>
+                      <span className={`inline-flex h-5 items-center rounded px-1.5 text-[10px] font-medium ${s.promo_opt_in === false ? "bg-slate-200 text-slate-700" : "bg-primary text-primary-foreground"}`}>
+                        Promo {s.promo_opt_in === false ? "OFF" : "ON"}
+                      </span>
+                    </Button>
+                  )}
                   {canEdit && <InviteVendorButton supplier={s} />}
                   {canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>}
                   {isAdmin && <Button size="icon" variant="ghost" title="Delete supplier" onClick={() => doDelete(s)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
@@ -173,6 +197,7 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
           </TableBody>
         </Table>
       </CardContent>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -229,7 +254,16 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PartyMessagesDialog
+        open={!!msgFor}
+        onOpenChange={(v) => { if (!v) setMsgFor(null); }}
+        party_kind="vendor"
+        party_id={msgFor?.id ?? null}
+        party_name={msgFor?.name ?? ""}
+      />
     </Card>
+
   );
 }
 

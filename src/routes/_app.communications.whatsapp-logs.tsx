@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   listWhatsAppLogs,
   listCustomersForFilter,
   listVendorsForFilter,
 } from "@/lib/whatsapp-admin.functions";
+import { retryNotificationLog } from "@/lib/notifications-admin.functions";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, RotateCw } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_app/communications/whatsapp-logs")({
   component: WhatsAppLogsPage,
@@ -51,9 +54,22 @@ function readBadge(s: string | null) {
 }
 
 function WhatsAppLogsPage() {
+  const qc = useQueryClient();
   const listLogsFn = useServerFn(listWhatsAppLogs);
   const listCustomersFn = useServerFn(listCustomersForFilter);
   const listVendorsFn = useServerFn(listVendorsForFilter);
+  const retryFn = useServerFn(retryNotificationLog);
+
+  const retry = useMutation({
+    mutationFn: (id: string) => retryFn({ data: { id } }),
+    onSuccess: (r: any) => {
+      if (r?.ok) toast.success("Message resent");
+      else toast.error(`Retry skipped: ${r?.reason ?? "unknown"}`);
+      qc.invalidateQueries({ queryKey: ["wa-logs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const monthAgo = useMemo(() => {
@@ -255,13 +271,14 @@ function WhatsAppLogsPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Read</TableHead>
                     <TableHead>Failure reason</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
                   ) : rows.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No messages match the current filters.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">No messages match the current filters.</TableCell></TableRow>
                   ) : (
                     rows.map((r) => (
                       <TableRow key={r.id}>
@@ -278,9 +295,18 @@ function WhatsAppLogsPage() {
                         <TableCell className="text-xs text-muted-foreground max-w-xs truncate" title={r.failure_reason ?? ""}>
                           {r.failure_reason ?? "—"}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {r.status !== "sent" && (
+                            <Button size="sm" variant="outline" disabled={retry.isPending}
+                              onClick={() => retry.mutate(r.id)}>
+                              <RotateCw className="h-3 w-3 mr-1" />Retry
+                            </Button>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
+
                 </TableBody>
               </Table>
             </div>

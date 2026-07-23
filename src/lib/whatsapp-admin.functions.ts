@@ -52,41 +52,38 @@ export const upsertWhatsAppTemplate = createServerFn({ method: "POST" })
       language_code: z.string().min(2).max(10).default("en"),
       variables: z.array(z.string().min(1).max(100)).max(20).default([]),
       is_active: z.boolean().default(true),
+      body_template: z.string().max(4000).optional().nullable(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const row = {
+      template_name: data.template_name,
+      event_key: data.event_key,
+      description: data.description ?? null,
+      language_code: data.language_code,
+      variables: data.variables as any,
+      is_active: data.is_active,
+      body_template: data.body_template ?? null,
+    };
     if (data.id) {
       const { error } = await supabaseAdmin
         .from("whatsapp_templates")
-        .update({
-          template_name: data.template_name,
-          event_key: data.event_key,
-          description: data.description ?? null,
-          language_code: data.language_code,
-          variables: data.variables as any,
-          is_active: data.is_active,
-        })
+        .update(row)
         .eq("id", data.id);
       if (error) throw error;
       return { ok: true, id: data.id };
     }
     const { data: ins, error } = await supabaseAdmin
       .from("whatsapp_templates")
-      .insert({
-        template_name: data.template_name,
-        event_key: data.event_key,
-        description: data.description ?? null,
-        language_code: data.language_code,
-        variables: data.variables as any,
-        is_active: data.is_active,
-      })
+      .insert(row)
       .select("id")
       .single();
     if (error) throw error;
     return { ok: true, id: ins.id };
   });
+
 
 export const deleteWhatsAppTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
