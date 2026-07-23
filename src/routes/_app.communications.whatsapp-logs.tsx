@@ -54,9 +54,22 @@ function readBadge(s: string | null) {
 }
 
 function WhatsAppLogsPage() {
+  const qc = useQueryClient();
   const listLogsFn = useServerFn(listWhatsAppLogs);
   const listCustomersFn = useServerFn(listCustomersForFilter);
   const listVendorsFn = useServerFn(listVendorsForFilter);
+  const retryFn = useServerFn(retryNotificationLog);
+
+  const retry = useMutation({
+    mutationFn: (id: string) => retryFn({ data: { id } }),
+    onSuccess: (r: any) => {
+      if (r?.ok) toast.success("Message resent");
+      else toast.error(`Retry skipped: ${r?.reason ?? "unknown"}`);
+      qc.invalidateQueries({ queryKey: ["wa-logs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const monthAgo = useMemo(() => {
