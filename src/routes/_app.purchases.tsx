@@ -25,10 +25,13 @@ import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { quickAddSupplier, deleteSupplier, broadcastPromo } from "@/lib/parties-admin.functions";
+import { setPromoOptIn } from "@/lib/notifications-admin.functions";
+import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
-type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null };
+type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null; promo_opt_in?: boolean };
+
 type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null };
 type NotifLog = { ref_id: string | null; event_type: string; status: string; error: string | null; sent_at: string; recipient_phone: string | null };
 
