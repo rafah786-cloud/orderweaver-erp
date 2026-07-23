@@ -71,9 +71,12 @@ function SuppliersTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (ur
   const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoMsg, setPromoMsg] = useState("");
+  const [msgFor, setMsgFor] = useState<Supplier | null>(null);
   const quickAdd = useServerFn(quickAddSupplier);
   const removeSupplier = useServerFn(deleteSupplier);
   const broadcast = useServerFn(broadcastPromo);
+  const setOptIn = useServerFn(setPromoOptIn);
+
 
   const doQuickAdd = async () => {
     if (!quickForm.name.trim() || !quickForm.phone.trim()) { toast.error("Name and mobile required"); return; }
