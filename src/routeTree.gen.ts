@@ -53,6 +53,7 @@ import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
 import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
 import { Route as AppCommunicationsWhatsappLogsRouteImport } from './routes/_app.communications.whatsapp-logs'
 import { Route as AppCommunicationsTemplatesRouteImport } from './routes/_app.communications.templates'
+import { Route as AppCommunicationsSetupRouteImport } from './routes/_app.communications.setup'
 import { Route as AppCommunicationsProvidersRouteImport } from './routes/_app.communications.providers'
 import { Route as AppCommunicationsInboxRouteImport } from './routes/_app.communications.inbox'
 import { Route as AppCommunicationsEventsRouteImport } from './routes/_app.communications.events'
@@ -304,6 +305,11 @@ const AppCommunicationsTemplatesRoute =
     path: '/templates',
     getParentRoute: () => AppCommunicationsRoute,
   } as any)
+const AppCommunicationsSetupRoute = AppCommunicationsSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AppCommunicationsRoute,
+} as any)
 const AppCommunicationsProvidersRoute =
   AppCommunicationsProvidersRouteImport.update({
     id: '/providers',
@@ -502,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/communications/events': typeof AppCommunicationsEventsRoute
   '/communications/inbox': typeof AppCommunicationsInboxRoute
   '/communications/providers': typeof AppCommunicationsProvidersRoute
+  '/communications/setup': typeof AppCommunicationsSetupRoute
   '/communications/templates': typeof AppCommunicationsTemplatesRoute
   '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/gst/einvoices': typeof AppGstEinvoicesRoute
@@ -574,6 +581,7 @@ export interface FileRoutesByTo {
   '/communications/events': typeof AppCommunicationsEventsRoute
   '/communications/inbox': typeof AppCommunicationsInboxRoute
   '/communications/providers': typeof AppCommunicationsProvidersRoute
+  '/communications/setup': typeof AppCommunicationsSetupRoute
   '/communications/templates': typeof AppCommunicationsTemplatesRoute
   '/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/gst/einvoices': typeof AppGstEinvoicesRoute
@@ -650,6 +658,7 @@ export interface FileRoutesById {
   '/_app/communications/events': typeof AppCommunicationsEventsRoute
   '/_app/communications/inbox': typeof AppCommunicationsInboxRoute
   '/_app/communications/providers': typeof AppCommunicationsProvidersRoute
+  '/_app/communications/setup': typeof AppCommunicationsSetupRoute
   '/_app/communications/templates': typeof AppCommunicationsTemplatesRoute
   '/_app/communications/whatsapp-logs': typeof AppCommunicationsWhatsappLogsRoute
   '/_app/gst/einvoices': typeof AppGstEinvoicesRoute
@@ -726,6 +735,7 @@ export interface FileRouteTypes {
     | '/communications/events'
     | '/communications/inbox'
     | '/communications/providers'
+    | '/communications/setup'
     | '/communications/templates'
     | '/communications/whatsapp-logs'
     | '/gst/einvoices'
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
     | '/communications/events'
     | '/communications/inbox'
     | '/communications/providers'
+    | '/communications/setup'
     | '/communications/templates'
     | '/communications/whatsapp-logs'
     | '/gst/einvoices'
@@ -873,6 +884,7 @@ export interface FileRouteTypes {
     | '/_app/communications/events'
     | '/_app/communications/inbox'
     | '/_app/communications/providers'
+    | '/_app/communications/setup'
     | '/_app/communications/templates'
     | '/_app/communications/whatsapp-logs'
     | '/_app/gst/einvoices'
@@ -1227,6 +1239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunicationsTemplatesRouteImport
       parentRoute: typeof AppCommunicationsRoute
     }
+    '/_app/communications/setup': {
+      id: '/_app/communications/setup'
+      path: '/setup'
+      fullPath: '/communications/setup'
+      preLoaderRoute: typeof AppCommunicationsSetupRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
     '/_app/communications/providers': {
       id: '/_app/communications/providers'
       path: '/providers'
@@ -1501,6 +1520,7 @@ interface AppCommunicationsRouteChildren {
   AppCommunicationsEventsRoute: typeof AppCommunicationsEventsRoute
   AppCommunicationsInboxRoute: typeof AppCommunicationsInboxRoute
   AppCommunicationsProvidersRoute: typeof AppCommunicationsProvidersRoute
+  AppCommunicationsSetupRoute: typeof AppCommunicationsSetupRoute
   AppCommunicationsTemplatesRoute: typeof AppCommunicationsTemplatesRoute
   AppCommunicationsWhatsappLogsRoute: typeof AppCommunicationsWhatsappLogsRoute
   AppCommunicationsIndexRoute: typeof AppCommunicationsIndexRoute
@@ -1512,6 +1532,7 @@ const AppCommunicationsRouteChildren: AppCommunicationsRouteChildren = {
   AppCommunicationsEventsRoute: AppCommunicationsEventsRoute,
   AppCommunicationsInboxRoute: AppCommunicationsInboxRoute,
   AppCommunicationsProvidersRoute: AppCommunicationsProvidersRoute,
+  AppCommunicationsSetupRoute: AppCommunicationsSetupRoute,
   AppCommunicationsTemplatesRoute: AppCommunicationsTemplatesRoute,
   AppCommunicationsWhatsappLogsRoute: AppCommunicationsWhatsappLogsRoute,
   AppCommunicationsIndexRoute: AppCommunicationsIndexRoute,
@@ -1672,13 +1693,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
