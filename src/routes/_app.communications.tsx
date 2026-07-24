@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 
 const TABS = [
+  { to: "/communications/setup",                  label: "Setup Wizard" },
   { to: "/communications/events",                 label: "Events" },
   { to: "/communications/providers",              label: "Providers" },
   { to: "/communications/templates",              label: "Templates" },
