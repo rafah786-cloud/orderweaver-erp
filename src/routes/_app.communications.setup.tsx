@@ -113,7 +113,20 @@ function SetupWizard() {
     return m;
   }, [tplQ.data]);
 
-  const templatesOk = KNOWN_EVENT_KEYS.every((k) => templatesByEvent.has(k));
+  const validation = valQ.data?.results ?? [];
+  const validationByEvent = useMemo(
+    () => new Map(validation.map((v) => [v.event_key, v])),
+    [validation],
+  );
+  const templatesMapped = KNOWN_EVENT_KEYS.every((k) => templatesByEvent.has(k));
+  const templatesValidated = valQ.data?.all_ok ?? false;
+  const templatesStatus: StepStatus = templatesValidated
+    ? "ok"
+    : templatesMapped
+      ? "warn"
+      : tplQ.data?.templates?.length
+        ? "warn"
+        : "todo";
 
   const activeSubs = (subQ.data ?? []).filter((s) => s.is_active);
   const subsOk = activeSubs.length > 0;
@@ -121,7 +134,7 @@ function SetupWizard() {
   const steps: Array<{ key: string; title: string; icon: any; status: StepStatus }> = [
     { key: "key", title: "API Credentials", icon: KeyRound, status: apiKeyOk ? "ok" : "todo" },
     { key: "cfg", title: "Provider Configuration", icon: Settings2, status: cfgOk ? "ok" : apiKeyOk ? "warn" : "todo" },
-    { key: "tpl", title: "Message Templates", icon: FileText, status: templatesOk ? "ok" : (tplQ.data?.templates?.length ? "warn" : "todo") },
+    { key: "tpl", title: "Message Templates", icon: FileText, status: templatesStatus },
     { key: "sub", title: "Staff Subscriptions", icon: Users, status: subsOk ? "ok" : "warn" },
     { key: "test", title: "Verify with a Test", icon: Send, status: testResult?.ok ? "ok" : "todo" },
   ];
