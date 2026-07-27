@@ -458,7 +458,12 @@ function SetupWizard() {
           <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          <Button variant="ghost" onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))} disabled={step === steps.length - 1}>
+          <Button
+            variant="ghost"
+            onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
+            disabled={step === steps.length - 1 || (step === 2 && !templatesValidated)}
+            title={step === 2 && !templatesValidated ? "Resolve template issues before continuing" : undefined}
+          >
             Next <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
