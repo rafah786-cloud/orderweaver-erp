@@ -281,35 +281,94 @@ function SetupWizard() {
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" />Step 3 · Message Templates</CardTitle>
-                <CardDescription>Every ERP event needs an Interakt-approved template with a matching name.</CardDescription>
+                <CardDescription>Every ERP event needs an Interakt-approved template with a matching variable count.</CardDescription>
               </div>
-              <Link to="/communications/templates"><Button size="sm" variant="outline">Manage templates</Button></Link>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => importMut.mutate({ overwrite: false })}
+                  disabled={!apiKeyOk || importMut.isPending}
+                >
+                  {importMut.isPending ? "Importing…" : "Import from Interakt"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => valQ.refetch()}
+                  disabled={!apiKeyOk || valQ.isFetching}
+                >
+                  {valQ.isFetching ? "Validating…" : "Re-validate"}
+                </Button>
+                <Link to="/communications/templates"><Button size="sm" variant="outline">Manage</Button></Link>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {!apiKeyOk && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+                  Add <code>INTERAKT_API_KEY</code> in Step 1 to enable validation and import.
+                </div>
+              )}
+              {valQ.data?.remoteError && (
+                <div className="rounded-md border border-red-500/40 bg-red-500/5 p-3 text-sm">
+                  Couldn't reach Interakt: {valQ.data.remoteError}
+                </div>
+              )}
+              {valQ.data && !valQ.data.remoteError && (
+                <div className="text-xs text-muted-foreground">
+                  Fetched {valQ.data.remote_count} template(s) from Interakt.
+                </div>
+              )}
+
               <div className="rounded-md border divide-y">
                 {KNOWN_EVENT_KEYS.map((k) => {
                   const t = templatesByEvent.get(k);
-                  const status: StepStatus = !t ? "todo" : t.approved === false ? "warn" : "ok";
+                  const v = validationByEvent.get(k);
+                  let status: StepStatus = "todo";
+                  let label = "Missing";
+                  if (v) {
+                    if (v.ok) { status = "ok"; label = "Approved · vars match"; }
+                    else if (!v.local_name) { status = "todo"; label = "Not mapped"; }
+                    else if (!v.interakt_found) { status = "todo"; label = "Not on Interakt"; }
+                    else if (!v.is_approved) { status = "warn"; label = v.interakt_status ?? "Not approved"; }
+                    else if (!v.vars_match) { status = "warn"; label = `Vars ${v.local_var_count} ≠ ${v.interakt_var_count}`; }
+                  } else if (t) {
+                    status = "warn"; label = "Unvalidated";
+                  }
                   return (
                     <div key={k} className="flex items-center justify-between px-3 py-2 text-sm">
-                      <div>
+                      <div className="min-w-0">
                         <div className="font-mono text-xs text-muted-foreground">{k}</div>
-                        <div className="font-medium">{t?.name ?? "— not mapped —"}</div>
+                        <div className="font-medium truncate">{t?.name ?? "— not mapped —"}</div>
+                        {v?.issue && !v.ok && (
+                          <div className="text-xs text-muted-foreground">{v.issue}</div>
+                        )}
                       </div>
-                      <StatusPill
-                        status={status}
-                        label={status === "ok" ? "Mapped" : status === "warn" ? "Not approved" : "Missing"}
-                      />
+                      <StatusPill status={status} label={label} />
                     </div>
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Template names in the app must match Interakt exactly (case-sensitive) and variable counts must line up, or Interakt will reject the send.
-              </p>
+
+              {importMut.data?.unmapped_remote?.length ? (
+                <div className="rounded-md border p-3 text-xs">
+                  <div className="font-medium mb-1">Interakt templates we couldn't auto-map ({importMut.data.unmapped_remote.length})</div>
+                  <div className="text-muted-foreground">
+                    Map these manually in the templates page: {importMut.data.unmapped_remote.slice(0, 8).map((t) => t.name).join(", ")}
+                    {importMut.data.unmapped_remote.length > 8 && "…"}
+                  </div>
+                </div>
+              ) : null}
+
+              {!templatesValidated && apiKeyOk && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
+                  Fix the issues above (or click <b>Import from Interakt</b>) before moving to the test step.
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
+
 
         {step === 3 && (
           <Card>
