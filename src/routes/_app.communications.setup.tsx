@@ -52,11 +52,31 @@ function SetupWizard() {
   const listTpl = useServerFn(listWhatsAppTemplates);
   const listSubs = useServerFn(listSubscriptions);
   const deptCounts = useServerFn(departmentEmployeeCounts);
+  const validateTpl = useServerFn(validateWhatsAppTemplates);
+  const importTpl = useServerFn(importInteraktTemplates);
 
   const cfgQ = useQuery({ queryKey: ["wa_setup_cfg"], queryFn: () => getCfg() });
   const tplQ = useQuery({ queryKey: ["wa_setup_tpl"], queryFn: () => listTpl() });
   const subQ = useQuery({ queryKey: ["wa_setup_sub"], queryFn: () => listSubs() });
   const empQ = useQuery({ queryKey: ["wa_setup_emp"], queryFn: () => deptCounts() });
+  const valQ = useQuery({
+    queryKey: ["wa_setup_validate"],
+    queryFn: () => validateTpl(),
+    enabled: !!cfgQ.data?.api_key_configured,
+  });
+
+  const importMut = useMutation({
+    mutationFn: (vars: { overwrite: boolean }) =>
+      importTpl({ data: { overwrite: vars.overwrite, onlyApproved: true } }),
+    onSuccess: async (r) => {
+      toast.success(
+        `Imported ${r.inserted.length} · updated ${r.updated.length} · skipped ${r.skipped.length}`,
+      );
+      await tplQ.refetch();
+      await valQ.refetch();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Import failed"),
+  });
 
   const [step, setStep] = useState(0);
 
