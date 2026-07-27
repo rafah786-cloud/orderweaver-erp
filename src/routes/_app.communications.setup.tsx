@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getWhatsAppConfig,
@@ -8,6 +8,10 @@ import {
   sendTestWhatsAppMessage,
 } from "@/lib/whatsapp-config.functions";
 import { listWhatsAppTemplates, KNOWN_EVENT_KEYS } from "@/lib/whatsapp-admin.functions";
+import {
+  validateWhatsAppTemplates,
+  importInteraktTemplates,
+} from "@/lib/whatsapp-interakt-sync.functions";
 import {
   listSubscriptions,
   departmentEmployeeCounts,
