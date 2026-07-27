@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getWhatsAppConfig,
@@ -8,6 +8,10 @@ import {
   sendTestWhatsAppMessage,
 } from "@/lib/whatsapp-config.functions";
 import { listWhatsAppTemplates, KNOWN_EVENT_KEYS } from "@/lib/whatsapp-admin.functions";
+import {
+  validateWhatsAppTemplates,
+  importInteraktTemplates,
+} from "@/lib/whatsapp-interakt-sync.functions";
 import {
   listSubscriptions,
   departmentEmployeeCounts,
@@ -48,11 +52,31 @@ function SetupWizard() {
   const listTpl = useServerFn(listWhatsAppTemplates);
   const listSubs = useServerFn(listSubscriptions);
   const deptCounts = useServerFn(departmentEmployeeCounts);
+  const validateTpl = useServerFn(validateWhatsAppTemplates);
+  const importTpl = useServerFn(importInteraktTemplates);
 
   const cfgQ = useQuery({ queryKey: ["wa_setup_cfg"], queryFn: () => getCfg() });
   const tplQ = useQuery({ queryKey: ["wa_setup_tpl"], queryFn: () => listTpl() });
   const subQ = useQuery({ queryKey: ["wa_setup_sub"], queryFn: () => listSubs() });
   const empQ = useQuery({ queryKey: ["wa_setup_emp"], queryFn: () => deptCounts() });
+  const valQ = useQuery({
+    queryKey: ["wa_setup_validate"],
+    queryFn: () => validateTpl(),
+    enabled: !!cfgQ.data?.api_key_configured,
+  });
+
+  const importMut = useMutation({
+    mutationFn: (vars: { overwrite: boolean }) =>
+      importTpl({ data: { overwrite: vars.overwrite, onlyApproved: true } }),
+    onSuccess: async (r) => {
+      toast.success(
+        `Imported ${r.inserted.length} · updated ${r.updated.length} · skipped ${r.skipped.length}`,
+      );
+      await tplQ.refetch();
+      await valQ.refetch();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Import failed"),
+  });
 
   const [step, setStep] = useState(0);
 
@@ -89,7 +113,20 @@ function SetupWizard() {
     return m;
   }, [tplQ.data]);
 
-  const templatesOk = KNOWN_EVENT_KEYS.every((k) => templatesByEvent.has(k));
+  const validation = valQ.data?.results ?? [];
+  const validationByEvent = useMemo(
+    () => new Map(validation.map((v) => [v.event_key, v])),
+    [validation],
+  );
+  const templatesMapped = KNOWN_EVENT_KEYS.every((k) => templatesByEvent.has(k));
+  const templatesValidated = valQ.data?.all_ok ?? false;
+  const templatesStatus: StepStatus = templatesValidated
+    ? "ok"
+    : templatesMapped
+      ? "warn"
+      : tplQ.data?.templates?.length
+        ? "warn"
+        : "todo";
 
   const activeSubs = (subQ.data ?? []).filter((s) => s.is_active);
   const subsOk = activeSubs.length > 0;
@@ -97,7 +134,7 @@ function SetupWizard() {
   const steps: Array<{ key: string; title: string; icon: any; status: StepStatus }> = [
     { key: "key", title: "API Credentials", icon: KeyRound, status: apiKeyOk ? "ok" : "todo" },
     { key: "cfg", title: "Provider Configuration", icon: Settings2, status: cfgOk ? "ok" : apiKeyOk ? "warn" : "todo" },
-    { key: "tpl", title: "Message Templates", icon: FileText, status: templatesOk ? "ok" : (tplQ.data?.templates?.length ? "warn" : "todo") },
+    { key: "tpl", title: "Message Templates", icon: FileText, status: templatesStatus },
     { key: "sub", title: "Staff Subscriptions", icon: Users, status: subsOk ? "ok" : "warn" },
     { key: "test", title: "Verify with a Test", icon: Send, status: testResult?.ok ? "ok" : "todo" },
   ];
@@ -244,35 +281,94 @@ function SetupWizard() {
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" />Step 3 · Message Templates</CardTitle>
-                <CardDescription>Every ERP event needs an Interakt-approved template with a matching name.</CardDescription>
+                <CardDescription>Every ERP event needs an Interakt-approved template with a matching variable count.</CardDescription>
               </div>
-              <Link to="/communications/templates"><Button size="sm" variant="outline">Manage templates</Button></Link>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => importMut.mutate({ overwrite: false })}
+                  disabled={!apiKeyOk || importMut.isPending}
+                >
+                  {importMut.isPending ? "Importing…" : "Import from Interakt"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => valQ.refetch()}
+                  disabled={!apiKeyOk || valQ.isFetching}
+                >
+                  {valQ.isFetching ? "Validating…" : "Re-validate"}
+                </Button>
+                <Link to="/communications/templates"><Button size="sm" variant="outline">Manage</Button></Link>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {!apiKeyOk && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+                  Add <code>INTERAKT_API_KEY</code> in Step 1 to enable validation and import.
+                </div>
+              )}
+              {valQ.data?.remoteError && (
+                <div className="rounded-md border border-red-500/40 bg-red-500/5 p-3 text-sm">
+                  Couldn't reach Interakt: {valQ.data.remoteError}
+                </div>
+              )}
+              {valQ.data && !valQ.data.remoteError && (
+                <div className="text-xs text-muted-foreground">
+                  Fetched {valQ.data.remote_count} template(s) from Interakt.
+                </div>
+              )}
+
               <div className="rounded-md border divide-y">
                 {KNOWN_EVENT_KEYS.map((k) => {
                   const t = templatesByEvent.get(k);
-                  const status: StepStatus = !t ? "todo" : t.approved === false ? "warn" : "ok";
+                  const v = validationByEvent.get(k);
+                  let status: StepStatus = "todo";
+                  let label = "Missing";
+                  if (v) {
+                    if (v.ok) { status = "ok"; label = "Approved · vars match"; }
+                    else if (!v.local_name) { status = "todo"; label = "Not mapped"; }
+                    else if (!v.interakt_found) { status = "todo"; label = "Not on Interakt"; }
+                    else if (!v.is_approved) { status = "warn"; label = v.interakt_status ?? "Not approved"; }
+                    else if (!v.vars_match) { status = "warn"; label = `Vars ${v.local_var_count} ≠ ${v.interakt_var_count}`; }
+                  } else if (t) {
+                    status = "warn"; label = "Unvalidated";
+                  }
                   return (
                     <div key={k} className="flex items-center justify-between px-3 py-2 text-sm">
-                      <div>
+                      <div className="min-w-0">
                         <div className="font-mono text-xs text-muted-foreground">{k}</div>
-                        <div className="font-medium">{t?.name ?? "— not mapped —"}</div>
+                        <div className="font-medium truncate">{t?.name ?? "— not mapped —"}</div>
+                        {v?.issue && !v.ok && (
+                          <div className="text-xs text-muted-foreground">{v.issue}</div>
+                        )}
                       </div>
-                      <StatusPill
-                        status={status}
-                        label={status === "ok" ? "Mapped" : status === "warn" ? "Not approved" : "Missing"}
-                      />
+                      <StatusPill status={status} label={label} />
                     </div>
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Template names in the app must match Interakt exactly (case-sensitive) and variable counts must line up, or Interakt will reject the send.
-              </p>
+
+              {importMut.data?.unmapped_remote?.length ? (
+                <div className="rounded-md border p-3 text-xs">
+                  <div className="font-medium mb-1">Interakt templates we couldn't auto-map ({importMut.data.unmapped_remote.length})</div>
+                  <div className="text-muted-foreground">
+                    Map these manually in the templates page: {importMut.data.unmapped_remote.slice(0, 8).map((t) => t.name).join(", ")}
+                    {importMut.data.unmapped_remote.length > 8 && "…"}
+                  </div>
+                </div>
+              ) : null}
+
+              {!templatesValidated && apiKeyOk && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
+                  Fix the issues above (or click <b>Import from Interakt</b>) before moving to the test step.
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
+
 
         {step === 3 && (
           <Card>
@@ -362,7 +458,12 @@ function SetupWizard() {
           <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          <Button variant="ghost" onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))} disabled={step === steps.length - 1}>
+          <Button
+            variant="ghost"
+            onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
+            disabled={step === steps.length - 1 || (step === 2 && !templatesValidated)}
+            title={step === 2 && !templatesValidated ? "Resolve template issues before continuing" : undefined}
+          >
             Next <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
