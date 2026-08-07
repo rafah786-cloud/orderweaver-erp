@@ -37,6 +37,37 @@ export type TallyLedgerEntry = {
   external_ref: string;
 };
 
+/** A Tally account group (Chart of Accounts node). */
+export type TallyGroup = {
+  name: string;
+  parent: string | null;
+  nature: "assets" | "liabilities" | "income" | "expenses";
+  affects_gross_profit: boolean;
+};
+
+/** Any Tally ledger master, regardless of group. */
+export type TallyLedgerMaster = {
+  name: string;
+  parent: string;
+  gstin: string | null;
+  opening_balance: number;
+  /** "dr" when the opening balance is a debit. */
+  opening_type: "dr" | "cr";
+  notes: string | null;
+};
+
+export type TallyGodown = { name: string; parent: string | null; address: string | null };
+export type TallyCostCentre = { name: string; parent: string | null };
+
+/** Bill-wise outstanding reference carried on a ledger master or voucher. */
+export type TallyBill = {
+  party_name: string;
+  bill_name: string;
+  bill_date: string | null;
+  /** Positive = receivable (Dr), negative = payable (Cr). */
+  amount: number;
+};
+
 export type TallyParsed = {
   customers: TallyParty[];
   vendors: TallyParty[];
@@ -44,7 +75,14 @@ export type TallyParsed = {
   finishedGoods: TallyStockItem[];
   /** Voucher-level ledger entries (Day Book / Ledger XML exports). */
   ledgerEntries: TallyLedgerEntry[];
+  /** Full Chart of Accounts. */
+  groups: TallyGroup[];
+  ledgers: TallyLedgerMaster[];
+  godowns: TallyGodown[];
+  costCentres: TallyCostCentre[];
+  bills: TallyBill[];
 };
+
 
 const parser = new XMLParser({
   ignoreAttributes: false,
