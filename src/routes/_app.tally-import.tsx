@@ -96,7 +96,10 @@ function TallyImportPage() {
         finishedGroups: finishedGroups.split(",").map((s) => s.trim()).filter(Boolean),
       });
       setParsed(out);
-      const total = out.customers.length + out.vendors.length + out.rawMaterials.length + out.finishedGoods.length;
+      const total =
+        out.customers.length + out.vendors.length + out.rawMaterials.length + out.finishedGoods.length +
+        out.groups.length + out.ledgers.length + out.godowns.length + out.costCentres.length;
+
       if (total === 0) toast.warning("No masters found in this XML. Make sure you exported Masters from Tally.");
       else toast.success(`Parsed ${total} records. Review and import.`);
     } catch (err) {
