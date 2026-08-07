@@ -476,3 +476,102 @@ function StockTable({ rows }: { rows: Array<{ name: string; unit: string; openin
     </div>
   );
 }
+
+type OutRow = { name: string; closing_balance: number };
+
+function OutstandingTable({ customers, vendors }: { customers: OutRow[]; vendors: OutRow[] }) {
+  const rows = [
+    ...customers.map((c) => ({ ...c, kind: "Customer" as const })),
+    ...vendors.map((v) => ({ ...v, kind: "Vendor" as const })),
+  ].filter((r) => Math.abs(r.closing_balance) > 0.005)
+   .sort((a, b) => Math.abs(b.closing_balance) - Math.abs(a.closing_balance));
+
+  const receivable = customers.reduce((a, c) => a + Math.max(c.closing_balance, 0), 0);
+  const payable = vendors.reduce((a, v) => a + Math.max(-v.closing_balance, 0), 0);
+
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No outstanding balances found in this export.</p>;
+
+  return (
+    <div>
+      <div className="grid gap-3 grid-cols-2 my-3">
+        <div className="rounded-xl glass-sm p-3">
+          <div className="text-xs text-muted-foreground">Total receivable (customers)</div>
+          <div className="text-xl font-semibold mt-0.5">₹{receivable.toFixed(2)}</div>
+        </div>
+        <div className="rounded-xl glass-sm p-3">
+          <div className="text-xs text-muted-foreground">Total payable (vendors)</div>
+          <div className="text-xl font-semibold mt-0.5">₹{payable.toFixed(2)}</div>
+        </div>
+      </div>
+      <div className="max-h-[420px] overflow-y-auto">
+        <Table>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Outstanding</TableHead><TableHead>Dr/Cr</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {rows.slice(0, 300).map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium">{r.name}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{r.kind}</TableCell>
+                <TableCell className="text-right">{Math.abs(r.closing_balance).toFixed(2)}</TableCell>
+                <TableCell className="text-xs">{r.closing_balance >= 0 ? "Dr" : "Cr"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {rows.length > 300 && <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>}
+      </div>
+    </div>
+  );
+}
+
+function ChartOfAccountsTable({
+  groups,
+  ledgers,
+}: {
+  groups: Array<{ name: string; parent: string | null; nature: string }>;
+  ledgers: Array<{ name: string; parent: string; opening_balance: number; opening_type: string }>;
+}) {
+  const rows = [
+    ...groups.map((g) => ({ name: g.name, parent: g.parent ?? "—", kind: "Group", detail: g.nature })),
+    ...ledgers.map((l) => ({ name: l.name, parent: l.parent, kind: "Ledger", detail: `${l.opening_balance.toFixed(2)} ${l.opening_type.toUpperCase()}` })),
+  ];
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No account groups or ledgers found. Export the Chart of Accounts / List of Accounts from Tally.</p>;
+  return (
+    <div className="max-h-[420px] overflow-y-auto">
+      <Table>
+        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Under</TableHead><TableHead>Type</TableHead><TableHead>Detail</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.slice(0, 300).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.parent}</TableCell>
+              <TableCell className="text-xs">{r.kind}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.detail}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {rows.length > 300 && <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>}
+    </div>
+  );
+}
+
+function NamedTable({ rows }: { rows: Array<{ name: string; kind: string; parent: string | null }> }) {
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No godowns or cost centres found.</p>;
+  return (
+    <div className="max-h-[420px] overflow-y-auto">
+      <Table>
+        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Under</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.slice(0, 200).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell className="text-xs">{r.kind}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.parent ?? "—"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
