@@ -35,12 +35,43 @@ const ledgerEntrySchema = z.object({
   external_ref: z.string().min(1).max(255),
 });
 
+const groupSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255).nullable(),
+  nature: z.enum(["assets", "liabilities", "income", "expenses"]),
+  affects_gross_profit: z.boolean(),
+});
+
+const ledgerMasterSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255),
+  gstin: z.string().max(20).nullable(),
+  opening_balance: z.number(),
+  opening_type: z.enum(["dr", "cr"]),
+  notes: z.string().max(500).nullable(),
+});
+
+const godownSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255).nullable(),
+  address: z.string().max(2000).nullable(),
+});
+
+const costCentreSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255).nullable(),
+});
+
 const inputSchema = z.object({
   customers: z.array(partySchema).max(2000).default([]),
   vendors: z.array(partySchema).max(2000).default([]),
   rawMaterials: z.array(stockSchema).max(2000).default([]),
   finishedGoods: z.array(stockSchema).max(2000).default([]),
   ledgerEntries: z.array(ledgerEntrySchema).max(5000).default([]),
+  groups: z.array(groupSchema).max(2000).default([]),
+  ledgers: z.array(ledgerMasterSchema).max(2000).default([]),
+  godowns: z.array(godownSchema).max(1000).default([]),
+  costCentres: z.array(costCentreSchema).max(1000).default([]),
   // When true, the handler skips the O(party_count) balance recompute so the
   // caller can stream many chunks fast and call `recomputeTallyBalances` once
   // at the end. Default true — the client always finalizes explicitly.
@@ -54,6 +85,10 @@ export type TallyImportResult = {
   finishedGoods: { inserted: number; updated: number }
   partyLedgerEntries: { inserted: number; skipped: number }
   supplierLedgerEntries: { inserted: number; skipped: number }
+  ledgerGroups: { inserted: number; updated: number }
+  ledgerAccounts: { inserted: number; updated: number }
+  godowns: { inserted: number; updated: number }
+  costCentres: { inserted: number; updated: number }
   unmatchedLedgerNames: string[];
   errors: string[];
   /** Party/supplier ids touched by this chunk's ledger inserts.
@@ -61,6 +96,7 @@ export type TallyImportResult = {
   touchedPartyIds: string[];
   touchedSupplierIds: string[];
 }
+
 
 function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
