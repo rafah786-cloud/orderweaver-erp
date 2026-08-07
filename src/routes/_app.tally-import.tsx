@@ -127,18 +127,24 @@ function TallyImportPage() {
     const LEDGER_CHUNK = 2000;
 
     const chunks: Array<{ label: string; payload: Record<string, unknown> }> = [];
-    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries", label: string) => {
+    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries" | "groups" | "ledgers" | "godowns" | "costCentres", label: string) => {
       for (let i = 0; i < arr.length; i += size) {
         chunks.push({
           label: `${label} ${Math.min(i + size, arr.length)}/${arr.length}`,
           payload: {
             customers: [], vendors: [], rawMaterials: [], finishedGoods: [], ledgerEntries: [],
+            groups: [], ledgers: [], godowns: [], costCentres: [],
             skipRecompute: true,
             [key]: arr.slice(i, i + size),
           } as any,
         });
       }
     };
+    // Groups first so ledger accounts can resolve their parent group.
+    push(parsed.groups, MASTER_CHUNK, "groups", "Account groups");
+    push(parsed.ledgers, MASTER_CHUNK, "ledgers", "Ledger accounts");
+    push(parsed.godowns, MASTER_CHUNK, "godowns", "Godowns");
+    push(parsed.costCentres, MASTER_CHUNK, "costCentres", "Cost centres");
     push(parsed.customers, MASTER_CHUNK, "customers", "Customers");
     push(parsed.vendors, MASTER_CHUNK, "vendors", "Vendors");
     push(parsed.rawMaterials, MASTER_CHUNK, "rawMaterials", "Raw materials");
@@ -153,11 +159,16 @@ function TallyImportPage() {
       finishedGoods: { inserted: 0, updated: 0 },
       partyLedgerEntries: { inserted: 0, skipped: 0 },
       supplierLedgerEntries: { inserted: 0, skipped: 0 },
+      ledgerGroups: { inserted: 0, updated: 0 },
+      ledgerAccounts: { inserted: 0, updated: 0 },
+      godowns: { inserted: 0, updated: 0 },
+      costCentres: { inserted: 0, updated: 0 },
       unmatchedLedgerNames: [],
       errors: [],
       touchedPartyIds: [],
       touchedSupplierIds: [],
     };
+
     const unmatched = new Set<string>();
     const touchedParties = new Set<string>();
     const touchedSuppliers = new Set<string>();
