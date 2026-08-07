@@ -237,9 +237,16 @@ export function parseTallyMasters(
   const rawMaterials: TallyStockItem[] = [];
   const finishedGoods: TallyStockItem[] = [];
   const ledgerEntries: TallyLedgerEntry[] = [];
+  const groups: TallyGroup[] = [];
+  const ledgersOut: TallyLedgerMaster[] = [];
+  const godowns: TallyGodown[] = [];
+  const costCentres: TallyCostCentre[] = [];
+  const bills: TallyBill[] = [];
 
   // Build a map of ledger-name → party type to classify vouchers
   const partyType = new Map<string, "customer" | "vendor">();
+  // group name (lowercased) → nature, used to classify ledgers under it
+  const groupNature = new Map<string, TallyGroup["nature"]>();
 
   // Extract a GSTIN from either the flat tag or the nested Prime-4+ GSTREGDETAILS.LIST
   const extractGstin = (l: Record<string, unknown>): string | null => {
@@ -257,7 +264,73 @@ export function parseTallyMasters(
 
   const isYes = (v: unknown) => text(v).toLowerCase() === "yes";
 
+  /** Infer the accounting nature of a Tally group from its own / parent name. */
+  const natureOf = (name: string, parent: string): TallyGroup["nature"] => {
+    const known = groupNature.get(parent.toLowerCase());
+    if (known) return known;
+    const s = `${parent} ${name}`.toLowerCase();
+    if (/(sales|income|revenue|direct incomes|indirect incomes)/.test(s)) return "income";
+    if (/(purchase|expense|expenses|direct expenses|indirect expenses|cost)/.test(s)) return "expenses";
+    if (/(liabilit|capital|loan|creditor|payable|provision|duties|reserve|suspense)/.test(s)) return "liabilities";
+    return "assets";
+  };
+
+  /** Bill-wise allocations on a ledger master (opening outstanding) or voucher line. */
+  const collectBills = (partyName: string, node: Record<string, unknown>) => {
+    const lists = [
+      ...arr<Record<string, unknown>>(node["BILLALLOCATIONS.LIST"] as never),
+      ...arr<Record<string, unknown>>(node["OPENINGBILLALLOCATIONS.LIST"] as never),
+almost
+    ];
+    for (const b of lists) {
+      const bill_name = text(b.NAME ?? b.BILLNAME);
+      if (!bill_name) continue;
+      bills.push({
+        party_name: partyName,
+        bill_name,
+        bill_date: parseTallyDate(text(b.BILLDATE ?? b.DATE)) || null,
+        amount: num(b.AMOUNT ?? b.OPENINGBALANCE),
+      });
+    }
+  };
+
   for (const msg of messages) {
+    /* ---------------- GROUP masters (Chart of Accounts) ---------------- */
+    for (const g of arr<Record<string, unknown>>(msg.GROUP as never)) {
+      if (isYes(g.ISDELETED)) continue;
+      const name = text(g["@_NAME"] ?? g.NAME);
+      if (!name) continue;
+      const parent = text(g.PARENT);
+      const nature = natureOf(name, parent);
+      groupNature.set(name.toLowerCase(), nature);
+      groups.push({
+        name,
+        parent: parent || null,
+        nature,
+        affects_gross_profit: isYes(g.AFFECTSGROSSPROFIT),
+      });
+    }
+
+    /* ---------------- GODOWN masters ---------------- */
+    for (const g of arr<Record<string, unknown>>(msg.GODOWN as never)) {
+      if (isYes(g.ISDELETED)) continue;
+      const name = text(g["@_NAME"] ?? g.NAME);
+      if (!name) continue;
+      godowns.push({
+        name,
+        parent: text(g.PARENT) || null,
+        address: flattenAddress(g["ADDRESS.LIST"]) || null,
+      });
+    }
+
+    /* ---------------- COSTCENTRE masters ---------------- */
+    for (const c of arr<Record<string, unknown>>(msg.COSTCENTRE as never)) {
+      if (isYes(c.ISDELETED)) continue;
+      const name = text(c["@_NAME"] ?? c.NAME);
+      if (!name) continue;
+      costCentres.push({ name, parent: text(c.PARENT) || null });
+    }
+
     /* ---------------- LEDGER masters ---------------- */
     const ledgers = arr<Record<string, unknown>>(
       msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined
@@ -267,15 +340,28 @@ export function parseTallyMasters(
       if (isYes(l.ISDELETED)) continue;
       const name = text(l["@_NAME"] ?? l.NAME) || text(l.MAILINGNAME);
       if (!name) continue;
-      const parent = text(l.PARENT).toLowerCase();
+      const parentRaw = text(l.PARENT);
+      const parent = parentRaw.toLowerCase();
+
+      const opening = num(l.OPENINGBALANCE);
+      const closingRaw = l.CLOSINGBALANCE;
+      const closing = closingRaw != null ? num(closingRaw) : opening;
+
+      // Every ledger — of any group — becomes a chart-of-accounts entry.
+      ledgersOut.push({
+        name,
+        parent: parentRaw || "Primary",
+        gstin: extractGstin(l),
+        opening_balance: Math.abs(opening),
+        opening_type: opening >= 0 ? "dr" : "cr",
+        notes: parentRaw ? `Tally group: ${parentRaw}` : null,
+      });
 
       const isCustomer = parent.includes("sundry debtor") || parent.includes("debtor");
       const isVendor = parent.includes("sundry creditor") || parent.includes("creditor");
       if (!isCustomer && !isVendor) continue;
 
-      const opening = num(l.OPENINGBALANCE);
-      const closingRaw = l.CLOSINGBALANCE;
-      const closing = closingRaw != null ? num(closingRaw) : opening;
+      collectBills(name, l);
 
       const party: TallyParty = {
         name,
@@ -293,6 +379,7 @@ export function parseTallyMasters(
       (isCustomer ? customers : vendors).push(party);
       partyType.set(name.toLowerCase(), isCustomer ? "customer" : "vendor");
     }
+
 
     /* ---------------- STOCKITEM masters ---------------- */
     const items = arr<Record<string, unknown>>(
