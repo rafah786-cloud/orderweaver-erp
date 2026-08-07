@@ -305,22 +305,34 @@ function TallyImportPage() {
                 <Stat label="Raw materials" value={parsed.rawMaterials.length} />
                 <Stat label="Finished goods" value={parsed.finishedGoods.length} />
                 <Stat label="Ledger entries" value={parsed.ledgerEntries.length} />
+                <Stat label="Account groups" value={parsed.groups.length} />
+                <Stat label="Ledger accounts" value={parsed.ledgers.length} />
+                <Stat label="Godowns" value={parsed.godowns.length} />
+                <Stat label="Cost centres" value={parsed.costCentres.length} />
+                <Stat label="Bill references" value={parsed.bills.length} />
               </div>
 
-              <Tabs defaultValue="customers">
-                <TabsList>
+              <Tabs defaultValue="outstanding">
+                <TabsList className="flex-wrap h-auto">
+                  <TabsTrigger value="outstanding">Outstanding balances</TabsTrigger>
                   <TabsTrigger value="customers">Customers</TabsTrigger>
                   <TabsTrigger value="vendors">Vendors</TabsTrigger>
                   <TabsTrigger value="raw">Raw materials</TabsTrigger>
                   <TabsTrigger value="finished">Finished goods</TabsTrigger>
                   <TabsTrigger value="ledger">Ledger entries</TabsTrigger>
+                  <TabsTrigger value="coa">Chart of accounts</TabsTrigger>
+                  <TabsTrigger value="other">Godowns & cost centres</TabsTrigger>
                 </TabsList>
+                <TabsContent value="outstanding"><OutstandingTable customers={parsed.customers} vendors={parsed.vendors} /></TabsContent>
                 <TabsContent value="customers"><PartyTable rows={parsed.customers} /></TabsContent>
                 <TabsContent value="vendors"><PartyTable rows={parsed.vendors} /></TabsContent>
                 <TabsContent value="raw"><StockTable rows={parsed.rawMaterials} /></TabsContent>
                 <TabsContent value="finished"><StockTable rows={parsed.finishedGoods} /></TabsContent>
                 <TabsContent value="ledger"><LedgerTable rows={parsed.ledgerEntries} /></TabsContent>
+                <TabsContent value="coa"><ChartOfAccountsTable groups={parsed.groups} ledgers={parsed.ledgers} /></TabsContent>
+                <TabsContent value="other"><NamedTable rows={[...parsed.godowns.map((g) => ({ name: g.name, kind: "Godown", parent: g.parent })), ...parsed.costCentres.map((c) => ({ name: c.name, kind: "Cost centre", parent: c.parent }))]} /></TabsContent>
               </Tabs>
+
             </CardContent>
           </Card>
         )}
