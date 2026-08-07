@@ -189,7 +189,12 @@ function TallyImportPage() {
         agg.partyLedgerEntries.skipped += res.partyLedgerEntries.skipped;
         agg.supplierLedgerEntries.inserted += res.supplierLedgerEntries.inserted;
         agg.supplierLedgerEntries.skipped += res.supplierLedgerEntries.skipped;
+        agg.ledgerGroups.inserted += res.ledgerGroups.inserted; agg.ledgerGroups.updated += res.ledgerGroups.updated;
+        agg.ledgerAccounts.inserted += res.ledgerAccounts.inserted; agg.ledgerAccounts.updated += res.ledgerAccounts.updated;
+        agg.godowns.inserted += res.godowns.inserted; agg.godowns.updated += res.godowns.updated;
+        agg.costCentres.inserted += res.costCentres.inserted; agg.costCentres.updated += res.costCentres.updated;
         agg.errors.push(...res.errors);
+
         res.unmatchedLedgerNames.forEach((n) => unmatched.add(n));
         res.touchedPartyIds.forEach((id) => touchedParties.add(id));
         res.touchedSupplierIds.forEach((id) => touchedSuppliers.add(id));
