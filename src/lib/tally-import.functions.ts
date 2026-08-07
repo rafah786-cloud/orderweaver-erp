@@ -333,6 +333,139 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       }
     }
 
+    /* ---------------- ledger_groups (Tally account groups) ---------------- */
+    if (data.groups.length > 0) {
+      const { data: existing } = await supabase.from("ledger_groups").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((g) => byName.set(norm(g.name), g.id));
+
+      for (const g of data.groups) {
+        const row = { name: g.name, nature: g.nature, affects_gross_profit: g.affects_gross_profit };
+        const id = byName.get(norm(g.name));
+        if (id) {
+          const { error } = await supabase.from("ledger_groups").update(row).eq("id", id);
+          if (error) result.errors.push(`Group ${g.name}: update failed`);
+          else result.ledgerGroups.updated++;
+        } else {
+          const { data: ins, error } = await supabase.from("ledger_groups").insert(row).select("id").single();
+          if (error || !ins) { console.error("[tally-import] group insert", error); result.errors.push(`Group ${g.name}: insert failed`); }
+          else { byName.set(norm(g.name), ins.id); result.ledgerGroups.inserted++; }
+        }
+      }
+      // Second pass: wire up parents now that every group exists.
+      for (const g of data.groups) {
+        if (!g.parent) continue;
+        const id = byName.get(norm(g.name));
+        const parentId = byName.get(norm(g.parent));
+        if (id && parentId && id !== parentId) {
+          await supabase.from("ledger_groups").update({ parent_id: parentId }).eq("id", id);
+        }
+      }
+    }
+
+    /* ---------------- ledger_accounts (full chart of accounts) ---------------- */
+    if (data.ledgers.length > 0) {
+      const { data: existingGroups } = await supabase.from("ledger_groups").select("id, name");
+      const groupByName = new Map<string, string>();
+      (existingGroups ?? []).forEach((g) => groupByName.set(norm(g.name), g.id));
+
+      // Fallback bucket for ledgers whose Tally group wasn't in this export.
+      let fallbackGroupId = groupByName.get("tally imported") ?? null;
+
+      const { data: existing } = await supabase.from("ledger_accounts").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((l) => byName.set(norm(l.name), l.id));
+
+      for (const l of data.ledgers) {
+        let groupId = groupByName.get(norm(l.parent)) ?? null;
+        if (!groupId) {
+          if (!fallbackGroupId) {
+            const { data: ins } = await supabase
+              .from("ledger_groups")
+              .insert({ name: "Tally Imported", nature: "assets" })
+              .select("id")
+              .single();
+            fallbackGroupId = ins?.id ?? null;
+            if (fallbackGroupId) groupByName.set("tally imported", fallbackGroupId);
+          }
+          groupId = fallbackGroupId;
+        }
+        if (!groupId) { result.errors.push(`Ledger ${l.name}: no group could be resolved`); continue; }
+
+        const row = {
+          name: l.name,
+          group_id: groupId,
+          opening_balance: l.opening_balance,
+          opening_balance_type: l.opening_type,
+          gstin: l.gstin,
+          notes: l.notes,
+        };
+        const id = byName.get(norm(l.name));
+        if (id) {
+          const { error } = await supabase.from("ledger_accounts").update(row).eq("id", id);
+          if (error) result.errors.push(`Ledger ${l.name}: update failed`);
+          else result.ledgerAccounts.updated++;
+        } else {
+          const { error } = await supabase.from("ledger_accounts").insert(row);
+          if (error) { console.error("[tally-import] ledger insert", error); result.errors.push(`Ledger ${l.name}: insert failed`); }
+          else { result.ledgerAccounts.inserted++; byName.set(norm(l.name), "new"); }
+        }
+      }
+    }
+
+    /* ---------------- godowns ---------------- */
+    if (data.godowns.length > 0) {
+      const { data: existing } = await supabase.from("godowns").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((g) => byName.set(norm(g.name), g.id));
+
+      for (const g of data.godowns) {
+        const row = { name: g.name, address: g.address };
+        const id = byName.get(norm(g.name));
+        if (id) {
+          const { error } = await supabase.from("godowns").update(row).eq("id", id);
+          if (error) result.errors.push(`Godown ${g.name}: update failed`);
+          else result.godowns.updated++;
+        } else {
+          const { data: ins, error } = await supabase.from("godowns").insert(row).select("id").single();
+          if (error || !ins) { console.error("[tally-import] godown insert", error); result.errors.push(`Godown ${g.name}: insert failed`); }
+          else { byName.set(norm(g.name), ins.id); result.godowns.inserted++; }
+        }
+      }
+      for (const g of data.godowns) {
+        if (!g.parent) continue;
+        const id = byName.get(norm(g.name));
+        const parentId = byName.get(norm(g.parent));
+        if (id && parentId && id !== parentId) {
+          await supabase.from("godowns").update({ parent_id: parentId }).eq("id", id);
+        }
+      }
+    }
+
+    /* ---------------- cost centres ---------------- */
+    if (data.costCentres.length > 0) {
+      const { data: existing } = await supabase.from("cost_centers").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((c) => byName.set(norm(c.name), c.id));
+
+      for (const c of data.costCentres) {
+        const id = byName.get(norm(c.name));
+        if (id) { result.costCentres.updated++; continue; }
+        const { data: ins, error } = await supabase.from("cost_centers").insert({ name: c.name }).select("id").single();
+        if (error || !ins) { console.error("[tally-import] cost centre insert", error); result.errors.push(`Cost centre ${c.name}: insert failed`); }
+        else { byName.set(norm(c.name), ins.id); result.costCentres.inserted++; }
+      }
+      for (const c of data.costCentres) {
+        if (!c.parent) continue;
+        const id = byName.get(norm(c.name));
+        const parentId = byName.get(norm(c.parent));
+        if (id && parentId && id !== parentId) {
+          await supabase.from("cost_centers").update({ parent_id: parentId }).eq("id", id);
+        }
+      }
+    }
+
+
     /* ---------------- ledger entries (vouchers) ---------------- */
     if (data.ledgerEntries.length > 0) {
       const partyRows: Record<string, unknown>[] = [];
