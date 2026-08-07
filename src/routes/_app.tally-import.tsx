@@ -96,7 +96,10 @@ function TallyImportPage() {
         finishedGroups: finishedGroups.split(",").map((s) => s.trim()).filter(Boolean),
       });
       setParsed(out);
-      const total = out.customers.length + out.vendors.length + out.rawMaterials.length + out.finishedGoods.length;
+      const total =
+        out.customers.length + out.vendors.length + out.rawMaterials.length + out.finishedGoods.length +
+        out.groups.length + out.ledgers.length + out.godowns.length + out.costCentres.length;
+
       if (total === 0) toast.warning("No masters found in this XML. Make sure you exported Masters from Tally.");
       else toast.success(`Parsed ${total} records. Review and import.`);
     } catch (err) {
@@ -127,18 +130,24 @@ function TallyImportPage() {
     const LEDGER_CHUNK = 2000;
 
     const chunks: Array<{ label: string; payload: Record<string, unknown> }> = [];
-    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries", label: string) => {
+    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries" | "groups" | "ledgers" | "godowns" | "costCentres", label: string) => {
       for (let i = 0; i < arr.length; i += size) {
         chunks.push({
           label: `${label} ${Math.min(i + size, arr.length)}/${arr.length}`,
           payload: {
             customers: [], vendors: [], rawMaterials: [], finishedGoods: [], ledgerEntries: [],
+            groups: [], ledgers: [], godowns: [], costCentres: [],
             skipRecompute: true,
             [key]: arr.slice(i, i + size),
           } as any,
         });
       }
     };
+    // Groups first so ledger accounts can resolve their parent group.
+    push(parsed.groups, MASTER_CHUNK, "groups", "Account groups");
+    push(parsed.ledgers, MASTER_CHUNK, "ledgers", "Ledger accounts");
+    push(parsed.godowns, MASTER_CHUNK, "godowns", "Godowns");
+    push(parsed.costCentres, MASTER_CHUNK, "costCentres", "Cost centres");
     push(parsed.customers, MASTER_CHUNK, "customers", "Customers");
     push(parsed.vendors, MASTER_CHUNK, "vendors", "Vendors");
     push(parsed.rawMaterials, MASTER_CHUNK, "rawMaterials", "Raw materials");
@@ -153,11 +162,16 @@ function TallyImportPage() {
       finishedGoods: { inserted: 0, updated: 0 },
       partyLedgerEntries: { inserted: 0, skipped: 0 },
       supplierLedgerEntries: { inserted: 0, skipped: 0 },
+      ledgerGroups: { inserted: 0, updated: 0 },
+      ledgerAccounts: { inserted: 0, updated: 0 },
+      godowns: { inserted: 0, updated: 0 },
+      costCentres: { inserted: 0, updated: 0 },
       unmatchedLedgerNames: [],
       errors: [],
       touchedPartyIds: [],
       touchedSupplierIds: [],
     };
+
     const unmatched = new Set<string>();
     const touchedParties = new Set<string>();
     const touchedSuppliers = new Set<string>();
@@ -178,7 +192,12 @@ function TallyImportPage() {
         agg.partyLedgerEntries.skipped += res.partyLedgerEntries.skipped;
         agg.supplierLedgerEntries.inserted += res.supplierLedgerEntries.inserted;
         agg.supplierLedgerEntries.skipped += res.supplierLedgerEntries.skipped;
+        agg.ledgerGroups.inserted += res.ledgerGroups.inserted; agg.ledgerGroups.updated += res.ledgerGroups.updated;
+        agg.ledgerAccounts.inserted += res.ledgerAccounts.inserted; agg.ledgerAccounts.updated += res.ledgerAccounts.updated;
+        agg.godowns.inserted += res.godowns.inserted; agg.godowns.updated += res.godowns.updated;
+        agg.costCentres.inserted += res.costCentres.inserted; agg.costCentres.updated += res.costCentres.updated;
         agg.errors.push(...res.errors);
+
         res.unmatchedLedgerNames.forEach((n) => unmatched.add(n));
         res.touchedPartyIds.forEach((id) => touchedParties.add(id));
         res.touchedSupplierIds.forEach((id) => touchedSuppliers.add(id));
@@ -289,22 +308,34 @@ function TallyImportPage() {
                 <Stat label="Raw materials" value={parsed.rawMaterials.length} />
                 <Stat label="Finished goods" value={parsed.finishedGoods.length} />
                 <Stat label="Ledger entries" value={parsed.ledgerEntries.length} />
+                <Stat label="Account groups" value={parsed.groups.length} />
+                <Stat label="Ledger accounts" value={parsed.ledgers.length} />
+                <Stat label="Godowns" value={parsed.godowns.length} />
+                <Stat label="Cost centres" value={parsed.costCentres.length} />
+                <Stat label="Bill references" value={parsed.bills.length} />
               </div>
 
-              <Tabs defaultValue="customers">
-                <TabsList>
+              <Tabs defaultValue="outstanding">
+                <TabsList className="flex-wrap h-auto">
+                  <TabsTrigger value="outstanding">Outstanding balances</TabsTrigger>
                   <TabsTrigger value="customers">Customers</TabsTrigger>
                   <TabsTrigger value="vendors">Vendors</TabsTrigger>
                   <TabsTrigger value="raw">Raw materials</TabsTrigger>
                   <TabsTrigger value="finished">Finished goods</TabsTrigger>
                   <TabsTrigger value="ledger">Ledger entries</TabsTrigger>
+                  <TabsTrigger value="coa">Chart of accounts</TabsTrigger>
+                  <TabsTrigger value="other">Godowns & cost centres</TabsTrigger>
                 </TabsList>
+                <TabsContent value="outstanding"><OutstandingTable customers={parsed.customers} vendors={parsed.vendors} /></TabsContent>
                 <TabsContent value="customers"><PartyTable rows={parsed.customers} /></TabsContent>
                 <TabsContent value="vendors"><PartyTable rows={parsed.vendors} /></TabsContent>
                 <TabsContent value="raw"><StockTable rows={parsed.rawMaterials} /></TabsContent>
                 <TabsContent value="finished"><StockTable rows={parsed.finishedGoods} /></TabsContent>
                 <TabsContent value="ledger"><LedgerTable rows={parsed.ledgerEntries} /></TabsContent>
+                <TabsContent value="coa"><ChartOfAccountsTable groups={parsed.groups} ledgers={parsed.ledgers} /></TabsContent>
+                <TabsContent value="other"><NamedTable rows={[...parsed.godowns.map((g) => ({ name: g.name, kind: "Godown", parent: g.parent })), ...parsed.costCentres.map((c) => ({ name: c.name, kind: "Cost centre", parent: c.parent }))]} /></TabsContent>
               </Tabs>
+
             </CardContent>
           </Card>
         )}
@@ -318,7 +349,12 @@ function TallyImportPage() {
                 <ResultStat label="Vendors" inserted={result.vendors.inserted} updated={result.vendors.updated} />
                 <ResultStat label="Raw materials" inserted={result.rawMaterials.inserted} updated={result.rawMaterials.updated} />
                 <ResultStat label="Finished goods" inserted={result.finishedGoods.inserted} updated={result.finishedGoods.updated} />
+                <ResultStat label="Account groups" inserted={result.ledgerGroups.inserted} updated={result.ledgerGroups.updated} />
+                <ResultStat label="Ledger accounts" inserted={result.ledgerAccounts.inserted} updated={result.ledgerAccounts.updated} />
+                <ResultStat label="Godowns" inserted={result.godowns.inserted} updated={result.godowns.updated} />
+                <ResultStat label="Cost centres" inserted={result.costCentres.inserted} updated={result.costCentres.updated} />
               </div>
+
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2 mb-3">
                 <div className="rounded-xl glass-sm p-3">
                   <div className="text-xs text-muted-foreground">Customer ledger entries</div>
@@ -448,3 +484,102 @@ function StockTable({ rows }: { rows: Array<{ name: string; unit: string; openin
     </div>
   );
 }
+
+type OutRow = { name: string; closing_balance: number };
+
+function OutstandingTable({ customers, vendors }: { customers: OutRow[]; vendors: OutRow[] }) {
+  const rows = [
+    ...customers.map((c) => ({ ...c, kind: "Customer" as const })),
+    ...vendors.map((v) => ({ ...v, kind: "Vendor" as const })),
+  ].filter((r) => Math.abs(r.closing_balance) > 0.005)
+   .sort((a, b) => Math.abs(b.closing_balance) - Math.abs(a.closing_balance));
+
+  const receivable = customers.reduce((a, c) => a + Math.max(c.closing_balance, 0), 0);
+  const payable = vendors.reduce((a, v) => a + Math.max(-v.closing_balance, 0), 0);
+
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No outstanding balances found in this export.</p>;
+
+  return (
+    <div>
+      <div className="grid gap-3 grid-cols-2 my-3">
+        <div className="rounded-xl glass-sm p-3">
+          <div className="text-xs text-muted-foreground">Total receivable (customers)</div>
+          <div className="text-xl font-semibold mt-0.5">₹{receivable.toFixed(2)}</div>
+        </div>
+        <div className="rounded-xl glass-sm p-3">
+          <div className="text-xs text-muted-foreground">Total payable (vendors)</div>
+          <div className="text-xl font-semibold mt-0.5">₹{payable.toFixed(2)}</div>
+        </div>
+      </div>
+      <div className="max-h-[420px] overflow-y-auto">
+        <Table>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Outstanding</TableHead><TableHead>Dr/Cr</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {rows.slice(0, 300).map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium">{r.name}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{r.kind}</TableCell>
+                <TableCell className="text-right">{Math.abs(r.closing_balance).toFixed(2)}</TableCell>
+                <TableCell className="text-xs">{r.closing_balance >= 0 ? "Dr" : "Cr"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {rows.length > 300 && <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>}
+      </div>
+    </div>
+  );
+}
+
+function ChartOfAccountsTable({
+  groups,
+  ledgers,
+}: {
+  groups: Array<{ name: string; parent: string | null; nature: string }>;
+  ledgers: Array<{ name: string; parent: string; opening_balance: number; opening_type: string }>;
+}) {
+  const rows = [
+    ...groups.map((g) => ({ name: g.name, parent: g.parent ?? "—", kind: "Group", detail: g.nature })),
+    ...ledgers.map((l) => ({ name: l.name, parent: l.parent, kind: "Ledger", detail: `${l.opening_balance.toFixed(2)} ${l.opening_type.toUpperCase()}` })),
+  ];
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No account groups or ledgers found. Export the Chart of Accounts / List of Accounts from Tally.</p>;
+  return (
+    <div className="max-h-[420px] overflow-y-auto">
+      <Table>
+        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Under</TableHead><TableHead>Type</TableHead><TableHead>Detail</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.slice(0, 300).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.parent}</TableCell>
+              <TableCell className="text-xs">{r.kind}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.detail}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {rows.length > 300 && <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>}
+    </div>
+  );
+}
+
+function NamedTable({ rows }: { rows: Array<{ name: string; kind: string; parent: string | null }> }) {
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No godowns or cost centres found.</p>;
+  return (
+    <div className="max-h-[420px] overflow-y-auto">
+      <Table>
+        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Under</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.slice(0, 200).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell className="text-xs">{r.kind}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{r.parent ?? "—"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+

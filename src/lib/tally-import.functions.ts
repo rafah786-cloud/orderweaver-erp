@@ -35,12 +35,43 @@ const ledgerEntrySchema = z.object({
   external_ref: z.string().min(1).max(255),
 });
 
+const groupSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255).nullable(),
+  nature: z.enum(["assets", "liabilities", "income", "expenses"]),
+  affects_gross_profit: z.boolean(),
+});
+
+const ledgerMasterSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255),
+  gstin: z.string().max(20).nullable(),
+  opening_balance: z.number(),
+  opening_type: z.enum(["dr", "cr"]),
+  notes: z.string().max(500).nullable(),
+});
+
+const godownSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255).nullable(),
+  address: z.string().max(2000).nullable(),
+});
+
+const costCentreSchema = z.object({
+  name: z.string().min(1).max(255),
+  parent: z.string().max(255).nullable(),
+});
+
 const inputSchema = z.object({
   customers: z.array(partySchema).max(2000).default([]),
   vendors: z.array(partySchema).max(2000).default([]),
   rawMaterials: z.array(stockSchema).max(2000).default([]),
   finishedGoods: z.array(stockSchema).max(2000).default([]),
   ledgerEntries: z.array(ledgerEntrySchema).max(5000).default([]),
+  groups: z.array(groupSchema).max(2000).default([]),
+  ledgers: z.array(ledgerMasterSchema).max(2000).default([]),
+  godowns: z.array(godownSchema).max(1000).default([]),
+  costCentres: z.array(costCentreSchema).max(1000).default([]),
   // When true, the handler skips the O(party_count) balance recompute so the
   // caller can stream many chunks fast and call `recomputeTallyBalances` once
   // at the end. Default true — the client always finalizes explicitly.
@@ -54,6 +85,10 @@ export type TallyImportResult = {
   finishedGoods: { inserted: number; updated: number }
   partyLedgerEntries: { inserted: number; skipped: number }
   supplierLedgerEntries: { inserted: number; skipped: number }
+  ledgerGroups: { inserted: number; updated: number }
+  ledgerAccounts: { inserted: number; updated: number }
+  godowns: { inserted: number; updated: number }
+  costCentres: { inserted: number; updated: number }
   unmatchedLedgerNames: string[];
   errors: string[];
   /** Party/supplier ids touched by this chunk's ledger inserts.
@@ -61,6 +96,7 @@ export type TallyImportResult = {
   touchedPartyIds: string[];
   touchedSupplierIds: string[];
 }
+
 
 function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
@@ -121,6 +157,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       finishedGoods: { inserted: 0, updated: 0 },
       partyLedgerEntries: { inserted: 0, skipped: 0 },
       supplierLedgerEntries: { inserted: 0, skipped: 0 },
+      ledgerGroups: { inserted: 0, updated: 0 },
+      ledgerAccounts: { inserted: 0, updated: 0 },
+      godowns: { inserted: 0, updated: 0 },
+      costCentres: { inserted: 0, updated: 0 },
+
       unmatchedLedgerNames: [],
       errors: [],
       touchedPartyIds: [],
@@ -291,6 +332,139 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         }
       }
     }
+
+    /* ---------------- ledger_groups (Tally account groups) ---------------- */
+    if (data.groups.length > 0) {
+      const { data: existing } = await supabase.from("ledger_groups").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((g) => byName.set(norm(g.name), g.id));
+
+      for (const g of data.groups) {
+        const row = { name: g.name, nature: g.nature, affects_gross_profit: g.affects_gross_profit };
+        const id = byName.get(norm(g.name));
+        if (id) {
+          const { error } = await supabase.from("ledger_groups").update(row).eq("id", id);
+          if (error) result.errors.push(`Group ${g.name}: update failed`);
+          else result.ledgerGroups.updated++;
+        } else {
+          const { data: ins, error } = await supabase.from("ledger_groups").insert(row).select("id").single();
+          if (error || !ins) { console.error("[tally-import] group insert", error); result.errors.push(`Group ${g.name}: insert failed`); }
+          else { byName.set(norm(g.name), ins.id); result.ledgerGroups.inserted++; }
+        }
+      }
+      // Second pass: wire up parents now that every group exists.
+      for (const g of data.groups) {
+        if (!g.parent) continue;
+        const id = byName.get(norm(g.name));
+        const parentId = byName.get(norm(g.parent));
+        if (id && parentId && id !== parentId) {
+          await supabase.from("ledger_groups").update({ parent_id: parentId }).eq("id", id);
+        }
+      }
+    }
+
+    /* ---------------- ledger_accounts (full chart of accounts) ---------------- */
+    if (data.ledgers.length > 0) {
+      const { data: existingGroups } = await supabase.from("ledger_groups").select("id, name");
+      const groupByName = new Map<string, string>();
+      (existingGroups ?? []).forEach((g) => groupByName.set(norm(g.name), g.id));
+
+      // Fallback bucket for ledgers whose Tally group wasn't in this export.
+      let fallbackGroupId = groupByName.get("tally imported") ?? null;
+
+      const { data: existing } = await supabase.from("ledger_accounts").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((l) => byName.set(norm(l.name), l.id));
+
+      for (const l of data.ledgers) {
+        let groupId = groupByName.get(norm(l.parent)) ?? null;
+        if (!groupId) {
+          if (!fallbackGroupId) {
+            const { data: ins } = await supabase
+              .from("ledger_groups")
+              .insert({ name: "Tally Imported", nature: "assets" })
+              .select("id")
+              .single();
+            fallbackGroupId = ins?.id ?? null;
+            if (fallbackGroupId) groupByName.set("tally imported", fallbackGroupId);
+          }
+          groupId = fallbackGroupId;
+        }
+        if (!groupId) { result.errors.push(`Ledger ${l.name}: no group could be resolved`); continue; }
+
+        const row = {
+          name: l.name,
+          group_id: groupId,
+          opening_balance: l.opening_balance,
+          opening_balance_type: l.opening_type,
+          gstin: l.gstin,
+          notes: l.notes,
+        };
+        const id = byName.get(norm(l.name));
+        if (id) {
+          const { error } = await supabase.from("ledger_accounts").update(row).eq("id", id);
+          if (error) result.errors.push(`Ledger ${l.name}: update failed`);
+          else result.ledgerAccounts.updated++;
+        } else {
+          const { error } = await supabase.from("ledger_accounts").insert(row);
+          if (error) { console.error("[tally-import] ledger insert", error); result.errors.push(`Ledger ${l.name}: insert failed`); }
+          else { result.ledgerAccounts.inserted++; byName.set(norm(l.name), "new"); }
+        }
+      }
+    }
+
+    /* ---------------- godowns ---------------- */
+    if (data.godowns.length > 0) {
+      const { data: existing } = await supabase.from("godowns").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((g) => byName.set(norm(g.name), g.id));
+
+      for (const g of data.godowns) {
+        const row = { name: g.name, address: g.address };
+        const id = byName.get(norm(g.name));
+        if (id) {
+          const { error } = await supabase.from("godowns").update(row).eq("id", id);
+          if (error) result.errors.push(`Godown ${g.name}: update failed`);
+          else result.godowns.updated++;
+        } else {
+          const { data: ins, error } = await supabase.from("godowns").insert(row).select("id").single();
+          if (error || !ins) { console.error("[tally-import] godown insert", error); result.errors.push(`Godown ${g.name}: insert failed`); }
+          else { byName.set(norm(g.name), ins.id); result.godowns.inserted++; }
+        }
+      }
+      for (const g of data.godowns) {
+        if (!g.parent) continue;
+        const id = byName.get(norm(g.name));
+        const parentId = byName.get(norm(g.parent));
+        if (id && parentId && id !== parentId) {
+          await supabase.from("godowns").update({ parent_id: parentId }).eq("id", id);
+        }
+      }
+    }
+
+    /* ---------------- cost centres ---------------- */
+    if (data.costCentres.length > 0) {
+      const { data: existing } = await supabase.from("cost_centers").select("id, name");
+      const byName = new Map<string, string>();
+      (existing ?? []).forEach((c) => byName.set(norm(c.name), c.id));
+
+      for (const c of data.costCentres) {
+        const id = byName.get(norm(c.name));
+        if (id) { result.costCentres.updated++; continue; }
+        const { data: ins, error } = await supabase.from("cost_centers").insert({ name: c.name }).select("id").single();
+        if (error || !ins) { console.error("[tally-import] cost centre insert", error); result.errors.push(`Cost centre ${c.name}: insert failed`); }
+        else { byName.set(norm(c.name), ins.id); result.costCentres.inserted++; }
+      }
+      for (const c of data.costCentres) {
+        if (!c.parent) continue;
+        const id = byName.get(norm(c.name));
+        const parentId = byName.get(norm(c.parent));
+        if (id && parentId && id !== parentId) {
+          await supabase.from("cost_centers").update({ parent_id: parentId }).eq("id", id);
+        }
+      }
+    }
+
 
     /* ---------------- ledger entries (vouchers) ---------------- */
     if (data.ledgerEntries.length > 0) {
