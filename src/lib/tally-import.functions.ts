@@ -157,6 +157,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       finishedGoods: { inserted: 0, updated: 0 },
       partyLedgerEntries: { inserted: 0, skipped: 0 },
       supplierLedgerEntries: { inserted: 0, skipped: 0 },
+      ledgerGroups: { inserted: 0, updated: 0 },
+      ledgerAccounts: { inserted: 0, updated: 0 },
+      godowns: { inserted: 0, updated: 0 },
+      costCentres: { inserted: 0, updated: 0 },
+
       unmatchedLedgerNames: [],
       errors: [],
       touchedPartyIds: [],
