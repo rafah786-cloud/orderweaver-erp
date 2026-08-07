@@ -280,7 +280,7 @@ export function parseTallyMasters(
     const lists = [
       ...arr<Record<string, unknown>>(node["BILLALLOCATIONS.LIST"] as never),
       ...arr<Record<string, unknown>>(node["OPENINGBILLALLOCATIONS.LIST"] as never),
-almost
+...arr<Record<string, unknown>>(node["BILLSCLEARED.LIST"] as never),
     ];
     for (const b of lists) {
       const bill_name = text(b.NAME ?? b.BILLNAME);
