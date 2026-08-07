@@ -507,13 +507,29 @@ export function parseTallyMasters(
     vendors.length === 0 &&
     rawMaterials.length === 0 &&
     finishedGoods.length === 0 &&
-    ledgerEntries.length === 0
+    ledgerEntries.length === 0 &&
+    groups.length === 0 &&
+    ledgersOut.length === 0 &&
+    godowns.length === 0 &&
+    costCentres.length === 0
   ) {
     throw new TallyXmlError(
-      "The XML was valid but contained no customers, vendors, stock items, or voucher entries.",
-      "Make sure you exported the right report from Tally: Masters (List of Accounts) for parties and stock, or Day Book / Ledger for transactions."
+      "The XML was valid but contained no masters or voucher entries.",
+      "Make sure you exported the right report from Tally: Masters (List of Accounts) for parties, ledgers and stock, or Day Book / Ledger for transactions."
     );
   }
 
-  return { customers, vendors, rawMaterials, finishedGoods, ledgerEntries };
+  return {
+    customers,
+    vendors,
+    rawMaterials,
+    finishedGoods,
+    ledgerEntries,
+    groups,
+    ledgers: ledgersOut,
+    godowns,
+    costCentres,
+    bills,
+  };
 }
+
