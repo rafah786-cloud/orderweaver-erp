@@ -20,9 +20,9 @@ function isSafeRedirect(target: unknown): target is string {
 }
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    redirect: isSafeRedirect(s.redirect) ? s.redirect : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
+    isSafeRedirect(s.redirect) ? { redirect: s.redirect } : {},
+
   component: LoginPage,
 });
 
