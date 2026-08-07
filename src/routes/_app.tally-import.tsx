@@ -349,7 +349,12 @@ function TallyImportPage() {
                 <ResultStat label="Vendors" inserted={result.vendors.inserted} updated={result.vendors.updated} />
                 <ResultStat label="Raw materials" inserted={result.rawMaterials.inserted} updated={result.rawMaterials.updated} />
                 <ResultStat label="Finished goods" inserted={result.finishedGoods.inserted} updated={result.finishedGoods.updated} />
+                <ResultStat label="Account groups" inserted={result.ledgerGroups.inserted} updated={result.ledgerGroups.updated} />
+                <ResultStat label="Ledger accounts" inserted={result.ledgerAccounts.inserted} updated={result.ledgerAccounts.updated} />
+                <ResultStat label="Godowns" inserted={result.godowns.inserted} updated={result.godowns.updated} />
+                <ResultStat label="Cost centres" inserted={result.costCentres.inserted} updated={result.costCentres.updated} />
               </div>
+
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2 mb-3">
                 <div className="rounded-xl glass-sm p-3">
                   <div className="text-xs text-muted-foreground">Customer ledger entries</div>
