@@ -2718,6 +2718,66 @@ export type Database = {
         }
         Relationships: []
       }
+      velocity_warehouses: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          contact_person: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          last_synced_at: string
+          name: string
+          phone: string | null
+          pincode: string | null
+          raw: Json
+          state: string | null
+          updated_at: string
+          velocity_id: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string
+          name: string
+          phone?: string | null
+          pincode?: string | null
+          raw?: Json
+          state?: string | null
+          updated_at?: string
+          velocity_id: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string
+          name?: string
+          phone?: string | null
+          pincode?: string | null
+          raw?: Json
+          state?: string | null
+          updated_at?: string
+          velocity_id?: string
+        }
+        Relationships: []
+      }
       vendor_invites: {
         Row: {
           accepted_at: string | null
