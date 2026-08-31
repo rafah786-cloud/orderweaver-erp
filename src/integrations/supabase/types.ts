@@ -2694,6 +2694,30 @@ export type Database = {
         }
         Relationships: []
       }
+      velocity_auth_token: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vendor_invites: {
         Row: {
           accepted_at: string | null
