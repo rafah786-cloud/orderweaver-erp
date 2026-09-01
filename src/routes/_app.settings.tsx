@@ -37,6 +37,7 @@ function SettingsPage() {
           <DeviceCard />
           <ShiftCard />
           <WhatsAppConfigCard />
+          <VelocityShippingCard />
         </div>
       </PageBody>
     </>
