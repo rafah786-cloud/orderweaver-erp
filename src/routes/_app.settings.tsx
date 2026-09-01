@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createDevice, rotateDeviceKey, deleteDevice } from "@/lib/biometric.functions";
 import { WhatsAppConfigCard } from "@/components/settings/WhatsAppConfigCard";
+import { VelocityShippingCard } from "@/components/settings/VelocityShippingCard";
 import { Trash2, KeyRound, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
@@ -36,6 +37,7 @@ function SettingsPage() {
           <DeviceCard />
           <ShiftCard />
           <WhatsAppConfigCard />
+          <VelocityShippingCard />
         </div>
       </PageBody>
     </>
