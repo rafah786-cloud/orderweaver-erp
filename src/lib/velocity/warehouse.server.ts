@@ -154,7 +154,12 @@ export async function syncVelocityWarehouses(): Promise<{ synced: number; wareho
     const { error } = await supabaseAdmin
       .from("velocity_warehouses")
       .upsert(
-        warehouses.map((w) => ({ ...w, last_synced_at: now, updated_at: now })),
+        warehouses.map((w) => ({
+          ...w,
+          raw: w.raw as unknown as Record<string, never>,
+          last_synced_at: now,
+          updated_at: now,
+        })),
         { onConflict: "velocity_id" },
       );
     if (error) throw new Error(error.message);
