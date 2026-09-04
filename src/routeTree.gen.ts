@@ -36,6 +36,7 @@ import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
+import { Route as AppAiRouteImport } from './routes/_app.ai'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
 import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
@@ -216,6 +217,11 @@ const AppAttendanceRoute = AppAttendanceRouteImport.update({
 const AppApprovalsRoute = AppApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiRoute = AppAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAccountingRoute = AppAccountingRouteImport.update({
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
+  '/ai': typeof AppAiRoute
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
@@ -548,6 +555,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
+  '/ai': typeof AppAiRoute
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
@@ -623,6 +631,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/_app/accounting': typeof AppAccountingRouteWithChildren
+  '/_app/ai': typeof AppAiRoute
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
@@ -700,6 +709,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendor-signup'
     | '/accounting'
+    | '/ai'
     | '/approvals'
     | '/attendance'
     | '/banking'
@@ -775,6 +785,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendor-signup'
     | '/accounting'
+    | '/ai'
     | '/approvals'
     | '/attendance'
     | '/banking'
@@ -849,6 +860,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendor-signup'
     | '/_app/accounting'
+    | '/_app/ai'
     | '/_app/approvals'
     | '/_app/attendance'
     | '/_app/banking'
@@ -1118,6 +1130,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/ai': {
+      id: '/_app/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AppAiRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/accounting': {
@@ -1624,6 +1643,7 @@ const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
+  AppAiRoute: typeof AppAiRoute
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
@@ -1651,6 +1671,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountingRoute: AppAccountingRouteWithChildren,
+  AppAiRoute: AppAiRoute,
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
