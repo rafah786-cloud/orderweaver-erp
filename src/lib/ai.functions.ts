@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -121,7 +121,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
         meta: { retrievers: result.usedRetrievers },
       });
 
-      return { ok: true as const, conversationId, ...result, error: null as string | null };
+      return { ok: true as const, conversationId, ...result, evidence: result.evidence as Json, error: null as string | null };
     } catch (e) {
       await logAiUsage({
         userId: context.userId,
@@ -136,7 +136,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
         conversationId,
         answer: "",
         usedRetrievers: [] as string[],
-        evidence: {} as Record<string, unknown>,
+        evidence: {} as Json,
         model: "",
         error: errorMessage(e),
       };
@@ -328,7 +328,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
         promptSummary: data.focus ?? data.topic,
         durationMs: Date.now() - started,
       });
-      return { ok: true as const, answer: result.answer, evidence: result.evidence, error: null as string | null };
+      return { ok: true as const, answer: result.answer, evidence: result.evidence as Json, error: null as string | null };
     } catch (e) {
       await logAiUsage({
         userId: context.userId,
@@ -337,7 +337,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
         error: errorMessage(e),
         durationMs: Date.now() - started,
       });
-      return { ok: false as const, answer: "", evidence: {} as Record<string, unknown>, error: errorMessage(e) };
+      return { ok: false as const, answer: "", evidence: {} as Json, error: errorMessage(e) };
     }
   });
 
@@ -381,7 +381,7 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
         durationMs: Date.now() - started,
         meta: { entity: result.entity, rows: result.rowCount },
       });
-      return { ok: true as const, ...result, error: null as string | null };
+      return { ok: true as const, ...result, spec: result.spec as unknown as Json, rows: result.rows as Json[], error: null as string | null };
     } catch (e) {
       await logAiUsage({
         userId: context.userId,
@@ -395,8 +395,8 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
         ok: false as const,
         entity: "",
         label: "",
-        spec: null,
-        rows: [] as Record<string, unknown>[],
+        spec: null as Json | null,
+        rows: [] as Json[],
         rowCount: 0,
         truncated: false,
         error: errorMessage(e),
@@ -502,7 +502,14 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         meta: { chunks, lines: extraction.lines?.length ?? 0 },
       });
 
-      return { ok: true as const, documentId: created.id, extraction, matches, indexedChunks: chunks, error: null as string | null };
+      return {
+        ok: true as const,
+        documentId: created.id,
+        extraction: extraction as unknown as Json,
+        matches: matches as unknown as Json,
+        indexedChunks: chunks,
+        error: null as string | null,
+      };
     } catch (e) {
       const message = errorMessage(e);
       await context.supabase
@@ -519,7 +526,14 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         refId: created.id,
         durationMs: Date.now() - started,
       });
-      return { ok: false as const, documentId: created.id, extraction: null, matches: null, indexedChunks: 0, error: message };
+      return {
+        ok: false as const,
+        documentId: created.id,
+        extraction: null as Json | null,
+        matches: null as Json | null,
+        indexedChunks: 0,
+        error: message,
+      };
     }
   });
 
@@ -612,7 +626,11 @@ export const compareQuotationDocuments = createServerFn({ method: "POST" })
       .filter((q): q is NonNullable<typeof q> => q !== null);
 
     if (quotes.length < 2) {
-      return { ok: false as const, comparison: null, error: "Select at least two documents that have been read successfully." };
+      return {
+        ok: false as const,
+        comparison: null as Json | null,
+        error: "Select at least two documents that have been read successfully.",
+      };
     }
 
     try {
@@ -623,9 +641,9 @@ export const compareQuotationDocuments = createServerFn({ method: "POST" })
         durationMs: Date.now() - started,
         meta: { documents: quotes.length },
       });
-      return { ok: true as const, comparison, error: null as string | null };
+      return { ok: true as const, comparison: comparison as unknown as Json, error: null as string | null };
     } catch (e) {
-      return { ok: false as const, comparison: null, error: errorMessage(e) };
+      return { ok: false as const, comparison: null as Json | null, error: errorMessage(e) };
     }
   });
 
