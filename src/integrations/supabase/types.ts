@@ -14,6 +14,322 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          feature: string
+          id: string
+          meta: Json | null
+          model: string | null
+          prompt_summary: string | null
+          ref_id: string | null
+          ref_table: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          feature: string
+          id?: string
+          meta?: Json | null
+          model?: string | null
+          prompt_summary?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          feature?: string
+          id?: string
+          meta?: Json | null
+          model?: string | null
+          prompt_summary?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_document_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          id: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          id?: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "ai_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_documents: {
+        Row: {
+          content_text: string | null
+          created_at: string
+          doc_kind: string
+          extraction: Json | null
+          extraction_error: string | null
+          extraction_status: string
+          file_name: string | null
+          id: string
+          mime_type: string | null
+          party_id: string | null
+          quotation_group: string | null
+          storage_path: string | null
+          supplier_id: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          content_text?: string | null
+          created_at?: string
+          doc_kind?: string
+          extraction?: Json | null
+          extraction_error?: string | null
+          extraction_status?: string
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          party_id?: string | null
+          quotation_group?: string | null
+          storage_path?: string | null
+          supplier_id?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          content_text?: string | null
+          created_at?: string
+          doc_kind?: string
+          extraction?: Json | null
+          extraction_error?: string | null
+          extraction_status?: string
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          party_id?: string | null
+          quotation_group?: string | null
+          storage_path?: string | null
+          supplier_id?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_documents_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_documents_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "party_outstanding"
+            referencedColumns: ["party_id"]
+          },
+          {
+            foreignKeyName: "ai_documents_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_insights: {
+        Row: {
+          created_by: string | null
+          expires_at: string | null
+          generated_at: string
+          id: string
+          kind: string
+          model: string | null
+          payload: Json
+          scope_key: string
+        }
+        Insert: {
+          created_by?: string | null
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          kind: string
+          model?: string | null
+          payload: Json
+          scope_key?: string
+        }
+        Update: {
+          created_by?: string | null
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          kind?: string
+          model?: string | null
+          payload?: Json
+          scope_key?: string
+        }
+        Relationships: []
+      }
+      ai_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          data: Json | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_proposals: {
+        Row: {
+          applied_id: string | null
+          applied_table: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          payload: Json
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_document_id: string | null
+          status: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          applied_id?: string | null
+          applied_table?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          payload: Json
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_document_id?: string | null
+          status?: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          applied_id?: string | null
+          applied_table?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_document_id?: string | null
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_proposals_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "ai_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           attendance_date: string
@@ -3144,6 +3460,21 @@ export type Database = {
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
       is_period_locked: { Args: { _d: string }; Returns: boolean }
+      match_ai_document_chunks: {
+        Args: {
+          _embedding: string
+          _match_count?: number
+          _supplier_id?: string
+        }
+        Returns: {
+          chunk_id: string
+          content: string
+          doc_kind: string
+          document_id: string
+          similarity: number
+          title: string
+        }[]
+      }
       next_voucher_number: {
         Args: { _type: Database["public"]["Enums"]["voucher_type"] }
         Returns: string
@@ -3209,12 +3540,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3238,11 +3569,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3263,11 +3594,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3288,11 +3619,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3305,11 +3636,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
