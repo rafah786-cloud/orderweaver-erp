@@ -36,9 +36,11 @@ import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
+import { Route as AppAiRouteImport } from './routes/_app.ai'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
 import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
+import { Route as AppAiIndexRouteImport } from './routes/_app.ai.index'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
 import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
@@ -63,6 +65,7 @@ import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banki
 import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
 import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
 import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
+import { Route as AppAiAskRouteImport } from './routes/_app.ai.ask'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
 import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
 import { Route as AppAccountingPeriodsRouteImport } from './routes/_app.accounting.periods'
@@ -218,6 +221,11 @@ const AppApprovalsRoute = AppApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiRoute = AppAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccountingRoute = AppAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
@@ -232,6 +240,11 @@ const AppCommunicationsIndexRoute = AppCommunicationsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCommunicationsRoute,
+} as any)
+const AppAiIndexRoute = AppAiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAiRoute,
 } as any)
 const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
   id: '/purchase-orders',
@@ -357,6 +370,11 @@ const AppBankingAccountsRoute = AppBankingAccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => AppBankingRoute,
 } as any)
+const AppAiAskRoute = AppAiAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AppAiRoute,
+} as any)
 const AppAccountingTrialBalanceRoute =
   AppAccountingTrialBalanceRouteImport.update({
     id: '/trial-balance',
@@ -473,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
+  '/ai': typeof AppAiRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
@@ -499,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/accounting/periods': typeof AppAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/ai/ask': typeof AppAiAskRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
   '/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -523,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/ai/': typeof AppAiIndexRoute
   '/communications/': typeof AppCommunicationsIndexRoute
   '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -572,6 +593,7 @@ export interface FileRoutesByTo {
   '/accounting/periods': typeof AppAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/ai/ask': typeof AppAiAskRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
   '/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -596,6 +618,7 @@ export interface FileRoutesByTo {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/ai': typeof AppAiIndexRoute
   '/communications': typeof AppCommunicationsIndexRoute
   '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -623,6 +646,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/_app/accounting': typeof AppAccountingRouteWithChildren
+  '/_app/ai': typeof AppAiRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
@@ -649,6 +673,7 @@ export interface FileRoutesById {
   '/_app/accounting/periods': typeof AppAccountingPeriodsRoute
   '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/_app/ai/ask': typeof AppAiAskRoute
   '/_app/banking/accounts': typeof AppBankingAccountsRoute
   '/_app/banking/cheques': typeof AppBankingChequesRoute
   '/_app/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -673,6 +698,7 @@ export interface FileRoutesById {
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
   '/_app/vendor/ledger': typeof AppVendorLedgerRoute
   '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/_app/ai/': typeof AppAiIndexRoute
   '/_app/communications/': typeof AppCommunicationsIndexRoute
   '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -700,6 +726,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendor-signup'
     | '/accounting'
+    | '/ai'
     | '/approvals'
     | '/attendance'
     | '/banking'
@@ -726,6 +753,7 @@ export interface FileRouteTypes {
     | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/ai/ask'
     | '/banking/accounts'
     | '/banking/cheques'
     | '/banking/currencies'
@@ -750,6 +778,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/ai/'
     | '/communications/'
     | '/vendor/'
     | '/accounting/ledger/$id'
@@ -799,6 +828,7 @@ export interface FileRouteTypes {
     | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/ai/ask'
     | '/banking/accounts'
     | '/banking/cheques'
     | '/banking/currencies'
@@ -823,6 +853,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/ai'
     | '/communications'
     | '/vendor'
     | '/accounting/ledger/$id'
@@ -849,6 +880,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendor-signup'
     | '/_app/accounting'
+    | '/_app/ai'
     | '/_app/approvals'
     | '/_app/attendance'
     | '/_app/banking'
@@ -875,6 +907,7 @@ export interface FileRouteTypes {
     | '/_app/accounting/periods'
     | '/_app/accounting/profit-loss'
     | '/_app/accounting/trial-balance'
+    | '/_app/ai/ask'
     | '/_app/banking/accounts'
     | '/_app/banking/cheques'
     | '/_app/banking/currencies'
@@ -899,6 +932,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/valuation'
     | '/_app/vendor/ledger'
     | '/_app/vendor/purchase-orders'
+    | '/_app/ai/'
     | '/_app/communications/'
     | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
@@ -1120,6 +1154,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ai': {
+      id: '/_app/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AppAiRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/accounting': {
       id: '/_app/accounting'
       path: '/accounting'
@@ -1140,6 +1181,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/communications/'
       preLoaderRoute: typeof AppCommunicationsIndexRouteImport
       parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/ai/': {
+      id: '/_app/ai/'
+      path: '/'
+      fullPath: '/ai/'
+      preLoaderRoute: typeof AppAiIndexRouteImport
+      parentRoute: typeof AppAiRoute
     }
     '/_app/vendor/purchase-orders': {
       id: '/_app/vendor/purchase-orders'
@@ -1308,6 +1356,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/banking/accounts'
       preLoaderRoute: typeof AppBankingAccountsRouteImport
       parentRoute: typeof AppBankingRoute
+    }
+    '/_app/ai/ask': {
+      id: '/_app/ai/ask'
+      path: '/ask'
+      fullPath: '/ai/ask'
+      preLoaderRoute: typeof AppAiAskRouteImport
+      parentRoute: typeof AppAiRoute
     }
     '/_app/accounting/trial-balance': {
       id: '/_app/accounting/trial-balance'
@@ -1482,6 +1537,18 @@ const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
   AppAccountingRouteChildren,
 )
 
+interface AppAiRouteChildren {
+  AppAiAskRoute: typeof AppAiAskRoute
+  AppAiIndexRoute: typeof AppAiIndexRoute
+}
+
+const AppAiRouteChildren: AppAiRouteChildren = {
+  AppAiAskRoute: AppAiAskRoute,
+  AppAiIndexRoute: AppAiIndexRoute,
+}
+
+const AppAiRouteWithChildren = AppAiRoute._addFileChildren(AppAiRouteChildren)
+
 interface AppBankingReconcileRouteChildren {
   AppBankingReconcileIdRoute: typeof AppBankingReconcileIdRoute
 }
@@ -1624,6 +1691,7 @@ const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
+  AppAiRoute: typeof AppAiRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
@@ -1651,6 +1719,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountingRoute: AppAccountingRouteWithChildren,
+  AppAiRoute: AppAiRouteWithChildren,
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
