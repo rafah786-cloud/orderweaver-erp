@@ -65,6 +65,7 @@ import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banki
 import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
 import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
 import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
+import { Route as AppAiAskRouteImport } from './routes/_app.ai.ask'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
 import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
 import { Route as AppAccountingPeriodsRouteImport } from './routes/_app.accounting.periods'
@@ -369,6 +370,11 @@ const AppBankingAccountsRoute = AppBankingAccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => AppBankingRoute,
 } as any)
+const AppAiAskRoute = AppAiAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AppAiRoute,
+} as any)
 const AppAccountingTrialBalanceRoute =
   AppAccountingTrialBalanceRouteImport.update({
     id: '/trial-balance',
@@ -512,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/accounting/periods': typeof AppAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/ai/ask': typeof AppAiAskRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
   '/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -586,6 +593,7 @@ export interface FileRoutesByTo {
   '/accounting/periods': typeof AppAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/ai/ask': typeof AppAiAskRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
   '/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -665,6 +673,7 @@ export interface FileRoutesById {
   '/_app/accounting/periods': typeof AppAccountingPeriodsRoute
   '/_app/accounting/profit-loss': typeof AppAccountingProfitLossRoute
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
+  '/_app/ai/ask': typeof AppAiAskRoute
   '/_app/banking/accounts': typeof AppBankingAccountsRoute
   '/_app/banking/cheques': typeof AppBankingChequesRoute
   '/_app/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -744,6 +753,7 @@ export interface FileRouteTypes {
     | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/ai/ask'
     | '/banking/accounts'
     | '/banking/cheques'
     | '/banking/currencies'
@@ -818,6 +828,7 @@ export interface FileRouteTypes {
     | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/trial-balance'
+    | '/ai/ask'
     | '/banking/accounts'
     | '/banking/cheques'
     | '/banking/currencies'
@@ -896,6 +907,7 @@ export interface FileRouteTypes {
     | '/_app/accounting/periods'
     | '/_app/accounting/profit-loss'
     | '/_app/accounting/trial-balance'
+    | '/_app/ai/ask'
     | '/_app/banking/accounts'
     | '/_app/banking/cheques'
     | '/_app/banking/currencies'
@@ -1345,6 +1357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBankingAccountsRouteImport
       parentRoute: typeof AppBankingRoute
     }
+    '/_app/ai/ask': {
+      id: '/_app/ai/ask'
+      path: '/ask'
+      fullPath: '/ai/ask'
+      preLoaderRoute: typeof AppAiAskRouteImport
+      parentRoute: typeof AppAiRoute
+    }
     '/_app/accounting/trial-balance': {
       id: '/_app/accounting/trial-balance'
       path: '/trial-balance'
@@ -1519,10 +1538,12 @@ const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
 )
 
 interface AppAiRouteChildren {
+  AppAiAskRoute: typeof AppAiAskRoute
   AppAiIndexRoute: typeof AppAiIndexRoute
 }
 
 const AppAiRouteChildren: AppAiRouteChildren = {
+  AppAiAskRoute: AppAiAskRoute,
   AppAiIndexRoute: AppAiIndexRoute,
 }
 
