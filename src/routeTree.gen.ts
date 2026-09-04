@@ -40,6 +40,7 @@ import { Route as AppAiRouteImport } from './routes/_app.ai'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
 import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
+import { Route as AppAiIndexRouteImport } from './routes/_app.ai.index'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
 import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
@@ -238,6 +239,11 @@ const AppCommunicationsIndexRoute = AppCommunicationsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCommunicationsRoute,
+} as any)
+const AppAiIndexRoute = AppAiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAiRoute,
 } as any)
 const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
   id: '/purchase-orders',
@@ -479,7 +485,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
-  '/ai': typeof AppAiRoute
+  '/ai': typeof AppAiRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
@@ -530,6 +536,7 @@ export interface FileRoutesByFullPath {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/ai/': typeof AppAiIndexRoute
   '/communications/': typeof AppCommunicationsIndexRoute
   '/vendor/': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -555,7 +562,6 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/accounting': typeof AppAccountingRouteWithChildren
-  '/ai': typeof AppAiRoute
   '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
@@ -604,6 +610,7 @@ export interface FileRoutesByTo {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/ai': typeof AppAiIndexRoute
   '/communications': typeof AppCommunicationsIndexRoute
   '/vendor': typeof AppVendorIndexRoute
   '/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -631,7 +638,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/_app/accounting': typeof AppAccountingRouteWithChildren
-  '/_app/ai': typeof AppAiRoute
+  '/_app/ai': typeof AppAiRouteWithChildren
   '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
@@ -682,6 +689,7 @@ export interface FileRoutesById {
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
   '/_app/vendor/ledger': typeof AppVendorLedgerRoute
   '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/_app/ai/': typeof AppAiIndexRoute
   '/_app/communications/': typeof AppCommunicationsIndexRoute
   '/_app/vendor/': typeof AppVendorIndexRoute
   '/_app/accounting/ledger/$id': typeof AppAccountingLedgerIdRoute
@@ -760,6 +768,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/ai/'
     | '/communications/'
     | '/vendor/'
     | '/accounting/ledger/$id'
@@ -785,7 +794,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendor-signup'
     | '/accounting'
-    | '/ai'
     | '/approvals'
     | '/attendance'
     | '/banking'
@@ -834,6 +842,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/ai'
     | '/communications'
     | '/vendor'
     | '/accounting/ledger/$id'
@@ -911,6 +920,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/valuation'
     | '/_app/vendor/ledger'
     | '/_app/vendor/purchase-orders'
+    | '/_app/ai/'
     | '/_app/communications/'
     | '/_app/vendor/'
     | '/_app/accounting/ledger/$id'
@@ -1159,6 +1169,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/communications/'
       preLoaderRoute: typeof AppCommunicationsIndexRouteImport
       parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/ai/': {
+      id: '/_app/ai/'
+      path: '/'
+      fullPath: '/ai/'
+      preLoaderRoute: typeof AppAiIndexRouteImport
+      parentRoute: typeof AppAiRoute
     }
     '/_app/vendor/purchase-orders': {
       id: '/_app/vendor/purchase-orders'
@@ -1501,6 +1518,16 @@ const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
   AppAccountingRouteChildren,
 )
 
+interface AppAiRouteChildren {
+  AppAiIndexRoute: typeof AppAiIndexRoute
+}
+
+const AppAiRouteChildren: AppAiRouteChildren = {
+  AppAiIndexRoute: AppAiIndexRoute,
+}
+
+const AppAiRouteWithChildren = AppAiRoute._addFileChildren(AppAiRouteChildren)
+
 interface AppBankingReconcileRouteChildren {
   AppBankingReconcileIdRoute: typeof AppBankingReconcileIdRoute
 }
@@ -1643,7 +1670,7 @@ const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAccountingRoute: typeof AppAccountingRouteWithChildren
-  AppAiRoute: typeof AppAiRoute
+  AppAiRoute: typeof AppAiRouteWithChildren
   AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
@@ -1671,7 +1698,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountingRoute: AppAccountingRouteWithChildren,
-  AppAiRoute: AppAiRoute,
+  AppAiRoute: AppAiRouteWithChildren,
   AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
