@@ -65,6 +65,9 @@ import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banki
 import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
 import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
 import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
+import { Route as AppAiSearchRouteImport } from './routes/_app.ai.search'
+import { Route as AppAiInsightsRouteImport } from './routes/_app.ai.insights'
+import { Route as AppAiDocumentsRouteImport } from './routes/_app.ai.documents'
 import { Route as AppAiBriefRouteImport } from './routes/_app.ai.brief'
 import { Route as AppAiAskRouteImport } from './routes/_app.ai.ask'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
@@ -371,6 +374,21 @@ const AppBankingAccountsRoute = AppBankingAccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => AppBankingRoute,
 } as any)
+const AppAiSearchRoute = AppAiSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiInsightsRoute = AppAiInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiDocumentsRoute = AppAiDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppAiRoute,
+} as any)
 const AppAiBriefRoute = AppAiBriefRouteImport.update({
   id: '/brief',
   path: '/brief',
@@ -526,6 +544,9 @@ export interface FileRoutesByFullPath {
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/ai/ask': typeof AppAiAskRoute
   '/ai/brief': typeof AppAiBriefRoute
+  '/ai/documents': typeof AppAiDocumentsRoute
+  '/ai/insights': typeof AppAiInsightsRoute
+  '/ai/search': typeof AppAiSearchRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
   '/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -602,6 +623,9 @@ export interface FileRoutesByTo {
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/ai/ask': typeof AppAiAskRoute
   '/ai/brief': typeof AppAiBriefRoute
+  '/ai/documents': typeof AppAiDocumentsRoute
+  '/ai/insights': typeof AppAiInsightsRoute
+  '/ai/search': typeof AppAiSearchRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
   '/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -683,6 +707,9 @@ export interface FileRoutesById {
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/_app/ai/ask': typeof AppAiAskRoute
   '/_app/ai/brief': typeof AppAiBriefRoute
+  '/_app/ai/documents': typeof AppAiDocumentsRoute
+  '/_app/ai/insights': typeof AppAiInsightsRoute
+  '/_app/ai/search': typeof AppAiSearchRoute
   '/_app/banking/accounts': typeof AppBankingAccountsRoute
   '/_app/banking/cheques': typeof AppBankingChequesRoute
   '/_app/banking/currencies': typeof AppBankingCurrenciesRoute
@@ -764,6 +791,9 @@ export interface FileRouteTypes {
     | '/accounting/trial-balance'
     | '/ai/ask'
     | '/ai/brief'
+    | '/ai/documents'
+    | '/ai/insights'
+    | '/ai/search'
     | '/banking/accounts'
     | '/banking/cheques'
     | '/banking/currencies'
@@ -840,6 +870,9 @@ export interface FileRouteTypes {
     | '/accounting/trial-balance'
     | '/ai/ask'
     | '/ai/brief'
+    | '/ai/documents'
+    | '/ai/insights'
+    | '/ai/search'
     | '/banking/accounts'
     | '/banking/cheques'
     | '/banking/currencies'
@@ -920,6 +953,9 @@ export interface FileRouteTypes {
     | '/_app/accounting/trial-balance'
     | '/_app/ai/ask'
     | '/_app/ai/brief'
+    | '/_app/ai/documents'
+    | '/_app/ai/insights'
+    | '/_app/ai/search'
     | '/_app/banking/accounts'
     | '/_app/banking/cheques'
     | '/_app/banking/currencies'
@@ -1369,6 +1405,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBankingAccountsRouteImport
       parentRoute: typeof AppBankingRoute
     }
+    '/_app/ai/search': {
+      id: '/_app/ai/search'
+      path: '/search'
+      fullPath: '/ai/search'
+      preLoaderRoute: typeof AppAiSearchRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/insights': {
+      id: '/_app/ai/insights'
+      path: '/insights'
+      fullPath: '/ai/insights'
+      preLoaderRoute: typeof AppAiInsightsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/documents': {
+      id: '/_app/ai/documents'
+      path: '/documents'
+      fullPath: '/ai/documents'
+      preLoaderRoute: typeof AppAiDocumentsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
     '/_app/ai/brief': {
       id: '/_app/ai/brief'
       path: '/brief'
@@ -1559,12 +1616,18 @@ const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
 interface AppAiRouteChildren {
   AppAiAskRoute: typeof AppAiAskRoute
   AppAiBriefRoute: typeof AppAiBriefRoute
+  AppAiDocumentsRoute: typeof AppAiDocumentsRoute
+  AppAiInsightsRoute: typeof AppAiInsightsRoute
+  AppAiSearchRoute: typeof AppAiSearchRoute
   AppAiIndexRoute: typeof AppAiIndexRoute
 }
 
 const AppAiRouteChildren: AppAiRouteChildren = {
   AppAiAskRoute: AppAiAskRoute,
   AppAiBriefRoute: AppAiBriefRoute,
+  AppAiDocumentsRoute: AppAiDocumentsRoute,
+  AppAiInsightsRoute: AppAiInsightsRoute,
+  AppAiSearchRoute: AppAiSearchRoute,
   AppAiIndexRoute: AppAiIndexRoute,
 }
 
