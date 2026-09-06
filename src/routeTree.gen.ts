@@ -67,6 +67,7 @@ import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.che
 import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
 import { Route as AppAiSearchRouteImport } from './routes/_app.ai.search'
 import { Route as AppAiInsightsRouteImport } from './routes/_app.ai.insights'
+import { Route as AppAiDocumentsRouteImport } from './routes/_app.ai.documents'
 import { Route as AppAiBriefRouteImport } from './routes/_app.ai.brief'
 import { Route as AppAiAskRouteImport } from './routes/_app.ai.ask'
 import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
@@ -383,6 +384,11 @@ const AppAiInsightsRoute = AppAiInsightsRouteImport.update({
   path: '/insights',
   getParentRoute: () => AppAiRoute,
 } as any)
+const AppAiDocumentsRoute = AppAiDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppAiRoute,
+} as any)
 const AppAiBriefRoute = AppAiBriefRouteImport.update({
   id: '/brief',
   path: '/brief',
@@ -538,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/ai/ask': typeof AppAiAskRoute
   '/ai/brief': typeof AppAiBriefRoute
+  '/ai/documents': typeof AppAiDocumentsRoute
   '/ai/insights': typeof AppAiInsightsRoute
   '/ai/search': typeof AppAiSearchRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
@@ -616,6 +623,7 @@ export interface FileRoutesByTo {
   '/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/ai/ask': typeof AppAiAskRoute
   '/ai/brief': typeof AppAiBriefRoute
+  '/ai/documents': typeof AppAiDocumentsRoute
   '/ai/insights': typeof AppAiInsightsRoute
   '/ai/search': typeof AppAiSearchRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
@@ -699,6 +707,7 @@ export interface FileRoutesById {
   '/_app/accounting/trial-balance': typeof AppAccountingTrialBalanceRoute
   '/_app/ai/ask': typeof AppAiAskRoute
   '/_app/ai/brief': typeof AppAiBriefRoute
+  '/_app/ai/documents': typeof AppAiDocumentsRoute
   '/_app/ai/insights': typeof AppAiInsightsRoute
   '/_app/ai/search': typeof AppAiSearchRoute
   '/_app/banking/accounts': typeof AppBankingAccountsRoute
@@ -782,6 +791,7 @@ export interface FileRouteTypes {
     | '/accounting/trial-balance'
     | '/ai/ask'
     | '/ai/brief'
+    | '/ai/documents'
     | '/ai/insights'
     | '/ai/search'
     | '/banking/accounts'
@@ -860,6 +870,7 @@ export interface FileRouteTypes {
     | '/accounting/trial-balance'
     | '/ai/ask'
     | '/ai/brief'
+    | '/ai/documents'
     | '/ai/insights'
     | '/ai/search'
     | '/banking/accounts'
@@ -942,6 +953,7 @@ export interface FileRouteTypes {
     | '/_app/accounting/trial-balance'
     | '/_app/ai/ask'
     | '/_app/ai/brief'
+    | '/_app/ai/documents'
     | '/_app/ai/insights'
     | '/_app/ai/search'
     | '/_app/banking/accounts'
@@ -1407,6 +1419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAiInsightsRouteImport
       parentRoute: typeof AppAiRoute
     }
+    '/_app/ai/documents': {
+      id: '/_app/ai/documents'
+      path: '/documents'
+      fullPath: '/ai/documents'
+      preLoaderRoute: typeof AppAiDocumentsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
     '/_app/ai/brief': {
       id: '/_app/ai/brief'
       path: '/brief'
@@ -1597,6 +1616,7 @@ const AppAccountingRouteWithChildren = AppAccountingRoute._addFileChildren(
 interface AppAiRouteChildren {
   AppAiAskRoute: typeof AppAiAskRoute
   AppAiBriefRoute: typeof AppAiBriefRoute
+  AppAiDocumentsRoute: typeof AppAiDocumentsRoute
   AppAiInsightsRoute: typeof AppAiInsightsRoute
   AppAiSearchRoute: typeof AppAiSearchRoute
   AppAiIndexRoute: typeof AppAiIndexRoute
@@ -1605,6 +1625,7 @@ interface AppAiRouteChildren {
 const AppAiRouteChildren: AppAiRouteChildren = {
   AppAiAskRoute: AppAiAskRoute,
   AppAiBriefRoute: AppAiBriefRoute,
+  AppAiDocumentsRoute: AppAiDocumentsRoute,
   AppAiInsightsRoute: AppAiInsightsRoute,
   AppAiSearchRoute: AppAiSearchRoute,
   AppAiIndexRoute: AppAiIndexRoute,
