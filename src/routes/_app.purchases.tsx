@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ function PurchasesPage() {
 
   return (
     <>
-      <PageHeader title="Purchases" description="Suppliers and purchase bills. Stock auto-updates BOQ." />
+      <PageHeader title="Purchases" description="Suppliers and purchase bills. Stock auto-updates BOQ." actions={<AiInsightButton topic="suppliers" label="Analyze pricing" />} />
       <PageBody>
         <Tabs defaultValue="bills">
           <TabsList>

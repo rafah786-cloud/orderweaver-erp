@@ -190,7 +190,7 @@ function DocumentsPage() {
                           <span className="text-sm font-medium">{h.title}</span>
                           <Badge variant="outline" className="text-[10px] capitalize">{String(h.docKind).replace(/_/g, " ")}</Badge>
                         </div>
-                        <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{h.content}</p>
+                        <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{h.excerpt}</p>
                       </div>
                     ))}
                   </div>

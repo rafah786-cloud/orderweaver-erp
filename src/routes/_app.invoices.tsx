@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -309,6 +310,7 @@ function InvoicesPage() {
         description="Create invoices with automatic credit-limit and overdue blocking."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <AiInsightButton topic="receivables" label="Analyze receivables" />
             <div className="flex items-center gap-2">
               <Label className="text-xs text-muted-foreground">Bill layout</Label>
               <Select

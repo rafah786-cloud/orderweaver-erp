@@ -66,6 +66,8 @@ import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.
 import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
 import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
 import { Route as AppAiSearchRouteImport } from './routes/_app.ai.search'
+import { Route as AppAiQuotationsRouteImport } from './routes/_app.ai.quotations'
+import { Route as AppAiProposalsRouteImport } from './routes/_app.ai.proposals'
 import { Route as AppAiInsightsRouteImport } from './routes/_app.ai.insights'
 import { Route as AppAiDocumentsRouteImport } from './routes/_app.ai.documents'
 import { Route as AppAiBriefRouteImport } from './routes/_app.ai.brief'
@@ -379,6 +381,16 @@ const AppAiSearchRoute = AppAiSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AppAiRoute,
 } as any)
+const AppAiQuotationsRoute = AppAiQuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiProposalsRoute = AppAiProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
+  getParentRoute: () => AppAiRoute,
+} as any)
 const AppAiInsightsRoute = AppAiInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
@@ -546,6 +558,8 @@ export interface FileRoutesByFullPath {
   '/ai/brief': typeof AppAiBriefRoute
   '/ai/documents': typeof AppAiDocumentsRoute
   '/ai/insights': typeof AppAiInsightsRoute
+  '/ai/proposals': typeof AppAiProposalsRoute
+  '/ai/quotations': typeof AppAiQuotationsRoute
   '/ai/search': typeof AppAiSearchRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
@@ -625,6 +639,8 @@ export interface FileRoutesByTo {
   '/ai/brief': typeof AppAiBriefRoute
   '/ai/documents': typeof AppAiDocumentsRoute
   '/ai/insights': typeof AppAiInsightsRoute
+  '/ai/proposals': typeof AppAiProposalsRoute
+  '/ai/quotations': typeof AppAiQuotationsRoute
   '/ai/search': typeof AppAiSearchRoute
   '/banking/accounts': typeof AppBankingAccountsRoute
   '/banking/cheques': typeof AppBankingChequesRoute
@@ -709,6 +725,8 @@ export interface FileRoutesById {
   '/_app/ai/brief': typeof AppAiBriefRoute
   '/_app/ai/documents': typeof AppAiDocumentsRoute
   '/_app/ai/insights': typeof AppAiInsightsRoute
+  '/_app/ai/proposals': typeof AppAiProposalsRoute
+  '/_app/ai/quotations': typeof AppAiQuotationsRoute
   '/_app/ai/search': typeof AppAiSearchRoute
   '/_app/banking/accounts': typeof AppBankingAccountsRoute
   '/_app/banking/cheques': typeof AppBankingChequesRoute
@@ -793,6 +811,8 @@ export interface FileRouteTypes {
     | '/ai/brief'
     | '/ai/documents'
     | '/ai/insights'
+    | '/ai/proposals'
+    | '/ai/quotations'
     | '/ai/search'
     | '/banking/accounts'
     | '/banking/cheques'
@@ -872,6 +892,8 @@ export interface FileRouteTypes {
     | '/ai/brief'
     | '/ai/documents'
     | '/ai/insights'
+    | '/ai/proposals'
+    | '/ai/quotations'
     | '/ai/search'
     | '/banking/accounts'
     | '/banking/cheques'
@@ -955,6 +977,8 @@ export interface FileRouteTypes {
     | '/_app/ai/brief'
     | '/_app/ai/documents'
     | '/_app/ai/insights'
+    | '/_app/ai/proposals'
+    | '/_app/ai/quotations'
     | '/_app/ai/search'
     | '/_app/banking/accounts'
     | '/_app/banking/cheques'
@@ -1412,6 +1436,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAiSearchRouteImport
       parentRoute: typeof AppAiRoute
     }
+    '/_app/ai/quotations': {
+      id: '/_app/ai/quotations'
+      path: '/quotations'
+      fullPath: '/ai/quotations'
+      preLoaderRoute: typeof AppAiQuotationsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/proposals': {
+      id: '/_app/ai/proposals'
+      path: '/proposals'
+      fullPath: '/ai/proposals'
+      preLoaderRoute: typeof AppAiProposalsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
     '/_app/ai/insights': {
       id: '/_app/ai/insights'
       path: '/insights'
@@ -1618,6 +1656,8 @@ interface AppAiRouteChildren {
   AppAiBriefRoute: typeof AppAiBriefRoute
   AppAiDocumentsRoute: typeof AppAiDocumentsRoute
   AppAiInsightsRoute: typeof AppAiInsightsRoute
+  AppAiProposalsRoute: typeof AppAiProposalsRoute
+  AppAiQuotationsRoute: typeof AppAiQuotationsRoute
   AppAiSearchRoute: typeof AppAiSearchRoute
   AppAiIndexRoute: typeof AppAiIndexRoute
 }
@@ -1627,6 +1667,8 @@ const AppAiRouteChildren: AppAiRouteChildren = {
   AppAiBriefRoute: AppAiBriefRoute,
   AppAiDocumentsRoute: AppAiDocumentsRoute,
   AppAiInsightsRoute: AppAiInsightsRoute,
+  AppAiProposalsRoute: AppAiProposalsRoute,
+  AppAiQuotationsRoute: AppAiQuotationsRoute,
   AppAiSearchRoute: AppAiSearchRoute,
   AppAiIndexRoute: AppAiIndexRoute,
 }

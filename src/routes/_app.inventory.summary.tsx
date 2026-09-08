@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { sb, type StockSummaryRow } from "@/lib/inventory";
@@ -31,7 +32,7 @@ function StockSummaryPage() {
 
   return (
     <>
-      <PageHeader title="Stock Summary" description={`${rows.length} items · Total value ${inr(totalValue)}`} />
+      <PageHeader title="Stock Summary" description={`${rows.length} items · Total value ${inr(totalValue)}`} actions={<AiInsightButton topic="inventory" label="Analyze stock" />} />
       <PageBody>
         <div className="mb-4 max-w-md">
           <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />

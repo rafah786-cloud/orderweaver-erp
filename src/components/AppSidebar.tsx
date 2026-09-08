@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, FileText, ShoppingCart, Factory,
   UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings,
   MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark,
-  Menu, PanelLeft, ChevronRight,
+  Menu, PanelLeft, ChevronRight, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -31,6 +31,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/gst": FileSpreadsheet,
   "/inventory": Boxes,
   "/banking": Landmark,
+  "/ai": Sparkles,
   "/vendor": Truck,
   "/settings": Settings,
 };
@@ -54,6 +55,7 @@ const LABELS: Record<string, string> = {
   "/gst": "GST",
   "/inventory": "Inventory",
   "/banking": "Banking",
+  "/ai": "AI Intelligence",
   "/vendor": "Vendor Portal",
   "/settings": "Settings",
 };
