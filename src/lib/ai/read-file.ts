@@ -49,7 +49,7 @@ async function readPdfText(file: File): Promise<string> {
         .trim(),
     );
   }
-  doc.destroy();
+  await doc.cleanup();
   return pages.join("\n\n");
 }
 
