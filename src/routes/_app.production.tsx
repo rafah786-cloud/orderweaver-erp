@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
@@ -146,7 +147,7 @@ function ProductionPage() {
 
   return (
     <>
-      <PageHeader title="Production Pipeline" description="Move orders through Received → In Production → QC → Ready → Dispatched." />
+      <PageHeader title="Production Pipeline" description="Move orders through Received → In Production → QC → Ready → Dispatched." actions={<AiInsightButton topic="production" label="Analyze production" />} />
       <PageBody>
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
           {STAGES.map((s) => (

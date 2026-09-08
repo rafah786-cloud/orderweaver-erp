@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,7 +185,7 @@ function SalesOrdersPage() {
       <PageHeader
         title="Sales Orders"
         description="A production order is auto-created the moment a sales order is saved."
-        actions={canCreate ? <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Order</Button> : undefined}
+        actions={<div className="flex items-center gap-2"><AiInsightButton topic="sales" label="Explain this trend" />{canCreate && <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Order</Button>}</div>}
       />
       <PageBody>
         <Card>
