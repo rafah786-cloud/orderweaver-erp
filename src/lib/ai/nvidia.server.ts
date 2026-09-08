@@ -13,15 +13,20 @@ import process from "node:process";
 
 const BASE_URL = (process.env["NVIDIA_BASE_URL"] || "https://integrate.api.nvidia.com/v1").replace(/\/+$/, "");
 
+/** Secrets pasted with surrounding quotes/whitespace are a common mistake — normalise defensively. */
+function cleanSecret(v: string | undefined): string {
+  return (v ?? "").trim().replace(/^["']+|["']+$/g, "").trim();
+}
+
 export const AI_MODELS = {
   /** General reasoning / business analysis. */
-  chat: process.env["NVIDIA_CHAT_MODEL"] || "meta/llama-3.3-70b-instruct",
+  chat: process.env["NVIDIA_CHAT_MODEL"] || "nvidia/llama-3.1-nemotron-70b-instruct",
   /** Cheaper/faster model for short classification + extraction jobs. */
-  fast: process.env["NVIDIA_FAST_MODEL"] || "meta/llama-3.1-8b-instruct",
+  fast: process.env["NVIDIA_FAST_MODEL"] || "mistralai/mistral-nemotron",
   /** Vision model for scanned invoices / photographed documents. */
   vision: process.env["NVIDIA_VISION_MODEL"] || "meta/llama-3.2-90b-vision-instruct",
-  /** Retrieval embeddings (1024 dimensions — matches ai_document_chunks). */
-  embedding: process.env["NVIDIA_EMBED_MODEL"] || "nvidia/nv-embedqa-e5-v5",
+  /** Retrieval embeddings (requested at 1024 dimensions — matches ai_document_chunks). */
+  embedding: process.env["NVIDIA_EMBED_MODEL"] || "nvidia/llama-3.2-nv-embedqa-1b-v1",
 } as const;
 
 export const EMBEDDING_DIMENSIONS = 1024;
@@ -31,11 +36,11 @@ export class AiUnavailableError extends Error {
 }
 
 export function isAiConfigured(): boolean {
-  return Boolean(process.env["NVIDIA_API_KEY"]);
+  return Boolean(cleanSecret(process.env["NVIDIA_API_KEY"]));
 }
 
 function apiKey(): string {
-  const key = process.env["NVIDIA_API_KEY"];
+  const key = cleanSecret(process.env["NVIDIA_API_KEY"]);
   if (!key) {
     throw new AiUnavailableError(
       "AI is not configured yet. Add the NVIDIA_API_KEY secret to enable AI features. The rest of the ERP is unaffected.",
