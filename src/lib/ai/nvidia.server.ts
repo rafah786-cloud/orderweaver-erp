@@ -20,16 +20,16 @@ function cleanSecret(v: string | undefined): string {
 
 export const AI_MODELS = {
   /** General reasoning / business analysis. */
-  chat: process.env["NVIDIA_CHAT_MODEL"] || "nvidia/llama-3.1-nemotron-70b-instruct",
+  chat: process.env["NVIDIA_CHAT_MODEL"] || "nvidia/nemotron-3-super-120b-a12b",
   /** Cheaper/faster model for short classification + extraction jobs. */
-  fast: process.env["NVIDIA_FAST_MODEL"] || "mistralai/mistral-nemotron",
+  fast: process.env["NVIDIA_FAST_MODEL"] || "nvidia/nemotron-3.5-lightning-30b-a3b",
   /** Vision model for scanned invoices / photographed documents. */
-  vision: process.env["NVIDIA_VISION_MODEL"] || "meta/llama-3.2-90b-vision-instruct",
-  /** Retrieval embeddings (requested at 1024 dimensions — matches ai_document_chunks). */
-  embedding: process.env["NVIDIA_EMBED_MODEL"] || "nvidia/llama-3.2-nv-embedqa-1b-v1",
+  vision: process.env["NVIDIA_VISION_MODEL"] || "meta/llama-3.2-11b-vision-instruct",
+  /** Retrieval embeddings (2048 dimensions — matches ai_document_chunks). */
+  embedding: process.env["NVIDIA_EMBED_MODEL"] || "nvidia/nemotron-3-embed-1b",
 } as const;
 
-export const EMBEDDING_DIMENSIONS = 1024;
+export const EMBEDDING_DIMENSIONS = 2048;
 
 export class AiUnavailableError extends Error {
   code = "AI_UNAVAILABLE" as const;
