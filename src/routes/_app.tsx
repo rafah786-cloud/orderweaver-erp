@@ -45,8 +45,8 @@ function AppLayout() {
 function AccessDenied({ allowed, have }: { allowed: string[]; have: string[] }) {
   return (
     <div className="flex min-h-full items-center justify-center p-8">
-      <div className="glass max-w-md w-full p-8 text-center space-y-4 rounded-2xl">
-        <div className="mx-auto h-14 w-14 rounded-2xl btn-gold flex items-center justify-center">
+      <div className="glass max-w-md w-full p-8 text-center space-y-4 rounded-xl">
+        <div className="mx-auto h-14 w-14 rounded-xl btn-gold flex items-center justify-center">
           <ShieldAlert className="h-7 w-7" />
         </div>
         <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Access denied</h1>
