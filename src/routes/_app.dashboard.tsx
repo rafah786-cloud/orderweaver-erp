@@ -8,8 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import {
   IndianRupee, AlertTriangle, Factory, Users, ShoppingCart, ReceiptText,
-  CalendarCheck, FileText, TrendingUp, Wallet, Upload,
+  CalendarCheck, FileText, TrendingUp, Wallet, Upload, ArrowRight, Sparkles,
 } from "lucide-react";
+import zizz from "@/assets/brands/zizz.png.asset.json";
+import softnights from "@/assets/brands/softnights.jpeg.asset.json";
+import mrcoir from "@/assets/brands/mrcoir.jpeg.asset.json";
+import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
+import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
+import drspine from "@/assets/brands/drspine.jpeg.asset.json";
+import zizzBedroom from "@/assets/zizz-flagship-bedroom.jpg.asset.json";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -30,15 +37,74 @@ function DashboardPage() {
         title={`Welcome, ${profile?.full_name?.split(" ")[0] ?? ""}`}
         description={`Role: ${roles.join(", ") || "—"}`}
       />
-      <PageBody>
-        {isAdmin && <AdminPanels />}
-        {isSales && !isAdmin && <SalesPanels />}
-        {isProduction && !isAdmin && <ProductionPanels />}
-        {isHR && !isAdmin && <HRPanels />}
-        {isCustomer && !isAdmin && <CustomerPanels />}
-        {isEmployee && <EmployeePanels />}
+      <PageBody className="dashboard-editorial space-y-10">
+        <BrandShowcase />
+        <section aria-labelledby="business-overview" className="space-y-5">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Mattress Maestro ERP</p>
+              <h2 id="business-overview">Business overview</h2>
+            </div>
+            <p>Live operational intelligence across the House of Abood Tradings.</p>
+          </div>
+          {isAdmin && <AdminPanels />}
+          {isSales && !isAdmin && <SalesPanels />}
+          {isProduction && !isAdmin && <ProductionPanels />}
+          {isHR && !isAdmin && <HRPanels />}
+          {isCustomer && !isAdmin && <CustomerPanels />}
+          {isEmployee && <EmployeePanels />}
+        </section>
       </PageBody>
     </>
+  );
+}
+
+const SISTER_BRANDS = [
+  { name: "OrthoMedic Rest", descriptor: "Orthopaedic support", asset: ortho },
+  { name: "Dr. Spine", descriptor: "Advanced spinal care", asset: drspine },
+  { name: "Mr. Coir", descriptor: "Natural resilient comfort", asset: mrcoir },
+  { name: "Soft Nights", descriptor: "Everyday sleep comfort", asset: softnights },
+  { name: "BYZ Bedding", descriptor: "Complete bedding essentials", asset: byz },
+];
+
+function BrandShowcase() {
+  return (
+    <div className="space-y-10">
+      <section className="zizz-hero" aria-labelledby="zizz-hero-title">
+        <img src={zizzBedroom.url} alt="A refined Zizz bedroom designed for premium sleep" width={1600} height={1000} className="zizz-hero-image" />
+        <div className="zizz-hero-shade" />
+        <div className="zizz-hero-content">
+          <p className="zizz-eyebrow"><Sparkles aria-hidden="true" /> The flagship of House of Abood Tradings</p>
+          <img src={zizz.url} alt="Zizz Mattress" className="zizz-logo" />
+          <h1 id="zizz-hero-title">The finer art of<br />restful living.</h1>
+          <p>Luxury mattresses thoughtfully crafted for deeper comfort, restorative sleep and beautifully lived mornings.</p>
+          <a href="https://zizzmattress.com" target="_blank" rel="noreferrer" className="zizz-cta">
+            Explore Zizz <ArrowRight aria-hidden="true" />
+          </a>
+        </div>
+        <div className="zizz-hero-signature" aria-hidden="true">
+          <span>Luxury</span><span>Comfort</span><span>Craftsmanship</span>
+        </div>
+      </section>
+
+      <section aria-labelledby="our-brands" className="brand-portfolio">
+        <div className="section-heading">
+          <div>
+            <p className="section-kicker">A considered portfolio</p>
+            <h2 id="our-brands">Our brands</h2>
+          </div>
+          <p>Specialist sleep solutions, united by one standard of quality.</p>
+        </div>
+        <div className="brand-grid">
+          {SISTER_BRANDS.map((brand) => (
+            <article className="brand-tile" key={brand.name}>
+              <div className="brand-mark-wrap"><img src={brand.asset.url} alt={`${brand.name} logo`} loading="lazy" /></div>
+              <div><h3>{brand.name}</h3><p>{brand.descriptor}</p></div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
 
