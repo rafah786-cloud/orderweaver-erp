@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "btn-gold font-semibold",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-[0_1px_0_oklch(1_0_0/.25)_inset,0_-1px_0_oklch(0_0_0/.3)_inset,0_8px_18px_-6px_oklch(0_0_0/.5)] hover:brightness-110 active:translate-y-px",
+          "bg-destructive text-destructive-foreground shadow-sm hover:brightness-110 active:translate-y-px",
         outline:
           "glass-sm text-foreground hover:bg-white/5 hover:border-white/20",
         secondary: "btn-3d text-foreground",
