@@ -12,6 +12,6 @@ export function PageHeader({ title, description, actions }: { title: string; des
   );
 }
 
-export function PageBody({ children }: { children: ReactNode }) {
-  return <div className="px-8 py-8">{children}</div>;
+export function PageBody({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`px-8 py-8 ${className}`}>{children}</div>;
 }
