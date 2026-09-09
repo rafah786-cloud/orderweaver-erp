@@ -47,17 +47,14 @@
 :root {
   --radius: 0.75rem;
 
-  /* Clean workspace with subtle warmth */
   --background: oklch(0.99 0.002 300);
   --foreground: oklch(0.25 0.02 280);
 
-  /* Flat white surfaces with high-end definition */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.25 0.02 280);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.25 0.02 280);
 
-  /* Signature Professional Aubergine */
   --primary: oklch(0.38 0.06 330);
   --primary-foreground: oklch(0.99 0 0);
 
@@ -81,7 +78,6 @@
   --input: oklch(0.93 0.005 280);
   --ring: oklch(0.38 0.06 330 / 0.2);
 
-  /* Sidebar — Sophisticated Deep Charcoal-Aubergine */
   --sidebar: oklch(0.20 0.02 320);
   --sidebar-foreground: oklch(0.95 0.005 280);
   --sidebar-accent: oklch(0.38 0.06 330 / 0.25);
@@ -102,9 +98,22 @@
   --foreground: oklch(0.95 0.005 280);
   --card: oklch(0.18 0.02 280);
   --card-foreground: oklch(0.95 0.005 280);
+  --popover: oklch(0.18 0.02 280);
+  --popover-foreground: oklch(0.95 0.005 280);
   --primary: oklch(0.55 0.08 330);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.22 0.02 280);
+  --secondary-foreground: oklch(0.90 0.005 280);
+  --muted: oklch(0.20 0.02 280);
+  --muted-foreground: oklch(0.60 0.02 280);
+  --accent: oklch(0.25 0.03 330);
+  --accent-foreground: oklch(0.95 0.005 280);
   --border: oklch(0.22 0.02 280);
+  --input: oklch(0.22 0.02 280);
+  --ring: oklch(0.55 0.08 330 / 0.3);
   --sidebar: oklch(0.12 0.02 320);
+  --sidebar-foreground: oklch(0.90 0.005 280);
+  --sidebar-active: oklch(0.55 0.08 330);
 }
 
 @layer base {
@@ -112,6 +121,7 @@
   html, body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
   }
   body {
     color: var(--color-foreground);
