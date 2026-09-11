@@ -291,30 +291,21 @@
 }
 
 @media (max-width: 1024px) {
-  .brand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .brand-tile:nth-child(4) { border-left: 0; }
-  .brand-tile:nth-child(n+4) { border-top: 1px solid #dedbd5; }
-  .quick-actions { grid-template-columns: 1fr; }
-  .quick-action-links a:first-child { border-left: 0; }
+  .hoa-brand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hoa-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hoa-why { grid-template-columns: 1fr; }
+  .hoa-hero-body { width: 72%; }
 }
 
 @media (max-width: 767px) {
-  .section-heading { align-items: flex-start; flex-direction: column; gap: .65rem; }
-  .section-heading > p { text-align: left; }
-  .zizz-hero { min-height: 38rem; border-radius: .7rem; }
-  .zizz-hero-shade { background: linear-gradient(0deg, rgb(11 18 25 / .93) 0%, rgb(17 25 32 / .52) 72%, rgb(17 25 32 / .12)); }
-  .zizz-hero-content { justify-content: flex-end; width: 100%; padding: 2rem 1.5rem 5rem; }
-  .zizz-logo { width: 6rem; margin-block: 1rem; }
-  .zizz-hero-signature { right: auto; left: 1.5rem; bottom: 1.4rem; gap: .6rem; font-size: .8rem; }
-  .zizz-hero-signature span + span::before { margin-right: .6rem; }
-  .brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .brand-tile { padding: .9rem; }
-  .brand-tile:nth-child(odd) { border-left: 0; }
-  .brand-tile:nth-child(even) { border-left: 1px solid #dedbd5; }
-  .brand-tile:nth-child(n+3) { border-top: 1px solid #dedbd5; }
-  .brand-mark-wrap { height: 6rem; }
-  .quick-action-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .quick-action-links a:nth-child(odd) { border-left: 0; }
-  .quick-action-links a:nth-child(n+3) { border-top: 1px solid var(--border); }
-  .dashboard-footer { align-items: flex-start; flex-direction: column; }
+  .hoa-hero { min-height: 36rem; }
+  .hoa-hero-veil { background: linear-gradient(0deg, rgb(247 246 243 / .98) 42%, rgb(247 246 243 / .82) 62%, rgb(247 246 243 / .25)); }
+  .hoa-hero-body { width: 100%; justify-content: flex-end; padding: 1.5rem 1.25rem 2rem; }
+  .hoa-hero-quote { display: none; }
+  .hoa-trust { max-width: none; }
+  .hoa-trust li { padding: 0 .5rem; font-size: .66rem; }
+  .hoa-brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hoa-action-grid { grid-template-columns: 1fr; }
+  .hoa-footer { flex-direction: column; align-items: flex-start; }
 }
+
