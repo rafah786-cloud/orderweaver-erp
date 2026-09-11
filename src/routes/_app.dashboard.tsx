@@ -43,20 +43,16 @@ function DashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={`Welcome, ${profile?.full_name?.split(" ")[0] ?? ""}`}
-        description={`Role: ${roles.join(", ") || "—"}`}
-      />
-      <PageBody className="dashboard-editorial space-y-10">
+      <PageBody className="dashboard-editorial space-y-8">
+        <HeroSection name={profile?.full_name?.split(" ")[0] ?? ""} roles={roles} />
         <BrandShowcase />
+        <WhySection />
         <QuickActions roles={roles} />
-        <section aria-labelledby="business-overview" className="space-y-5">
-          <div className="section-heading">
-            <div>
-              <p className="section-kicker">Mattress Maestro ERP</p>
-              <h2 id="business-overview">Business overview</h2>
-            </div>
-            <p>Live operational intelligence across the House of Abood Tradings.</p>
+        <section aria-labelledby="business-overview" className="hoa-panel space-y-5">
+          <div className="hoa-section-head">
+            <p className="hoa-kicker">Mattress Maestro ERP</p>
+            <h2 id="business-overview" className="hoa-title">Business Overview. <em>Live and Accurate.</em></h2>
+            <p className="hoa-sub">Operational intelligence across sales, production, inventory and finance.</p>
           </div>
           {isAdmin && <AdminPanels />}
           {isSales && !isAdmin && <SalesPanels />}
@@ -65,8 +61,19 @@ function DashboardPage() {
           {isCustomer && !isAdmin && <CustomerPanels />}
           {isEmployee && <EmployeePanels />}
         </section>
-        <footer className="dashboard-footer">
-          <div><strong>House of Abood Tradings</strong><span>Crafting better sleep through trusted brands.</span></div>
+        <section className="hoa-band">
+          <div>
+            <span className="hoa-band-rule" aria-hidden="true" />
+            <h2>Premium Sleep. Healthier Lives.</h2>
+            <p>House of Abood Tradings</p>
+          </div>
+          <a className="hoa-btn hoa-btn-light" href="https://zizzmattress.com" target="_blank" rel="noreferrer">
+            Contact Us <ArrowRight aria-hidden="true" />
+          </a>
+        </section>
+        <footer className="hoa-footer">
+          <strong>House of Abood Tradings</strong>
+          <span>© {new Date().getFullYear()} House of Abood Tradings. All rights reserved.</span>
           <span>Mattress Maestro · Business Operations</span>
         </footer>
       </PageBody>
@@ -75,51 +82,95 @@ function DashboardPage() {
 }
 
 const SISTER_BRANDS = [
-  { name: "OrthoMedic Rest", descriptor: "Orthopaedic support", asset: ortho },
-  { name: "Dr. Spine", descriptor: "Advanced spinal care", asset: drspine },
-  { name: "Mr. Coir", descriptor: "Natural resilient comfort", asset: mrcoir },
-  { name: "Soft Nights", descriptor: "Everyday sleep comfort", asset: softnights },
-  { name: "BYZ Bedding", descriptor: "Complete bedding essentials", asset: byz },
+  { name: "Zizz Mattress", descriptor: "Sleep Redefined", asset: zizz, flagship: true },
+  { name: "OrthoMedic Rest", descriptor: "Orthopaedic Support", asset: ortho },
+  { name: "Dr. Spine", descriptor: "Spine Care", asset: drspine },
+  { name: "Mr. Coir", descriptor: "Natural Comfort", asset: mrcoir },
+  { name: "Soft Nights", descriptor: "Everyday Comfort", asset: softnights },
+  { name: "BYZ Bedding", descriptor: "Modern Living", asset: byz },
 ];
+
+const TRUST = [
+  { icon: Gem, a: "Trusted", b: "Quality" },
+  { icon: ShieldCheck, a: "Comfort", b: "for Life" },
+  { icon: Users, a: "Families", b: "We Serve" },
+  { icon: Leaf, a: "A Healthier", b: "Tomorrow" },
+];
+
+function HeroSection({ name, roles }: { name: string; roles: string[] }) {
+  return (
+    <section className="hoa-hero" aria-labelledby="hoa-hero-title">
+      <img src={zizzBedroom.url} alt="A Zizz bedroom designed for premium sleep" width={1600} height={1000} className="hoa-hero-img" />
+      <div className="hoa-hero-veil" aria-hidden="true" />
+      <div className="hoa-hero-body">
+        <p className="hoa-kicker">Est. Premium Sleep &amp; Comfort</p>
+        <h1 id="hoa-hero-title">
+          Better Sleep<br /><em>Brighter Tomorrows</em>
+        </h1>
+        <p className="hoa-hero-lead">
+          {name ? `Welcome back, ${name}. ` : ""}Premium sleep &amp; comfort solutions for healthier lives and happier homes.
+          {roles.length ? ` Signed in as ${roles.join(", ")}.` : ""}
+        </p>
+        <div className="hoa-hero-cta">
+          <a className="hoa-btn hoa-btn-primary" href="https://zizzmattress.com" target="_blank" rel="noreferrer">
+            Explore Our Brands <ArrowRight aria-hidden="true" />
+          </a>
+          <Link className="hoa-btn hoa-btn-ghost" to="/inventory">View Products</Link>
+        </div>
+        <ul className="hoa-trust">
+          {TRUST.map(({ icon: Icon, a, b }) => (
+            <li key={a}><Icon aria-hidden="true" /><span>{a}<br />{b}</span></li>
+          ))}
+        </ul>
+      </div>
+      <p className="hoa-hero-quote" aria-hidden="true">“Comfort today. A healthier tomorrow.”</p>
+    </section>
+  );
+}
 
 function BrandShowcase() {
   return (
-    <div className="space-y-10">
-      <section className="zizz-hero" aria-labelledby="zizz-hero-title">
-        <img src={zizzBedroom.url} alt="A refined Zizz bedroom designed for premium sleep" width={1600} height={1000} className="zizz-hero-image" />
-        <div className="zizz-hero-shade" />
-        <div className="zizz-hero-content">
-          <p className="zizz-eyebrow"><Sparkles aria-hidden="true" /> The flagship of House of Abood Tradings</p>
-          <img src={zizz.url} alt="Zizz Mattress" className="zizz-logo" />
-          <h2 id="zizz-hero-title">The finer art of<br />restful living.</h2>
-          <p>Luxury mattresses thoughtfully crafted for deeper comfort, restorative sleep and beautifully lived mornings.</p>
-          <a href="https://zizzmattress.com" target="_blank" rel="noreferrer" className="zizz-cta">
-            Explore Zizz <ArrowRight aria-hidden="true" />
-          </a>
-        </div>
-        <div className="zizz-hero-signature" aria-hidden="true">
-          <span>Luxury</span><span>Comfort</span><span>Craftsmanship</span>
-        </div>
-      </section>
+    <section aria-labelledby="our-brands" className="hoa-panel">
+      <div className="hoa-section-head hoa-center">
+        <p className="hoa-kicker">Our Specialized Brands</p>
+        <h2 id="our-brands" className="hoa-title">Different Needs. <em>A Stronger Tomorrow.</em></h2>
+        <p className="hoa-sub">A range of trusted brands, each designed to bring comfort, health and value to every home.</p>
+      </div>
+      <div className="hoa-brand-grid">
+        {SISTER_BRANDS.map((brand) => (
+          <article className={`hoa-brand-card${brand.flagship ? " is-flagship" : ""}`} key={brand.name}>
+            {brand.flagship && <span className="hoa-flag">Flagship</span>}
+            <div className="hoa-brand-mark"><img src={brand.asset.url} alt={`${brand.name} logo`} loading="lazy" /></div>
+            <h3>{brand.name}</h3>
+            <p>{brand.descriptor}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-      <section aria-labelledby="our-brands" className="brand-portfolio">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">A considered portfolio</p>
-            <h2 id="our-brands">Our brands</h2>
-          </div>
-          <p>Specialist sleep solutions, united by one standard of quality.</p>
-        </div>
-        <div className="brand-grid">
-          {SISTER_BRANDS.map((brand) => (
-            <article className="brand-tile" key={brand.name}>
-              <div className="brand-mark-wrap"><img src={brand.asset.url} alt={`${brand.name} logo`} loading="lazy" /></div>
-              <div><h3>{brand.name}</h3><p>{brand.descriptor}</p></div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
+function WhySection() {
+  const stats = [
+    { icon: Users, big: "6", small: "Trusted Brands" },
+    { icon: Package, big: "Wide", small: "Product Range" },
+    { icon: ShieldCheck, big: "Reliable", small: "Supply & Support" },
+    { icon: Heart, big: "Committed", small: "to Better Living" },
+  ];
+  return (
+    <section className="hoa-panel hoa-why" aria-labelledby="hoa-why">
+      <div>
+        <p className="hoa-kicker">Why House of Abood Tradings</p>
+        <h2 id="hoa-why" className="hoa-title">More Than Mattresses.<br /><em>A Healthier Tomorrow.</em></h2>
+        <p className="hoa-sub">We bring together trusted brands, quality products and a commitment to better sleep for every home and business.</p>
+        <Link className="hoa-btn hoa-btn-primary" to="/parties">Our Customers <ArrowRight aria-hidden="true" /></Link>
+      </div>
+      <div className="hoa-stat-grid">
+        {stats.map((s) => (
+          <div className="hoa-stat" key={s.small}><s.icon aria-hidden="true" /><strong>{s.big}</strong><span>{s.small}</span></div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -133,16 +184,20 @@ function QuickActions({ roles }: { roles: string[] }) {
   ];
   if (items.length === 0) return null;
   return (
-    <section aria-labelledby="quick-actions" className="quick-actions">
-      <div><p className="section-kicker">Work faster</p><h2 id="quick-actions">Quick actions</h2></div>
-      <div className="quick-action-links">
+    <section aria-labelledby="quick-actions" className="hoa-panel">
+      <div className="hoa-section-head">
+        <p className="hoa-kicker">Work Faster</p>
+        <h2 id="quick-actions" className="hoa-title">Quick <em>Actions</em></h2>
+      </div>
+      <div className="hoa-action-grid">
         {items.map(({ to, label, icon: Icon }) => (
-          <Link key={to} to={to}><Icon aria-hidden="true" /><span>{label}</span><ArrowRight aria-hidden="true" /></Link>
+          <Link key={to} to={to} className="hoa-action"><Icon aria-hidden="true" /><span>{label}</span><ArrowRight aria-hidden="true" /></Link>
         ))}
       </div>
     </section>
   );
 }
+
 
 /* ------------------------------ ADMIN ------------------------------ */
 
