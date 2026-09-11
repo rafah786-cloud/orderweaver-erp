@@ -19,6 +19,16 @@ import drspine from "@/assets/brands/drspine.jpeg.asset.json";
 import zizzBedroom from "@/assets/zizz-flagship-bedroom.jpg.asset.json";
 
 export const Route = createFileRoute("/_app/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Business Dashboard | Mattress Maestro" },
+      { name: "description", content: "Live sales, production, inventory and financial overview for House of Abood Tradings." },
+      { property: "og:title", content: "Business Dashboard | Mattress Maestro" },
+      { property: "og:description", content: "Live sales, production, inventory and financial overview for House of Abood Tradings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: DashboardPage,
 });
 

@@ -2,6 +2,16 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Mattress Maestro | House of Abood Tradings" },
+      { name: "description", content: "Secure ERP workspace for House of Abood Tradings and its mattress brands." },
+      { property: "og:title", content: "Mattress Maestro | House of Abood Tradings" },
+      { property: "og:description", content: "Secure ERP workspace for House of Abood Tradings and its mattress brands." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
