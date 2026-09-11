@@ -84,13 +84,13 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
   return (
     <div className="flex h-full flex-col text-sidebar-foreground">
       <div className={`flex items-center gap-3 border-b border-sidebar-border px-5 py-5 ${collapsed ? "justify-center px-2" : ""}`}>
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl btn-gold">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md btn-gold">
           <Building2 className="h-5 w-5" />
         </div>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <div className="gold-text truncate text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</div>
-            <div className="text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/70">Manufacturing</div>
+            <div className="truncate text-xl leading-none text-sidebar-foreground" style={{ fontFamily: "var(--font-display)" }}>House of Abood</div>
+            <div className="mt-1 text-[9px] uppercase tracking-[0.2em] text-sidebar-foreground/60">Mattress Maestro ERP</div>
           </div>
         )}
         {!collapsed && (
@@ -114,16 +114,16 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
             <Link
               to={item.to}
               onClick={onNavigate}
-              className={`group relative flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 ease-out ${
+              className={`group relative flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out ${
                 collapsed ? "justify-center px-2" : "gap-3"
               } ${
                 active
-                  ? "bg-sidebar-active text-sidebar-active-foreground shadow-lg ring-1 ring-sidebar-active-foreground/25"
-                  : "text-sidebar-foreground hover:translate-x-0.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-sm"
+                  ? "bg-sidebar-active text-sidebar-active-foreground shadow-md"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               }`}
             >
               {active && !collapsed && (
-                <span aria-hidden className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-sidebar-active-foreground" />
+                <span aria-hidden className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 bg-sidebar-active-foreground" />
               )}
               <Icon
                 className={`h-4 w-4 shrink-0 transition-all duration-200 group-hover:scale-110 ${
@@ -242,7 +242,7 @@ export function MobileTopBar() {
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
   return (
-    <header className="glass sticky top-0 z-20 flex items-center justify-between gap-3 rounded-none border-0 border-b border-white/10 px-3 py-2 md:hidden">
+    <header className="glass sticky top-0 z-20 flex items-center justify-between gap-3 rounded-none border-0 border-b px-3 py-2 md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" aria-label="Open navigation menu">
@@ -258,7 +258,7 @@ export function MobileTopBar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg btn-gold">
           <Building2 className="h-4 w-4" />
         </div>
-        <div className="gold-text text-sm font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings</div>
+        <div className="text-lg text-foreground" style={{ fontFamily: "var(--font-display)" }}>House of Abood</div>
       </div>
       <div className="w-9" aria-hidden />
     </header>
