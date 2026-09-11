@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import {
   IndianRupee, AlertTriangle, Factory, Users, ShoppingCart, ReceiptText,
-  CalendarCheck, FileText, TrendingUp, Wallet, Upload, ArrowRight, Sparkles,
+  CalendarCheck, FileText, TrendingUp, Wallet, Upload, ArrowRight, Sparkles, Package,
 } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 import softnights from "@/assets/brands/softnights.jpeg.asset.json";
@@ -39,6 +39,7 @@ function DashboardPage() {
       />
       <PageBody className="dashboard-editorial space-y-10">
         <BrandShowcase />
+        <QuickActions roles={roles} />
         <section aria-labelledby="business-overview" className="space-y-5">
           <div className="section-heading">
             <div>
@@ -54,6 +55,10 @@ function DashboardPage() {
           {isCustomer && !isAdmin && <CustomerPanels />}
           {isEmployee && <EmployeePanels />}
         </section>
+        <footer className="dashboard-footer">
+          <div><strong>House of Abood Tradings</strong><span>Crafting better sleep through trusted brands.</span></div>
+          <span>Mattress Maestro · Business Operations</span>
+        </footer>
       </PageBody>
     </>
   );
@@ -76,7 +81,7 @@ function BrandShowcase() {
         <div className="zizz-hero-content">
           <p className="zizz-eyebrow"><Sparkles aria-hidden="true" /> The flagship of House of Abood Tradings</p>
           <img src={zizz.url} alt="Zizz Mattress" className="zizz-logo" />
-          <h1 id="zizz-hero-title">The finer art of<br />restful living.</h1>
+          <h2 id="zizz-hero-title">The finer art of<br />restful living.</h2>
           <p>Luxury mattresses thoughtfully crafted for deeper comfort, restorative sleep and beautifully lived mornings.</p>
           <a href="https://zizzmattress.com" target="_blank" rel="noreferrer" className="zizz-cta">
             Explore Zizz <ArrowRight aria-hidden="true" />
@@ -105,6 +110,27 @@ function BrandShowcase() {
         </div>
       </section>
     </div>
+  );
+}
+
+function QuickActions({ roles }: { roles: string[] }) {
+  const isAdmin = roles.includes("admin");
+  const items = [
+    ...(isAdmin || roles.includes("sales") ? [{ to: "/sales-orders" as const, label: "Create sales order", icon: ShoppingCart }] : []),
+    ...(isAdmin || roles.includes("sales") ? [{ to: "/invoices" as const, label: "Generate invoice", icon: ReceiptText }] : []),
+    ...(isAdmin || roles.includes("production") ? [{ to: "/production" as const, label: "Production status", icon: Factory }] : []),
+    ...(isAdmin || roles.includes("accountant") || roles.includes("production") || roles.includes("sales") ? [{ to: "/inventory" as const, label: "Review inventory", icon: Package }] : []),
+  ];
+  if (items.length === 0) return null;
+  return (
+    <section aria-labelledby="quick-actions" className="quick-actions">
+      <div><p className="section-kicker">Work faster</p><h2 id="quick-actions">Quick actions</h2></div>
+      <div className="quick-action-links">
+        {items.map(({ to, label, icon: Icon }) => (
+          <Link key={to} to={to}><Icon aria-hidden="true" /><span>{label}</span><ArrowRight aria-hidden="true" /></Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

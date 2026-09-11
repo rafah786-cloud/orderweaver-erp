@@ -2,7 +2,7 @@ import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar, MobileTopBar } from "@/components/AppSidebar";
 import { allowedRolesFor } from "@/lib/permissions";
-import { ShieldAlert } from "lucide-react";
+import { Bell, Search, ShieldAlert, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app")({
@@ -34,6 +34,14 @@ function AppLayout() {
       <AppSidebar />
       <div className="relative flex flex-1 flex-col min-w-0">
         <MobileTopBar />
+        <header className="corporate-topbar hidden md:flex">
+          <div className="corporate-wordmark"><span>House of</span><strong>Abood Tradings</strong></div>
+          <nav aria-label="Workspace tools">
+            {hasAnyRole(["admin", "accountant", "sales", "production"]) && <Link to="/ai/search" aria-label="Search ERP"><Search /></Link>}
+            {hasAnyRole(["admin"]) && <Link to="/communications/inbox" aria-label="Notifications"><Bell /></Link>}
+            <div className="profile-chip"><UserRound /><span>{profile?.full_name ?? "Account"}</span></div>
+          </nav>
+        </header>
         <main className="relative flex-1 overflow-y-auto overflow-x-auto">
           {denied ? <AccessDenied allowed={allowed!} have={roles} /> : <Outlet />}
         </main>
