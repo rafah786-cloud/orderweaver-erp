@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import {
   IndianRupee, AlertTriangle, Factory, Users, ShoppingCart, ReceiptText,
-  CalendarCheck, FileText, TrendingUp, Wallet, Upload, ArrowRight, Sparkles, Package,
+  CalendarCheck, FileText, TrendingUp, Wallet, Upload, ArrowRight, Package,
+  Gem, ShieldCheck, Leaf, Heart,
 } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 import softnights from "@/assets/brands/softnights.jpeg.asset.json";
