@@ -1,4 +1,5 @@
 import { ArrowLeft, Printer } from "lucide-react";
+import { useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import zizzLogo from "@/assets/brands/zizz.png.asset.json";
@@ -70,12 +71,17 @@ function MetaCell({ label, value }: { label: string; value?: string | null }) {
 
 export function ReferenceInvoice({ invoice, items, party }: { invoice: InvoiceRecord; items: InvoiceItem[]; party: PartyRecord }) {
   const router = useRouter();
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = `Invoice ${invoice.invoice_number}`;
+    return () => { document.title = previousTitle; };
+  }, [invoice.invoice_number]);
   const isInterState = Boolean(party.state_code && party.state_code !== COMPANY.stateCode);
   const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const taxableTotal = items.reduce((sum, item) => sum + Number(item.amount ?? Number(item.quantity) * Number(item.unit_price)), 0);
   const groupedTax = Array.from(items.reduce((groups, item) => {
     const taxable = Number(item.amount ?? Number(item.quantity) * Number(item.unit_price));
-    const rate = Number(item.tax_rate ?? (taxable > 0 ? Number(invoice.tax_amount) / taxableTotal * 100 : 0));
+    const rate = Number(item.tax_rate ?? (taxableTotal > 0 ? Number(invoice.tax_amount) / taxableTotal * 100 : 0));
     const key = `${item.hsn_code ?? "—"}|${rate}`;
     const current = groups.get(key) ?? { hsn: item.hsn_code ?? "—", rate, taxable: 0, tax: 0 };
     current.taxable += taxable;

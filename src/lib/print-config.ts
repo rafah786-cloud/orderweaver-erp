@@ -11,7 +11,7 @@ export const COMPANY = {
     "Malappuram",
   ],
   gstin: "32ABWFA0954C1ZM",
-  pan: "ABWFA0954C",
+  pan: "",
   state: "Kerala",
   stateCode: "32",
   phone: "",
