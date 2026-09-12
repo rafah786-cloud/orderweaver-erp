@@ -91,7 +91,7 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes,
                   <div key={l}>{l}</div>
                 ))}
                 <div>GSTIN: {COMPANY.gstin} &nbsp;·&nbsp; State: {COMPANY.state} ({COMPANY.stateCode})</div>
-                <div>{COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}</div>
+                <div>{[COMPANY.phone, COMPANY.email].filter(Boolean).join(" · ")}</div>
               </div>
             </div>
             <div className="text-right">
@@ -122,13 +122,15 @@ export function PrintLayout({ title, docLabel, meta = [], children, footerNotes,
           {/* Footer */}
           <footer className="mt-8 border-t pt-4 text-xs text-gray-700">
             {footerNotes}
-            <div className="mt-4 grid grid-cols-2 gap-6">
+            <div className={`mt-4 grid gap-6 ${COMPANY.bank.name ? "grid-cols-2" : "grid-cols-1"}`}>
+              {COMPANY.bank.name && (
               <div>
                 <div className="mb-1 font-semibold">Bank Details</div>
                 <div>{COMPANY.bank.name} — {COMPANY.bank.branch}</div>
                 <div>A/c Name: {COMPANY.bank.accountName}</div>
                 <div>A/c No: {COMPANY.bank.accountNumber} &nbsp;·&nbsp; IFSC: {COMPANY.bank.ifsc}</div>
               </div>
+              )}
               <div className="text-right">
                 <div className="mb-10">For {COMPANY.name}</div>
                 <div className="border-t border-gray-400 pt-1 text-gray-600">Authorised Signatory</div>
