@@ -251,6 +251,9 @@
     @page { size: A4; margin: 7mm; }
     html, body, .ref-invoice-root { background: #fff !important; }
     .no-print { display: none !important; }
+    .app-shell { display: block !important; height: auto !important; overflow: visible !important; }
+    .app-shell-decoration, .app-shell-sidebar, .app-shell-mobile-bar, .app-shell-topbar { display: none !important; }
+    .app-shell-content, .app-shell-main { display: block !important; height: auto !important; overflow: visible !important; }
     .ref-invoice-page { width: auto; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
     .ref-items-table thead, .ref-tax-table thead { display: table-header-group; }
     .ref-items-table tr, .ref-tax-table tr { break-inside: avoid; }
