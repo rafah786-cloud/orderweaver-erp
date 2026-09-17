@@ -70,10 +70,12 @@ CREATE OR REPLACE FUNCTION public.resolve_financial_year(_date date)
 RETURNS uuid LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE result uuid; matches integer;
 BEGIN
-  SELECT count(*), min(id) INTO matches, result FROM public.financial_years
+  SELECT count(*) INTO matches FROM public.financial_years
   WHERE _date BETWEEN start_date AND end_date;
   IF matches = 0 THEN RAISE EXCEPTION 'No financial year is configured for %', _date; END IF;
   IF matches > 1 THEN RAISE EXCEPTION 'Multiple financial years contain %', _date; END IF;
+  SELECT id INTO result FROM public.financial_years
+  WHERE _date BETWEEN start_date AND end_date;
   RETURN result;
 END $$;
 
