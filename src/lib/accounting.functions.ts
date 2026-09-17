@@ -11,7 +11,8 @@ const entry = z.object({
   narration: z.string().max(500).optional(),
   line_order: z.number().int().positive().optional(),
 });
-type RpcClient = { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+type RpcRow = Record<string, string | number | boolean | null>;
+type RpcClient = { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: RpcRow | RpcRow[] | null; error: { message: string } | null }> };
 const rpc = (value: unknown) => value as RpcClient;
 
 export const createGlVoucher = createServerFn({ method: "POST" })

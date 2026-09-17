@@ -75,3 +75,27 @@ export class IsolatedAccountingFixture {
     return reversal;
   }
 }
+
+export class IsolatedFinancialYearFixture {
+  status: "open" | "closed" = "open";
+  events: Array<{ action: "closed" | "reopened"; reason?: string }> = [];
+
+  constructor(readonly start: string, readonly end: string) {}
+
+  accepts(date: string) {
+    return this.status === "open" && date >= this.start && date <= this.end;
+  }
+
+  close(hasDrafts = false, hasUnbalanced = false) {
+    if (hasDrafts) throw new Error("Financial year has draft vouchers");
+    if (hasUnbalanced) throw new Error("Financial year has an unbalanced voucher");
+    this.status = "closed";
+    this.events.push({ action: "closed" });
+  }
+
+  reopen(reason: string) {
+    if (reason.trim().length < 3) throw new Error("Reopen reason required");
+    this.status = "open";
+    this.events.push({ action: "reopened", reason });
+  }
+}

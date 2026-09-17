@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculatePeriodBalance, IsolatedAccountingFixture, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
+import { calculatePeriodBalance, IsolatedAccountingFixture, IsolatedFinancialYearFixture, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
 
 const a = "ledger-a";
 const b = "ledger-b";
@@ -65,5 +65,20 @@ describe("Phase 1 accounting foundation", () => {
       { date: "2026-04-04", debit: 999, credit: 0, status: "cancelled" },
     ];
     expect(calculatePeriodBalance(50, movements, "2026-04-01", "2027-03-31")).toEqual({ opening: 150, debit: 25, credit: 10, closing: 165 });
+  });
+
+  it("enforces FY boundaries and controlled close/reopen", () => {
+    const year = new IsolatedFinancialYearFixture("2026-04-01", "2027-03-31");
+    expect(year.accepts("2026-04-01")).toBe(true);
+    expect(year.accepts("2027-03-31")).toBe(true);
+    expect(year.accepts("2026-03-31")).toBe(false);
+    expect(() => year.close(true)).toThrow("draft vouchers");
+    expect(() => year.close(false, true)).toThrow("unbalanced voucher");
+    year.close();
+    expect(year.accepts("2026-09-01")).toBe(false);
+    expect(() => year.reopen("x")).toThrow("reason");
+    year.reopen("Approved correction");
+    expect(year.accepts("2026-09-01")).toBe(true);
+    expect(year.events).toEqual([{ action: "closed" }, { action: "reopened", reason: "Approved correction" }]);
   });
 });
