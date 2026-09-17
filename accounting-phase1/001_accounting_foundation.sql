@@ -137,7 +137,7 @@ CREATE OR REPLACE FUNCTION public.create_gl_voucher_internal(
   _idempotency_key text DEFAULT NULL, _status public.voucher_status DEFAULT 'posted',
   _created_by uuid DEFAULT NULL, _reversal_of uuid DEFAULT NULL)
 RETURNS public.vouchers LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE result public.vouchers; fy uuid; item jsonb; n integer:=0;
+DECLARE result public.vouchers; fy uuid; fy_state public.financial_year_status; item jsonb; n integer:=0;
 BEGIN
   IF _status NOT IN ('draft','posted') THEN RAISE EXCEPTION 'Invalid initial status'; END IF;
   IF _idempotency_key IS NOT NULL THEN
@@ -149,7 +149,8 @@ BEGIN
     IF FOUND THEN RETURN result; END IF;
   END IF;
   fy:=public.resolve_financial_year(_date);
-  IF EXISTS (SELECT 1 FROM public.financial_years WHERE id=fy AND status='closed') THEN
+  SELECT status INTO fy_state FROM public.financial_years WHERE id=fy FOR SHARE;
+  IF fy_state='closed' THEN
     RAISE EXCEPTION 'Financial year is closed for %', _date;
   END IF;
   PERFORM set_config('app.accounting_lifecycle','on',true);
