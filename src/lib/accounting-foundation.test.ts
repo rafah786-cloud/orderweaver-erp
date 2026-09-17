@@ -48,6 +48,14 @@ describe("Phase 1 accounting foundation", () => {
     expect([...original.lines, ...reversal.lines].reduce((sum, line) => sum + line.debit - line.credit, 0)).toBe(0);
   });
 
+  it("models cancellation through a compensating reversal rather than deleting history", async () => {
+    const db = new IsolatedAccountingFixture();
+    const original = await db.post("debit_note", "2026-04-01", balanced(200), "debit-note:1");
+    const cancellationEntry = await db.reverse(original.id, "2026-04-02");
+    expect(cancellationEntry.lines).toEqual(reverseGlLines(original.lines));
+    expect(original.status).toBe("reversed");
+  });
+
   it("calculates backdated FY opening, movement and closing without drafts or cancellations", () => {
     const movements: Array<{ date: string; debit: number; credit: number; status: VoucherStatus }> = [
       { date: "2026-03-31", debit: 100, credit: 0, status: "posted" },

@@ -238,7 +238,37 @@ BEGIN
     RETURN result;
   END IF;
   IF original.status IN ('cancelled','reversed') THEN RETURN original; END IF;
-  RETURN public.reverse_gl_voucher(original.id,_date,_reason);
+  result:=public.reverse_gl_voucher(original.id,_date,_reason);
+  PERFORM set_config('app.accounting_lifecycle','on',true);
+  UPDATE public.vouchers SET status='cancelled',cancelled_at=now(),cancelled_by=auth.uid(),
+    cancellation_reason=_reason WHERE id=original.id;
+  RETURN result;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.replace_draft_gl_voucher(_id uuid,_date date,_entries jsonb,
+  _narration text DEFAULT NULL,_reference text DEFAULT NULL)
+RETURNS public.vouchers LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE result public.vouchers; fy uuid; item jsonb; n integer:=0;
+BEGIN
+  PERFORM public.assert_accounting_role();
+  SELECT * INTO result FROM public.vouchers WHERE id=_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Voucher not found'; END IF;
+  IF result.status<>'draft' THEN RAISE EXCEPTION 'Only draft vouchers can be changed'; END IF;
+  fy:=public.resolve_financial_year(_date);
+  IF EXISTS (SELECT 1 FROM public.financial_years WHERE id=fy AND status='closed') THEN
+    RAISE EXCEPTION 'Financial year is closed for %',_date; END IF;
+  PERFORM set_config('app.accounting_lifecycle','on',true);
+  DELETE FROM public.voucher_entries WHERE voucher_id=result.id;
+  UPDATE public.vouchers SET voucher_date=_date,narration=_narration,reference=_reference,financial_year_id=fy
+  WHERE id=result.id RETURNING * INTO result;
+  FOR item IN SELECT value FROM jsonb_array_elements(_entries) LOOP
+    n:=n+1;
+    INSERT INTO public.voucher_entries(voucher_id,ledger_account_id,cost_center_id,debit,credit,narration,line_order)
+    VALUES(result.id,(item->>'ledger_account_id')::uuid,NULLIF(item->>'cost_center_id','')::uuid,
+      COALESCE((item->>'debit')::numeric,0),COALESCE((item->>'credit')::numeric,0),
+      NULLIF(item->>'narration',''),COALESCE((item->>'line_order')::integer,n));
+  END LOOP;
+  RETURN result;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.guard_financial_year_control()
@@ -296,8 +326,8 @@ RETURNS TABLE(ledger_id uuid,name text,group_id uuid,group_name text,nature publ
   opening_balance numeric,opening_balance_type text,total_debit numeric,total_credit numeric,closing_balance numeric)
 LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
 SELECT la.id,la.name,la.group_id,lg.name,lg.nature,
-  (CASE WHEN la.opening_balance_type='dr' THEN la.opening_balance ELSE -la.opening_balance END)
-    +COALESCE(sum(ve.debit-ve.credit) FILTER(WHERE v.voucher_date<_from),0),
+  abs((CASE WHEN la.opening_balance_type='dr' THEN la.opening_balance ELSE -la.opening_balance END)
+    +COALESCE(sum(ve.debit-ve.credit) FILTER(WHERE v.voucher_date<_from),0)),
   CASE WHEN (CASE WHEN la.opening_balance_type='dr' THEN la.opening_balance ELSE -la.opening_balance END)
     +COALESCE(sum(ve.debit-ve.credit) FILTER(WHERE v.voucher_date<_from),0)>=0 THEN 'dr' ELSE 'cr' END,
   COALESCE(sum(ve.debit) FILTER(WHERE v.voucher_date BETWEEN _from AND _to),0),
@@ -317,8 +347,56 @@ REVOKE ALL ON FUNCTION public.next_voucher_number(public.voucher_type) FROM PUBL
 REVOKE ALL ON FUNCTION public.create_gl_voucher_internal(public.voucher_type,date,jsonb,text,text,text,uuid,text,public.voucher_status,uuid,uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.create_gl_voucher(public.voucher_type,date,jsonb,text,text,text,public.voucher_status) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.post_gl_voucher(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.replace_draft_gl_voucher(uuid,date,jsonb,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reverse_gl_voucher(uuid,date,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_gl_voucher(uuid,text,date) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.close_financial_year(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reopen_financial_year(uuid,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_ledger_balances(date,date) TO authenticated;
+
+-- Existing sales and purchase creation remains compatible, but now uses the same
+-- atomic, balanced, idempotent posting path as manual vouchers.
+CREATE OR REPLACE FUNCTION public.post_invoice_to_voucher()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE party_ledger uuid; sales_ledger uuid; cgst_ledger uuid; sgst_ledger uuid; igst_ledger uuid;
+  interstate boolean; half_tax numeric; entries jsonb;
+BEGIN
+  party_ledger:=public.get_or_create_party_ledger(NEW.party_id);
+  SELECT id INTO sales_ledger FROM public.ledger_accounts WHERE name='Sales' LIMIT 1;
+  SELECT id INTO cgst_ledger FROM public.ledger_accounts WHERE name='Output CGST' LIMIT 1;
+  SELECT id INTO sgst_ledger FROM public.ledger_accounts WHERE name='Output SGST' LIMIT 1;
+  SELECT id INTO igst_ledger FROM public.ledger_accounts WHERE name='Output IGST' LIMIT 1;
+  interstate:=NEW.dispatch_state_code IS NOT NULL AND NEW.supplier_gstin IS NOT NULL
+    AND NEW.dispatch_state_code<>substring(NEW.supplier_gstin,1,2);
+  entries:=jsonb_build_array(
+    jsonb_build_object('ledger_account_id',party_ledger,'debit',NEW.total_amount,'credit',0),
+    jsonb_build_object('ledger_account_id',sales_ledger,'debit',0,'credit',NEW.subtotal));
+  IF NEW.tax_amount>0 THEN
+    IF interstate THEN
+      entries:=entries||jsonb_build_array(jsonb_build_object('ledger_account_id',igst_ledger,'debit',0,'credit',NEW.tax_amount));
+    ELSE
+      half_tax:=NEW.tax_amount/2;
+      entries:=entries||jsonb_build_array(
+        jsonb_build_object('ledger_account_id',cgst_ledger,'debit',0,'credit',half_tax),
+        jsonb_build_object('ledger_account_id',sgst_ledger,'debit',0,'credit',NEW.tax_amount-half_tax));
+    END IF;
+  END IF;
+  PERFORM public.create_gl_voucher_internal('sales',NEW.invoice_date,entries,'Auto: Invoice '||NEW.invoice_number,
+    NEW.invoice_number,'invoices',NEW.id,'invoice:'||NEW.id::text,'posted',auth.uid(),NULL);
+  RETURN NEW;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.post_purchase_to_voucher()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE supplier_ledger uuid; purchase_ledger uuid; entries jsonb;
+BEGIN
+  IF NEW.supplier_id IS NULL THEN RETURN NEW; END IF;
+  supplier_ledger:=public.get_or_create_supplier_ledger(NEW.supplier_id);
+  SELECT id INTO purchase_ledger FROM public.ledger_accounts WHERE name='Purchases' LIMIT 1;
+  entries:=jsonb_build_array(
+    jsonb_build_object('ledger_account_id',purchase_ledger,'debit',NEW.total_amount,'credit',0),
+    jsonb_build_object('ledger_account_id',supplier_ledger,'debit',0,'credit',NEW.total_amount));
+  PERFORM public.create_gl_voucher_internal('purchase',NEW.bill_date,entries,'Auto: Bill '||NEW.bill_number,
+    NEW.bill_number,'purchase_bills',NEW.id,'purchase-bill:'||NEW.id::text,'posted',auth.uid(),NULL);
+  RETURN NEW;
+END $$;
