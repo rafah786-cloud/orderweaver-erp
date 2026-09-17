@@ -172,6 +172,10 @@ EXCEPTION WHEN unique_violation THEN
     SELECT * INTO result FROM public.vouchers WHERE idempotency_key=_idempotency_key;
     IF FOUND THEN RETURN result; END IF;
   END IF;
+  IF _source_table IS NOT NULL AND _source_id IS NOT NULL THEN
+    SELECT * INTO result FROM public.vouchers WHERE source_table=_source_table AND source_id=_source_id;
+    IF FOUND THEN RETURN result; END IF;
+  END IF;
   RAISE;
 END $$;
 
