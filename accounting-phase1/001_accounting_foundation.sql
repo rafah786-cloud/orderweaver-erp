@@ -70,10 +70,12 @@ CREATE OR REPLACE FUNCTION public.resolve_financial_year(_date date)
 RETURNS uuid LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE result uuid; matches integer;
 BEGIN
-  SELECT count(*), min(id) INTO matches, result FROM public.financial_years
+  SELECT count(*) INTO matches FROM public.financial_years
   WHERE _date BETWEEN start_date AND end_date;
   IF matches = 0 THEN RAISE EXCEPTION 'No financial year is configured for %', _date; END IF;
   IF matches > 1 THEN RAISE EXCEPTION 'Multiple financial years contain %', _date; END IF;
+  SELECT id INTO result FROM public.financial_years
+  WHERE _date BETWEEN start_date AND end_date;
   RETURN result;
 END $$;
 
@@ -135,7 +137,7 @@ CREATE OR REPLACE FUNCTION public.create_gl_voucher_internal(
   _idempotency_key text DEFAULT NULL, _status public.voucher_status DEFAULT 'posted',
   _created_by uuid DEFAULT NULL, _reversal_of uuid DEFAULT NULL)
 RETURNS public.vouchers LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE result public.vouchers; fy uuid; item jsonb; n integer:=0;
+DECLARE result public.vouchers; fy uuid; fy_state public.financial_year_status; item jsonb; n integer:=0;
 BEGIN
   IF _status NOT IN ('draft','posted') THEN RAISE EXCEPTION 'Invalid initial status'; END IF;
   IF _idempotency_key IS NOT NULL THEN
@@ -147,10 +149,10 @@ BEGIN
     IF FOUND THEN RETURN result; END IF;
   END IF;
   fy:=public.resolve_financial_year(_date);
-  IF EXISTS (SELECT 1 FROM public.financial_years WHERE id=fy AND status='closed') THEN
+  SELECT status INTO fy_state FROM public.financial_years WHERE id=fy FOR SHARE;
+  IF fy_state='closed' THEN
     RAISE EXCEPTION 'Financial year is closed for %', _date;
   END IF;
-  PERFORM set_config('app.accounting_lifecycle','on',true);
   INSERT INTO public.vouchers(voucher_number,voucher_type,voucher_date,narration,reference,source_table,source_id,
     financial_year_id,created_by,status,idempotency_key,posted_at,posted_by,reversal_of,is_locked)
   VALUES(public.next_voucher_number(_type),_type,_date,_narration,_reference,_source_table,_source_id,fy,_created_by,
@@ -168,6 +170,10 @@ BEGIN
 EXCEPTION WHEN unique_violation THEN
   IF _idempotency_key IS NOT NULL THEN
     SELECT * INTO result FROM public.vouchers WHERE idempotency_key=_idempotency_key;
+    IF FOUND THEN RETURN result; END IF;
+  END IF;
+  IF _source_table IS NOT NULL AND _source_id IS NOT NULL THEN
+    SELECT * INTO result FROM public.vouchers WHERE source_table=_source_table AND source_id=_source_id;
     IF FOUND THEN RETURN result; END IF;
   END IF;
   RAISE;
@@ -198,6 +204,7 @@ BEGIN
   PERFORM set_config('app.accounting_lifecycle','on',true);
   UPDATE public.vouchers SET status='posted',posted_at=now(),posted_by=auth.uid(),is_locked=true
   WHERE id=result.id RETURNING * INTO result;
+  PERFORM set_config('app.accounting_lifecycle','off',true);
   RETURN result;
 END $$;
 
@@ -220,6 +227,7 @@ BEGIN
   PERFORM set_config('app.accounting_lifecycle','on',true);
   UPDATE public.vouchers SET status='reversed',reversed_by=result.id,cancellation_reason=_reason,is_locked=true
   WHERE id=original.id;
+  PERFORM set_config('app.accounting_lifecycle','off',true);
   RETURN result;
 END $$;
 
@@ -235,6 +243,7 @@ BEGIN
     PERFORM set_config('app.accounting_lifecycle','on',true);
     UPDATE public.vouchers SET status='cancelled',cancelled_at=now(),cancelled_by=auth.uid(),
       cancellation_reason=_reason,is_locked=true WHERE id=original.id RETURNING * INTO result;
+    PERFORM set_config('app.accounting_lifecycle','off',true);
     RETURN result;
   END IF;
   IF original.status IN ('cancelled','reversed') THEN RETURN original; END IF;
@@ -242,6 +251,7 @@ BEGIN
   PERFORM set_config('app.accounting_lifecycle','on',true);
   UPDATE public.vouchers SET status='cancelled',cancelled_at=now(),cancelled_by=auth.uid(),
     cancellation_reason=_reason WHERE id=original.id;
+  PERFORM set_config('app.accounting_lifecycle','off',true);
   RETURN result;
 END $$;
 
@@ -257,7 +267,6 @@ BEGIN
   fy:=public.resolve_financial_year(_date);
   IF EXISTS (SELECT 1 FROM public.financial_years WHERE id=fy AND status='closed') THEN
     RAISE EXCEPTION 'Financial year is closed for %',_date; END IF;
-  PERFORM set_config('app.accounting_lifecycle','on',true);
   DELETE FROM public.voucher_entries WHERE voucher_id=result.id;
   UPDATE public.vouchers SET voucher_date=_date,narration=_narration,reference=_reference,financial_year_id=fy
   WHERE id=result.id RETURNING * INTO result;
@@ -300,6 +309,7 @@ BEGIN
   PERFORM set_config('app.accounting_lifecycle','on',true);
   UPDATE public.financial_years SET status='closed',is_locked=true,closed_at=now(),closed_by=auth.uid(),is_current=false
   WHERE id=fy.id RETURNING * INTO result;
+  PERFORM set_config('app.accounting_lifecycle','off',true);
   INSERT INTO public.financial_year_events(financial_year_id,action,performed_by) VALUES(fy.id,'closed',auth.uid());
   RETURN result;
 END $$;
@@ -316,6 +326,7 @@ BEGIN
   PERFORM set_config('app.accounting_lifecycle','on',true);
   UPDATE public.financial_years SET status='open',is_locked=false,reopened_at=now(),reopened_by=auth.uid(),reopen_reason=_reason
   WHERE id=fy.id RETURNING * INTO result;
+  PERFORM set_config('app.accounting_lifecycle','off',true);
   INSERT INTO public.financial_year_events(financial_year_id,action,reason,performed_by)
   VALUES(fy.id,'reopened',_reason,auth.uid());
   RETURN result;

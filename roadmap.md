@@ -4,7 +4,8 @@
 - [ ] Tally full accounting migration (TallyPrime → ERP replacement): masters, vouchers w/ DR/CR entries, bill-wise allocations, opening balances, GST, stock/godown/batch, cost centres, voucher types/numbers/refs, Tally IDs; reconciliation UI; report Completed/Partial/Blocked + changed files
 - [ ] Execute the audited TallyPrime-retirement remediation and cutover plan
   - [x] Phase 1 Accounting Foundation implemented as an isolated migration and fixture suite; not applied to the shared live database
-  - [ ] Apply and run database integration/concurrency tests in a separately provisioned isolated database
+  - [x] Apply and run PostgreSQL integration/concurrency tests in a disposable isolated database with synthetic fixtures (25 PASS, 0 FAIL)
+  - [ ] Repeat managed authentication/RLS and copied-data reconciliation in a separately provisioned managed test project before production promotion
   - [ ] Phase 2 and later phases not started
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
