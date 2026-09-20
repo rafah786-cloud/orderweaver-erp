@@ -1,0 +1,9 @@
+-- Run read-only against a safe schema/data copy before Phase 1 promotion.
+SELECT 'overlapping_financial_years' AS check_name, a.id, b.id AS conflicting_id FROM public.financial_years a JOIN public.financial_years b ON a.id < b.id AND daterange(a.start_date,a.end_date,'[]') && daterange(b.start_date,b.end_date,'[]');
+SELECT 'multiple_current_financial_years' AS check_name, count(*) AS issue_count FROM public.financial_years WHERE is_current HAVING count(*) > 1;
+SELECT 'duplicate_source_ids' AS check_name, source_table,source_id,count(*) FROM public.vouchers WHERE source_table IS NOT NULL AND source_id IS NOT NULL GROUP BY source_table,source_id HAVING count(*)>1;
+SELECT 'duplicate_idempotency_ids' AS check_name,idempotency_key,count(*) FROM public.vouchers WHERE idempotency_key IS NOT NULL GROUP BY idempotency_key HAVING count(*)>1;
+SELECT 'missing_or_inactive_posting_ledgers' AS check_name, required.name FROM (VALUES ('Sales'),('Purchases'),('Output CGST'),('Output SGST'),('Output IGST')) required(name) LEFT JOIN public.ledger_accounts la ON lower(la.name)=lower(required.name) AND la.is_active WHERE la.id IS NULL;
+SELECT 'legacy_unbalanced_vouchers' AS check_name,v.id,v.voucher_number,coalesce(sum(ve.debit),0) debit,coalesce(sum(ve.credit),0) credit FROM public.vouchers v LEFT JOIN public.voucher_entries ve ON ve.voucher_id=v.id GROUP BY v.id,v.voucher_number HAVING round(coalesce(sum(ve.debit),0),2)<>round(coalesce(sum(ve.credit),0),2) OR count(ve.id)<2;
+SELECT 'unmapped_party_ledgers' AS check_name,p.id,p.name FROM public.parties p LEFT JOIN public.ledger_accounts la ON la.mapped_party_id=p.id AND la.is_active WHERE la.id IS NULL;
+SELECT 'unmapped_supplier_ledgers' AS check_name,s.id,s.name FROM public.suppliers s LEFT JOIN public.ledger_accounts la ON la.mapped_supplier_id=s.id AND la.is_active WHERE la.id IS NULL;
