@@ -130,13 +130,13 @@ function TallyImportPage() {
     const LEDGER_CHUNK = 2000;
 
     const chunks: Array<{ label: string; payload: Record<string, unknown> }> = [];
-    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries" | "groups" | "ledgers" | "godowns" | "costCentres", label: string) => {
+    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries" | "groups" | "ledgers" | "godowns" | "costCentres" | "bills", label: string) => {
       for (let i = 0; i < arr.length; i += size) {
         chunks.push({
           label: `${label} ${Math.min(i + size, arr.length)}/${arr.length}`,
           payload: {
             customers: [], vendors: [], rawMaterials: [], finishedGoods: [], ledgerEntries: [],
-            groups: [], ledgers: [], godowns: [], costCentres: [],
+            groups: [], ledgers: [], godowns: [], costCentres: [], bills: [],
             skipRecompute: true,
             [key]: arr.slice(i, i + size),
           } as any,
@@ -153,6 +153,7 @@ function TallyImportPage() {
     push(parsed.rawMaterials, MASTER_CHUNK, "rawMaterials", "Raw materials");
     push(parsed.finishedGoods, MASTER_CHUNK, "finishedGoods", "Finished goods");
     push(parsed.ledgerEntries, LEDGER_CHUNK, "ledgerEntries", "Ledger entries");
+    push(parsed.bills, LEDGER_CHUNK, "bills", "Bill references");
 
     // Aggregate results across chunks.
     const agg: TallyImportResult = {
@@ -166,6 +167,7 @@ function TallyImportPage() {
       ledgerAccounts: { inserted: 0, updated: 0 },
       godowns: { inserted: 0, updated: 0 },
       costCentres: { inserted: 0, updated: 0 },
+      billReferences: { staged: 0, unmatched: 0 },
       unmatchedLedgerNames: [],
       errors: [],
       touchedPartyIds: [],
@@ -196,6 +198,8 @@ function TallyImportPage() {
         agg.ledgerAccounts.inserted += res.ledgerAccounts.inserted; agg.ledgerAccounts.updated += res.ledgerAccounts.updated;
         agg.godowns.inserted += res.godowns.inserted; agg.godowns.updated += res.godowns.updated;
         agg.costCentres.inserted += res.costCentres.inserted; agg.costCentres.updated += res.costCentres.updated;
+        agg.billReferences.staged += res.billReferences.staged;
+        agg.billReferences.unmatched += res.billReferences.unmatched;
         agg.errors.push(...res.errors);
 
         res.unmatchedLedgerNames.forEach((n) => unmatched.add(n));
