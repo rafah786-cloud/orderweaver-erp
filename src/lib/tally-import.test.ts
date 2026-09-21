@@ -208,3 +208,22 @@ describe("Tally import — TallyPrime 4/5 format", () => {
     expect(p.ledgerEntries[0].credit).toBe(0);
   });
 });
+
+describe("Tally import — bill-wise references", () => {
+  it("preserves opening, settlement type, dates, signs, and stable identities", () => {
+    const xml = `<?xml version="1.0"?><ENVELOPE><BODY><DATA><TALLYMESSAGE>
+      <LEDGER NAME="Bills Customer"><PARENT>Sundry Debtors</PARENT>
+        <OPENINGBILLALLOCATIONS.LIST><NAME>OPEN-1</NAME><BILLDATE>20260401</BILLDATE><AMOUNT>750</AMOUNT></OPENINGBILLALLOCATIONS.LIST>
+      </LEDGER>
+    </TALLYMESSAGE><TALLYMESSAGE><VOUCHER VCHTYPE="Receipt"><DATE>20260501</DATE><GUID>receipt-guid</GUID>
+      <ALLLEDGERENTRIES.LIST><LEDGERNAME>Bills Customer</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>250</AMOUNT>
+        <BILLALLOCATIONS.LIST><NAME>OPEN-1</NAME><BILLTYPE>Agst Ref</BILLTYPE><AMOUNT>-250</AMOUNT></BILLALLOCATIONS.LIST>
+      </ALLLEDGERENTRIES.LIST>
+    </VOUCHER></TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
+    const parsed = parseTallyMasters(xml, groups);
+    expect(parsed.bills).toHaveLength(2);
+    expect(parsed.bills[0]).toMatchObject({ bill_name: "OPEN-1", bill_date: "2026-04-01", amount: 750, reference_type: "opening", voucher_guid: null });
+    expect(parsed.bills[1]).toMatchObject({ bill_name: "OPEN-1", amount: -250, reference_type: "against_ref", voucher_guid: "receipt-guid" });
+    expect(new Set(parsed.bills.map((bill) => bill.external_ref)).size).toBe(2);
+  });
+});

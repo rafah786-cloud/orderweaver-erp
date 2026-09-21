@@ -62,6 +62,16 @@ const costCentreSchema = z.object({
   parent: z.string().max(255).nullable(),
 });
 
+const billSchema = z.object({
+  party_name: z.string().min(1).max(255),
+  bill_name: z.string().min(1).max(255),
+  bill_date: z.string().date().nullable(),
+  amount: z.number(),
+  reference_type: z.enum(["opening", "new_ref", "against_ref", "on_account", "advance", "cleared"]),
+  voucher_guid: z.string().max(255).nullable(),
+  external_ref: z.string().min(1).max(1000),
+});
+
 const inputSchema = z.object({
   customers: z.array(partySchema).max(2000).default([]),
   vendors: z.array(partySchema).max(2000).default([]),
@@ -72,6 +82,7 @@ const inputSchema = z.object({
   ledgers: z.array(ledgerMasterSchema).max(2000).default([]),
   godowns: z.array(godownSchema).max(1000).default([]),
   costCentres: z.array(costCentreSchema).max(1000).default([]),
+  bills: z.array(billSchema).max(5000).default([]),
   // When true, the handler skips the O(party_count) balance recompute so the
   // caller can stream many chunks fast and call `recomputeTallyBalances` once
   // at the end. Default true — the client always finalizes explicitly.
@@ -89,6 +100,7 @@ export type TallyImportResult = {
   ledgerAccounts: { inserted: number; updated: number }
   godowns: { inserted: number; updated: number }
   costCentres: { inserted: number; updated: number }
+  billReferences: { staged: number; unmatched: number }
   unmatchedLedgerNames: string[];
   errors: string[];
   /** Party/supplier ids touched by this chunk's ledger inserts.
@@ -161,12 +173,21 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       ledgerAccounts: { inserted: 0, updated: 0 },
       godowns: { inserted: 0, updated: 0 },
       costCentres: { inserted: 0, updated: 0 },
+      billReferences: { staged: data.bills.length, unmatched: 0 },
 
       unmatchedLedgerNames: [],
       errors: [],
       touchedPartyIds: [],
       touchedSupplierIds: [],
     }
+
+    // Phase 2 initiation only: parsed bill references are validated and counted,
+    // but are not written until the isolated Phase 2 migration is promoted.
+    result.billReferences.unmatched = data.bills.filter((bill) => {
+      const key = norm(bill.party_name);
+      return !data.customers.some((party) => norm(party.name) === key) &&
+        !data.vendors.some((supplier) => norm(supplier.name) === key);
+    }).length;
 
     // Maps populated below for ledger entry matching
     const partyByName = new Map<string, string>(); // lowercased name → id

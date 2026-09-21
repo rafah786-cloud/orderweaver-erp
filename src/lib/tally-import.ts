@@ -66,6 +66,9 @@ export type TallyBill = {
   bill_date: string | null;
   /** Positive = receivable (Dr), negative = payable (Cr). */
   amount: number;
+  reference_type: "opening" | "new_ref" | "against_ref" | "on_account" | "advance" | "cleared";
+  voucher_guid: string | null;
+  external_ref: string;
 };
 
 export type TallyParsed = {
@@ -276,20 +279,29 @@ export function parseTallyMasters(
   };
 
   /** Bill-wise allocations on a ledger master (opening outstanding) or voucher line. */
-  const collectBills = (partyName: string, node: Record<string, unknown>) => {
-    const lists = [
-      ...arr<Record<string, unknown>>(node["BILLALLOCATIONS.LIST"] as never),
-      ...arr<Record<string, unknown>>(node["OPENINGBILLALLOCATIONS.LIST"] as never),
-...arr<Record<string, unknown>>(node["BILLSCLEARED.LIST"] as never),
+  const collectBills = (partyName: string, node: Record<string, unknown>, voucherGuid: string | null = null) => {
+    const lists: Array<{ values: Record<string, unknown>[]; fallback: TallyBill["reference_type"] }> = [
+      { values: arr<Record<string, unknown>>(node["OPENINGBILLALLOCATIONS.LIST"] as never), fallback: "opening" },
+      { values: arr<Record<string, unknown>>(node["BILLALLOCATIONS.LIST"] as never), fallback: "new_ref" },
+      { values: arr<Record<string, unknown>>(node["BILLSCLEARED.LIST"] as never), fallback: "cleared" },
     ];
-    for (const b of lists) {
+    for (const { values, fallback } of lists) for (const b of values) {
       const bill_name = text(b.NAME ?? b.BILLNAME);
       if (!bill_name) continue;
+      const method = text(b.BILLTYPE ?? b.METHOD).toLowerCase().replace(/[\s-]+/g, "_");
+      const reference_type: TallyBill["reference_type"] =
+        method === "against_ref" || method === "agst_ref" ? "against_ref" :
+        method === "on_account" ? "on_account" : method === "advance" ? "advance" :
+        method === "new_ref" ? "new_ref" : fallback;
+      const bill_date = parseTallyDate(text(b.BILLDATE ?? b.DATE)) || null;
       bills.push({
         party_name: partyName,
         bill_name,
-        bill_date: parseTallyDate(text(b.BILLDATE ?? b.DATE)) || null,
+        bill_date,
         amount: num(b.AMOUNT ?? b.OPENINGBALANCE),
+        reference_type,
+        voucher_guid: voucherGuid,
+        external_ref: [voucherGuid ?? "master", partyName, bill_name, bill_date ?? "", reference_type].join("|"),
       });
     }
   };
@@ -441,6 +453,11 @@ export function parseTallyMasters(
         v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
       );
       const lines = [...ledgerLines, ...altLines];
+
+      for (const line of lines) {
+        const ledgerName = text(line.LEDGERNAME);
+        if (ledgerName && partyType.has(ledgerName.toLowerCase())) collectBills(ledgerName, line, guid);
+      }
 
       // First pass: emit entries for lines that directly reference a known party.
       let matchedParty = false;
