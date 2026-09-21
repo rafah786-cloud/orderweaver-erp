@@ -198,6 +198,8 @@ function TallyImportPage() {
         agg.ledgerAccounts.inserted += res.ledgerAccounts.inserted; agg.ledgerAccounts.updated += res.ledgerAccounts.updated;
         agg.godowns.inserted += res.godowns.inserted; agg.godowns.updated += res.godowns.updated;
         agg.costCentres.inserted += res.costCentres.inserted; agg.costCentres.updated += res.costCentres.updated;
+        agg.billReferences.staged += res.billReferences.staged;
+        agg.billReferences.unmatched += res.billReferences.unmatched;
         agg.errors.push(...res.errors);
 
         res.unmatchedLedgerNames.forEach((n) => unmatched.add(n));
