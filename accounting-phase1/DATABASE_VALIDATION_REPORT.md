@@ -8,7 +8,7 @@
 - Isolation: disposable local cluster and database, Unix-socket only, synthetic fixtures only
 - Production credentials/data/schema: not used or modified
 - ERP screens and production workflows: unchanged
-- Phase 2: not started
+- Phase 2: subsequently implemented and tested only in the same disposable environment; still unapplied
 - Final automated result: 25 PASS, 0 FAIL
 
 ## Defects demonstrated and corrected
@@ -90,3 +90,13 @@ No live schema was changed. The isolated migration definition changed only in:
 - **Migration risk:** direct authenticated writes to vouchers, voucher entries, and numbering are revoked. Every existing integration must be exercised against the approved functions in the managed test project before promotion.
 - **Migration risk:** sales/purchase posting still depends on configured ledger names and valid party/supplier ledger mappings. Validate those masters in the copied dataset.
 - **Out of scope:** no Phase 2 bill-wise, stock-ledger, GST expansion, migration staging, or TallyBridge work was performed.
+
+## Durable rerun assets
+
+- `tests/run_database_suite.py` — guarded executable database suite using synthetic fixtures only.
+- `tests/base_fixture.sql` — disposable accounting/auth fixture schema.
+- `tests/preflight.sql` — overlapping FY, duplicate source, posting-ledger, legacy-balance, and mapping checks.
+- `tests/managed_security_checks.sql` — managed role/grant/direct-write denial checks.
+- `tests/direct-write-audit.sh` — inventories application code that still writes legacy voucher tables directly.
+
+The durable runner currently covers 20 grouped checks, including all voucher types, enforcement, rollback, idempotency, lifecycle, open/closed periods, atomic source posting, controls, and a 40-session concurrency workload. The prior detailed 25-check validation remains the authoritative Phase 1 matrix above.
