@@ -12,7 +12,7 @@ if os.environ.get('ALLOW_PHASE1_DATABASE_TESTS')!='isolated-only':
     raise SystemExit('REFUSED: set ALLOW_PHASE1_DATABASE_TESTS=isolated-only')
 
 def psql(sql=None,file=None,tuples=False):
-    cmd=['psql',URL,'-v','ON_ERROR_STOP=1']
+    cmd=['psql',URL,'-q','-v','ON_ERROR_STOP=1']
     if tuples: cmd += ['-At']
     if file: cmd += ['-f',str(file)]
     else: cmd += ['-c',sql]
