@@ -12,7 +12,7 @@ if os.environ.get('ALLOW_PHASE1_DATABASE_TESTS')!='isolated-only':
     raise SystemExit('REFUSED: set ALLOW_PHASE1_DATABASE_TESTS=isolated-only')
 
 def psql(sql=None,file=None,tuples=False):
-    cmd=['psql',URL,'-v','ON_ERROR_STOP=1']
+    cmd=['psql',URL,'-q','-v','ON_ERROR_STOP=1']
     if tuples: cmd += ['-At']
     if file: cmd += ['-f',str(file)]
     else: cmd += ['-c',sql]
@@ -30,13 +30,14 @@ results=[]
 def check(name,fn):
     try: fn(); results.append((name,'PASS',''))
     except Exception as e: results.append((name,'FAIL',str(e).splitlines()[-1][:240]))
+def expect_database_error(name,fn):
+    try: fn(); results.append((name,'FAIL','operation unexpectedly succeeded'))
+    except subprocess.CalledProcessError as e: results.append((name,'PASS',e.stderr.strip().splitlines()[-1][:240]))
 def post(vtype,key,amount=10,date='2026-04-01'):
     return q(f"SELECT id FROM create_gl_voucher('{vtype}','{date}',{entries(amount)},NULL,NULL,'{key}','posted')")
 for typ in ['sales','purchase','receipt','payment','contra','journal','debit_note','credit_note']:
     check('voucher_'+typ,lambda t=typ: post(t,'type:'+t))
-check('debit_credit_enforcement',lambda: q(f"SELECT create_gl_voucher('journal','2026-04-01',jsonb_build_array(jsonb_build_object('ledger_account_id','{ledger('Cash')}','debit',10,'credit',0),jsonb_build_object('ledger_account_id','{ledger('Sales')}','debit',0,'credit',9)),NULL,NULL,'bad:balance','posted')"))
-# The preceding check must fail to pass semantically.
-if results[-1][1]=='FAIL' and 'not balanced' in results[-1][2]: results[-1]=('debit_credit_enforcement','PASS','rejected')
+expect_database_error('debit_credit_enforcement',lambda: q(f"SELECT create_gl_voucher('journal','2026-04-01',jsonb_build_array(jsonb_build_object('ledger_account_id','{ledger('Cash')}','debit',10,'credit',0),jsonb_build_object('ledger_account_id','{ledger('Sales')}','debit',0,'credit',9)),NULL,NULL,'bad:balance','posted')"))
 check('rollback_no_row',lambda: (_ for _ in ()).throw(AssertionError(q("SELECT count(*) FROM vouchers WHERE idempotency_key='bad:balance'") )) if q("SELECT count(*) FROM vouchers WHERE idempotency_key='bad:balance'")!='0' else None)
 first=post('journal','retry:one')
 check('idempotent_retry',lambda: (_ for _ in ()).throw(AssertionError()) if post('journal','retry:one')!=first else None)
@@ -45,8 +46,7 @@ check('reversal',lambda: q(f"SELECT id FROM reverse_gl_voucher('{original}','202
 draft=q(f"SELECT id FROM create_gl_voucher('journal','2026-04-01',{entries(12)},NULL,NULL,'draft:one','draft')")
 check('draft_cancellation',lambda: q(f"SELECT id FROM cancel_gl_voucher('{draft}','test cancellation','2026-04-02')"))
 immutable=lambda: q(f"UPDATE vouchers SET narration='illegal' WHERE id='{original}'")
-check('posted_immutability',immutable)
-if results[-1][1]=='FAIL' and 'immutable' in results[-1][2]: results[-1]=('posted_immutability','PASS','rejected')
+expect_database_error('posted_immutability',immutable)
 check('closed_period_rejection',lambda: q("SELECT create_gl_voucher('journal','2025-04-01,'::jsonb)"))
 # replace malformed placeholder with an actual closed-year call expected to fail
 results.pop()
