@@ -6,7 +6,7 @@ The migration adds canonical bills and allocations, atomic invoice/purchase bill
 
 ## Isolated database validation
 
-`tests/run_phase2_suite.py` is fail-closed and requires an explicitly isolated database URL. Against PostgreSQL 17 with Phase 1 and synthetic fixtures installed, 14 checks passed with zero failures:
+`tests/run_phase2_suite.py` is fail-closed and requires an explicitly isolated database URL. Against PostgreSQL 17 with Phase 1 and synthetic fixtures installed, 18 checks passed with zero failures:
 
 - customer and supplier opening bills
 - atomic invoice and purchase-bill linkage
@@ -17,5 +17,7 @@ The migration adds canonical bills and allocations, atomic invoice/purchase bill
 - as-of outstanding and ageing totals
 - concurrent settlement locking
 - compensating allocations after voucher reversal
+- source-voucher reversal cancellation with as-of report handling
+- retry-safe opening bills without external references
 
 Managed authentication, RLS/API grants, connection pooling, and copied-data reconciliation remain blocked until a separate managed test project is connected. This migration remains unapplied and no production screen or workflow uses it.
