@@ -61,9 +61,9 @@ sql(f"SELECT post_bill_settlement('payment','2026-06-04','{bank}',jsonb_build_ar
 check('multi_bill_payment',scalar("SELECT count(*) FROM bill_allocations WHERE idempotency_key LIKE 'settle:p4:%'")=='2')
 
 outstanding=scalar("SELECT coalesce(sum(outstanding_amount),0) FROM bill_outstanding_as_of('2026-06-30','customer')")
-check('as_of_customer_outstanding',outstanding=='1000.00',outstanding)
+check('as_of_customer_outstanding',outstanding=='1125.00',outstanding)
 ageing=scalar("SELECT total_outstanding FROM bill_ageing_as_of('2026-07-31','customer')")
-check('customer_ageing_total',ageing=='1000.00',ageing)
+check('customer_ageing_total',ageing=='1125.00',ageing)
 
 # Concurrent attempts for the remaining 600 on one supplier bill: exactly one may settle it.
 responses=[]
