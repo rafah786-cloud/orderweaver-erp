@@ -19,6 +19,8 @@ CREATE TABLE public.bills (
   source_voucher_id uuid NOT NULL REFERENCES public.vouchers(id) ON DELETE RESTRICT,
   source_voucher_entry_id uuid NOT NULL REFERENCES public.voucher_entries(id) ON DELETE RESTRICT,
   status public.bill_status NOT NULL DEFAULT 'open',
+  cancelled_on date,
+  source_voiding_voucher_id uuid REFERENCES public.vouchers(id) ON DELETE RESTRICT,
   external_ref text,
   created_by uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -78,10 +80,11 @@ CREATE INDEX bill_allocations_voucher_idx ON public.bill_allocations(settlement_
 
 CREATE OR REPLACE FUNCTION public.refresh_bill_status(_bill_id uuid)
 RETURNS public.bill_status LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE original numeric; applied numeric; result public.bill_status;
+DECLARE original numeric; applied numeric; result public.bill_status; current_status public.bill_status;
 BEGIN
-  SELECT original_amount INTO original FROM public.bills WHERE id=_bill_id FOR UPDATE;
+  SELECT original_amount,status INTO original,current_status FROM public.bills WHERE id=_bill_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Bill not found'; END IF;
+  IF current_status='cancelled' THEN RETURN current_status; END IF;
   SELECT COALESCE(sum(effect*amount),0) INTO applied FROM public.bill_allocations WHERE bill_id=_bill_id;
   result:=CASE WHEN applied<=0 THEN 'open'::public.bill_status WHEN applied<original THEN 'partial'::public.bill_status ELSE 'settled'::public.bill_status END;
   UPDATE public.bills SET status=result,updated_at=now() WHERE id=_bill_id;
@@ -118,12 +121,15 @@ CREATE OR REPLACE FUNCTION public.create_opening_bill(
   _party_kind public.bill_party_kind,_party_id uuid,_supplier_id uuid,_reference text,_date date,_due_date date,
   _amount numeric,_offset_ledger_id uuid,_external_ref text,_currency text DEFAULT 'INR')
 RETURNS public.bills LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE party_ledger uuid; entries jsonb; v public.vouchers; entry_id uuid;
+DECLARE party_ledger uuid; entries jsonb; v public.vouchers; entry_id uuid; stable_key text;
 BEGIN
   IF NOT public.has_role(auth.uid(),'admin') AND NOT public.has_role(auth.uid(),'accountant') THEN RAISE EXCEPTION 'Accounting access required'; END IF;
+  IF NULLIF(trim(_reference),'') IS NULL THEN RAISE EXCEPTION 'Opening bill reference required'; END IF;
+  stable_key:=COALESCE(NULLIF(trim(_external_ref),''),
+    'manual:'||_party_kind::text||':'||COALESCE(_party_id,_supplier_id)::text||':'||lower(trim(_reference)));
   IF _party_kind='customer' THEN party_ledger:=public.get_or_create_party_ledger(_party_id); entries:=jsonb_build_array(jsonb_build_object('ledger_account_id',party_ledger,'debit',_amount,'credit',0),jsonb_build_object('ledger_account_id',_offset_ledger_id,'debit',0,'credit',_amount));
   ELSE party_ledger:=public.get_or_create_supplier_ledger(_supplier_id); entries:=jsonb_build_array(jsonb_build_object('ledger_account_id',_offset_ledger_id,'debit',_amount,'credit',0),jsonb_build_object('ledger_account_id',party_ledger,'debit',0,'credit',_amount)); END IF;
-  v:=public.create_gl_voucher_internal('journal',_date,entries,'Opening bill '||_reference,_reference,'opening_bills',NULL,'opening-bill:'||_party_kind::text||':'||_external_ref,'posted',auth.uid(),NULL);
+  v:=public.create_gl_voucher_internal('journal',_date,entries,'Opening bill '||_reference,_reference,'opening_bills',NULL,'opening-bill:'||stable_key,'posted',auth.uid(),NULL);
   SELECT id INTO entry_id FROM public.voucher_entries WHERE voucher_id=v.id AND ledger_account_id=party_ledger;
   RETURN public.create_bill_internal(_party_kind,_party_id,_supplier_id,party_ledger,_reference,_date,_due_date,'opening',_amount,_currency,v.id,entry_id,_external_ref,auth.uid());
 END $$;
@@ -196,9 +202,9 @@ BEGIN
   RETURN v;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.reverse_bill_allocations()
+CREATE OR REPLACE FUNCTION public.sync_bills_for_voucher_lifecycle()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE a public.bill_allocations; reverse_entry uuid;
+DECLARE a public.bill_allocations; reverse_entry uuid; voiding_date date;
 BEGIN
   IF NEW.status='reversed' AND OLD.status='posted' AND NEW.reversed_by IS NOT NULL THEN
     FOR a IN SELECT * FROM public.bill_allocations WHERE settlement_voucher_id=NEW.id AND effect=1 LOOP
@@ -208,9 +214,16 @@ BEGIN
       PERFORM public.refresh_bill_status(a.bill_id);
     END LOOP;
   END IF;
+  IF NEW.status IN ('reversed','cancelled') AND OLD.status IS DISTINCT FROM NEW.status THEN
+    SELECT voucher_date INTO voiding_date FROM public.vouchers WHERE id=NEW.reversed_by;
+    UPDATE public.bills
+    SET status='cancelled',cancelled_on=COALESCE(voiding_date,NEW.voucher_date),
+      source_voiding_voucher_id=COALESCE(NEW.reversed_by,NEW.id),updated_at=now()
+    WHERE source_voucher_id=NEW.id AND status<>'cancelled';
+  END IF;
   RETURN NEW;
 END $$;
-CREATE TRIGGER trg_reverse_bill_allocations AFTER UPDATE OF status ON public.vouchers FOR EACH ROW EXECUTE FUNCTION public.reverse_bill_allocations();
+CREATE TRIGGER trg_sync_bills_for_voucher_lifecycle AFTER UPDATE OF status ON public.vouchers FOR EACH ROW EXECUTE FUNCTION public.sync_bills_for_voucher_lifecycle();
 
 CREATE OR REPLACE FUNCTION public.bill_outstanding_as_of(_as_of date,_kind public.bill_party_kind DEFAULT NULL)
 RETURNS TABLE(bill_id uuid,party_kind public.bill_party_kind,party_id uuid,supplier_id uuid,bill_reference text,bill_date date,due_date date,original_amount numeric,allocated_amount numeric,outstanding_amount numeric,currency_code text)
@@ -219,7 +232,7 @@ SELECT b.id,b.party_kind,b.party_id,b.supplier_id,b.bill_reference,b.bill_date,b
   COALESCE(sum(a.effect*a.amount) FILTER(WHERE a.allocation_date<=_as_of),0),
   b.original_amount-COALESCE(sum(a.effect*a.amount) FILTER(WHERE a.allocation_date<=_as_of),0),b.currency_code
 FROM public.bills b LEFT JOIN public.bill_allocations a ON a.bill_id=b.id
-WHERE b.bill_date<=_as_of AND b.status<>'cancelled' AND (_kind IS NULL OR b.party_kind=_kind)
+WHERE b.bill_date<=_as_of AND (b.cancelled_on IS NULL OR b.cancelled_on>_as_of) AND (_kind IS NULL OR b.party_kind=_kind)
 GROUP BY b.id HAVING b.original_amount-COALESCE(sum(a.effect*a.amount) FILTER(WHERE a.allocation_date<=_as_of),0)<>0;
 $$;
 CREATE OR REPLACE FUNCTION public.bill_ageing_as_of(_as_of date,_kind public.bill_party_kind DEFAULT NULL)

@@ -29,6 +29,9 @@ customer_bill=scalar(f"SELECT id FROM create_opening_bill('customer','{customer}
 supplier_bill=scalar(f"SELECT id FROM create_opening_bill('supplier',NULL,'{supplier}','OPEN-S-1','2026-04-01','2026-04-30',800,'{opening}','tally:open-s-1','INR')")
 check('customer_opening_bill',bool(customer_bill))
 check('supplier_opening_bill',bool(supplier_bill))
+opening_without_external=scalar(f"SELECT id FROM create_opening_bill('customer','{customer}',NULL,'MANUAL-OPEN-1','2026-04-01','2026-04-30',125,'{opening}',NULL,'INR')")
+opening_without_external_retry=scalar(f"SELECT id FROM create_opening_bill('customer','{customer}',NULL,'MANUAL-OPEN-1','2026-04-01','2026-04-30',125,'{opening}',NULL,'INR')")
+check('opening_bill_without_external_ref_idempotent',opening_without_external==opening_without_external_retry and scalar("SELECT count(*) FROM bills WHERE bill_reference='MANUAL-OPEN-1'")=='1')
 
 sql("INSERT INTO invoices(invoice_number,party_id,invoice_date,due_date,subtotal,tax_amount,total_amount,dispatch_state_code,supplier_gstin) VALUES('INV-P2','10000000-0000-0000-0000-000000000001','2026-05-01','2026-05-31',1000,180,1180,'32','32AAAAA0000A1Z1')")
 invoice_bill=scalar("SELECT id FROM bills WHERE bill_reference='INV-P2'")
@@ -36,6 +39,14 @@ check('sales_bill_atomic_link',bool(invoice_bill) and scalar(f"SELECT original_a
 sql("INSERT INTO purchase_bills(bill_number,supplier_id,bill_date,total_amount) VALUES('PB-P2','20000000-0000-0000-0000-000000000001','2026-05-02',590)")
 purchase_bill=scalar("SELECT id FROM bills WHERE bill_reference='PB-P2'")
 check('purchase_bill_atomic_link',bool(purchase_bill) and scalar(f"SELECT original_amount FROM bills WHERE id='{purchase_bill}'")=='590.00')
+
+sql("INSERT INTO invoices(invoice_number,party_id,invoice_date,due_date,subtotal,tax_amount,total_amount,dispatch_state_code,supplier_gstin) VALUES('INV-VOID','10000000-0000-0000-0000-000000000001','2026-05-03','2026-06-02',200,0,200,'32','32AAAAA0000A1Z1')")
+void_bill=scalar("SELECT id FROM bills WHERE bill_reference='INV-VOID'")
+void_source=scalar(f"SELECT source_voucher_id FROM bills WHERE id='{void_bill}'")
+sql(f"SELECT reverse_gl_voucher('{void_source}','2026-06-10','void invoice')")
+check('reversed_source_cancels_bill',scalar(f"SELECT status FROM bills WHERE id='{void_bill}'")=='cancelled')
+check('reversed_source_excluded_from_current_outstanding',scalar(f"SELECT count(*) FROM bill_outstanding_as_of('2026-06-10','customer') WHERE bill_id='{void_bill}'")=='0')
+check('reversed_source_retained_in_historical_outstanding',scalar(f"SELECT count(*) FROM bill_outstanding_as_of('2026-06-09','customer') WHERE bill_id='{void_bill}'")=='1')
 
 receipt=scalar(f"SELECT id FROM post_bill_settlement('receipt','2026-06-01','{cash}',jsonb_build_array(jsonb_build_object('bill_id','{invoice_bill}','amount',300,'allocation_type','against_ref')),'R1','settle:r1')")
 check('partial_receipt',scalar(f"SELECT status||':'||(original_amount-coalesce((SELECT sum(effect*amount) FROM bill_allocations WHERE bill_id=b.id),0)) FROM bills b WHERE id='{invoice_bill}'")=='partial:880.00')
