@@ -8,15 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState } from "react";
-import { sb, type LedgerAccount, type VoucherType, nextVoucherNumber, VOUCHER_TYPE_LABEL } from "@/lib/accounting";
-import { useAuth } from "@/hooks/useAuth";
+import { useRef, useState } from "react";
+import { sb, type LedgerAccount, type VoucherType, VOUCHER_TYPE_LABEL } from "@/lib/accounting";
 import { inr } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
+import { createGlVoucher } from "@/lib/accounting.functions";
 
 export const Route = createFileRoute("/_app/accounting/vouchers/new")({
   component: NewVoucherPage,
@@ -29,7 +29,7 @@ const MANUAL_TYPES: VoucherType[] = ["receipt", "payment", "contra", "journal", 
 
 function NewVoucherPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const createVoucher = useServerFn(createGlVoucher);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
   const [type, setType] = useState<VoucherType>("journal");
@@ -41,6 +41,7 @@ function NewVoucherPage() {
     { ledger_account_id: "", debit: 0, credit: 0, narration: "" },
   ]);
   const [saving, setSaving] = useState(false);
+  const idempotencyKey = useRef<string | null>(null);
 
   const ledgersQ = useQuery({
     queryKey: ["all_ledgers"],
@@ -77,29 +78,29 @@ function NewVoucherPage() {
     }
     setSaving(true);
     try {
-      const voucherNumber = await nextVoucherNumber(type);
-      const { data: v, error: vErr } = await sb.from("vouchers").insert({
-        voucher_number: voucherNumber,
-        voucher_type: type,
-        voucher_date: voucherDate,
-        narration: narration || null,
-        reference: reference || null,
-        created_by: user?.id ?? null,
-      }).select("id").single();
-      if (vErr) throw vErr;
-
-      const entries = validLines.map((l, i) => ({
-        voucher_id: v.id,
+      if (!idempotencyKey.current) idempotencyKey.current = `manual-voucher:${crypto.randomUUID()}`;
+      const result = await createVoucher({ data: {
+        type,
+        date: voucherDate,
+        narration: narration || undefined,
+        reference: reference || undefined,
+        idempotencyKey: idempotencyKey.current,
+        status: "posted",
+        entries: validLines.map((l, i) => ({
         ledger_account_id: l.ledger_account_id,
         debit: Number(l.debit || 0),
         credit: Number(l.credit || 0),
-        narration: l.narration || null,
+        narration: l.narration || undefined,
         line_order: i + 1,
-      }));
-      const { error: eErr } = await sb.from("voucher_entries").insert(entries);
-      if (eErr) throw eErr;
+        })),
+      } });
+      const row = Array.isArray(result) ? result[0] : result;
+      if (!row || typeof row.id !== "string" || typeof row.voucher_number !== "string") {
+        throw new Error("Accounting service returned an invalid voucher");
+      }
+      const voucher = { id: row.id, voucherNumber: row.voucher_number };
 
-      toast.success(`${VOUCHER_TYPE_LABEL[type]} ${voucherNumber} saved`);
+      toast.success(`${VOUCHER_TYPE_LABEL[type]} ${voucher.voucherNumber} saved`);
 
       // Customer payment notification: receipt voucher → notify the customer whose ledger was credited
       if (type === "receipt") {
@@ -124,9 +125,9 @@ function NewVoucherPage() {
                   party_id: partyId,
                   event: "payment.received",
                   ref_table: "vouchers",
-                  ref_id: v.id,
+                  ref_id: voucher.id,
                   vars: {
-                    receipt_no: voucherNumber,
+                    receipt_no: voucher.voucherNumber,
                     payment_amount: amount.toFixed(2),
                   },
                 },
@@ -136,9 +137,9 @@ function NewVoucherPage() {
                 data: {
                   event: "staff.payment.received",
                   ref_table: "vouchers",
-                  ref_id: v.id,
+                  ref_id: voucher.id,
                   customer_party_id: partyId,
-                  vars: { receipt_no: voucherNumber, payment_amount: amount.toFixed(2) },
+                  vars: { receipt_no: voucher.voucherNumber, payment_amount: amount.toFixed(2) },
                 },
               }).catch(() => {});
             }
@@ -148,7 +149,7 @@ function NewVoucherPage() {
         }
       }
 
-      navigate({ to: "/accounting/voucher/$id", params: { id: v.id } });
+      navigate({ to: "/accounting/voucher/$id", params: { id: voucher.id } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to save voucher";
       toast.error(msg);
