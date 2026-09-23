@@ -72,19 +72,6 @@ export type LedgerBalance = {
   closing_balance: number;
 };
 
-// Generate next voucher number from the series on the client.
-// Server function next_voucher_number is locked down; client computes from current state.
-export async function nextVoucherNumber(type: VoucherType): Promise<string> {
-  const { data, error } = await sb.from("voucher_number_series").select("*").eq("voucher_type", type).maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error(`No number series for ${type}`);
-  const num = String(data.next_number).padStart(data.width ?? 4, "0");
-  const result = `${data.prefix ?? ""}${num}${data.suffix ?? ""}`;
-  // Bump
-  await sb.from("voucher_number_series").update({ next_number: data.next_number + 1 }).eq("voucher_type", type);
-  return result;
-}
-
 export const VOUCHER_TYPE_LABEL: Record<VoucherType, string> = {
   sales: "Sales",
   purchase: "Purchase",

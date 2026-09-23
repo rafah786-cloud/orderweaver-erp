@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 import os, subprocess, sys, threading
+from pathlib import Path
 
-URL=os.environ.get('TEST_DATABASE_URL','')
-if not URL or os.environ.get('ALLOW_PHASE2_DATABASE_TESTS')!='isolated-only':
-    raise SystemExit('REFUSED: isolated TEST_DATABASE_URL and ALLOW_PHASE2_DATABASE_TESTS=isolated-only are required')
+ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from accounting_test_target import load_managed_test_target, verify_and_display_identity
+
+TARGET=load_managed_test_target('ALLOW_PHASE2_DATABASE_TESTS')
+URL=TARGET.url
+# This read-only identity probe is the only SQL allowed before the target is displayed and verified.
+verify_and_display_identity(TARGET)
 
 def sql(statement, quiet=True):
     command=['psql',URL,'-q','-v','ON_ERROR_STOP=1','-At','-c',"SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';"+statement]

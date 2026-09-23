@@ -9,6 +9,8 @@
   - [ ] Repeat managed authentication/RLS and copied-data reconciliation in a separately provisioned managed test project before production promotion (blocked: no separate managed project connected)
   - [x] Phase 2 bill-wise receivables/payables, opening bills, sales/purchase bill linkage, settlements, reversals and ageing implemented and locally database-tested in isolation (14 PASS, 0 FAIL); unapplied to shared live database
   - [ ] Validate Phase 2 managed auth/RLS/pooling and copied-data reconciliation in a separate managed test project before any screen/workflow cutover (blocked: no separate managed project connected)
+  - [x] Harden managed validation runners to require and display an explicit non-production TEST identity before mutating SQL
+  - [x] Replace manual voucher and number-series client writes with the authenticated Phase 1 atomic posting function
   - [ ] Phase 3 and later phases not started
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference

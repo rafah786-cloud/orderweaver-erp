@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-import os, subprocess, sys, tempfile, threading
+import os, subprocess, sys, threading
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-URL=os.environ.get('TEST_DATABASE_URL','')
-if not URL:
-    raise SystemExit('BLOCKED: TEST_DATABASE_URL is required')
-for forbidden in filter(None,[os.environ.get('SUPABASE_URL',''),os.environ.get('PGHOST','')]):
-    if forbidden in URL:
-        raise SystemExit('REFUSED: test URL appears to target the connected shared database')
-if os.environ.get('ALLOW_PHASE1_DATABASE_TESTS')!='isolated-only':
-    raise SystemExit('REFUSED: set ALLOW_PHASE1_DATABASE_TESTS=isolated-only')
+sys.path.insert(0, str(ROOT))
+from accounting_test_target import load_managed_test_target, verify_and_display_identity
+
+TARGET=load_managed_test_target('ALLOW_PHASE1_DATABASE_TESTS')
+URL=TARGET.url
+# This read-only identity probe is the only SQL allowed before the target is displayed and verified.
+verify_and_display_identity(TARGET)
 
 def psql(sql=None,file=None,tuples=False):
     cmd=['psql',URL,'-q','-v','ON_ERROR_STOP=1']
