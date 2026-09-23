@@ -58,6 +58,11 @@ def load_managed_test_target(phase_flag: str) -> ManagedTestTarget:
 
 
 def verify_and_display_identity(target: ManagedTestTarget) -> None:
+    print("TARGET_ENVIRONMENT\tMANAGED_TEST")
+    print(f"TARGET_PROJECT_REF_CONFIGURED\t{target.project_ref}")
+    print(f"TARGET_HOST_CONFIGURED\t{target.host}")
+    print(f"TARGET_DATABASE_CONFIGURED\t{target.database}")
+    print("TARGET_IDENTITY_PROBE\tSTARTING_READ_ONLY")
     identity_sql = (
         "SELECT current_database(), current_user, "
         "COALESCE(inet_server_addr()::text,''), inet_server_port()"
@@ -75,10 +80,8 @@ def verify_and_display_identity(target: ManagedTestTarget) -> None:
     if database != target.database:
         raise SystemExit("REFUSED: resolved database identity does not match the explicit TEST database")
 
-    print("TARGET_ENVIRONMENT\tMANAGED_TEST")
-    print(f"TARGET_PROJECT_REF\t{target.project_ref}")
-    print(f"TARGET_HOST\t{target.host}")
-    print(f"TARGET_DATABASE\t{database}")
-    print(f"TARGET_SERVER\t{address}:{port}")
-    print(f"TARGET_USER\t{user}")
+    print(f"TARGET_PROJECT_REF_VERIFIED\t{target.project_ref}")
+    print(f"TARGET_DATABASE_VERIFIED\t{database}")
+    print(f"TARGET_SERVER_VERIFIED\t{address}:{port}")
+    print(f"TARGET_USER_VERIFIED\t{user}")
     print("TARGET_IDENTITY_VERIFIED\tPASS")
