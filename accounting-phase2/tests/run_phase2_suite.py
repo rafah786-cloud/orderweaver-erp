@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from accounting_test_target import load_managed_test_target, verify_and_display_identity
+from accounting_test_target import clean_psql_environment, load_managed_test_target, verify_and_display_identity
 
 TARGET=load_managed_test_target('ALLOW_PHASE2_DATABASE_TESTS')
 URL=TARGET.url
@@ -13,7 +13,7 @@ verify_and_display_identity(TARGET)
 
 def sql(statement, quiet=True):
     command=['psql',URL,'-q','-v','ON_ERROR_STOP=1','-At','-c',"SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';"+statement]
-    return subprocess.run(command,text=True,capture_output=True,check=True).stdout.strip()
+    return subprocess.run(command,text=True,capture_output=True,check=True,env=clean_psql_environment()).stdout.strip()
 
 def scalar(statement):
     rows=[line for line in sql(statement).splitlines() if line and line!='SET']

@@ -2,12 +2,22 @@
 """Fail-closed connection guard for managed accounting test databases."""
 
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from urllib.parse import parse_qs, unquote, urlparse
 
 
 PRODUCTION_PROJECT_REF = "ysaocrumxikgywdotkne"
+
+
+def clean_psql_environment() -> dict[str, str]:
+    """Never allow libpq to inherit another connection or session setting."""
+    return {
+        key: value for key, value in os.environ.items()
+        if not key.startswith(("PG", "SUPABASE_", "VITE_SUPABASE_"))
+        and key not in {"DATABASE_URL", "TEST_DATABASE_URL"}
+    }
 
 
 @dataclass(frozen=True)
@@ -32,6 +42,8 @@ def load_managed_test_target(phase_flag: str) -> ManagedTestTarget:
         )
     if os.environ.get("TEST_DATABASE_URL"):
         raise SystemExit("REFUSED: TEST_DATABASE_URL is not accepted for managed validation")
+    if not re.fullmatch(r"[a-z]{20}", expected_ref):
+        raise SystemExit("REFUSED: expected TEST project reference has an invalid format")
     if expected_ref == PRODUCTION_PROJECT_REF:
         raise SystemExit("REFUSED: expected TEST project is the production project")
 
@@ -43,14 +55,12 @@ def load_managed_test_target(phase_flag: str) -> ManagedTestTarget:
         raise SystemExit("REFUSED: managed TEST URL must use PostgreSQL")
     if not host or host in {"localhost", "127.0.0.1", "::1"}:
         raise SystemExit("REFUSED: local databases are not managed TEST projects")
-    if not (host.endswith(".supabase.co") or host.endswith(".pooler.supabase.com")):
-        raise SystemExit("REFUSED: target is not a managed PostgreSQL project host")
+    if host != f"db.{expected_ref}.supabase.co":
+        raise SystemExit("REFUSED: direct managed TEST host must exactly match expected project")
+    if parsed.username != "postgres":
+        raise SystemExit("REFUSED: direct managed TEST connection must use the postgres database user")
     if sslmode not in {"require", "verify-ca", "verify-full"}:
         raise SystemExit("REFUSED: managed TEST URL must require TLS with sslmode=require or stronger")
-    if expected_ref not in host and expected_ref not in (parsed.username or ""):
-        raise SystemExit("REFUSED: URL does not identify EXPECTED_TEST_PROJECT_REF")
-    if PRODUCTION_PROJECT_REF in host or PRODUCTION_PROJECT_REF in (parsed.username or ""):
-        raise SystemExit("REFUSED: target URL identifies the production project")
     if database != expected_database:
         raise SystemExit("REFUSED: URL database does not match EXPECTED_TEST_DATABASE")
 
@@ -67,12 +77,13 @@ def verify_and_display_identity(target: ManagedTestTarget) -> None:
         "SELECT current_database(), current_user, "
         "COALESCE(inet_server_addr()::text,''), inet_server_port()"
     )
-    completed = subprocess.run(
-        ["psql", target.url, "-q", "-v", "ON_ERROR_STOP=1", "-At", "-F", "\t", "-c", identity_sql],
-        text=True,
-        capture_output=True,
-        check=True,
-    )
+    try:
+        completed = subprocess.run(
+            ["psql", target.url, "-q", "-v", "ON_ERROR_STOP=1", "-At", "-F", "\t", "-c", identity_sql],
+            text=True, capture_output=True, check=True, env=clean_psql_environment(),
+        )
+    except subprocess.CalledProcessError:
+        raise SystemExit("REFUSED: managed TEST identity probe failed; no migration or fixture SQL executed") from None
     rows = [line for line in completed.stdout.splitlines() if line.strip()]
     if len(rows) != 1:
         raise SystemExit("REFUSED: could not resolve one TEST database identity")

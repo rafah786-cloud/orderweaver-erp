@@ -3,7 +3,7 @@ import os, subprocess, sys, threading
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from accounting_test_target import load_managed_test_target, verify_and_display_identity
+from accounting_test_target import clean_psql_environment, load_managed_test_target, verify_and_display_identity
 
 TARGET=load_managed_test_target('ALLOW_PHASE1_DATABASE_TESTS')
 URL=TARGET.url
@@ -15,7 +15,7 @@ def psql(sql=None,file=None,tuples=False):
     if tuples: cmd += ['-At']
     if file: cmd += ['-f',str(file)]
     else: cmd += ['-c',sql]
-    return subprocess.run(cmd,text=True,capture_output=True,check=True).stdout.strip()
+    return subprocess.run(cmd,text=True,capture_output=True,check=True,env=clean_psql_environment()).stdout.strip()
 
 psql(file=ROOT/'accounting-phase1/tests/base_fixture.sql')
 psql(file=ROOT/'accounting-phase1/001_accounting_foundation.sql')
@@ -46,9 +46,6 @@ draft=q(f"SELECT id FROM create_gl_voucher('journal','2026-04-01',{entries(12)},
 check('draft_cancellation',lambda: q(f"SELECT id FROM cancel_gl_voucher('{draft}','test cancellation','2026-04-02')"))
 immutable=lambda: q(f"UPDATE vouchers SET narration='illegal' WHERE id='{original}'")
 expect_database_error('posted_immutability',immutable)
-check('closed_period_rejection',lambda: q("SELECT create_gl_voucher('journal','2025-04-01,'::jsonb)"))
-# replace malformed placeholder with an actual closed-year call expected to fail
-results.pop()
 try: q(f"SELECT create_gl_voucher('journal','2025-04-01',{entries(1)},NULL,NULL,'closed:one','posted')"); results.append(('closed_period_rejection','FAIL','accepted'))
 except Exception as e: results.append(('closed_period_rejection','PASS','rejected'))
 check('sales_atomic',lambda: q("INSERT INTO invoices(invoice_number,party_id,invoice_date,subtotal,tax_amount,total_amount,dispatch_state_code,supplier_gstin) VALUES('INV-T1','10000000-0000-0000-0000-000000000001','2026-04-03',1000,180,1180,'32','32AAAAA0000A1Z1') RETURNING id"))
