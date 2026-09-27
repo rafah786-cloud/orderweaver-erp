@@ -19,6 +19,16 @@ import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { createGlVoucher } from "@/lib/accounting.functions";
 
 export const Route = createFileRoute("/_app/accounting/vouchers/new")({
+  head: () => ({
+    meta: [
+      { title: "New Voucher | Mattress Maestro" },
+      { name: "description", content: "Create a balanced accounting voucher in Mattress Maestro." },
+      { property: "og:title", content: "New Voucher | Mattress Maestro" },
+      { property: "og:description", content: "Create a balanced accounting voucher in Mattress Maestro." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: NewVoucherPage,
 });
 
@@ -87,11 +97,11 @@ function NewVoucherPage() {
         idempotencyKey: idempotencyKey.current,
         status: "posted",
         entries: validLines.map((l, i) => ({
-        ledger_account_id: l.ledger_account_id,
-        debit: Number(l.debit || 0),
-        credit: Number(l.credit || 0),
-        narration: l.narration || undefined,
-        line_order: i + 1,
+          ledger_account_id: l.ledger_account_id,
+          debit: Number(l.debit || 0),
+          credit: Number(l.credit || 0),
+          narration: l.narration || undefined,
+          line_order: i + 1,
         })),
       } });
       const row = Array.isArray(result) ? result[0] : result;
