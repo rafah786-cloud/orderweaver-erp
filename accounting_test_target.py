@@ -10,6 +10,15 @@ from urllib.parse import parse_qs, unquote, urlparse
 PRODUCTION_PROJECT_REF = "ysaocrumxikgywdotkne"
 
 
+def clean_psql_environment() -> dict[str, str]:
+    """Never allow libpq to inherit another connection or session setting."""
+    return {
+        key: value for key, value in os.environ.items()
+        if not key.startswith(("PG", "SUPABASE_", "VITE_SUPABASE_"))
+        and key not in {"DATABASE_URL", "TEST_DATABASE_URL"}
+    }
+
+
 @dataclass(frozen=True)
 class ManagedTestTarget:
     url: str
@@ -72,6 +81,7 @@ def verify_and_display_identity(target: ManagedTestTarget) -> None:
         text=True,
         capture_output=True,
         check=True,
+        env=clean_psql_environment(),
     )
     rows = [line for line in completed.stdout.splitlines() if line.strip()]
     if len(rows) != 1:
