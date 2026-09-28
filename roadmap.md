@@ -11,6 +11,7 @@
   - [ ] Validate Phase 2 managed auth/RLS/pooling and copied-data reconciliation in a separate managed test project before any screen/workflow cutover (blocked: no separate managed project connected)
   - [x] Harden managed validation runners to require and display an explicit non-production TEST identity before mutating SQL
   - [x] Replace manual voucher and number-series client writes with the authenticated Phase 1 atomic posting function
+  - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation (blocked: a complete restorable production backup/restore point cannot be verified; no migrations or validation SQL run)
   - [ ] Phase 3 and later phases not started
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
