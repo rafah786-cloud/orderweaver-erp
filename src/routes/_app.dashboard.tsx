@@ -1,3 +1,4 @@
+import { AccountingPreflightButton } from "@/components/AccountingPreflightButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,7 @@ function DashboardPage() {
 
   return (
     <>
+      <AccountingPreflightButton />
       <PageBody className="dashboard-editorial space-y-8">
         <HeroSection name={profile?.full_name?.split(" ")[0] ?? ""} roles={roles} />
         <BrandShowcase />
