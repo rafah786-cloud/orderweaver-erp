@@ -30,15 +30,29 @@ describe("stock movements", () => {
     expect(db.openingUntouched()).toBe(true);
   });
 
-  it("preserves weighted value across a transfer", async () => {
+  it("uses signed on-hand value for running weighted average after issues", async () => {
+    const db = new IsolatedStockLedger([]);
+    await db.receive("foam", "main", 4, 10, "receipt-avg-a");
+    await db.receive("foam", "main", 2, 20, "receipt-avg-b");
+    const first = await db.issue("foam", "main", 3, "issue-avg-a");
+    expect(first.rate).toBeCloseTo(13.3333333333, 10);
+    const second = await db.issue("foam", "main", 1, "issue-avg-b");
+    expect(second.rate).toBeCloseTo(13.3333333333, 10);
+    expect(db.available("foam", "main")).toBe(2);
+    expect(db.weightedRate("foam", "main")).toBeCloseTo(13.3333333333, 10);
+  });
+
+  it("preserves weighted value across a transfer and values the destination", async () => {
     const db = new IsolatedStockLedger([]);
     await db.receive("foam", "main", 4, 10, "receipt-5a");
     await db.receive("foam", "main", 2, 20, "receipt-5b");
     const [out, incoming] = await db.transfer("foam", "main", "branch", 3, "transfer-valued");
-    expect(out.rate).toBe(13.333333333333334);
+    expect(out.rate).toBeCloseTo(13.333333333333334, 12);
     expect(out.amount).toBeCloseTo(40, 8);
     expect(incoming.rate).toBe(out.rate);
     expect(incoming.amount).toBeCloseTo(out.amount, 8);
+    expect(db.available("foam", "branch")).toBe(3);
+    expect(db.weightedRate("foam", "branch")).toBeCloseTo(out.rate, 12);
   });
 
   it("allows only one concurrent issue to consume the same quantity", async () => {
