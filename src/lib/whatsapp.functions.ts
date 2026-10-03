@@ -85,6 +85,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     z.object({
       bill_id: z.string().uuid(),
       event: z.enum(["created", "updated", "cancelled"]).default("created"),
+      // Legacy clients may include origin, but it must never select an outbound link.
       origin: z.string().url().optional(),
     }).parse(d),
   )
@@ -113,7 +114,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       await logWhatsAppNotification({ party_kind: "vendor", party_id: sup.id, event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
-    const po_url = data.origin ? `${data.origin}/print/purchase/${bill.id}` : "";
+    const po_url = `https://www.zizzmattress.com/print/purchase/${bill.id}`;
     const result = await sendForEvent({
       to,
       eventKey,
