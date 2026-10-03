@@ -76,7 +76,34 @@ export class IsolatedAccountingFixture {
   }
 }
 
-export class IsolatedVoucherPoster {
+export function prepareInvoiceVoucher(input: {
+  invoiceId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  partyLedgerId: string | null;
+  salesLedgerId: string | null;
+  subtotal: number;
+  taxAmount: number;
+  taxComponents?: { ledgerAccountId: string; amount: number }[];
+}) {
+  const key = `invoice:${input.invoiceId}`;
+  if (!input.partyLedgerId) return { ok: false as const, reason: "missing customer ledger", key };
+  if (!input.salesLedgerId) return { ok: false as const, reason: "missing Sales ledger", key };
+  if (input.taxAmount > 0 && !input.taxComponents?.length) return { ok: false as const, reason: "aggregate tax has no stored split", key };
+  const taxLines = input.taxComponents ?? [];
+  const entries = [
+    { ledger_account_id: input.partyLedgerId, debit: input.subtotal + input.taxAmount, credit: 0 },
+    { ledger_account_id: input.salesLedgerId, debit: 0, credit: input.subtotal },
+    ...taxLines.map((line) => ({ ledger_account_id: line.ledgerAccountId, debit: 0, credit: line.amount })),
+  ];
+  if (!validateGlLines(entries).valid) return { ok: false as const, reason: "unbalanced voucher", key };
+  return {
+    ok: true as const,
+    key,
+    call: { type: "sales", date: input.invoiceDate, entries, narration: `Invoice ${input.invoiceNumber}`, reference: input.invoiceNumber, idempotencyKey: key },
+  };
+}
+  export class IsolatedVoucherPoster {
   private next = 8;
   private consumed = 0;
   private rows = new Map<string, { id: string; number: string; key: string | null; lines: GlLineInput[] }>();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculatePeriodBalance, IsolatedAccountingFixture, IsolatedFinancialYearFixture, IsolatedVoucherPoster, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
+import { calculatePeriodBalance, IsolatedAccountingFixture, IsolatedFinancialYearFixture, IsolatedVoucherPoster, prepareInvoiceVoucher, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
 
 const a = "ledger-a";
 const b = "ledger-b";
@@ -113,5 +113,31 @@ describe("create_gl_voucher fixture", () => {
     await expect(db.post([{ ledger_account_id: "old", debit: 10, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 10 }], "voucher-key-4")).rejects.toThrow("inactive ledger");
     const closed = new IsolatedVoucherPoster(ledgers, false);
     await expect(closed.post(lines, "voucher-key-5", "2026-04-02")).rejects.toThrow("financial year");
+  });
+});
+
+describe("invoice voucher preparation", () => {
+  const base = { invoiceId: "inv-1", invoiceNumber: "INV-1", invoiceDate: "2026-04-01", partyLedgerId: "party-ledger", salesLedgerId: "sales-ledger", subtotal: 1000, taxAmount: 0 };
+
+  it("prepares a balanced sales voucher for the mapped customer ledger", () => {
+    const prepared = prepareInvoiceVoucher(base);
+    expect(prepared.ok).toBe(true);
+    if (!prepared.ok) return;
+    expect(prepared.call.entries).toEqual([
+      { ledger_account_id: "party-ledger", debit: 1000, credit: 0 },
+      { ledger_account_id: "sales-ledger", debit: 0, credit: 1000 },
+    ]);
+    expect(prepared.key).toBe("invoice:inv-1");
+    expect(validateGlLines(prepared.call.entries).valid).toBe(true);
+  });
+
+  it("does not invent a tax split when only aggregate tax is stored", () => {
+    const prepared = prepareInvoiceVoucher({ ...base, taxAmount: 180 });
+    expect(prepared).toMatchObject({ ok: false, reason: "aggregate tax has no stored split" });
+  });
+
+  it("reports a missing customer or Sales ledger", () => {
+    expect(prepareInvoiceVoucher({ ...base, partyLedgerId: null }).reason).toBe("missing customer ledger");
+    expect(prepareInvoiceVoucher({ ...base, salesLedgerId: null }).reason).toBe("missing Sales ledger");
   });
 });

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { uninstalledAccountingFunction } from "@/lib/accounting";
+import { prepareInvoiceVoucher } from "@/lib/accounting-foundation";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -175,13 +176,25 @@ function InvoicesPage() {
         }))
       );
       if (itemErr) throw itemErr;
-      // @ts-expect-error This RPC requires the unapplied accounting migration.
-      const { error: taxErr } = await supabase.rpc("snapshot_invoice_tax", { p_invoice: inv.id });
-      if (taxErr && !uninstalledAccountingFunction(taxErr)) throw taxErr;
-      return { id: inv.id as string, invoiceNumber, taxSnapshotted: !taxErr };
+      const { data: partyLedger } = await supabase.from("ledger_accounts").select("id").eq("mapped_party_id", partyId).maybeSingle();
+      const { data: salesLedger } = await supabase.from("ledger_accounts").select("id").eq("name", "Sales").maybeSingle();
+      const prepared = prepareInvoiceVoucher({
+        invoiceId: inv.id, invoiceNumber, invoiceDate, partyLedgerId: partyLedger?.id ?? null,
+        salesLedgerId: salesLedger?.id ?? null, subtotal, taxAmount: tax,
+      });
+      let posted = false;
+      if (prepared.ok) {
+        const { error: postErr } = await supabase.rpc("create_gl_voucher", {
+          _type: prepared.call.type, _date: prepared.call.date, _entries: prepared.call.entries,
+          _narration: prepared.call.narration, _reference: prepared.call.reference, _idempotency_key: prepared.call.idempotencyKey,
+        });
+        if (postErr && !uninstalledAccountingFunction(postErr)) throw postErr;
+        posted = !postErr;
+      }
+      return { id: inv.id as string, invoiceNumber, posted, postingReason: prepared.ok ? null : prepared.reason };
     },
     onSuccess: async (res) => {
-      toast.success(res.taxSnapshotted ? "Invoice created" : "Invoice created. Tax snapshot function is not installed.");
+      toast.success(res.posted ? "Invoice created and posted." : `Invoice created. Accounting not posted: ${res.postingReason ?? "create_gl_voucher is not installed"}.`);
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["party-outstanding"] });
       const savedParty = partyId;
