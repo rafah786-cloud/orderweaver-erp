@@ -8,7 +8,10 @@ async function adminDb(userId: string) {
   return supabaseAdmin;
 }
 
-const countOf = async (db: Awaited<ReturnType<typeof adminDb>>, table: string) => {
+const probe = async (db: Awaited<ReturnType<typeof adminDb>>, table: string, columns: string) => {
+  const { error } = await db.from(table).select(columns).limit(1);
+  return error ? error.message : "columns present";
+};
   const { count, error } = await db.from(table).select("id", { count: "exact", head: true });
   if (error) return { count: null, error: error.message };
   return { count: count ?? 0, error: null };
@@ -87,6 +90,9 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       purchases: await countOf(db, "purchase_bills"),
       bills,
       billAllocations: allocations,
+      billColumns: await probe(db, "bills", "party_kind, party_id, original_amount, external_ref"),
+      billAllocationColumns: await probe(db, "bill_allocations", "id, bill_id, amount"),
+      stockMovementColumns: await probe(db, "stock_movements", "stock_item_id, movement_type, quantity, narration"),
       rawMaterialStockQuantity: stock,
       stockMovements: await countOf(db, "stock_movements"),
       financialYears: yearRows,
