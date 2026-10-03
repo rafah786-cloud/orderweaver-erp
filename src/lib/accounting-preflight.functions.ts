@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function adminDb(userId: string) {
@@ -8,16 +9,19 @@ async function adminDb(userId: string) {
   return supabaseAdmin;
 }
 
-const probe = async (db: Awaited<ReturnType<typeof adminDb>>, table: string, columns: string) => {
+// These read-only checks include optional tables absent from the generated schema until migrations run.
+const probe = async (db: SupabaseClient, table: string, columns: string) => {
   const { error } = await db.from(table).select(columns).limit(1);
   return error ? error.message : "columns present";
 };
+
+const countOf = async (db: SupabaseClient, table: string) => {
   const { count, error } = await db.from(table).select("id", { count: "exact", head: true });
   if (error) return { count: null, error: error.message };
   return { count: count ?? 0, error: null };
 };
 
-async function sumColumn(db: Awaited<ReturnType<typeof adminDb>>, table: string, column: string) {
+async function sumColumn(db: SupabaseClient, table: string, column: string) {
   let from = 0;
   let total = 0;
   let rows = 0;
@@ -27,7 +31,7 @@ async function sumColumn(db: Awaited<ReturnType<typeof adminDb>>, table: string,
     if (error) return { total: null, rows, nonzero, error: error.message };
     const batch = data ?? [];
     for (const row of batch) {
-      const value = Number(row[column] ?? 0);
+      const value = Number(Object.values(row)[0] ?? 0);
       total += value;
       rows += 1;
       if (value !== 0) nonzero += 1;
