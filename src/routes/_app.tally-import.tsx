@@ -74,6 +74,7 @@ function TallyImportPage() {
   const [result, setResult] = useState<TallyImportResult | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
+  const accountingExport = !!parsed && (parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
 
   if (!hasRole("admin")) {
     return (
@@ -118,7 +119,7 @@ function TallyImportPage() {
   };
 
   const commit = async () => {
-    if (!parsed) return;
+    if (!parsed || accountingExport) return;
     setImporting(true);
     setResult(null);
 
@@ -152,8 +153,8 @@ function TallyImportPage() {
     push(parsed.vendors, MASTER_CHUNK, "vendors", "Vendors");
     push(parsed.rawMaterials, MASTER_CHUNK, "rawMaterials", "Raw materials");
     push(parsed.finishedGoods, MASTER_CHUNK, "finishedGoods", "Finished goods");
-    push(parsed.ledgerEntries, LEDGER_CHUNK, "ledgerEntries", "Ledger entries");
-    push(parsed.bills, LEDGER_CHUNK, "bills", "Bill references");
+    // Accounting exports must never be sent to the legacy master importer:
+    // it cannot persist every voucher leg or any bill allocation.
 
     // Aggregate results across chunks.
     const agg: TallyImportResult = {
@@ -290,13 +291,14 @@ function TallyImportPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-base">
                 <span>3. Preview & import</span>
-                <Button onClick={commit} disabled={importing} className="btn-3d">
+                <Button onClick={commit} disabled={importing || accountingExport} className="btn-3d">
                   <Upload className="h-4 w-4 mr-1" />
                   {importing ? "Importing…" : "Import to database"}
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {accountingExport && <p role="alert" className="mb-4 border border-warning/30 bg-warning/5 p-3 text-sm text-warning">Accounting transactions and bill references are available for review only. Import is paused because this importer cannot safely preserve every voucher leg and bill allocation. No accounting records will be uploaded.</p>}
               {progress && (
                 <div className="mb-4 space-y-1.5">
                   <div className="flex justify-between text-xs text-muted-foreground">
