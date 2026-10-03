@@ -1,0 +1,94 @@
+export type StockMovement = {
+  id: string;
+  itemId: string;
+  godownId: string;
+  type: "purchase" | "sale" | "transfer_in" | "transfer_out" | "opening";
+  quantity: number;
+  rate: number;
+  amount: number;
+  date: string;
+  source: string;
+  key: string | null;
+  reverses: string | null;
+};
+
+export class IsolatedStockLedger {
+  private rows: StockMovement[];
+  private seq = 1;
+  private queue = Promise.resolve();
+
+  constructor(opening: Array<{ itemId: string; godownId: string; quantity: number }>) {
+    this.rows = opening.map((row) => ({
+      id: `opening-${this.seq++}`, itemId: row.itemId, godownId: row.godownId, type: "opening",
+      quantity: row.quantity, rate: 0, amount: 0, date: "2025-04-01", source: "opening", key: null, reverses: null,
+    }));
+  }
+
+  private async locked<T>(work: () => T) {
+    let release: () => void = () => undefined;
+    const prior = this.queue;
+    this.queue = new Promise<void>((resolve) => { release = resolve; });
+    await prior;
+    try { return work(); } finally { release(); }
+  }
+
+  available(itemId: string, godownId: string) {
+    return this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId).reduce((sum, row) => {
+      return sum + (row.type === "sale" || row.type === "transfer_out" ? -row.quantity : row.quantity);
+    }, 0);
+  }
+
+  async receive(itemId: string, godownId: string, quantity: number, rate: number, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.find((row) => row.key === key);
+      if (existing) return existing;
+      if (quantity <= 0 || rate <= 0) throw new Error("invalid receipt");
+      const row: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId, type: "purchase", quantity, rate, amount: quantity * rate, date: "2026-04-01", source: "purchase", key, reverses: null };
+      this.rows.push(row);
+      return row;
+    });
+  }
+
+  async issue(itemId: string, godownId: string, quantity: number, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.find((row) => row.key === key);
+      if (existing) return existing;
+      if (this.available(itemId, godownId) < quantity) throw new Error("insufficient stock");
+      const inward = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId && row.rate > 0);
+      if (inward.length === 0) throw new Error("opening stock has no rate");
+      const rate = inward.reduce((sum, row) => sum + row.amount, 0) / inward.reduce((sum, row) => sum + row.quantity, 0);
+      const row: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId, type: "sale", quantity, rate, amount: quantity * rate, date: "2026-04-02", source: "dispatch", key, reverses: null };
+      this.rows.push(row);
+      return row;
+    });
+  }
+
+  async transfer(itemId: string, from: string, to: string, quantity: number, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.filter((row) => row.key === key);
+      if (existing.length) return existing;
+      if (from === to || this.available(itemId, from) < quantity) throw new Error("insufficient stock");
+      const out: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: from, type: "transfer_out", quantity, rate: 0, amount: 0, date: "2026-04-03", source: "transfer", key, reverses: null };
+      const inn: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: to, type: "transfer_in", quantity, rate: 0, amount: 0, date: "2026-04-03", source: "transfer", key, reverses: null };
+      this.rows.push(out, inn);
+      return [out, inn];
+    });
+  }
+
+  async reverse(id: string, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.find((row) => row.key === key);
+      if (existing) return existing;
+      const original = this.rows.find((row) => row.id === id);
+      if (!original || original.type === "opening") throw new Error("cannot reverse opening");
+      const opposite = original.type === "purchase" ? "sale" : original.type === "sale" ? "purchase" : original.type === "transfer_out" ? "transfer_in" : "transfer_out";
+      const row: StockMovement = { ...original, id: `mv-${this.seq++}`, type: opposite, key, reverses: original.id };
+      this.rows.push(row);
+      return row;
+    });
+  }
+
+  openingUntouched() {
+    return this.rows.filter((row) => row.type === "opening").every((row) => row.rate === 0 && row.amount === 0 && row.key === null);
+  }
+}
