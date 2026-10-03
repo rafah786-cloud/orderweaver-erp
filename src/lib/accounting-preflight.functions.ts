@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 async function adminDb(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -8,7 +9,7 @@ async function adminDb(userId: string) {
   return supabaseAdmin;
 }
 
-const countOf = async (db: Awaited<ReturnType<typeof adminDb>>, table: string) => {
+const countOf = async (db: Awaited<ReturnType<typeof adminDb>>, table: keyof Database["public"]["Tables"]) => {
   const { count, error } = await db.from(table).select("id", { count: "exact", head: true });
   if (error) return { count: null, error: error.message };
   return { count: count ?? 0, error: null };

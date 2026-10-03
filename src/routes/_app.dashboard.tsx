@@ -605,7 +605,7 @@ function CustomerPanels() {
 
   const outstanding = invoices
     .filter((i) => i.status === "unpaid" || i.status === "partial")
-    .reduce((s, i) => s + Number(i.outstanding ?? (Number(i.total_amount) - Number(i.paid_amount))), 0);
+    .reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
 
   return (
     <>

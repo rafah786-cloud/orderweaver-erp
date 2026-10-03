@@ -370,7 +370,7 @@ export async function receivables(db: Db) {
 export async function inventoryIntelligence(db: Db, days = 90) {
   const from = daysAgo(days);
   const [{ data: materials }, { data: purchases }, { data: boqUsage }] = await Promise.all([
-    db.from("raw_materials").select("id, code, name, unit, reorder_level"),
+    db.from("raw_materials").select("id, code, name, unit, reorder_level, current_stock"),
     db
       .from("purchase_bill_items")
       .select("raw_material_id, quantity, unit_price, purchase_bills!inner(bill_date)")
@@ -415,7 +415,7 @@ export async function inventoryIntelligence(db: Db, days = 90) {
   const items = (materials ?? []).map((m) => {
     const used = consumption.get(m.id) ?? 0;
     const perDay = used / days;
-    const stock = Number(m.on_hand ?? 0);
+    const stock = Number(m.current_stock ?? 0);
     const daysOfCover = perDay > 0 ? round(stock / perDay, 1) : null;
     const velocity: "fast" | "steady" | "slow" | "dormant" =
       perDay <= 0 ? "dormant" : daysOfCover != null && daysOfCover < 20 ? "fast" : daysOfCover != null && daysOfCover < 90 ? "steady" : "slow";
