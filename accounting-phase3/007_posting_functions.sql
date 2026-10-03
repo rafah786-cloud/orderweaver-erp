@@ -1,98 +1,84 @@
--- Not applied. Matches the live voucher, bill, and invoice tables.
--- Creates functions only. Does not update the existing 7 vouchers, 330 bills, invoices, or stock.
+-- NOT INSTALLED.
+-- Compatibility posting functions for the live schema.
+-- Prerequisite: accounting-phase3/006_gl_voucher.sql must be installed first.
+-- This file intentionally does NOT rewrite historical vouchers, bills, invoices or stock.
+-- It does NOT invent tax splits and does NOT assume a global "Debtors" ledger.
 
-CREATE OR REPLACE FUNCTION public.create_gl_voucher(
-  _type text, _date date, _entries jsonb, _narration text, _reference text, _idempotency_key text, _status text DEFAULT 'posted'
-) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE existing uuid; voucher uuid; next_no integer; prefix text; width integer; suffix text; debit numeric := 0; credit numeric := 0; line jsonb;
+CREATE OR REPLACE FUNCTION public.ensure_invoice_bill(p_invoice uuid)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE existing uuid; inv record; party_ledger uuid; sales_ledger uuid; voucher_id uuid; voucher_entry_id uuid; created uuid;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin') THEN RAISE EXCEPTION 'admin only'; END IF;
-  SELECT id INTO existing FROM public.vouchers WHERE reference = _idempotency_key LIMIT 1;
+  SELECT id INTO existing FROM public.bills WHERE source_invoice_id = p_invoice;
   IF existing IS NOT NULL THEN RETURN existing; END IF;
-  FOR line IN SELECT value FROM jsonb_array_elements(_entries) LOOP
-    debit := debit + COALESCE((line->>'debit')::numeric, 0);
-    credit := credit + COALESCE((line->>'credit')::numeric, 0);
-  END LOOP;
-  IF round(debit - credit, 2) <> 0 OR debit <= 0 THEN RAISE EXCEPTION 'unbalanced voucher'; END IF;
-  UPDATE public.voucher_number_series SET next_number = next_number + 1
-  WHERE voucher_type = _type::public.voucher_type
-  RETURNING next_number - 1, prefix, width, suffix INTO next_no, prefix, width, suffix;
-  IF next_no IS NULL THEN RAISE EXCEPTION 'voucher series missing'; END IF;
-  INSERT INTO public.vouchers (voucher_type, voucher_date, voucher_number, narration, reference, is_locked)
-  VALUES (_type::public.voucher_type, _date, prefix || lpad(next_no::text, width, '0') || suffix, concat_ws(' | ', _narration, _reference), _idempotency_key, true)
-  RETURNING id INTO voucher;
-  INSERT INTO public.voucher_entries (voucher_id, ledger_account_id, debit, credit, line_order)
-  SELECT voucher, (line->>'ledger_account_id')::uuid, COALESCE((line->>'debit')::numeric, 0), COALESCE((line->>'credit')::numeric, 0), ordinality::integer
-  FROM jsonb_array_elements(_entries) WITH ORDINALITY AS t(line, ordinality);
-  RETURN voucher;
-END $$;
-
-CREATE OR REPLACE FUNCTION public.reverse_gl_voucher(_id uuid, _date date, _reason text)
-RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE original public.vouchers%ROWTYPE; entries jsonb;
-BEGIN
-  SELECT * INTO original FROM public.vouchers WHERE id = _id;
-  IF original.id IS NULL THEN RAISE EXCEPTION 'voucher missing'; END IF;
-  SELECT jsonb_agg(jsonb_build_object('ledger_account_id', ledger_account_id, 'debit', credit, 'credit', debit)) INTO entries
-  FROM public.voucher_entries WHERE voucher_id = _id;
-  RETURN public.create_gl_voucher(original.voucher_type::text, _date, entries, 'Reversal: ' || COALESCE(_reason, ''), original.voucher_number, 'reversal:' || _id::text, 'posted');
-END $$;
-
-CREATE OR REPLACE FUNCTION public.cancel_gl_voucher(_id uuid, _date date, _reason text)
-RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN RETURN public.reverse_gl_voucher(_id, _date, _reason); END $$;
-
-CREATE OR REPLACE FUNCTION public.snapshot_invoice_tax(p_invoice uuid)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE inv record;
-BEGIN
-  SELECT subtotal, tax_amount INTO inv FROM public.invoices WHERE id = p_invoice;
-  IF inv.subtotal IS NULL THEN RAISE EXCEPTION 'invoice missing'; END IF;
-  INSERT INTO public.invoice_tax_snapshots (invoice_id, taxable_value, igst, cgst, sgst, cess)
-  VALUES (p_invoice, inv.subtotal, 0, inv.tax_amount, 0, 0)
-  ON CONFLICT (invoice_id) DO UPDATE SET taxable_value = EXCLUDED.taxable_value, cgst = EXCLUDED.cgst;
+  SELECT * INTO inv FROM public.invoices WHERE id = p_invoice FOR UPDATE;
+  IF inv.id IS NULL THEN RAISE EXCEPTION 'invoice missing'; END IF;
+  IF inv.party_id IS NULL THEN RAISE EXCEPTION 'invoice party missing'; END IF;
+  party_ledger := public.get_or_create_party_ledger(inv.party_id);
+  SELECT id INTO sales_ledger FROM public.ledger_accounts WHERE name = 'Sales' AND is_active LIMIT 1;
+  IF sales_ledger IS NULL THEN RAISE EXCEPTION 'Sales ledger required'; END IF;
+  SELECT x.id INTO voucher_id
+  FROM public.create_gl_voucher('sales', COALESCE(inv.invoice_date, CURRENT_DATE),
+    jsonb_build_array(
+      jsonb_build_object('ledger_account_id', party_ledger, 'debit', inv.total_amount, 'credit', 0),
+      jsonb_build_object('ledger_account_id', sales_ledger, 'debit', 0, 'credit', inv.total_amount)
+    ), 'Invoice bill', inv.invoice_number, 'invoice:' || p_invoice::text) AS x;
+  SELECT ve.id INTO voucher_entry_id FROM public.voucher_entries ve WHERE ve.voucher_id = voucher_id ORDER BY ve.line_order LIMIT 1;
+  INSERT INTO public.bills(party_kind, party_id, ledger_account_id, bill_reference, bill_date, due_date, reference_type, original_amount, source_voucher_id, source_voucher_entry_id, external_ref, source_invoice_id)
+  VALUES ('customer', inv.party_id, party_ledger, inv.invoice_number, COALESCE(inv.invoice_date, CURRENT_DATE), inv.due_date, 'new_ref', inv.total_amount, voucher_id, voucher_entry_id, 'invoice:' || p_invoice::text, p_invoice)
+  RETURNING id INTO created;
+  RETURN created;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.record_invoice_receipt(p_invoice uuid, p_amount numeric, p_idempotency text)
 RETURNS numeric LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE inv record; bill uuid; cash uuid; debtors uuid; voucher uuid; entry uuid;
+DECLARE existing uuid; bill uuid; inv record; party_ledger uuid; cash uuid; voucher_id uuid; voucher_entry_id uuid; outstanding numeric;
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.bill_allocations WHERE idempotency_key = p_idempotency) THEN
-    RETURN public.bill_outstanding((SELECT id FROM public.bills WHERE source_invoice_id = p_invoice LIMIT 1));
-  END IF;
-  SELECT * INTO inv FROM public.invoices WHERE id = p_invoice;
+  IF p_amount <= 0 THEN RAISE EXCEPTION 'receipt amount must be positive'; END IF;
+  IF p_idempotency IS NULL OR length(trim(p_idempotency)) < 8 THEN RAISE EXCEPTION 'idempotency key required'; END IF;
+  SELECT id INTO existing FROM public.bill_allocations WHERE idempotency_key = p_idempotency;
+  IF existing IS NOT NULL THEN RETURN public.bill_outstanding(p_invoice); END IF;
+  SELECT * INTO inv FROM public.invoices WHERE id = p_invoice FOR UPDATE;
   IF inv.id IS NULL THEN RAISE EXCEPTION 'invoice missing'; END IF;
-  SELECT id INTO bill FROM public.bills WHERE source_invoice_id = p_invoice LIMIT 1;
-  SELECT id INTO cash FROM public.ledger_accounts WHERE name = 'Cash' LIMIT 1;
-  SELECT id INTO debtors FROM public.ledger_accounts WHERE name = 'Debtors' LIMIT 1;
-  IF cash IS NULL OR debtors IS NULL THEN RAISE EXCEPTION 'Cash or Debtors ledger required'; END IF;
-  voucher := public.create_gl_voucher('receipt', CURRENT_DATE, jsonb_build_array(
-    jsonb_build_object('ledger_account_id', cash, 'debit', p_amount, 'credit', 0),
-    jsonb_build_object('ledger_account_id', debtors, 'debit', 0, 'credit', p_amount)
-  ), 'Invoice receipt', inv.invoice_number, p_idempotency, 'posted');
-  SELECT id INTO entry FROM public.voucher_entries WHERE voucher_id = voucher ORDER BY line_order LIMIT 1;
-  IF bill IS NOT NULL THEN
-    INSERT INTO public.bill_allocations (bill_id, settlement_voucher_id, settlement_voucher_entry_id, allocation_type, amount, effect, idempotency_key)
-    VALUES (bill, voucher, entry, 'against_ref', p_amount, 1, p_idempotency);
-  END IF;
-  UPDATE public.invoices SET paid_amount = paid_amount + p_amount,
-    status = CASE WHEN paid_amount + p_amount >= total_amount - 0.01 THEN 'paid' ELSE 'partial' END
+  IF inv.status = 'cancelled' THEN RAISE EXCEPTION 'invoice cancelled'; END IF;
+  bill := public.ensure_invoice_bill(p_invoice);
+  PERFORM 1 FROM public.bills WHERE id = bill FOR UPDATE;
+  outstanding := public.bill_outstanding(bill);
+  IF p_amount > outstanding + 0.01 THEN RAISE EXCEPTION 'settlement exceeds outstanding'; END IF;
+  party_ledger := public.get_or_create_party_ledger(inv.party_id);
+  SELECT id INTO cash FROM public.ledger_accounts WHERE name = 'Cash' AND is_active LIMIT 1;
+  IF cash IS NULL THEN RAISE EXCEPTION 'Cash ledger required'; END IF;
+  SELECT x.id INTO voucher_id
+  FROM public.create_gl_voucher('receipt', CURRENT_DATE,
+    jsonb_build_array(
+      jsonb_build_object('ledger_account_id', cash, 'debit', p_amount, 'credit', 0),
+      jsonb_build_object('ledger_account_id', party_ledger, 'debit', 0, 'credit', p_amount)
+    ), 'Invoice receipt', inv.invoice_number, p_idempotency) AS x;
+  SELECT ve.id INTO voucher_entry_id FROM public.voucher_entries ve WHERE ve.voucher_id = voucher_id ORDER BY ve.line_order LIMIT 1;
+  INSERT INTO public.bill_allocations(bill_id, settlement_voucher_id, settlement_voucher_entry_id, allocation_type, allocation_date, amount, effect, idempotency_key)
+  VALUES (bill, voucher_id, voucher_entry_id, 'against_ref', CURRENT_DATE, p_amount, 1, p_idempotency);
+  UPDATE public.invoices
+  SET paid_amount = inv.total_amount - public.bill_outstanding(bill),
+      status = CASE WHEN public.bill_outstanding(bill) <= 0.01 THEN 'paid' ELSE 'partial' END
   WHERE id = p_invoice;
-  RETURN inv.total_amount - inv.paid_amount - p_amount;
+  RETURN public.bill_outstanding(bill);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.reverse_invoice(p_invoice uuid, p_idempotency text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE inv record; debtors uuid; sales uuid;
+DECLARE existing uuid; inv record; bill record; reversal uuid;
 BEGIN
-  SELECT * INTO inv FROM public.invoices WHERE id = p_invoice;
+  IF p_idempotency IS NULL OR length(trim(p_idempotency)) < 8 THEN RAISE EXCEPTION 'idempotency key required'; END IF;
+  SELECT id INTO existing FROM public.vouchers WHERE idempotency_key = p_idempotency;
+  IF existing IS NOT NULL THEN RETURN existing; END IF;
+  SELECT * INTO inv FROM public.invoices WHERE id = p_invoice FOR UPDATE;
   IF inv.id IS NULL THEN RAISE EXCEPTION 'invoice missing'; END IF;
-  SELECT id INTO debtors FROM public.ledger_accounts WHERE name = 'Debtors' LIMIT 1;
-  SELECT id INTO sales FROM public.ledger_accounts WHERE name = 'Sales' LIMIT 1;
-  IF debtors IS NULL OR sales IS NULL THEN RAISE EXCEPTION 'Debtors or Sales ledger required'; END IF;
+  IF inv.status = 'cancelled' THEN RAISE EXCEPTION 'invoice already cancelled'; END IF;
+  SELECT * INTO bill FROM public.bills WHERE source_invoice_id = p_invoice LIMIT 1 FOR UPDATE;
+  IF bill.id IS NULL OR bill.source_voucher_id IS NULL THEN RAISE EXCEPTION 'invoice has no source voucher; refusing to invent reversal'; END IF;
+  reversal := public.reverse_gl_voucher(bill.source_voucher_id, CURRENT_DATE, 'Invoice reversal');
+  UPDATE public.bills SET status = 'cancelled' WHERE id = bill.id;
   UPDATE public.invoices SET status = 'cancelled' WHERE id = p_invoice;
-  RETURN public.create_gl_voucher('credit_note', CURRENT_DATE, jsonb_build_array(
-    jsonb_build_object('ledger_account_id', sales, 'debit', inv.total_amount, 'credit', 0),
-    jsonb_build_object('ledger_account_id', debtors, 'debit', 0, 'credit', inv.total_amount)
-  ), 'Invoice cancellation', inv.invoice_number, p_idempotency, 'posted');
+  RETURN reversal;
 END $$;
+
+-- Tax snapshot intentionally remains unimplemented here. The current invoice schema stores aggregate tax_amount but not CGST/SGST/IGST/cess components. A tax split must never be invented.
