@@ -133,8 +133,15 @@ function PartiesPage() {
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error("Name is required");
       const payload = {
-        ...form,
+        name: form.name,
+        contact_person: form.contact_person,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        gstin: form.gstin,
         credit_limit: Number(form.credit_limit) || 0,
+        notes: form.notes,
+        opening_balance: Number(form.opening_balance) || 0,
       };
       if (editing) {
         const { error } = await supabase.from("parties").update(payload).eq("id", editing.id);
@@ -333,7 +340,7 @@ function PartiesPage() {
             <Field label="Credit Limit (₹)"><Input type="number" value={form.credit_limit} onChange={(e) => setForm({ ...form, credit_limit: Number(e.target.value) })} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Opening Balance (₹)"><Input type="number" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: Number(e.target.value) })} /></Field>
-              <Field label="Closing Balance (₹)"><Input type="number" value={form.current_balance} onChange={(e) => setForm({ ...form, current_balance: Number(e.target.value) })} /></Field>
+              <Field label="Closing Balance (₹)"><Input type="number" value={form.current_balance} disabled readOnly /></Field>
             </div>
             <Field label="Notes"><Textarea rows={2} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
           </div>
