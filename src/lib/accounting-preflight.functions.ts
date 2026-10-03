@@ -12,6 +12,8 @@ const probe = async (db: Awaited<ReturnType<typeof adminDb>>, table: string, col
   const { error } = await db.from(table).select(columns).limit(1);
   return error ? error.message : "columns present";
 };
+
+const countOf = async (db: Awaited<ReturnType<typeof adminDb>>, table: string) => {
   const { count, error } = await db.from(table).select("id", { count: "exact", head: true });
   if (error) return { count: null, error: error.message };
   return { count: count ?? 0, error: null };
