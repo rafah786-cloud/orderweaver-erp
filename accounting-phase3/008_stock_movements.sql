@@ -76,9 +76,7 @@ BEGIN
 
   IF available < p_qty THEN RAISE EXCEPTION 'insufficient stock'; END IF;
 
-  -- Calculate running weighted average from the signed inventory balance.
-  -- Do not divide total positive movement value by total positive movement quantity:
-  -- issue rows must reduce both value and quantity.
+  -- Calculate weighted-average cost from the signed running inventory balance.
   SELECT
     COALESCE(sum(CASE WHEN movement_type IN ('sale','transfer_out','production_out') THEN -amount ELSE amount END), 0),
     COALESCE(sum(CASE WHEN movement_type IN ('sale','transfer_out','production_out') THEN -quantity ELSE quantity END), 0)
@@ -110,11 +108,12 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   existing uuid;
   out_id uuid;
-  in_id uuid;
   from_available numeric;
   from_value numeric;
   from_qty numeric;
   rate numeric;
+  out_key text;
+  in_key text;
 BEGIN
   IF p_key IS NULL OR btrim(p_key) = '' THEN RAISE EXCEPTION 'idempotency key required'; END IF;
   SELECT id INTO existing FROM public.stock_movements WHERE idempotency_key = p_key LIMIT 1;
@@ -122,7 +121,6 @@ BEGIN
   IF p_from_godown IS NULL OR p_to_godown IS NULL OR p_from_godown = p_to_godown THEN RAISE EXCEPTION 'invalid godown transfer'; END IF;
   IF p_qty <= 0 THEN RAISE EXCEPTION 'invalid transfer'; END IF;
 
-  -- Lock the item row first; both godown balances therefore serialize on the same item.
   PERFORM 1 FROM public.stock_items WHERE id = p_item FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'stock item not found'; END IF;
 
@@ -141,15 +139,20 @@ BEGIN
   IF from_qty <= 0 OR from_value <= 0 THEN RAISE EXCEPTION 'source stock has no rated value'; END IF;
   rate := from_value / from_qty;
 
+  -- A transfer creates two physical movements. Their keys must be distinct
+  -- because idempotency_key is unique, while the caller's key identifies the
+  -- business operation as a whole.
+  out_key := p_key || ':out';
+  in_key := p_key || ':in';
+
   INSERT INTO public.stock_movements
     (stock_item_id, godown_id, movement_type, quantity, rate, amount, movement_date, source_table, idempotency_key)
-  VALUES (p_item, p_from_godown, 'transfer_out', p_qty, rate, round(p_qty * rate, 2), p_date, 'stock_transfer', p_key)
+  VALUES (p_item, p_from_godown, 'transfer_out', p_qty, rate, round(p_qty * rate, 2), p_date, 'stock_transfer', out_key)
   RETURNING id INTO out_id;
 
   INSERT INTO public.stock_movements
     (stock_item_id, godown_id, movement_type, quantity, rate, amount, movement_date, source_table, idempotency_key)
-  VALUES (p_item, p_to_godown, 'transfer_in', p_qty, rate, round(p_qty * rate, 2), p_date, 'stock_transfer', p_key)
-  RETURNING id INTO in_id;
+  VALUES (p_item, p_to_godown, 'transfer_in', p_qty, rate, round(p_qty * rate, 2), p_date, 'stock_transfer', in_key);
 
   RETURN out_id;
 END $$;
