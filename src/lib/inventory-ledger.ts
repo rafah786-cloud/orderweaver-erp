@@ -69,10 +69,16 @@ export class IsolatedStockLedger {
   }
 
   weightedRate(itemId: string, godownId: string) {
-    const inward = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId && row.rate > 0 && ["purchase", "transfer_in"].includes(row.type));
-    const qty = inward.reduce((sum, row) => sum + row.quantity, 0);
-    if (qty <= 0) return 0;
-    return inward.reduce((sum, row) => sum + row.amount, 0) / qty;
+    const rows = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId);
+    const quantity = rows.reduce((sum, row) => {
+      return sum + (["sale", "transfer_out"].includes(row.type) ? -row.quantity : row.quantity);
+    }, 0);
+    if (quantity <= 0) return 0;
+    const value = rows.reduce((sum, row) => {
+      if (row.type === "sale" || row.type === "transfer_out") return sum - row.amount;
+      return sum + row.amount;
+    }, 0);
+    return value > 0 ? value / quantity : 0;
   }
 
   async receive(itemId: string, godownId: string, quantity: number, rate: number, key: string) {
