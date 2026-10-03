@@ -12,6 +12,24 @@ export type StockMovement = {
   reverses: string | null;
 };
 
+export function resolveStockItem(matches: string[]) {
+  if (matches.length !== 1) return { ok: false as const, reason: matches.length === 0 ? "no stock item" : "ambiguous stock item" };
+  return { ok: true as const, stockItemId: matches[0] };
+}
+
+export function applyDocumentTransition(kind: "purchase" | "sales", status: string, next: string, lines: Array<{ id: string; matches: string[] }>) {
+  if (kind === "purchase" && next !== "received") return { movements: [], status: next };
+  if (kind === "sales" && next !== "dispatched") return { movements: [], status: next };
+  if ((kind === "purchase" && status === "received") || (kind === "sales" && status === "dispatched")) return { movements: [], status };
+  const movements = [];
+  for (const line of lines) {
+    const item = resolveStockItem(line.matches);
+    if (!item.ok) return { movements: [], status, reason: item.reason };
+    movements.push({ key: `${next}:${line.id}`, stockItemId: item.stockItemId });
+  }
+  return { movements, status: next };
+}
+
 export function planPurchaseReceipt(status: "draft" | "received", items: Array<{ id: string; quantity: number; rate: number }>) {
   if (status !== "received") return [];
   return items.map((item) => ({ key: `receipt:${item.id}`, quantity: item.quantity, rate: item.rate, source: item.id }));

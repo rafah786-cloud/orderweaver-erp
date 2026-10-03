@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IsolatedStockLedger, planPurchaseReceipt, planSalesDispatch } from "./inventory-ledger";
+import { IsolatedStockLedger, planPurchaseReceipt, planSalesDispatch, applyDocumentTransition } from "./inventory-ledger";
 
 const opening = [{ itemId: "foam", godownId: "main", quantity: 10 }];
 
@@ -52,5 +52,17 @@ describe("purchase and sales stock plans", () => {
     expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 1, ratedQuantity: 5, alreadyDispatched: false }).reason).toBe("insufficient stock");
     expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 5, ratedQuantity: 0, alreadyDispatched: false }).reason).toBe("opening stock has no rate");
     expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 5, ratedQuantity: 5, alreadyDispatched: true }).reason).toBe("already dispatched");
+  });
+
+  it("posts one movement only on receive or dispatch and rejects an ambiguous item", () => {
+    const line = [{ id: "line-1", matches: ["item-1"] }];
+    expect(applyDocumentTransition("purchase", "draft", "draft", line).movements).toEqual([]);
+    expect(applyDocumentTransition("purchase", "draft", "cancelled", line).movements).toEqual([]);
+    expect(applyDocumentTransition("purchase", "draft", "received", line).movements).toHaveLength(1);
+    expect(applyDocumentTransition("purchase", "received", "received", line).movements).toEqual([]);
+    expect(applyDocumentTransition("sales", "confirmed", "confirmed", line).movements).toEqual([]);
+    expect(applyDocumentTransition("sales", "confirmed", "dispatched", line).movements).toHaveLength(1);
+    expect(applyDocumentTransition("sales", "dispatched", "dispatched", line).movements).toEqual([]);
+    expect(applyDocumentTransition("purchase", "draft", "received", [{ id: "line-1", matches: ["a", "b"] }]).reason).toBe("ambiguous stock item");
   });
 });
