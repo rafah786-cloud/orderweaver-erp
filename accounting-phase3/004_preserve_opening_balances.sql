@@ -67,28 +67,7 @@ WHERE rm.current_stock <> 0
     WHERE sm.stock_item_id = si.id AND sm.movement_type = 'opening'
   );
 
--- Opening customer bills only when the canonical bill table has the expected columns.
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'bills' AND column_name = 'original_amount'
-  ) AND EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'bills' AND column_name = 'party_id'
-  ) AND EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'bills' AND column_name = 'external_ref'
-  ) THEN
-    INSERT INTO public.bills (party_kind, party_id, original_amount, external_ref)
-    SELECT 'customer', p.id, p.current_balance, 'opening:' || p.id::text
-    FROM public.parties p
-    WHERE p.current_balance <> 0
-      AND NOT EXISTS (
-        SELECT 1 FROM public.bills b
-        WHERE b.external_ref = 'opening:' || p.id::text
-      );
-  END IF;
-END $$;
+-- Live preflight on 2026-10-03: public.bills does not exist.
+-- The snapshot above is the preservation record. Do not create bill rows here.
 
 COMMIT;
