@@ -76,6 +76,47 @@ export class IsolatedAccountingFixture {
   }
 }
 
+export class IsolatedVoucherPoster {
+  private next = 8;
+  private consumed = 0;
+  private rows = new Map<string, { id: string; number: string; key: string | null; lines: GlLineInput[] }>();
+  private queue = Promise.resolve();
+  readonly historical = Array.from({ length: 7 }, (_, index) => ({ id: `existing-${index + 1}`, number: `SAL/${index + 1}`, key: null }));
+
+  constructor(private readonly ledgers: Record<string, { active: boolean }>, private readonly yearOpen = true) {
+    this.historical.forEach((row) => this.rows.set(row.id, { ...row, lines: [] }));
+  }
+
+  async post(lines: GlLineInput[], key: string, date = "2026-04-01") {
+    let release = () => undefined;
+    const prior = this.queue;
+    this.queue = new Promise<void>((resolve) => { release = resolve; });
+    await prior;
+    try {
+      const duplicate = [...this.rows.values()].find((row) => row.key === key);
+      if (duplicate) return { id: duplicate.id, voucherNumber: duplicate.number, created: false };
+      if (!this.yearOpen || date < "2025-04-01" || date > "2027-03-31") throw new Error("closed or missing financial year");
+      if (lines.length < 2) throw new Error("at least two entries required");
+      for (const line of lines) {
+        const ledger = this.ledgers[line.ledger_account_id];
+        if (!ledger) throw new Error("invalid ledger");
+        if (!ledger.active) throw new Error("inactive ledger");
+        if (line.debit < 0 || line.credit < 0 || (line.debit > 0) === (line.credit > 0)) throw new Error("entry must have one side");
+      }
+      if (!validateGlLines(lines).valid) throw new Error("unbalanced voucher");
+      const number = `SAL/${this.next}`;
+      this.next += 1;
+      this.consumed += 1;
+      const id = `new-${this.consumed}`;
+      this.rows.set(id, { id, number, key, lines });
+      return { id, voucherNumber: number, created: true };
+    } finally { release(); }
+  }
+
+  series() { return this.next; }
+  historicalUntouched() { return this.historical.every((row) => this.rows.get(row.id)?.key === null); }
+}
+
 export class IsolatedFinancialYearFixture {
   status: "open" | "closed" = "open";
   events: Array<{ action: "closed" | "reopened"; reason?: string }> = [];

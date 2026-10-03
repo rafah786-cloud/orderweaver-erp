@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculatePeriodBalance, IsolatedAccountingFixture, IsolatedFinancialYearFixture, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
+import { calculatePeriodBalance, IsolatedAccountingFixture, IsolatedFinancialYearFixture, IsolatedVoucherPoster, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
 
 const a = "ledger-a";
 const b = "ledger-b";
@@ -80,5 +80,38 @@ describe("Phase 1 accounting foundation", () => {
     year.reopen("Approved correction");
     expect(year.accepts("2026-09-01")).toBe(true);
     expect(year.events).toEqual([{ action: "closed" }, { action: "reopened", reason: "Approved correction" }]);
+  });
+});
+
+describe("create_gl_voucher fixture", () => {
+  const ledgers = { a: { active: true }, b: { active: true }, old: { active: false } };
+  const lines = [{ ledger_account_id: "a", debit: 100, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 100 }];
+
+  it("posts a balanced voucher and leaves the existing seven untouched", async () => {
+    const db = new IsolatedVoucherPoster(ledgers);
+    const posted = await db.post(lines, "voucher-key-1");
+    expect(posted).toEqual({ id: "new-1", voucherNumber: "SAL/8", created: true });
+    expect(db.historicalUntouched()).toBe(true);
+  });
+
+  it("rejects an unbalanced voucher without consuming a number", async () => {
+    const db = new IsolatedVoucherPoster(ledgers);
+    await expect(db.post([{ ledger_account_id: "a", debit: 100, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 90 }], "voucher-key-2")).rejects.toThrow("unbalanced");
+    expect(db.series()).toBe(8);
+  });
+
+  it("returns the same voucher for a duplicate key, including concurrent calls", async () => {
+    const db = new IsolatedVoucherPoster(ledgers);
+    const [first, second] = await Promise.all([db.post(lines, "same-key-1"), db.post(lines, "same-key-1")]);
+    expect(first.id).toBe(second.id);
+    expect(db.series()).toBe(9);
+  });
+
+  it("rejects an invalid or inactive ledger and a closed year", async () => {
+    const db = new IsolatedVoucherPoster(ledgers);
+    await expect(db.post([{ ledger_account_id: "missing", debit: 10, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 10 }], "voucher-key-3")).rejects.toThrow("invalid ledger");
+    await expect(db.post([{ ledger_account_id: "old", debit: 10, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 10 }], "voucher-key-4")).rejects.toThrow("inactive ledger");
+    const closed = new IsolatedVoucherPoster(ledgers, false);
+    await expect(closed.post(lines, "voucher-key-5", "2026-04-02")).rejects.toThrow("financial year");
   });
 });
