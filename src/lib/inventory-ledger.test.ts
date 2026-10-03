@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IsolatedStockLedger } from "./inventory-ledger";
+import { IsolatedStockLedger, planPurchaseReceipt, planSalesDispatch } from "./inventory-ledger";
 
 const opening = [{ itemId: "foam", godownId: "main", quantity: 10 }];
 
@@ -36,5 +36,21 @@ describe("stock movements", () => {
     const results = await Promise.allSettled([db.issue("foam", "main", 1, "issue-a"), db.issue("foam", "main", 1, "issue-b")]);
     expect(results.filter((row) => row.status === "fulfilled")).toHaveLength(1);
     expect(results.filter((row) => row.status === "rejected")).toHaveLength(1);
+  });
+});
+
+describe("purchase and sales stock plans", () => {
+  it("creates no receipt for a draft and one receipt when received", () => {
+    expect(planPurchaseReceipt("draft", [{ id: "line-1", quantity: 2, rate: 5 }])).toEqual([]);
+    const received = planPurchaseReceipt("received", [{ id: "line-1", quantity: 2, rate: 5 }]);
+    expect(received).toHaveLength(1);
+    expect(planPurchaseReceipt("received", [{ id: "line-1", quantity: 2, rate: 5 }])[0].key).toBe(received[0].key);
+  });
+
+  it("does not reserve a sales order and rejects a repeated or unrated dispatch", () => {
+    expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 5, ratedQuantity: 5, alreadyDispatched: false })).toMatchObject({ reserved: 0, key: "dispatch:so-1" });
+    expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 1, ratedQuantity: 5, alreadyDispatched: false }).reason).toBe("insufficient stock");
+    expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 5, ratedQuantity: 0, alreadyDispatched: false }).reason).toBe("opening stock has no rate");
+    expect(planSalesDispatch({ orderId: "so-1", ordered: 2, available: 5, ratedQuantity: 5, alreadyDispatched: true }).reason).toBe("already dispatched");
   });
 });

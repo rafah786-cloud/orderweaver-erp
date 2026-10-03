@@ -139,13 +139,10 @@ function SalesOrdersPage() {
         })),
       );
       if (itemErr) throw itemErr;
-      // @ts-expect-error This RPC requires the unapplied accounting migration.
-      const { error: reserveErr } = await supabase.rpc("reserve_sales_order", { p_order: so.id });
-      if (reserveErr && !uninstalledAccountingFunction(reserveErr)) throw reserveErr;
-      return { id: so.id as string, orderNumber, reserved: !reserveErr };
+      return { id: so.id as string, orderNumber };
     },
     onSuccess: async (res) => {
-      toast.success(res.reserved ? "Sales order created and stock reserved." : "Sales order created. Stock reservation is not installed.");
+      toast.success("Sales order created. Ordered quantity is saved. Nothing is reserved or dispatched.");
       qc.invalidateQueries({ queryKey: ["sales-orders"] });
       qc.invalidateQueries({ queryKey: ["production-orders"] });
       setOpen(false);
@@ -201,14 +198,16 @@ function SalesOrdersPage() {
                   <TableHead>Party</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Expected</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Ordered</TableHead>
+                  <TableHead className="text-right">Reserved</TableHead>
+                  <TableHead className="text-right">Dispatched</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : orders.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">No sales orders yet.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No sales orders yet.</TableCell></TableRow>
                 ) : orders.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-medium">{o.order_number}</TableCell>
@@ -216,6 +215,8 @@ function SalesOrdersPage() {
                     <TableCell>{formatDate(o.order_date)}</TableCell>
                     <TableCell>{formatDate(o.expected_delivery)}</TableCell>
                     <TableCell className="text-right font-medium">{inr(o.total_amount)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">0</TableCell>
+                    <TableCell className="text-right text-muted-foreground">0</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

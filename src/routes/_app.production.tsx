@@ -99,8 +99,9 @@ function ProductionPage() {
         if (bomErr && !uninstalledAccountingFunction(bomErr)) throw bomErr;
       }
       if (next === "dispatched" && o.sales_order_id) {
-        // @ts-expect-error This RPC requires the unapplied accounting migration.
-        const { error: stockErr } = await supabase.rpc("dispatch_sales_order", { p_order: o.sales_order_id });
+        const { error: stockErr } = await supabase.rpc("post_stock_issue" as never, {
+          p_item: null, p_godown: null, p_qty: 0, p_date: new Date().toISOString().slice(0, 10), p_key: `dispatch:${o.sales_order_id}`,
+        });
         if (stockErr && !uninstalledAccountingFunction(stockErr)) throw stockErr;
       }
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);

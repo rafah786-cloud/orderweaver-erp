@@ -386,14 +386,11 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           quantity: Number(i.quantity), unit_price: Number(i.unit_price) })),
       );
       if (iErr) throw iErr;
-      // @ts-expect-error This RPC requires the unapplied accounting migration.
-      const { error: stockErr } = await supabase.rpc("receive_purchase_bill", { p_bill: bill.id });
-      if (stockErr && !uninstalledAccountingFunction(stockErr)) throw stockErr;
-      return { id: bill.id as string, stockPosted: !stockErr };
+      return { id: bill.id as string, stockPosted: false };
     },
     onSuccess: async (res) => {
       const billId = res.id;
-      toast.success(res.stockPosted ? "Purchase bill saved and stock receipt posted." : "Purchase bill saved. Stock receipt function is not installed.");
+      toast.success("Purchase bill saved as draft. Stock is posted only when it is marked received.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
       qc.invalidateQueries({ queryKey: ["purchase-bill-notifs"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
@@ -424,7 +421,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     <Card className="mt-4">
       <CardContent className="p-0">
         <div className="flex items-center justify-between p-4">
-          <div className="text-sm text-muted-foreground">Stock auto-adds to BOQ on save.</div>
+          <div className="text-sm text-muted-foreground">Saving a bill does not receive stock. Mark received to post a stock movement.</div>
           {canEdit && <Button size="sm" onClick={() => { resetForm(); setBillNumber(`PB-${Date.now().toString().slice(-6)}`); setOpen(true); }}>
             <Plus className="h-4 w-4 mr-1" />New Bill
           </Button>}
@@ -467,7 +464,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Purchase Bill</DialogTitle>
-            <DialogDescription>Adds quantities to raw-material stock automatically.</DialogDescription>
+            <DialogDescription>The bill is saved as a draft. Stock is not changed until it is marked received.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid grid-cols-2 gap-3">

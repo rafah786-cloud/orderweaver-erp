@@ -12,6 +12,18 @@ export type StockMovement = {
   reverses: string | null;
 };
 
+export function planPurchaseReceipt(status: "draft" | "received", items: Array<{ id: string; quantity: number; rate: number }>) {
+  if (status !== "received") return [];
+  return items.map((item) => ({ key: `receipt:${item.id}`, quantity: item.quantity, rate: item.rate, source: item.id }));
+}
+
+export function planSalesDispatch(input: { orderId: string; ordered: number; available: number; ratedQuantity: number; alreadyDispatched: boolean }) {
+  if (input.alreadyDispatched) return { ok: false as const, reason: "already dispatched" };
+  if (input.ratedQuantity <= 0) return { ok: false as const, reason: "opening stock has no rate" };
+  if (input.available < input.ordered) return { ok: false as const, reason: "insufficient stock" };
+  return { ok: true as const, key: `dispatch:${input.orderId}`, quantity: input.ordered, reserved: 0 };
+}
+
 export class IsolatedStockLedger {
   private rows: StockMovement[];
   private seq = 1;
