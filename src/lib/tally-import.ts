@@ -71,6 +71,16 @@ export type TallyBill = {
   external_ref: string;
 };
 
+/** Complete source voucher for pre-import reconciliation; never inferred from party balances. */
+export type TallyVoucher = {
+  source_id: string;
+  has_stable_id: boolean;
+  voucher_type: string | null;
+  voucher_number: string | null;
+  voucher_date: string;
+  entries: Array<{ ledger_name: string; debit: number; credit: number }>;
+};
+
 export type TallyParsed = {
   customers: TallyParty[];
   vendors: TallyParty[];
@@ -84,6 +94,7 @@ export type TallyParsed = {
   godowns: TallyGodown[];
   costCentres: TallyCostCentre[];
   bills: TallyBill[];
+  vouchers: TallyVoucher[];
 };
 
 
@@ -245,6 +256,7 @@ export function parseTallyMasters(
   const godowns: TallyGodown[] = [];
   const costCentres: TallyCostCentre[] = [];
   const bills: TallyBill[] = [];
+  const vouchersOut: TallyVoucher[] = [];
 
   // Build a map of ledger-name → party type to classify vouchers
   const partyType = new Map<string, "customer" | "vendor">();
@@ -454,6 +466,19 @@ export function parseTallyMasters(
       );
       const lines = [...ledgerLines, ...altLines];
 
+      vouchersOut.push({
+        source_id: guid,
+        has_stable_id: !!text(v.GUID ?? v["@_REMOTEID"]),
+        voucher_type,
+        voucher_number,
+        voucher_date: entry_date,
+        entries: lines.map((line) => {
+          const amount = num(line.AMOUNT);
+          const debit = isYes(line.ISDEEMEDPOSITIVE) ? Math.abs(amount) : 0;
+          return { ledger_name: text(line.LEDGERNAME), debit, credit: debit ? 0 : Math.abs(amount) };
+        }),
+      });
+
       for (const line of lines) {
         const ledgerName = text(line.LEDGERNAME);
         if (ledgerName && partyType.has(ledgerName.toLowerCase())) collectBills(ledgerName, line, guid);
@@ -525,6 +550,7 @@ export function parseTallyMasters(
     rawMaterials.length === 0 &&
     finishedGoods.length === 0 &&
     ledgerEntries.length === 0 &&
+    vouchersOut.length === 0 &&
     groups.length === 0 &&
     ledgersOut.length === 0 &&
     godowns.length === 0 &&
@@ -547,6 +573,7 @@ export function parseTallyMasters(
     godowns,
     costCentres,
     bills,
+    vouchers: vouchersOut,
   };
 }
 

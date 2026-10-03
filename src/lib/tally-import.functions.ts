@@ -173,7 +173,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       ledgerAccounts: { inserted: 0, updated: 0 },
       godowns: { inserted: 0, updated: 0 },
       costCentres: { inserted: 0, updated: 0 },
-      billReferences: { staged: data.bills.length, unmatched: 0 },
+      billReferences: { staged: 0, unmatched: 0 },
 
       unmatchedLedgerNames: [],
       errors: [],
@@ -181,13 +181,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
       touchedSupplierIds: [],
     }
 
-    // Phase 2 initiation only: parsed bill references are validated and counted,
-    // but are not written until the isolated Phase 2 migration is promoted.
-    result.billReferences.unmatched = data.bills.filter((bill) => {
-      const key = norm(bill.party_name);
-      return !data.customers.some((party) => norm(party.name) === key) &&
-        !data.vendors.some((supplier) => norm(supplier.name) === key);
-    }).length;
+    // Never acknowledge an accounting import that discards bill allocations.
+    // Reject before the first write, including requests bypassing the upload UI.
+    if (data.bills.length || data.ledgerEntries.length) {
+      throw new Error("Accounting transactions and bills require a validated staging import; no records were written by this request.");
+    }
 
     // Maps populated below for ledger entry matching
     const partyByName = new Map<string, string>(); // lowercased name → id
