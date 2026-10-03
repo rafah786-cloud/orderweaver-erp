@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileUp, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { parseTallyMasters, TallyXmlError, type TallyParsed } from "@/lib/tally-import";
+import { inspectTallyAccounting } from "@/lib/tally-integrity";
 import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } from "@/lib/tally-import.functions";
 import { Progress } from "@/components/ui/progress";
 
@@ -74,7 +75,8 @@ function TallyImportPage() {
   const [result, setResult] = useState<TallyImportResult | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
-  const accountingExport = !!parsed && (parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
+  const accountingExport = !!parsed && (parsed.vouchers.length > 0 || parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
+  const integrity = parsed ? inspectTallyAccounting(parsed) : null;
 
   if (!hasRole("admin")) {
     return (
@@ -298,7 +300,11 @@ function TallyImportPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {accountingExport && <p role="alert" className="mb-4 border border-warning/30 bg-warning/5 p-3 text-sm text-warning">Accounting transactions and bill references are available for review only. Import is paused because this importer cannot safely preserve every voucher leg and bill allocation. No accounting records will be uploaded.</p>}
+              {accountingExport && <div role="alert" className="mb-4 border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
+                <p>Accounting transactions and bill references are available for review only. Import is paused because this importer cannot safely preserve every voucher leg and bill allocation. No accounting records will be uploaded.</p>
+                <p className="mt-2">{integrity?.voucherCount ?? 0} vouchers · debit {integrity?.debit.toFixed(2)} · credit {integrity?.credit.toFixed(2)} · {integrity?.errors.length ?? 0} integrity issues</p>
+                {integrity?.errors.slice(0, 20).map((issue, index) => <p key={index} className="mt-1 text-xs">{issue}</p>)}
+              </div>}
               {progress && (
                 <div className="mb-4 space-y-1.5">
                   <div className="flex justify-between text-xs text-muted-foreground">
