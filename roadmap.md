@@ -26,5 +26,12 @@
 ## 2026-10-04 direct-repository hardening
 - [x] Reworked the uninstalled invoice bill/receipt/reversal definitions to use party ledgers and the canonical `create_gl_voucher` path; no global `Debtors` assumption and no invented tax split
 - [x] Hardened isolated inventory ledger to preserve perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
-- [x] Added isolated weighted-value transfer test coverage
+- [x] Hardened the prepared stock posting SQL with item-row locking, idempotency enforcement, signed running-value weighted average, valued transfers, and immutable reversal posting; remains uninstalled
+- [x] Added isolated weighted-average issue and destination-transfer test coverage
 - [ ] Do not install accounting/inventory SQL until production compatibility and recovery requirements are explicitly satisfied
+
+## 2026-10-04 repository engineering checkpoint
+- No production database writes were performed from this repository session.
+- No prepared accounting/inventory SQL was installed.
+- GitHub repository changes are source-code/prepared-SQL changes only; live deployment status must be verified separately.
+- Inventory SQL still requires database-level integration tests before installation.
