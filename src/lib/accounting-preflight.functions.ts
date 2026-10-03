@@ -31,7 +31,7 @@ async function sumColumn(db: SupabaseClient, table: string, column: string) {
     if (error) return { total: null, rows, nonzero, error: error.message };
     const batch = data ?? [];
     for (const row of batch) {
-      const value = Number(row[column] ?? 0);
+      const value = Number(Object.values(row)[0] ?? 0);
       total += value;
       rows += 1;
       if (value !== 0) nonzero += 1;
