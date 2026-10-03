@@ -79,13 +79,10 @@ BEGIN
   IF p_amount <= 0 THEN RAISE EXCEPTION 'receipt amount must be positive'; END IF;
   IF p_idempotency IS NULL OR length(trim(p_idempotency)) < 8 THEN RAISE EXCEPTION 'idempotency key required'; END IF;
 
-  SELECT id INTO existing FROM public.bill_allocations WHERE idempotency_key = p_idempotency;
-  IF existing IS NOT NULL THEN
-    SELECT b.source_invoice_id INTO bill FROM public.bills b
-    JOIN public.bill_allocations a ON a.bill_id = b.id
-    WHERE a.id = existing;
-    RETURN public.bill_outstanding(bill);
-  END IF;
+  SELECT a.id, a.bill_id INTO existing, bill
+  FROM public.bill_allocations a
+  WHERE a.idempotency_key = p_idempotency;
+  IF existing IS NOT NULL THEN RETURN public.bill_outstanding(bill); END IF;
 
   SELECT * INTO inv FROM public.invoices WHERE id = p_invoice FOR UPDATE;
   IF inv.id IS NULL THEN RAISE EXCEPTION 'invoice missing'; END IF;
