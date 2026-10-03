@@ -30,6 +30,17 @@ describe("stock movements", () => {
     expect(db.openingUntouched()).toBe(true);
   });
 
+  it("preserves weighted value across a transfer", async () => {
+    const db = new IsolatedStockLedger([]);
+    await db.receive("foam", "main", 4, 10, "receipt-5a");
+    await db.receive("foam", "main", 2, 20, "receipt-5b");
+    const [out, incoming] = await db.transfer("foam", "main", "branch", 3, "transfer-valued");
+    expect(out.rate).toBe(13.333333333333334);
+    expect(out.amount).toBeCloseTo(40, 8);
+    expect(incoming.rate).toBe(out.rate);
+    expect(incoming.amount).toBeCloseTo(out.amount, 8);
+  });
+
   it("allows only one concurrent issue to consume the same quantity", async () => {
     const db = new IsolatedStockLedger([]);
     await db.receive("foam", "main", 1, 10, "receipt-4");
