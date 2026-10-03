@@ -196,6 +196,11 @@ function QuickActions({ roles }: { roles: string[] }) {
         {items.map(({ to, label, icon: Icon }) => (
           <Link key={to} to={to} className="hoa-action"><Icon aria-hidden="true" /><span>{label}</span><ArrowRight aria-hidden="true" /></Link>
         ))}
+        {isAdmin && (
+          <a className="hoa-action" href="https://biz-tally-sync.lovable.app" target="_blank" rel="noopener noreferrer">
+            <Upload aria-hidden="true" /><span>Tally Connect</span><ArrowRight aria-hidden="true" />
+          </a>
+        )}
       </div>
     </section>
   );
