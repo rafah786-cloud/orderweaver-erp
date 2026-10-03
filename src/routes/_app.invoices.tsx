@@ -184,7 +184,8 @@ function InvoicesPage() {
       });
       let posted = false;
       if (prepared.ok) {
-        const { error: postErr } = await supabase.rpc("create_gl_voucher" as never, {
+        // @ts-expect-error The optional Phase 1 RPC is absent from the live generated schema until its migration is applied.
+        const { error: postErr } = await supabase.rpc("create_gl_voucher", {
           _type: prepared.call.type, _date: prepared.call.date, _entries: prepared.call.entries,
           _narration: prepared.call.narration, _reference: prepared.call.reference, _idempotency_key: prepared.call.idempotencyKey,
         });

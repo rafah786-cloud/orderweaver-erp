@@ -119,9 +119,24 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    // Test messages may only go to the configured business-owned number.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: providerConfig, error: configError } = await supabaseAdmin
+      .from("notification_providers")
+      .select("config")
+      .eq("channel", CHANNEL)
+      .eq("name", PROVIDER_NAME)
+      .maybeSingle();
+    if (configError) throw new Error("Could not verify the business number");
+    const configuredNumber = (providerConfig?.config as Record<string, unknown> | null)?.business_number;
+    const normalize = (value: string) => value.replace(/[\s()\-]/g, "");
+    if (typeof configuredNumber !== "string" || !/^\+[1-9]\d{7,14}$/.test(normalize(configuredNumber)) ||
+        normalize(data.mobileNumber) !== normalize(configuredNumber)) {
+      throw new Error("Test messages can only be sent to the configured business number");
+    }
     const { sendWhatsAppMessage } = await import("./whatsapp/send.server");
     const result = await sendWhatsAppMessage(
-      data.mobileNumber,
+      normalize(configuredNumber),
       data.templateName,
       data.variables,
       { party_kind: "admin", event_type: "test.send" },

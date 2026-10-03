@@ -89,7 +89,7 @@ export function WhatsAppConfigCard() {
       }
       const r = await testFn({
         data: {
-          mobileNumber: test.mobileNumber,
+          mobileNumber: cfgQ.data?.business_number ?? "",
           templateName: test.templateName,
           variables: vars,
         },
@@ -189,8 +189,8 @@ export function WhatsAppConfigCard() {
                 <DialogHeader><DialogTitle>Send Test WhatsApp Message</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div>
-                    <Label>Mobile Number (E.164, e.g. +91...)</Label>
-                    <Input value={test.mobileNumber} onChange={(e) => setTest({ ...test, mobileNumber: e.target.value })} placeholder="+919876543210" />
+                    <Label>Configured business number</Label>
+                    <Input value={cfgQ.data?.business_number ?? ""} readOnly placeholder="Set a business number above" />
                   </div>
                   <div>
                     <Label>Template Name</Label>
@@ -204,7 +204,7 @@ export function WhatsAppConfigCard() {
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setTestOpen(false)}>Cancel</Button>
-                  <Button onClick={runTest} disabled={testBusy || !test.mobileNumber || !test.templateName}>
+                  <Button onClick={runTest} disabled={testBusy || !cfgQ.data?.business_number || !test.templateName}>
                     {testBusy ? "Sending…" : "Send Test"}
                   </Button>
                 </DialogFooter>

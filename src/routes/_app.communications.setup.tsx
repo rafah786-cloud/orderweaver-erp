@@ -162,7 +162,7 @@ function SetupWizard() {
         try { vars = JSON.parse(test.variables); }
         catch { toast.error('Variables must be JSON, e.g. {"customer_name":"Alex"}'); setTestBusy(false); return; }
       }
-      const r = await testFn({ data: { mobileNumber: test.mobileNumber, templateName: test.templateName, variables: vars } });
+      const r = await testFn({ data: { mobileNumber: cfgQ.data?.business_number ?? "", templateName: test.templateName, variables: vars } });
       if (r.ok) {
         setTestResult({ ok: true, msg: `Sent successfully · id ${r.messageId || "(none)"} · ${r.attempts} attempt(s)` });
         toast.success("Test message sent");
@@ -411,13 +411,13 @@ function SetupWizard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Send className="h-5 w-5" />Step 5 · Verify with a Test</CardTitle>
-              <CardDescription>Send a real message with an approved template. Check WhatsApp on the receiving number.</CardDescription>
+              <CardDescription>Send a real message with an approved template to the configured business number.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <Label>Recipient (E.164)</Label>
-                  <Input value={test.mobileNumber} onChange={(e) => setTest({ ...test, mobileNumber: e.target.value })} placeholder="+919876543210" />
+                  <Label>Configured business number</Label>
+                  <Input value={cfgQ.data?.business_number ?? ""} readOnly placeholder="Set a business number in Step 2" />
                 </div>
                 <div>
                   <Label>Template Name</Label>

@@ -45,6 +45,7 @@ async function sendForEvent(opts: {
   to: string;
   eventKey: string;
   vars: Record<string, string | number | null | undefined>;
+  requireTemplate?: boolean;
 }) {
   const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
   const provider = await getWhatsAppProvider();
@@ -58,6 +59,9 @@ async function sendForEvent(opts: {
     };
   }
   const tpl = await resolveTemplate(opts.eventKey);
+  if (opts.requireTemplate && !tpl?.template_name) {
+    return { ok: false as const, status: "skipped" as const, error: "Active template required", template_name: null, messageId: "" };
+  }
   if (tpl?.template_name) {
     const varNames = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
     const bodyValues = varNames.map((n) => String(opts.vars[n] ?? ""));
@@ -85,6 +89,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     z.object({
       bill_id: z.string().uuid(),
       event: z.enum(["created", "updated", "cancelled"]).default("created"),
+      // Legacy clients may include origin, but it must never select an outbound link.
       origin: z.string().url().optional(),
     }).parse(d),
   )
@@ -113,7 +118,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       await logWhatsAppNotification({ party_kind: "vendor", party_id: sup.id, event_type: eventKey, ref_table: "purchase_bills", ref_id: bill.id, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
-    const po_url = data.origin ? `${data.origin}/print/purchase/${bill.id}` : "";
+    const po_url = `https://www.zizzmattress.com/print/purchase/${bill.id}`;
     const result = await sendForEvent({
       to,
       eventKey,
@@ -142,7 +147,57 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     return { ok: result.ok };
   });
 
-/** Generic customer notification — uses templates resolved via event key. */
+/** Derive customer-facing fields from the saved record, never from RPC variables. */
+async function verifiedCustomerEvent(
+  supabaseAdmin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"],
+  event: string,
+  refId: string,
+  partyId: string,
+): Promise<Record<string, string> | null> {
+  const invoiceEvents = ["invoice.issued", "invoice.paid"];
+  if (invoiceEvents.includes(event)) {
+    const { data: invoice } = await supabaseAdmin.from("invoices")
+      .select("party_id, invoice_number, total_amount, due_date, status, paid_amount")
+      .eq("id", refId).eq("party_id", partyId).maybeSingle();
+    if (!invoice || invoice.status === "cancelled") return null;
+    if (event === "invoice.paid" && invoice.status !== "paid") return null;
+    return event === "invoice.issued"
+      ? { invoice_no: invoice.invoice_number, invoice_amount: Number(invoice.total_amount).toFixed(2),
+          due_date: invoice.due_date ?? "", invoice_url: `https://www.zizzmattress.com/print/invoice/${refId}` }
+      : { invoice_no: invoice.invoice_number, payment_amount: Number(invoice.paid_amount).toFixed(2) };
+  }
+  if (event === "sales_order.created") {
+    const { data: order } = await supabaseAdmin.from("sales_orders")
+      .select("order_number, order_date, total_amount").eq("id", refId).eq("party_id", partyId).maybeSingle();
+    return order ? { order_no: order.order_number, order_date: order.order_date,
+      order_value: Number(order.total_amount).toFixed(2) } : null;
+  }
+  if (event === "dispatch.update" || event === "production_order.ready") {
+    const { data: order } = await supabaseAdmin.from("production_orders")
+      .select("production_number, status, tracking_number, transporter_name, sales_orders!inner(party_id, order_number)")
+      .eq("id", refId).eq("sales_orders.party_id", partyId).maybeSingle();
+    if (!order || !["ready", "dispatched"].includes(order.status)) return null;
+    const salesOrder = order.sales_orders as { party_id: string; order_number: string } | null;
+    return { order_no: salesOrder?.order_number ?? order.production_number,
+      tracking_no: order.tracking_number ?? "", transporter_name: order.transporter_name ?? "" };
+  }
+  if (event === "payment.received") {
+    const { data: voucher } = await supabaseAdmin.from("vouchers")
+      .select("voucher_number, voucher_type, voucher_entries(credit, ledger_accounts!inner(mapped_party_id))")
+      .eq("id", refId).eq("voucher_type", "receipt").maybeSingle();
+    if (!voucher) return null;
+    const credits = (voucher.voucher_entries ?? []) as Array<{ credit: number; ledger_accounts: { mapped_party_id: string | null } | null }>;
+    const amount = credits.filter((entry) => entry.ledger_accounts?.mapped_party_id === partyId)
+      .reduce((sum, entry) => sum + Number(entry.credit), 0);
+    return amount > 0 ? { receipt_no: voucher.voucher_number, payment_amount: amount.toFixed(2) } : null;
+  }
+  if (event === "ledger.statement_ready") {
+    return refId === partyId ? {} : null;
+  }
+  return null;
+}
+
+/** Generic customer notification — only verified record data enters an active template. */
 export const notifyCustomerEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -166,6 +221,18 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
     await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const expectedTable: Record<string, string> = {
+      "sales_order.created": "sales_orders", "production_order.ready": "production_orders",
+      "dispatch.update": "production_orders", "invoice.issued": "invoices",
+      "invoice.paid": "invoices", "payment.received": "vouchers", "ledger.statement_ready": "parties",
+    };
+    if (!data.ref_id || (data.ref_table && data.ref_table !== expectedTable[data.event])) {
+      throw new Error("A matching business record is required to send this alert");
+    }
+    const verifiedVars = await verifiedCustomerEvent(supabaseAdmin, data.event, data.ref_id, data.party_id);
+    if (!verifiedVars) throw new Error("Alert does not match the saved business record");
+    const template = await resolveTemplate(data.event);
+    if (!template?.template_name) throw new Error("An active message template is required");
     const { data: party } = await supabaseAdmin
       .from("parties")
       .select("id, name, phone, whatsapp_number, whatsapp_opt_in")
@@ -181,7 +248,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       await logWhatsAppNotification({ party_kind: "customer", party_id: party.id, event_type: data.event, ref_table: data.ref_table ?? null, ref_id: data.ref_id ?? null, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
-    const result = await sendForEvent({ to, eventKey: data.event, vars: { customer_name: party.name, ...data.vars } });
+    const result = await sendForEvent({ to, eventKey: data.event, vars: { ...verifiedVars, customer_name: party.name }, requireTemplate: true });
     await logWhatsAppNotification({
       party_kind: "customer",
       party_id: party.id,
@@ -193,7 +260,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       status: result.ok ? "sent" : result.status,
       whatsapp_message_id: result.ok ? result.messageId : null,
       failure_reason: result.ok ? null : result.error,
-      payload: { vars: data.vars },
+      payload: { vars: verifiedVars },
     });
     return { ok: result.ok };
   });
