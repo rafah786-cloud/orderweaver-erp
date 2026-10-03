@@ -16,6 +16,15 @@
   - [x] Harden managed validation runners to require and display an explicit non-production TEST identity before mutating SQL
   - [x] Replace manual voucher and number-series client writes with the authenticated Phase 1 atomic posting function
   - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation (blocked: a complete restorable production backup/restore point cannot be verified; no migrations or validation SQL run)
-  - [ ] Phase 3 and later phases not started
+  - [ ] Phase 3 inventory ledger hardening: perpetual weighted-average valuation, immutable movements, transfer value preservation, reversal safety, live posting functions and document-state integration
+  - [ ] Phase 3 production consumption: confirm BOM units, scrap/wastage rule, output quantity and finished-goods posting before enabling production stock accounting
+  - [ ] Phase 3 opening stock valuation: obtain source valuation/rate from Tally before assigning any value; zero-rate opening stock remains quantity-only
+  - [ ] Phase 3 accounting integration: replace legacy direct-balance/stock writes with canonical posting functions without rewriting historical records
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
+
+## 2026-10-04 direct-repository hardening
+- [x] Reworked the uninstalled invoice bill/receipt/reversal definitions to use party ledgers and the canonical `create_gl_voucher` path; no global `Debtors` assumption and no invented tax split
+- [x] Hardened isolated inventory ledger to preserve perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
+- [x] Added isolated weighted-value transfer test coverage
+- [ ] Do not install accounting/inventory SQL until production compatibility and recovery requirements are explicitly satisfied
