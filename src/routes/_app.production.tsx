@@ -93,10 +93,12 @@ function ProductionPage() {
         ...(transporter !== null ? { transporter_name: transporter || null } : {}),
       };
       if (next === "in_production" && o.sales_order_id) {
+        // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { error: bomErr } = await supabase.rpc("produce_sales_order_bom", { p_order: o.sales_order_id, p_godown: null, p_idempotency: `bom:${o.id}` });
         if (bomErr) throw bomErr;
       }
       if (next === "dispatched" && o.sales_order_id) {
+        // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { error: stockErr } = await supabase.rpc("dispatch_sales_order", { p_order: o.sales_order_id });
         if (stockErr) throw stockErr;
       }

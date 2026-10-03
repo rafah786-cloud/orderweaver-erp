@@ -68,6 +68,7 @@ function MaterialsTab({ canEdit }: { canEdit: boolean }) {
       const { data, error } = await supabase.from("raw_materials").select("*").order("name");
       if (!error && data) {
         for (const row of data) {
+          // @ts-expect-error This RPC requires the unapplied accounting migration.
           const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: row.id });
           row.current_stock = Number(onHand ?? 0);
         }
