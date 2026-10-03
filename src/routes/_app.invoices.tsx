@@ -77,6 +77,7 @@ function InvoicesPage() {
         .order("invoice_date", { ascending: false });
       if (error) throw error;
       const rows = await Promise.all((data ?? []).map(async (inv) => {
+        // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { data: due } = await supabase.rpc("bill_outstanding", { p_bill: inv.id });
         const outstanding = Number(due ?? inv.total_amount);
         return { ...inv, paid_amount: Number(inv.total_amount) - outstanding };
@@ -174,6 +175,7 @@ function InvoicesPage() {
         }))
       );
       if (itemErr) throw itemErr;
+      // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error: taxErr } = await supabase.rpc("snapshot_invoice_tax", { p_invoice: inv.id });
       if (taxErr) throw taxErr;
       return { id: inv.id as string, invoiceNumber };
@@ -219,6 +221,7 @@ function InvoicesPage() {
       const newPaid = Number(payInv.paid_amount) + amt;
       if (newPaid > Number(payInv.total_amount) + 0.01) throw new Error("Payment exceeds invoice total");
       const status: InvoiceRow["status"] = newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
+      // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error } = await supabase.rpc("record_invoice_receipt", {
         p_invoice: payInv.id, p_amount: amt, p_idempotency: `receipt:${payInv.id}:${newPaid}`,
       });
@@ -253,6 +256,7 @@ function InvoicesPage() {
 
   const cancelInvoice = useMutation({
     mutationFn: async (inv: InvoiceRow) => {
+      // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error } = await supabase.rpc("reverse_invoice", { p_invoice: inv.id, p_idempotency: `cancel:${inv.id}` });
       if (error) throw error;
     },

@@ -308,6 +308,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
         const existingId = byName.get(norm(m.name));
         const fresh = !existingId;
         const key = `tally:raw:${norm(m.name)}`;
+        // @ts-expect-error This RPC is defined by the unapplied accounting migration; fail closed at runtime if absent.
         const { data: accepted, error: ingestErr } = await supabase.rpc("ingest_tally_event", {
           p_key: key, p_entity_type: "raw_material", p_entity_key: norm(m.name),
         });
@@ -552,6 +553,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .eq("id", id)
             .single();
           const opening = Number(p?.opening_balance ?? 0);
+          // @ts-expect-error RPC is unavailable until its migration is applied.
           await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
         }
         for (const id of supplierIds) {
@@ -567,6 +569,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .eq("id", id)
             .single();
           const opening = Number(s?.opening_balance ?? 0);
+          // @ts-expect-error RPC is unavailable until its migration is applied.
           await supabase.rpc("record_tally_balance", { p_entity_type: "supplier", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
         }
       }
@@ -610,6 +613,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
         .eq("id", id)
         .single();
       const opening = Number(p?.opening_balance ?? 0);
+      // @ts-expect-error RPC is unavailable until its migration is applied.
       await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
       recomputedParties++;
     }
@@ -626,6 +630,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
         .eq("id", id)
         .single();
       const opening = Number(s?.opening_balance ?? 0);
+      // @ts-expect-error RPC is unavailable until its migration is applied.
       await supabase.rpc("record_tally_balance", { p_entity_type: "supplier", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
       recomputedSuppliers++;
     }

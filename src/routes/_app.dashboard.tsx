@@ -507,6 +507,7 @@ function ProductionPanels() {
       const { data, error } = await supabase.from("raw_materials").select("id, name, reorder_level, unit");
       if (error) throw error;
       const rows = await Promise.all((data ?? []).map(async (m) => {
+        // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: m.id });
         return { ...m, on_hand: Number(onHand ?? 0) };
       }));

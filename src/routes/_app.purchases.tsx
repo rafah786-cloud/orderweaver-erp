@@ -385,6 +385,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           quantity: Number(i.quantity), unit_price: Number(i.unit_price) })),
       );
       if (iErr) throw iErr;
+      // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error: stockErr } = await supabase.rpc("receive_purchase_bill", { p_bill: bill.id });
       if (stockErr) throw stockErr;
       return bill.id as string;
