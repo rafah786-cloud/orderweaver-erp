@@ -220,7 +220,6 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           pin_code: c.pin_code ?? null,
           contact_person: c.contact_person ?? null,
           opening_balance: c.opening_balance,
-          current_balance: c.closing_balance,
         }
         if (existingId) {
           const { error: uErr } = await supabase.from("parties").update(row).eq("id", existingId);
@@ -274,7 +273,6 @@ export const importTallyMasters = createServerFn({ method: "POST" })
           state_code: v.state_code ?? null,
           contact_person: v.contact_person ?? null,
           opening_balance: v.opening_balance,
-          current_balance: v.closing_balance,
         }
         if (existingId) {
           const { error: uErr } = await supabase.from("suppliers").update(row).eq("id", existingId);
@@ -310,11 +308,17 @@ export const importTallyMasters = createServerFn({ method: "POST" })
 
       for (const m of data.rawMaterials) {
         const existingId = byName.get(norm(m.name));
+        const fresh = !existingId;
+        const key = `tally:raw:${norm(m.name)}`;
+        const { data: accepted, error: ingestErr } = await supabase.rpc("ingest_tally_event", {
+          p_key: key, p_entity_type: "raw_material", p_entity_key: norm(m.name),
+        });
+        if (ingestErr) throw ingestErr;
+        if (accepted === false) { result.rawMaterials.updated++; continue; }
         const row = {
           name: m.name,
           unit: m.unit || "pcs",
-          current_stock: m.opening_qty,
-          notes: m.group ? `Tally group: ${m.group}` : null,
+                    notes: m.group ? `Tally group: ${m.group}` : null,
         }
         if (existingId) {
           const { error: uErr } = await supabase.from("raw_materials").update(row).eq("id", existingId);
@@ -550,10 +554,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .eq("id", id)
             .single();
           const opening = Number(p?.opening_balance ?? 0);
-          await supabase
-            .from("parties")
-            .update({ current_balance: opening + totalDr - totalCr })
-            .eq("id", id);
+          await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
         }
         for (const id of supplierIds) {
           const { data: sums } = await supabase
@@ -568,10 +569,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             .eq("id", id)
             .single();
           const opening = Number(s?.opening_balance ?? 0);
-          await supabase
-            .from("suppliers")
-            .update({ current_balance: opening + totalDr - totalCr })
-            .eq("id", id);
+          await supabase.rpc("record_tally_balance", { p_entity_type: "supplier", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
         }
       }
     }
@@ -616,7 +614,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
       const opening = Number(p?.opening_balance ?? 0);
       await supabase
         .from("parties")
-        .update({ current_balance: opening + totalDr - totalCr })
+      await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
         .eq("id", id);
       recomputedParties++;
     }
@@ -635,7 +633,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
       const opening = Number(s?.opening_balance ?? 0);
       await supabase
         .from("suppliers")
-        .update({ current_balance: opening + totalDr - totalCr })
+      await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
         .eq("id", id);
       recomputedSuppliers++;
     }

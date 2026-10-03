@@ -138,6 +138,8 @@ function SalesOrdersPage() {
         })),
       );
       if (itemErr) throw itemErr;
+      const { error: reserveErr } = await supabase.rpc("reserve_sales_order", { p_order: so.id });
+      if (reserveErr) throw reserveErr;
       return { id: so.id as string, orderNumber };
     },
     onSuccess: async (res) => {

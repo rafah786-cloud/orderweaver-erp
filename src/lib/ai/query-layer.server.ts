@@ -106,13 +106,12 @@ export const ENTITIES: Record<string, EntityDef> = {
   raw_materials: {
     table: "raw_materials",
     label: "Raw materials",
-    select: "id, code, name, unit, current_stock, reorder_level, updated_at",
+    select: "id, code, name, unit, reorder_level, updated_at",
     columns: {
       code: "text",
       name: "text",
       unit: "text",
-      current_stock: "number",
-      reorder_level: "number",
+            reorder_level: "number",
     },
     defaultOrder: { column: "name", ascending: true },
     description: "Raw material stock levels and reorder thresholds.",

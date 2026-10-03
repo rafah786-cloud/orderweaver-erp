@@ -49,8 +49,8 @@ function Reconcile() {
       toast.error("Amounts don't match"); return;
     }
     const now = new Date().toISOString();
-    await sb.from("bank_transactions").update({ reconciled_at: now, reconciled_with: s.id, bank_date: s.txn_date }).eq("id", b.id);
-    await sb.from("bank_transactions").update({ reconciled_at: now, reconciled_with: b.id }).eq("id", s.id);
+    const { error } = await sb.rpc("match_bank_lines", { p_book: b.id, p_statement: s.id });
+    if (error) { toast.error(error.message); return; }
     toast.success("Reconciled");
     setBookSel(null); setStmtSel(null);
     load();

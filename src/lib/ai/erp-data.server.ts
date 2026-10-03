@@ -330,7 +330,7 @@ export async function receivables(db: Db) {
   const names = await partyNames(db, [...new Set(rows.map((r) => r.party_id))]);
   const buckets = { current: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90plus: 0 };
   const detail = rows.map((r) => {
-    const outstanding = Number(r.total_amount ?? 0) - Number(r.paid_amount ?? 0);
+    const outstanding = Number(r.total_amount ?? 0) - Number(r.paid_amount ?? 0); // display projection; canonical outstanding is bill_outstanding()
     const due = r.due_date ?? r.invoice_date;
     const daysOverdue = Math.floor((new Date(today).getTime() - new Date(due).getTime()) / DAY);
     if (daysOverdue <= 0) buckets.current += outstanding;
@@ -370,7 +370,7 @@ export async function receivables(db: Db) {
 export async function inventoryIntelligence(db: Db, days = 90) {
   const from = daysAgo(days);
   const [{ data: materials }, { data: purchases }, { data: boqUsage }] = await Promise.all([
-    db.from("raw_materials").select("id, code, name, unit, current_stock, reorder_level"),
+    db.from("raw_materials").select("id, code, name, unit, reorder_level"),
     db
       .from("purchase_bill_items")
       .select("raw_material_id, quantity, unit_price, purchase_bills!inner(bill_date)")
@@ -415,7 +415,7 @@ export async function inventoryIntelligence(db: Db, days = 90) {
   const items = (materials ?? []).map((m) => {
     const used = consumption.get(m.id) ?? 0;
     const perDay = used / days;
-    const stock = Number(m.current_stock ?? 0);
+    const stock = Number(m.on_hand ?? 0);
     const daysOfCover = perDay > 0 ? round(stock / perDay, 1) : null;
     const velocity: "fast" | "steady" | "slow" | "dormant" =
       perDay <= 0 ? "dormant" : daysOfCover != null && daysOfCover < 20 ? "fast" : daysOfCover != null && daysOfCover < 90 ? "steady" : "slow";

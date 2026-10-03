@@ -502,9 +502,13 @@ function ProductionPanels() {
   const { data: lowStock = [] } = useQuery({
     queryKey: ["prod-dash-stock"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("raw_materials").select("id, name, current_stock, reorder_level, unit");
+      const { data, error } = await supabase.from("raw_materials").select("id, name, reorder_level, unit");
       if (error) throw error;
-      return (data ?? []).filter((m) => Number(m.current_stock) <= Number(m.reorder_level));
+      const rows = await Promise.all((data ?? []).map(async (m) => {
+        const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: m.id });
+        return { ...m, on_hand: Number(onHand ?? 0) };
+      }));
+      return rows.filter((m) => m.on_hand <= Number(m.reorder_level));
     },
   });
 
@@ -532,7 +536,7 @@ function ProductionPanels() {
                 {lowStock.slice(0, 8).map((m) => (
                   <div key={m.id} className="flex items-center justify-between text-sm">
                     <span className="truncate">{m.name}</span>
-                    <span className="font-medium text-warning">{Number(m.current_stock)} {m.unit}</span>
+                    <span className="font-medium text-warning">{Number(m.on_hand)} {m.unit}</span>
                   </div>
                 ))}
               </div>
@@ -599,7 +603,7 @@ function CustomerPanels() {
 
   const outstanding = invoices
     .filter((i) => i.status === "unpaid" || i.status === "partial")
-    .reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
+    .reduce((s, i) => s + Number(i.outstanding ?? (Number(i.total_amount) - Number(i.paid_amount))), 0);
 
   return (
     <>

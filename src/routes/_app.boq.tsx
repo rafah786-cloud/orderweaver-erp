@@ -66,6 +66,12 @@ function MaterialsTab({ canEdit }: { canEdit: boolean }) {
     queryKey: ["raw-materials"],
     queryFn: async () => {
       const { data, error } = await supabase.from("raw_materials").select("*").order("name");
+      if (!error && data) {
+        for (const row of data) {
+          const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: row.id });
+          row.current_stock = Number(onHand ?? 0);
+        }
+      }
       if (error) throw error;
       return (data ?? []) as RawMaterial[];
     },

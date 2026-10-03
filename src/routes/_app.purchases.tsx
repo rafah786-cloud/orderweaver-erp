@@ -385,10 +385,12 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           quantity: Number(i.quantity), unit_price: Number(i.unit_price) })),
       );
       if (iErr) throw iErr;
+      const { error: stockErr } = await supabase.rpc("receive_purchase_bill", { p_bill: bill.id });
+      if (stockErr) throw stockErr;
       return bill.id as string;
     },
     onSuccess: async (billId) => {
-      toast.success("Purchase bill saved. Raw-material stock updated.");
+      toast.success("Purchase bill saved and stock receipt posted.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
       qc.invalidateQueries({ queryKey: ["purchase-bill-notifs"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });

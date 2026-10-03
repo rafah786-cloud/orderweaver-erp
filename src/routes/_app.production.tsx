@@ -48,6 +48,7 @@ type Order = {
   status: Status;
   tracking_number: string | null;
   transporter_name: string | null;
+  sales_order_id: string | null;
   sales_orders: { order_number: string; party_id: string; parties: { name: string } | null } | null;
 };
 
@@ -64,7 +65,7 @@ function ProductionPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("production_orders")
-        .select("id, production_number, status, tracking_number, transporter_name, sales_orders(order_number, party_id, parties(name))")
+        .select("id, production_number, status, tracking_number, transporter_name, sales_order_id, sales_orders(order_number, party_id, parties(name))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Order[];
@@ -91,8 +92,15 @@ function ProductionPage() {
         ...(tracking !== null ? { tracking_number: tracking || null } : {}),
         ...(transporter !== null ? { transporter_name: transporter || null } : {}),
       };
+      if (next === "in_production" && o.sales_order_id) {
+        const { error: bomErr } = await supabase.rpc("produce_sales_order_bom", { p_order: o.sales_order_id, p_godown: null, p_idempotency: `bom:${o.id}` });
+        if (bomErr) throw bomErr;
+      }
+      if (next === "dispatched" && o.sales_order_id) {
+        const { error: stockErr } = await supabase.rpc("dispatch_sales_order", { p_order: o.sales_order_id });
+        if (stockErr) throw stockErr;
+      }
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
-
       if (error) throw error;
       return { next, order: { ...o, tracking_number: tracking, transporter_name: transporter } };
     },

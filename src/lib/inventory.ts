@@ -107,3 +107,19 @@ export async function nextStockJournalNumber(): Promise<string> {
   }
   return `SJ/${String(next).padStart(4, "0")}`;
 }
+
+export async function postStockReceipt(itemId: string, godownId: string, qty: number, rate: number, date: string, idempotencyKey: string) {
+  const { data, error } = await sb.rpc("post_stock_receipt", {
+    p_item: itemId, p_godown: godownId, p_qty: qty, p_rate: rate, p_date: date, p_idempotency: idempotencyKey,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function postStockIssue(itemId: string, godownId: string, qty: number, date: string, idempotencyKey: string, movementType = "sale") {
+  const { data, error } = await sb.rpc("post_stock_issue", {
+    p_item: itemId, p_godown: godownId, p_qty: qty, p_date: date, p_idempotency: idempotencyKey, p_movement_type: movementType,
+  });
+  if (error) throw error;
+  return data as string;
+}

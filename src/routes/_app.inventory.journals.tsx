@@ -65,13 +65,18 @@ function JournalsPage() {
       quantity: l.quantity, rate: l.rate, amount: l.quantity * l.rate, line_order: idx,
     }));
     await sb.from("stock_journal_entries").insert(entries);
-    const movements = valid.map((l) => ({
-      movement_date: date, stock_item_id: l.stock_item_id, godown_id: l.godown_id || null,
-      movement_type: l.movement_type, quantity: l.quantity, rate: l.rate,
-      amount: l.quantity * l.rate, source_table: "stock_journals", source_id: j.id,
-      narration: narration || `Journal ${num}`,
-    }));
-    await sb.from("stock_movements").insert(movements);
+    for (const [idx, l] of valid.entries()) {
+      const godown = l.godown_id;
+      if (!godown) throw new Error("Godown is required");
+      const key = `journal:${j.id}:${idx}`;
+      const qty = Math.abs(Number(l.quantity));
+      const fn = Number(l.quantity) >= 0 ? "post_stock_receipt" : "post_stock_issue";
+      const args = Number(l.quantity) >= 0
+        ? { p_item: l.stock_item_id, p_godown: godown, p_qty: qty, p_rate: Number(l.rate), p_date: date, p_idempotency: key, p_source_table: "stock_journals", p_source_id: j.id }
+        : { p_item: l.stock_item_id, p_godown: godown, p_qty: qty, p_date: date, p_idempotency: key, p_source_table: "stock_journals", p_source_id: j.id, p_movement_type: l.movement_type };
+      const { error: postErr } = await sb.rpc(fn, args);
+      if (postErr) throw postErr;
+    }
     toast.success(`Journal ${num} saved`);
     navigate({ to: "/inventory/movements" });
   };
