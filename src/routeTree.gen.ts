@@ -9,117 +9,93 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as PendingRouteImport } from './routes/pending'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SignupRouteImport } from './routes/signup'
 import { Route as VendorSignupRouteImport } from './routes/vendor-signup'
-import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
-import { Route as AppAiRouteImport } from './routes/_app.ai'
-import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
-import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
-import { Route as AppBankingRouteImport } from './routes/_app.banking'
-import { Route as AppBoqRouteImport } from './routes/_app.boq'
-import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
-import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
-import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
-import { Route as AppGstRouteImport } from './routes/_app.gst'
-import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
-import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
-import { Route as AppPartiesRouteImport } from './routes/_app.parties'
-import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
-import { Route as AppProductionRouteImport } from './routes/_app.production'
-import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
-import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
-import { Route as AppVendorRouteImport } from './routes/_app.vendor'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PendingRouteImport } from './routes/pending'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
-import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
-import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
-import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
-import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
-import { Route as AppAccountingPeriodsRouteImport } from './routes/_app.accounting.periods'
-import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
-import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
-import { Route as AppAiIndexRouteImport } from './routes/_app.ai.index'
-import { Route as AppAiAskRouteImport } from './routes/_app.ai.ask'
-import { Route as AppAiBriefRouteImport } from './routes/_app.ai.brief'
-import { Route as AppAiDocumentsRouteImport } from './routes/_app.ai.documents'
-import { Route as AppAiInsightsRouteImport } from './routes/_app.ai.insights'
-import { Route as AppAiProposalsRouteImport } from './routes/_app.ai.proposals'
-import { Route as AppAiQuotationsRouteImport } from './routes/_app.ai.quotations'
-import { Route as AppAiSearchRouteImport } from './routes/_app.ai.search'
-import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
-import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
-import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
-import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banking.payment-advice'
-import { Route as AppBankingReconcileRouteImport } from './routes/_app.banking.reconcile'
-import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
-import { Route as AppCommunicationsEmployeeSubscriptionsRouteImport } from './routes/_app.communications.employee-subscriptions'
-import { Route as AppCommunicationsEventsRouteImport } from './routes/_app.communications.events'
-import { Route as AppCommunicationsInboxRouteImport } from './routes/_app.communications.inbox'
-import { Route as AppCommunicationsProvidersRouteImport } from './routes/_app.communications.providers'
-import { Route as AppCommunicationsSetupRouteImport } from './routes/_app.communications.setup'
-import { Route as AppCommunicationsTemplatesRouteImport } from './routes/_app.communications.templates'
-import { Route as AppCommunicationsWhatsappLogsRouteImport } from './routes/_app.communications.whatsapp-logs'
-import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
-import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
-import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
-import { Route as AppInventoryGodownsRouteImport } from './routes/_app.inventory.godowns'
-import { Route as AppInventoryItemsRouteImport } from './routes/_app.inventory.items'
-import { Route as AppInventoryJournalsRouteImport } from './routes/_app.inventory.journals'
-import { Route as AppInventoryMovementsRouteImport } from './routes/_app.inventory.movements'
-import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
-import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
-import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
+import { Route as AppVendorRouteImport } from './routes/_app.vendor'
+import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
+import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
+import { Route as AppProductionRouteImport } from './routes/_app.production'
+import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppPartiesRouteImport } from './routes/_app.parties'
+import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
+import { Route as AppGstRouteImport } from './routes/_app.gst'
+import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
+import { Route as AppBoqRouteImport } from './routes/_app.boq'
+import { Route as AppBankingRouteImport } from './routes/_app.banking'
+import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
+import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
+import { Route as AppAiRouteImport } from './routes/_app.ai'
+import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
-import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
+import { Route as AppCommunicationsIndexRouteImport } from './routes/_app.communications.index'
+import { Route as AppAiIndexRouteImport } from './routes/_app.ai.index'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
-import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
-import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
-import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
-import { Route as AppBankingChequePrintIdRouteImport } from './routes/_app.banking.cheque-print.$id'
-import { Route as AppBankingReconcileIdRouteImport } from './routes/_app.banking.reconcile.$id'
-import { Route as AppGstReturnsIdRouteImport } from './routes/_app.gst.returns.$id'
-import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
-import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
-import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
-import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
-import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
-import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
+import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
+import { Route as AppInventoryValuationRouteImport } from './routes/_app.inventory.valuation'
+import { Route as AppInventorySummaryRouteImport } from './routes/_app.inventory.summary'
+import { Route as AppInventoryReorderRouteImport } from './routes/_app.inventory.reorder'
+import { Route as AppInventoryMovementsRouteImport } from './routes/_app.inventory.movements'
+import { Route as AppInventoryJournalsRouteImport } from './routes/_app.inventory.journals'
+import { Route as AppInventoryItemsRouteImport } from './routes/_app.inventory.items'
+import { Route as AppInventoryGodownsRouteImport } from './routes/_app.inventory.godowns'
+import { Route as AppGstReturnsRouteImport } from './routes/_app.gst.returns'
+import { Route as AppGstHsnRouteImport } from './routes/_app.gst.hsn'
+import { Route as AppGstEinvoicesRouteImport } from './routes/_app.gst.einvoices'
+import { Route as AppCommunicationsWhatsappLogsRouteImport } from './routes/_app.communications.whatsapp-logs'
+import { Route as AppCommunicationsTemplatesRouteImport } from './routes/_app.communications.templates'
+import { Route as AppCommunicationsSetupRouteImport } from './routes/_app.communications.setup'
+import { Route as AppCommunicationsProvidersRouteImport } from './routes/_app.communications.providers'
+import { Route as AppCommunicationsInboxRouteImport } from './routes/_app.communications.inbox'
+import { Route as AppCommunicationsEventsRouteImport } from './routes/_app.communications.events'
+import { Route as AppCommunicationsEmployeeSubscriptionsRouteImport } from './routes/_app.communications.employee-subscriptions'
+import { Route as AppBankingReconcileRouteImport } from './routes/_app.banking.reconcile'
+import { Route as AppBankingPaymentAdviceRouteImport } from './routes/_app.banking.payment-advice'
+import { Route as AppBankingCurrenciesRouteImport } from './routes/_app.banking.currencies'
+import { Route as AppBankingChequesRouteImport } from './routes/_app.banking.cheques'
+import { Route as AppBankingAccountsRouteImport } from './routes/_app.banking.accounts'
+import { Route as AppAiSearchRouteImport } from './routes/_app.ai.search'
+import { Route as AppAiQuotationsRouteImport } from './routes/_app.ai.quotations'
+import { Route as AppAiProposalsRouteImport } from './routes/_app.ai.proposals'
+import { Route as AppAiInsightsRouteImport } from './routes/_app.ai.insights'
+import { Route as AppAiDocumentsRouteImport } from './routes/_app.ai.documents'
+import { Route as AppAiBriefRouteImport } from './routes/_app.ai.brief'
+import { Route as AppAiAskRouteImport } from './routes/_app.ai.ask'
+import { Route as AppAccountingTrialBalanceRouteImport } from './routes/_app.accounting.trial-balance'
+import { Route as AppAccountingProfitLossRouteImport } from './routes/_app.accounting.profit-loss'
+import { Route as AppAccountingPeriodsRouteImport } from './routes/_app.accounting.periods'
+import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
+import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
+import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
+import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
 import { Route as ApiPublicWhatsappInteraktRouteImport } from './routes/api/public/whatsapp/interakt'
+import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
+import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
+import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
+import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purchase.$id'
+import { Route as AppPrintPartyLedgerIdRouteImport } from './routes/_app.print.party-ledger.$id'
+import { Route as AppPrintInvoiceIdRouteImport } from './routes/_app.print.invoice.$id'
+import { Route as AppGstReturnsIdRouteImport } from './routes/_app.gst.returns.$id'
+import { Route as AppBankingReconcileIdRouteImport } from './routes/_app.banking.reconcile.$id'
+import { Route as AppBankingChequePrintIdRouteImport } from './routes/_app.banking.cheque-print.$id'
+import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
+import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
+import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PendingRoute = PendingRouteImport.update({
-  id: '/pending',
-  path: '/pending',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const VendorSignupRoute = VendorSignupRouteImport.update({
+  id: '/vendor-signup',
+  path: '/vendor-signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -127,104 +103,38 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VendorSignupRoute = VendorSignupRouteImport.update({
-  id: '/vendor-signup',
-  path: '/vendor-signup',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppAccountingRoute = AppAccountingRouteImport.update({
-  id: '/accounting',
-  path: '/accounting',
-  getParentRoute: () => AppRoute,
+const PendingRoute = PendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAiRoute = AppAiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => AppRoute,
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppApprovalsRoute = AppApprovalsRouteImport.update({
-  id: '/approvals',
-  path: '/approvals',
-  getParentRoute: () => AppRoute,
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAttendanceRoute = AppAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
-  getParentRoute: () => AppRoute,
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppBankingRoute = AppBankingRouteImport.update({
-  id: '/banking',
-  path: '/banking',
-  getParentRoute: () => AppRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppBoqRoute = AppBoqRouteImport.update({
-  id: '/boq',
-  path: '/boq',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCommunicationsRoute = AppCommunicationsRouteImport.update({
-  id: '/communications',
-  path: '/communications',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppEmployeesRoute = AppEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppGstRoute = AppGstRouteImport.update({
-  id: '/gst',
-  path: '/gst',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInventoryRoute = AppInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInvoicesRoute = AppInvoicesRouteImport.update({
-  id: '/invoices',
-  path: '/invoices',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPartiesRoute = AppPartiesRouteImport.update({
-  id: '/parties',
-  path: '/parties',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPayslipsRoute = AppPayslipsRouteImport.update({
-  id: '/payslips',
-  path: '/payslips',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppProductionRoute = AppProductionRouteImport.update({
-  id: '/production',
-  path: '/production',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPurchasesRoute = AppPurchasesRouteImport.update({
-  id: '/purchases',
-  path: '/purchases',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
-  id: '/sales-orders',
-  path: '/sales-orders',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTallyImportRoute = AppTallyImportRouteImport.update({
-  id: '/tally-import',
-  path: '/tally-import',
+const AppWhatsappRoute = AppWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AppRoute,
 } as any)
 const AppVendorRoute = AppVendorRouteImport.update({
@@ -232,132 +142,191 @@ const AppVendorRoute = AppVendorRouteImport.update({
   path: '/vendor',
   getParentRoute: () => AppRoute,
 } as any)
-const AppWhatsappRoute = AppWhatsappRouteImport.update({
-  id: '/whatsapp',
-  path: '/whatsapp',
+const AppTallyImportRoute = AppTallyImportRouteImport.update({
+  id: '/tally-import',
+  path: '/tally-import',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAccountingAuditLogRoute = AppAccountingAuditLogRouteImport.update({
-  id: '/audit-log',
-  path: '/audit-log',
-  getParentRoute: () => AppAccountingRoute,
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppAccountingBalanceSheetRoute =
-  AppAccountingBalanceSheetRouteImport.update({
-    id: '/balance-sheet',
-    path: '/balance-sheet',
-    getParentRoute: () => AppAccountingRoute,
-  } as any)
-const AppAccountingDayBookRoute = AppAccountingDayBookRouteImport.update({
-  id: '/day-book',
-  path: '/day-book',
-  getParentRoute: () => AppAccountingRoute,
+const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
+  id: '/sales-orders',
+  path: '/sales-orders',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
-  id: '/ledgers',
-  path: '/ledgers',
-  getParentRoute: () => AppAccountingRoute,
+const AppPurchasesRoute = AppPurchasesRouteImport.update({
+  id: '/purchases',
+  path: '/purchases',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppAccountingPeriodsRoute = AppAccountingPeriodsRouteImport.update({
-  id: '/periods',
-  path: '/periods',
-  getParentRoute: () => AppAccountingRoute,
+const AppProductionRoute = AppProductionRouteImport.update({
+  id: '/production',
+  path: '/production',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppAccountingProfitLossRoute = AppAccountingProfitLossRouteImport.update({
-  id: '/profit-loss',
-  path: '/profit-loss',
-  getParentRoute: () => AppAccountingRoute,
+const AppPayslipsRoute = AppPayslipsRouteImport.update({
+  id: '/payslips',
+  path: '/payslips',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppAccountingTrialBalanceRoute =
-  AppAccountingTrialBalanceRouteImport.update({
-    id: '/trial-balance',
-    path: '/trial-balance',
-    getParentRoute: () => AppAccountingRoute,
-  } as any)
-const AppAiIndexRoute = AppAiIndexRouteImport.update({
+const AppPartiesRoute = AppPartiesRouteImport.update({
+  id: '/parties',
+  path: '/parties',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesRoute = AppInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInventoryRoute = AppInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGstRoute = AppGstRouteImport.update({
+  id: '/gst',
+  path: '/gst',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEmployeesRoute = AppEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCommunicationsRoute = AppCommunicationsRouteImport.update({
+  id: '/communications',
+  path: '/communications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBoqRoute = AppBoqRouteImport.update({
+  id: '/boq',
+  path: '/boq',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBankingRoute = AppBankingRouteImport.update({
+  id: '/banking',
+  path: '/banking',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAttendanceRoute = AppAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppApprovalsRoute = AppApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiRoute = AppAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountingRoute = AppAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiAskRoute = AppAiAskRouteImport.update({
-  id: '/ask',
-  path: '/ask',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiBriefRoute = AppAiBriefRouteImport.update({
-  id: '/brief',
-  path: '/brief',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiDocumentsRoute = AppAiDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiInsightsRoute = AppAiInsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiProposalsRoute = AppAiProposalsRouteImport.update({
-  id: '/proposals',
-  path: '/proposals',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiQuotationsRoute = AppAiQuotationsRouteImport.update({
-  id: '/quotations',
-  path: '/quotations',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppAiSearchRoute = AppAiSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => AppAiRoute,
-} as any)
-const AppBankingAccountsRoute = AppBankingAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
-  getParentRoute: () => AppBankingRoute,
-} as any)
-const AppBankingChequesRoute = AppBankingChequesRouteImport.update({
-  id: '/cheques',
-  path: '/cheques',
-  getParentRoute: () => AppBankingRoute,
-} as any)
-const AppBankingCurrenciesRoute = AppBankingCurrenciesRouteImport.update({
-  id: '/currencies',
-  path: '/currencies',
-  getParentRoute: () => AppBankingRoute,
-} as any)
-const AppBankingPaymentAdviceRoute = AppBankingPaymentAdviceRouteImport.update({
-  id: '/payment-advice',
-  path: '/payment-advice',
-  getParentRoute: () => AppBankingRoute,
-} as any)
-const AppBankingReconcileRoute = AppBankingReconcileRouteImport.update({
-  id: '/reconcile',
-  path: '/reconcile',
-  getParentRoute: () => AppBankingRoute,
+  getParentRoute: () => AppVendorRoute,
 } as any)
 const AppCommunicationsIndexRoute = AppCommunicationsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCommunicationsRoute,
 } as any)
-const AppCommunicationsEmployeeSubscriptionsRoute =
-  AppCommunicationsEmployeeSubscriptionsRouteImport.update({
-    id: '/employee-subscriptions',
-    path: '/employee-subscriptions',
+const AppAiIndexRoute = AppAiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
+  id: '/purchase-orders',
+  path: '/purchase-orders',
+  getParentRoute: () => AppVendorRoute,
+} as any)
+const AppVendorLedgerRoute = AppVendorLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
+  getParentRoute: () => AppVendorRoute,
+} as any)
+const AppInventoryValuationRoute = AppInventoryValuationRouteImport.update({
+  id: '/valuation',
+  path: '/valuation',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventorySummaryRoute = AppInventorySummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryReorderRoute = AppInventoryReorderRouteImport.update({
+  id: '/reorder',
+  path: '/reorder',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryMovementsRoute = AppInventoryMovementsRouteImport.update({
+  id: '/movements',
+  path: '/movements',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryJournalsRoute = AppInventoryJournalsRouteImport.update({
+  id: '/journals',
+  path: '/journals',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryGodownsRoute = AppInventoryGodownsRouteImport.update({
+  id: '/godowns',
+  path: '/godowns',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppGstReturnsRoute = AppGstReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => AppGstRoute,
+} as any)
+const AppGstHsnRoute = AppGstHsnRouteImport.update({
+  id: '/hsn',
+  path: '/hsn',
+  getParentRoute: () => AppGstRoute,
+} as any)
+const AppGstEinvoicesRoute = AppGstEinvoicesRouteImport.update({
+  id: '/einvoices',
+  path: '/einvoices',
+  getParentRoute: () => AppGstRoute,
+} as any)
+const AppCommunicationsWhatsappLogsRoute =
+  AppCommunicationsWhatsappLogsRouteImport.update({
+    id: '/whatsapp-logs',
+    path: '/whatsapp-logs',
     getParentRoute: () => AppCommunicationsRoute,
   } as any)
-const AppCommunicationsEventsRoute = AppCommunicationsEventsRouteImport.update({
-  id: '/events',
-  path: '/events',
-  getParentRoute: () => AppCommunicationsRoute,
-} as any)
-const AppCommunicationsInboxRoute = AppCommunicationsInboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
+const AppCommunicationsTemplatesRoute =
+  AppCommunicationsTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AppCommunicationsRoute,
+  } as any)
+const AppCommunicationsSetupRoute = AppCommunicationsSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => AppCommunicationsRoute,
 } as any)
 const AppCommunicationsProvidersRoute =
@@ -366,150 +335,118 @@ const AppCommunicationsProvidersRoute =
     path: '/providers',
     getParentRoute: () => AppCommunicationsRoute,
   } as any)
-const AppCommunicationsSetupRoute = AppCommunicationsSetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
+const AppCommunicationsInboxRoute = AppCommunicationsInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
   getParentRoute: () => AppCommunicationsRoute,
 } as any)
-const AppCommunicationsTemplatesRoute =
-  AppCommunicationsTemplatesRouteImport.update({
-    id: '/templates',
-    path: '/templates',
+const AppCommunicationsEventsRoute = AppCommunicationsEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AppCommunicationsRoute,
+} as any)
+const AppCommunicationsEmployeeSubscriptionsRoute =
+  AppCommunicationsEmployeeSubscriptionsRouteImport.update({
+    id: '/employee-subscriptions',
+    path: '/employee-subscriptions',
     getParentRoute: () => AppCommunicationsRoute,
   } as any)
-const AppCommunicationsWhatsappLogsRoute =
-  AppCommunicationsWhatsappLogsRouteImport.update({
-    id: '/whatsapp-logs',
-    path: '/whatsapp-logs',
-    getParentRoute: () => AppCommunicationsRoute,
-  } as any)
-const AppGstEinvoicesRoute = AppGstEinvoicesRouteImport.update({
-  id: '/einvoices',
-  path: '/einvoices',
-  getParentRoute: () => AppGstRoute,
-} as any)
-const AppGstHsnRoute = AppGstHsnRouteImport.update({
-  id: '/hsn',
-  path: '/hsn',
-  getParentRoute: () => AppGstRoute,
-} as any)
-const AppGstReturnsRoute = AppGstReturnsRouteImport.update({
-  id: '/returns',
-  path: '/returns',
-  getParentRoute: () => AppGstRoute,
-} as any)
-const AppInventoryGodownsRoute = AppInventoryGodownsRouteImport.update({
-  id: '/godowns',
-  path: '/godowns',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppInventoryJournalsRoute = AppInventoryJournalsRouteImport.update({
-  id: '/journals',
-  path: '/journals',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppInventoryMovementsRoute = AppInventoryMovementsRouteImport.update({
-  id: '/movements',
-  path: '/movements',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppInventoryReorderRoute = AppInventoryReorderRouteImport.update({
-  id: '/reorder',
-  path: '/reorder',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppInventorySummaryRoute = AppInventorySummaryRouteImport.update({
-  id: '/summary',
-  path: '/summary',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppInventoryValuationRoute = AppInventoryValuationRouteImport.update({
-  id: '/valuation',
-  path: '/valuation',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppVendorIndexRoute = AppVendorIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppVendorRoute,
-} as any)
-const AppVendorLedgerRoute = AppVendorLedgerRouteImport.update({
-  id: '/ledger',
-  path: '/ledger',
-  getParentRoute: () => AppVendorRoute,
-} as any)
-const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
-  id: '/purchase-orders',
-  path: '/purchase-orders',
-  getParentRoute: () => AppVendorRoute,
-} as any)
-const AppAccountingLedgerIdRoute = AppAccountingLedgerIdRouteImport.update({
-  id: '/ledger/$id',
-  path: '/ledger/$id',
-  getParentRoute: () => AppAccountingRoute,
-} as any)
-const AppAccountingVoucherIdRoute = AppAccountingVoucherIdRouteImport.update({
-  id: '/voucher/$id',
-  path: '/voucher/$id',
-  getParentRoute: () => AppAccountingRoute,
-} as any)
-const AppAccountingVouchersNewRoute =
-  AppAccountingVouchersNewRouteImport.update({
-    id: '/vouchers/new',
-    path: '/vouchers/new',
-    getParentRoute: () => AppAccountingRoute,
-  } as any)
-const AppBankingChequePrintIdRoute = AppBankingChequePrintIdRouteImport.update({
-  id: '/cheque-print/$id',
-  path: '/cheque-print/$id',
+const AppBankingReconcileRoute = AppBankingReconcileRouteImport.update({
+  id: '/reconcile',
+  path: '/reconcile',
   getParentRoute: () => AppBankingRoute,
 } as any)
-const AppBankingReconcileIdRoute = AppBankingReconcileIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppBankingReconcileRoute,
+const AppBankingPaymentAdviceRoute = AppBankingPaymentAdviceRouteImport.update({
+  id: '/payment-advice',
+  path: '/payment-advice',
+  getParentRoute: () => AppBankingRoute,
 } as any)
-const AppGstReturnsIdRoute = AppGstReturnsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppGstReturnsRoute,
+const AppBankingCurrenciesRoute = AppBankingCurrenciesRouteImport.update({
+  id: '/currencies',
+  path: '/currencies',
+  getParentRoute: () => AppBankingRoute,
 } as any)
-const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
-  id: '/print/invoice/$id',
-  path: '/print/invoice/$id',
-  getParentRoute: () => AppRoute,
+const AppBankingChequesRoute = AppBankingChequesRouteImport.update({
+  id: '/cheques',
+  path: '/cheques',
+  getParentRoute: () => AppBankingRoute,
 } as any)
-const AppPrintPartyLedgerIdRoute = AppPrintPartyLedgerIdRouteImport.update({
-  id: '/print/party-ledger/$id',
-  path: '/print/party-ledger/$id',
-  getParentRoute: () => AppRoute,
+const AppBankingAccountsRoute = AppBankingAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AppBankingRoute,
 } as any)
-const AppPrintPurchaseIdRoute = AppPrintPurchaseIdRouteImport.update({
-  id: '/print/purchase/$id',
-  path: '/print/purchase/$id',
-  getParentRoute: () => AppRoute,
+const AppAiSearchRoute = AppAiSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppAiRoute,
 } as any)
-const AppPrintSupplierLedgerIdRoute =
-  AppPrintSupplierLedgerIdRouteImport.update({
-    id: '/print/supplier-ledger/$id',
-    path: '/print/supplier-ledger/$id',
-    getParentRoute: () => AppRoute,
+const AppAiQuotationsRoute = AppAiQuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiProposalsRoute = AppAiProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiInsightsRoute = AppAiInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiDocumentsRoute = AppAiDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiBriefRoute = AppAiBriefRouteImport.update({
+  id: '/brief',
+  path: '/brief',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiAskRoute = AppAiAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAccountingTrialBalanceRoute =
+  AppAccountingTrialBalanceRouteImport.update({
+    id: '/trial-balance',
+    path: '/trial-balance',
+    getParentRoute: () => AppAccountingRoute,
   } as any)
-const AppVendorPurchaseOrdersIdRoute =
-  AppVendorPurchaseOrdersIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AppVendorPurchaseOrdersRoute,
+const AppAccountingProfitLossRoute = AppAccountingProfitLossRouteImport.update({
+  id: '/profit-loss',
+  path: '/profit-loss',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingPeriodsRoute = AppAccountingPeriodsRouteImport.update({
+  id: '/periods',
+  path: '/periods',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingLedgersRoute = AppAccountingLedgersRouteImport.update({
+  id: '/ledgers',
+  path: '/ledgers',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingDayBookRoute = AppAccountingDayBookRouteImport.update({
+  id: '/day-book',
+  path: '/day-book',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingBalanceSheetRoute =
+  AppAccountingBalanceSheetRouteImport.update({
+    id: '/balance-sheet',
+    path: '/balance-sheet',
+    getParentRoute: () => AppAccountingRoute,
   } as any)
-const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
-  id: '/api/public/biometric/punch',
-  path: '/api/public/biometric/punch',
-  getParentRoute: () => rootRouteImport,
+const AppAccountingAuditLogRoute = AppAccountingAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
+  getParentRoute: () => AppAccountingRoute,
 } as any)
 const ApiPublicWhatsappInteraktRoute =
   ApiPublicWhatsappInteraktRouteImport.update({
@@ -517,6 +454,69 @@ const ApiPublicWhatsappInteraktRoute =
     path: '/api/public/whatsapp/interakt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
+  id: '/api/public/biometric/punch',
+  path: '/api/public/biometric/punch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppVendorPurchaseOrdersIdRoute =
+  AppVendorPurchaseOrdersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AppVendorPurchaseOrdersRoute,
+  } as any)
+const AppPrintSupplierLedgerIdRoute =
+  AppPrintSupplierLedgerIdRouteImport.update({
+    id: '/print/supplier-ledger/$id',
+    path: '/print/supplier-ledger/$id',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppPrintPurchaseIdRoute = AppPrintPurchaseIdRouteImport.update({
+  id: '/print/purchase/$id',
+  path: '/print/purchase/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrintPartyLedgerIdRoute = AppPrintPartyLedgerIdRouteImport.update({
+  id: '/print/party-ledger/$id',
+  path: '/print/party-ledger/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
+  id: '/print/invoice/$id',
+  path: '/print/invoice/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGstReturnsIdRoute = AppGstReturnsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppGstReturnsRoute,
+} as any)
+const AppBankingReconcileIdRoute = AppBankingReconcileIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppBankingReconcileRoute,
+} as any)
+const AppBankingChequePrintIdRoute = AppBankingChequePrintIdRouteImport.update({
+  id: '/cheque-print/$id',
+  path: '/cheque-print/$id',
+  getParentRoute: () => AppBankingRoute,
+} as any)
+const AppAccountingVouchersNewRoute =
+  AppAccountingVouchersNewRouteImport.update({
+    id: '/vouchers/new',
+    path: '/vouchers/new',
+    getParentRoute: () => AppAccountingRoute,
+  } as any)
+const AppAccountingVoucherIdRoute = AppAccountingVoucherIdRouteImport.update({
+  id: '/voucher/$id',
+  path: '/voucher/$id',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
+const AppAccountingLedgerIdRoute = AppAccountingLedgerIdRouteImport.update({
+  id: '/ledger/$id',
+  path: '/ledger/$id',
+  getParentRoute: () => AppAccountingRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1037,46 +1037,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pending': {
-      id: '/pending'
-      path: '/pending'
-      fullPath: '/pending'
-      preLoaderRoute: typeof PendingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/vendor-signup': {
+      id: '/vendor-signup'
+      path: '/vendor-signup'
+      fullPath: '/vendor-signup'
+      preLoaderRoute: typeof VendorSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -1086,144 +1051,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/vendor-signup': {
-      id: '/vendor-signup'
-      path: '/vendor-signup'
-      fullPath: '/vendor-signup'
-      preLoaderRoute: typeof VendorSignupRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/accounting': {
-      id: '/_app/accounting'
-      path: '/accounting'
-      fullPath: '/accounting'
-      preLoaderRoute: typeof AppAccountingRouteImport
-      parentRoute: typeof AppRoute
+    '/pending': {
+      id: '/pending'
+      path: '/pending'
+      fullPath: '/pending'
+      preLoaderRoute: typeof PendingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/ai': {
-      id: '/_app/ai'
-      path: '/ai'
-      fullPath: '/ai'
-      preLoaderRoute: typeof AppAiRouteImport
-      parentRoute: typeof AppRoute
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/approvals': {
-      id: '/_app/approvals'
-      path: '/approvals'
-      fullPath: '/approvals'
-      preLoaderRoute: typeof AppApprovalsRouteImport
-      parentRoute: typeof AppRoute
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/attendance': {
-      id: '/_app/attendance'
-      path: '/attendance'
-      fullPath: '/attendance'
-      preLoaderRoute: typeof AppAttendanceRouteImport
-      parentRoute: typeof AppRoute
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/banking': {
-      id: '/_app/banking'
-      path: '/banking'
-      fullPath: '/banking'
-      preLoaderRoute: typeof AppBankingRouteImport
-      parentRoute: typeof AppRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/boq': {
-      id: '/_app/boq'
-      path: '/boq'
-      fullPath: '/boq'
-      preLoaderRoute: typeof AppBoqRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/communications': {
-      id: '/_app/communications'
-      path: '/communications'
-      fullPath: '/communications'
-      preLoaderRoute: typeof AppCommunicationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/employees': {
-      id: '/_app/employees'
-      path: '/employees'
-      fullPath: '/employees'
-      preLoaderRoute: typeof AppEmployeesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/gst': {
-      id: '/_app/gst'
-      path: '/gst'
-      fullPath: '/gst'
-      preLoaderRoute: typeof AppGstRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/inventory': {
-      id: '/_app/inventory'
-      path: '/inventory'
-      fullPath: '/inventory'
-      preLoaderRoute: typeof AppInventoryRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/invoices': {
-      id: '/_app/invoices'
-      path: '/invoices'
-      fullPath: '/invoices'
-      preLoaderRoute: typeof AppInvoicesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/parties': {
-      id: '/_app/parties'
-      path: '/parties'
-      fullPath: '/parties'
-      preLoaderRoute: typeof AppPartiesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/payslips': {
-      id: '/_app/payslips'
-      path: '/payslips'
-      fullPath: '/payslips'
-      preLoaderRoute: typeof AppPayslipsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/production': {
-      id: '/_app/production'
-      path: '/production'
-      fullPath: '/production'
-      preLoaderRoute: typeof AppProductionRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/purchases': {
-      id: '/_app/purchases'
-      path: '/purchases'
-      fullPath: '/purchases'
-      preLoaderRoute: typeof AppPurchasesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/sales-orders': {
-      id: '/_app/sales-orders'
-      path: '/sales-orders'
-      fullPath: '/sales-orders'
-      preLoaderRoute: typeof AppSalesOrdersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/tally-import': {
-      id: '/_app/tally-import'
-      path: '/tally-import'
-      fullPath: '/tally-import'
-      preLoaderRoute: typeof AppTallyImportRouteImport
+    '/_app/whatsapp': {
+      id: '/_app/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AppWhatsappRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/vendor': {
@@ -1233,152 +1107,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/whatsapp': {
-      id: '/_app/whatsapp'
-      path: '/whatsapp'
-      fullPath: '/whatsapp'
-      preLoaderRoute: typeof AppWhatsappRouteImport
+    '/_app/tally-import': {
+      id: '/_app/tally-import'
+      path: '/tally-import'
+      fullPath: '/tally-import'
+      preLoaderRoute: typeof AppTallyImportRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/accounting/audit-log': {
-      id: '/_app/accounting/audit-log'
-      path: '/audit-log'
-      fullPath: '/accounting/audit-log'
-      preLoaderRoute: typeof AppAccountingAuditLogRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/accounting/balance-sheet': {
-      id: '/_app/accounting/balance-sheet'
-      path: '/balance-sheet'
-      fullPath: '/accounting/balance-sheet'
-      preLoaderRoute: typeof AppAccountingBalanceSheetRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/sales-orders': {
+      id: '/_app/sales-orders'
+      path: '/sales-orders'
+      fullPath: '/sales-orders'
+      preLoaderRoute: typeof AppSalesOrdersRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/accounting/day-book': {
-      id: '/_app/accounting/day-book'
-      path: '/day-book'
-      fullPath: '/accounting/day-book'
-      preLoaderRoute: typeof AppAccountingDayBookRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/purchases': {
+      id: '/_app/purchases'
+      path: '/purchases'
+      fullPath: '/purchases'
+      preLoaderRoute: typeof AppPurchasesRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/accounting/ledgers': {
-      id: '/_app/accounting/ledgers'
-      path: '/ledgers'
-      fullPath: '/accounting/ledgers'
-      preLoaderRoute: typeof AppAccountingLedgersRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/production': {
+      id: '/_app/production'
+      path: '/production'
+      fullPath: '/production'
+      preLoaderRoute: typeof AppProductionRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/accounting/periods': {
-      id: '/_app/accounting/periods'
-      path: '/periods'
-      fullPath: '/accounting/periods'
-      preLoaderRoute: typeof AppAccountingPeriodsRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/payslips': {
+      id: '/_app/payslips'
+      path: '/payslips'
+      fullPath: '/payslips'
+      preLoaderRoute: typeof AppPayslipsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/accounting/profit-loss': {
-      id: '/_app/accounting/profit-loss'
-      path: '/profit-loss'
-      fullPath: '/accounting/profit-loss'
-      preLoaderRoute: typeof AppAccountingProfitLossRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/parties': {
+      id: '/_app/parties'
+      path: '/parties'
+      fullPath: '/parties'
+      preLoaderRoute: typeof AppPartiesRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/accounting/trial-balance': {
-      id: '/_app/accounting/trial-balance'
-      path: '/trial-balance'
-      fullPath: '/accounting/trial-balance'
-      preLoaderRoute: typeof AppAccountingTrialBalanceRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/invoices': {
+      id: '/_app/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AppInvoicesRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/ai/': {
-      id: '/_app/ai/'
+    '/_app/inventory': {
+      id: '/_app/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AppInventoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/gst': {
+      id: '/_app/gst'
+      path: '/gst'
+      fullPath: '/gst'
+      preLoaderRoute: typeof AppGstRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/employees': {
+      id: '/_app/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AppEmployeesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/communications': {
+      id: '/_app/communications'
+      path: '/communications'
+      fullPath: '/communications'
+      preLoaderRoute: typeof AppCommunicationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/boq': {
+      id: '/_app/boq'
+      path: '/boq'
+      fullPath: '/boq'
+      preLoaderRoute: typeof AppBoqRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/banking': {
+      id: '/_app/banking'
+      path: '/banking'
+      fullPath: '/banking'
+      preLoaderRoute: typeof AppBankingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/attendance': {
+      id: '/_app/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AppAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/approvals': {
+      id: '/_app/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/ai': {
+      id: '/_app/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AppAiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounting': {
+      id: '/_app/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AppAccountingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vendor/': {
+      id: '/_app/vendor/'
       path: '/'
-      fullPath: '/ai/'
-      preLoaderRoute: typeof AppAiIndexRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/ask': {
-      id: '/_app/ai/ask'
-      path: '/ask'
-      fullPath: '/ai/ask'
-      preLoaderRoute: typeof AppAiAskRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/brief': {
-      id: '/_app/ai/brief'
-      path: '/brief'
-      fullPath: '/ai/brief'
-      preLoaderRoute: typeof AppAiBriefRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/documents': {
-      id: '/_app/ai/documents'
-      path: '/documents'
-      fullPath: '/ai/documents'
-      preLoaderRoute: typeof AppAiDocumentsRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/insights': {
-      id: '/_app/ai/insights'
-      path: '/insights'
-      fullPath: '/ai/insights'
-      preLoaderRoute: typeof AppAiInsightsRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/proposals': {
-      id: '/_app/ai/proposals'
-      path: '/proposals'
-      fullPath: '/ai/proposals'
-      preLoaderRoute: typeof AppAiProposalsRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/quotations': {
-      id: '/_app/ai/quotations'
-      path: '/quotations'
-      fullPath: '/ai/quotations'
-      preLoaderRoute: typeof AppAiQuotationsRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/ai/search': {
-      id: '/_app/ai/search'
-      path: '/search'
-      fullPath: '/ai/search'
-      preLoaderRoute: typeof AppAiSearchRouteImport
-      parentRoute: typeof AppAiRoute
-    }
-    '/_app/banking/accounts': {
-      id: '/_app/banking/accounts'
-      path: '/accounts'
-      fullPath: '/banking/accounts'
-      preLoaderRoute: typeof AppBankingAccountsRouteImport
-      parentRoute: typeof AppBankingRoute
-    }
-    '/_app/banking/cheques': {
-      id: '/_app/banking/cheques'
-      path: '/cheques'
-      fullPath: '/banking/cheques'
-      preLoaderRoute: typeof AppBankingChequesRouteImport
-      parentRoute: typeof AppBankingRoute
-    }
-    '/_app/banking/currencies': {
-      id: '/_app/banking/currencies'
-      path: '/currencies'
-      fullPath: '/banking/currencies'
-      preLoaderRoute: typeof AppBankingCurrenciesRouteImport
-      parentRoute: typeof AppBankingRoute
-    }
-    '/_app/banking/payment-advice': {
-      id: '/_app/banking/payment-advice'
-      path: '/payment-advice'
-      fullPath: '/banking/payment-advice'
-      preLoaderRoute: typeof AppBankingPaymentAdviceRouteImport
-      parentRoute: typeof AppBankingRoute
-    }
-    '/_app/banking/reconcile': {
-      id: '/_app/banking/reconcile'
-      path: '/reconcile'
-      fullPath: '/banking/reconcile'
-      preLoaderRoute: typeof AppBankingReconcileRouteImport
-      parentRoute: typeof AppBankingRoute
+      fullPath: '/vendor/'
+      preLoaderRoute: typeof AppVendorIndexRouteImport
+      parentRoute: typeof AppVendorRoute
     }
     '/_app/communications/': {
       id: '/_app/communications/'
@@ -1387,130 +1254,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunicationsIndexRouteImport
       parentRoute: typeof AppCommunicationsRoute
     }
-    '/_app/communications/employee-subscriptions': {
-      id: '/_app/communications/employee-subscriptions'
-      path: '/employee-subscriptions'
-      fullPath: '/communications/employee-subscriptions'
-      preLoaderRoute: typeof AppCommunicationsEmployeeSubscriptionsRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/communications/events': {
-      id: '/_app/communications/events'
-      path: '/events'
-      fullPath: '/communications/events'
-      preLoaderRoute: typeof AppCommunicationsEventsRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/communications/inbox': {
-      id: '/_app/communications/inbox'
-      path: '/inbox'
-      fullPath: '/communications/inbox'
-      preLoaderRoute: typeof AppCommunicationsInboxRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/communications/providers': {
-      id: '/_app/communications/providers'
-      path: '/providers'
-      fullPath: '/communications/providers'
-      preLoaderRoute: typeof AppCommunicationsProvidersRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/communications/setup': {
-      id: '/_app/communications/setup'
-      path: '/setup'
-      fullPath: '/communications/setup'
-      preLoaderRoute: typeof AppCommunicationsSetupRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/communications/templates': {
-      id: '/_app/communications/templates'
-      path: '/templates'
-      fullPath: '/communications/templates'
-      preLoaderRoute: typeof AppCommunicationsTemplatesRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/communications/whatsapp-logs': {
-      id: '/_app/communications/whatsapp-logs'
-      path: '/whatsapp-logs'
-      fullPath: '/communications/whatsapp-logs'
-      preLoaderRoute: typeof AppCommunicationsWhatsappLogsRouteImport
-      parentRoute: typeof AppCommunicationsRoute
-    }
-    '/_app/gst/einvoices': {
-      id: '/_app/gst/einvoices'
-      path: '/einvoices'
-      fullPath: '/gst/einvoices'
-      preLoaderRoute: typeof AppGstEinvoicesRouteImport
-      parentRoute: typeof AppGstRoute
-    }
-    '/_app/gst/hsn': {
-      id: '/_app/gst/hsn'
-      path: '/hsn'
-      fullPath: '/gst/hsn'
-      preLoaderRoute: typeof AppGstHsnRouteImport
-      parentRoute: typeof AppGstRoute
-    }
-    '/_app/gst/returns': {
-      id: '/_app/gst/returns'
-      path: '/returns'
-      fullPath: '/gst/returns'
-      preLoaderRoute: typeof AppGstReturnsRouteImport
-      parentRoute: typeof AppGstRoute
-    }
-    '/_app/inventory/godowns': {
-      id: '/_app/inventory/godowns'
-      path: '/godowns'
-      fullPath: '/inventory/godowns'
-      preLoaderRoute: typeof AppInventoryGodownsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/inventory/items': {
-      id: '/_app/inventory/items'
-      path: '/items'
-      fullPath: '/inventory/items'
-      preLoaderRoute: typeof AppInventoryItemsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/inventory/journals': {
-      id: '/_app/inventory/journals'
-      path: '/journals'
-      fullPath: '/inventory/journals'
-      preLoaderRoute: typeof AppInventoryJournalsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/inventory/movements': {
-      id: '/_app/inventory/movements'
-      path: '/movements'
-      fullPath: '/inventory/movements'
-      preLoaderRoute: typeof AppInventoryMovementsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/inventory/reorder': {
-      id: '/_app/inventory/reorder'
-      path: '/reorder'
-      fullPath: '/inventory/reorder'
-      preLoaderRoute: typeof AppInventoryReorderRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/inventory/summary': {
-      id: '/_app/inventory/summary'
-      path: '/summary'
-      fullPath: '/inventory/summary'
-      preLoaderRoute: typeof AppInventorySummaryRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/inventory/valuation': {
-      id: '/_app/inventory/valuation'
-      path: '/valuation'
-      fullPath: '/inventory/valuation'
-      preLoaderRoute: typeof AppInventoryValuationRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/_app/vendor/': {
-      id: '/_app/vendor/'
+    '/_app/ai/': {
+      id: '/_app/ai/'
       path: '/'
-      fullPath: '/vendor/'
-      preLoaderRoute: typeof AppVendorIndexRouteImport
+      fullPath: '/ai/'
+      preLoaderRoute: typeof AppAiIndexRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/vendor/purchase-orders': {
+      id: '/_app/vendor/purchase-orders'
+      path: '/purchase-orders'
+      fullPath: '/vendor/purchase-orders'
+      preLoaderRoute: typeof AppVendorPurchaseOrdersRouteImport
       parentRoute: typeof AppVendorRoute
     }
     '/_app/vendor/ledger': {
@@ -1520,67 +1275,284 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorLedgerRouteImport
       parentRoute: typeof AppVendorRoute
     }
-    '/_app/vendor/purchase-orders': {
-      id: '/_app/vendor/purchase-orders'
-      path: '/purchase-orders'
-      fullPath: '/vendor/purchase-orders'
-      preLoaderRoute: typeof AppVendorPurchaseOrdersRouteImport
-      parentRoute: typeof AppVendorRoute
+    '/_app/inventory/valuation': {
+      id: '/_app/inventory/valuation'
+      path: '/valuation'
+      fullPath: '/inventory/valuation'
+      preLoaderRoute: typeof AppInventoryValuationRouteImport
+      parentRoute: typeof AppInventoryRoute
     }
-    '/_app/accounting/ledger/$id': {
-      id: '/_app/accounting/ledger/$id'
-      path: '/ledger/$id'
-      fullPath: '/accounting/ledger/$id'
-      preLoaderRoute: typeof AppAccountingLedgerIdRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/inventory/summary': {
+      id: '/_app/inventory/summary'
+      path: '/summary'
+      fullPath: '/inventory/summary'
+      preLoaderRoute: typeof AppInventorySummaryRouteImport
+      parentRoute: typeof AppInventoryRoute
     }
-    '/_app/accounting/voucher/$id': {
-      id: '/_app/accounting/voucher/$id'
-      path: '/voucher/$id'
-      fullPath: '/accounting/voucher/$id'
-      preLoaderRoute: typeof AppAccountingVoucherIdRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/inventory/reorder': {
+      id: '/_app/inventory/reorder'
+      path: '/reorder'
+      fullPath: '/inventory/reorder'
+      preLoaderRoute: typeof AppInventoryReorderRouteImport
+      parentRoute: typeof AppInventoryRoute
     }
-    '/_app/accounting/vouchers/new': {
-      id: '/_app/accounting/vouchers/new'
-      path: '/vouchers/new'
-      fullPath: '/accounting/vouchers/new'
-      preLoaderRoute: typeof AppAccountingVouchersNewRouteImport
-      parentRoute: typeof AppAccountingRoute
+    '/_app/inventory/movements': {
+      id: '/_app/inventory/movements'
+      path: '/movements'
+      fullPath: '/inventory/movements'
+      preLoaderRoute: typeof AppInventoryMovementsRouteImport
+      parentRoute: typeof AppInventoryRoute
     }
-    '/_app/banking/cheque-print/$id': {
-      id: '/_app/banking/cheque-print/$id'
-      path: '/cheque-print/$id'
-      fullPath: '/banking/cheque-print/$id'
-      preLoaderRoute: typeof AppBankingChequePrintIdRouteImport
+    '/_app/inventory/journals': {
+      id: '/_app/inventory/journals'
+      path: '/journals'
+      fullPath: '/inventory/journals'
+      preLoaderRoute: typeof AppInventoryJournalsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/items': {
+      id: '/_app/inventory/items'
+      path: '/items'
+      fullPath: '/inventory/items'
+      preLoaderRoute: typeof AppInventoryItemsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/inventory/godowns': {
+      id: '/_app/inventory/godowns'
+      path: '/godowns'
+      fullPath: '/inventory/godowns'
+      preLoaderRoute: typeof AppInventoryGodownsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/_app/gst/returns': {
+      id: '/_app/gst/returns'
+      path: '/returns'
+      fullPath: '/gst/returns'
+      preLoaderRoute: typeof AppGstReturnsRouteImport
+      parentRoute: typeof AppGstRoute
+    }
+    '/_app/gst/hsn': {
+      id: '/_app/gst/hsn'
+      path: '/hsn'
+      fullPath: '/gst/hsn'
+      preLoaderRoute: typeof AppGstHsnRouteImport
+      parentRoute: typeof AppGstRoute
+    }
+    '/_app/gst/einvoices': {
+      id: '/_app/gst/einvoices'
+      path: '/einvoices'
+      fullPath: '/gst/einvoices'
+      preLoaderRoute: typeof AppGstEinvoicesRouteImport
+      parentRoute: typeof AppGstRoute
+    }
+    '/_app/communications/whatsapp-logs': {
+      id: '/_app/communications/whatsapp-logs'
+      path: '/whatsapp-logs'
+      fullPath: '/communications/whatsapp-logs'
+      preLoaderRoute: typeof AppCommunicationsWhatsappLogsRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/templates': {
+      id: '/_app/communications/templates'
+      path: '/templates'
+      fullPath: '/communications/templates'
+      preLoaderRoute: typeof AppCommunicationsTemplatesRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/setup': {
+      id: '/_app/communications/setup'
+      path: '/setup'
+      fullPath: '/communications/setup'
+      preLoaderRoute: typeof AppCommunicationsSetupRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/providers': {
+      id: '/_app/communications/providers'
+      path: '/providers'
+      fullPath: '/communications/providers'
+      preLoaderRoute: typeof AppCommunicationsProvidersRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/inbox': {
+      id: '/_app/communications/inbox'
+      path: '/inbox'
+      fullPath: '/communications/inbox'
+      preLoaderRoute: typeof AppCommunicationsInboxRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/events': {
+      id: '/_app/communications/events'
+      path: '/events'
+      fullPath: '/communications/events'
+      preLoaderRoute: typeof AppCommunicationsEventsRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/communications/employee-subscriptions': {
+      id: '/_app/communications/employee-subscriptions'
+      path: '/employee-subscriptions'
+      fullPath: '/communications/employee-subscriptions'
+      preLoaderRoute: typeof AppCommunicationsEmployeeSubscriptionsRouteImport
+      parentRoute: typeof AppCommunicationsRoute
+    }
+    '/_app/banking/reconcile': {
+      id: '/_app/banking/reconcile'
+      path: '/reconcile'
+      fullPath: '/banking/reconcile'
+      preLoaderRoute: typeof AppBankingReconcileRouteImport
       parentRoute: typeof AppBankingRoute
     }
-    '/_app/banking/reconcile/$id': {
-      id: '/_app/banking/reconcile/$id'
+    '/_app/banking/payment-advice': {
+      id: '/_app/banking/payment-advice'
+      path: '/payment-advice'
+      fullPath: '/banking/payment-advice'
+      preLoaderRoute: typeof AppBankingPaymentAdviceRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/currencies': {
+      id: '/_app/banking/currencies'
+      path: '/currencies'
+      fullPath: '/banking/currencies'
+      preLoaderRoute: typeof AppBankingCurrenciesRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/cheques': {
+      id: '/_app/banking/cheques'
+      path: '/cheques'
+      fullPath: '/banking/cheques'
+      preLoaderRoute: typeof AppBankingChequesRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/banking/accounts': {
+      id: '/_app/banking/accounts'
+      path: '/accounts'
+      fullPath: '/banking/accounts'
+      preLoaderRoute: typeof AppBankingAccountsRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/ai/search': {
+      id: '/_app/ai/search'
+      path: '/search'
+      fullPath: '/ai/search'
+      preLoaderRoute: typeof AppAiSearchRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/quotations': {
+      id: '/_app/ai/quotations'
+      path: '/quotations'
+      fullPath: '/ai/quotations'
+      preLoaderRoute: typeof AppAiQuotationsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/proposals': {
+      id: '/_app/ai/proposals'
+      path: '/proposals'
+      fullPath: '/ai/proposals'
+      preLoaderRoute: typeof AppAiProposalsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/insights': {
+      id: '/_app/ai/insights'
+      path: '/insights'
+      fullPath: '/ai/insights'
+      preLoaderRoute: typeof AppAiInsightsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/documents': {
+      id: '/_app/ai/documents'
+      path: '/documents'
+      fullPath: '/ai/documents'
+      preLoaderRoute: typeof AppAiDocumentsRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/brief': {
+      id: '/_app/ai/brief'
+      path: '/brief'
+      fullPath: '/ai/brief'
+      preLoaderRoute: typeof AppAiBriefRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/ask': {
+      id: '/_app/ai/ask'
+      path: '/ask'
+      fullPath: '/ai/ask'
+      preLoaderRoute: typeof AppAiAskRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/accounting/trial-balance': {
+      id: '/_app/accounting/trial-balance'
+      path: '/trial-balance'
+      fullPath: '/accounting/trial-balance'
+      preLoaderRoute: typeof AppAccountingTrialBalanceRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/profit-loss': {
+      id: '/_app/accounting/profit-loss'
+      path: '/profit-loss'
+      fullPath: '/accounting/profit-loss'
+      preLoaderRoute: typeof AppAccountingProfitLossRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/periods': {
+      id: '/_app/accounting/periods'
+      path: '/periods'
+      fullPath: '/accounting/periods'
+      preLoaderRoute: typeof AppAccountingPeriodsRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/ledgers': {
+      id: '/_app/accounting/ledgers'
+      path: '/ledgers'
+      fullPath: '/accounting/ledgers'
+      preLoaderRoute: typeof AppAccountingLedgersRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/day-book': {
+      id: '/_app/accounting/day-book'
+      path: '/day-book'
+      fullPath: '/accounting/day-book'
+      preLoaderRoute: typeof AppAccountingDayBookRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/balance-sheet': {
+      id: '/_app/accounting/balance-sheet'
+      path: '/balance-sheet'
+      fullPath: '/accounting/balance-sheet'
+      preLoaderRoute: typeof AppAccountingBalanceSheetRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/audit-log': {
+      id: '/_app/accounting/audit-log'
+      path: '/audit-log'
+      fullPath: '/accounting/audit-log'
+      preLoaderRoute: typeof AppAccountingAuditLogRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/api/public/whatsapp/interakt': {
+      id: '/api/public/whatsapp/interakt'
+      path: '/api/public/whatsapp/interakt'
+      fullPath: '/api/public/whatsapp/interakt'
+      preLoaderRoute: typeof ApiPublicWhatsappInteraktRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/biometric/punch': {
+      id: '/api/public/biometric/punch'
+      path: '/api/public/biometric/punch'
+      fullPath: '/api/public/biometric/punch'
+      preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/vendor/purchase-orders/$id': {
+      id: '/_app/vendor/purchase-orders/$id'
       path: '/$id'
-      fullPath: '/banking/reconcile/$id'
-      preLoaderRoute: typeof AppBankingReconcileIdRouteImport
-      parentRoute: typeof AppBankingReconcileRoute
+      fullPath: '/vendor/purchase-orders/$id'
+      preLoaderRoute: typeof AppVendorPurchaseOrdersIdRouteImport
+      parentRoute: typeof AppVendorPurchaseOrdersRoute
     }
-    '/_app/gst/returns/$id': {
-      id: '/_app/gst/returns/$id'
-      path: '/$id'
-      fullPath: '/gst/returns/$id'
-      preLoaderRoute: typeof AppGstReturnsIdRouteImport
-      parentRoute: typeof AppGstReturnsRoute
-    }
-    '/_app/print/invoice/$id': {
-      id: '/_app/print/invoice/$id'
-      path: '/print/invoice/$id'
-      fullPath: '/print/invoice/$id'
-      preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/print/party-ledger/$id': {
-      id: '/_app/print/party-ledger/$id'
-      path: '/print/party-ledger/$id'
-      fullPath: '/print/party-ledger/$id'
-      preLoaderRoute: typeof AppPrintPartyLedgerIdRouteImport
+    '/_app/print/supplier-ledger/$id': {
+      id: '/_app/print/supplier-ledger/$id'
+      path: '/print/supplier-ledger/$id'
+      fullPath: '/print/supplier-ledger/$id'
+      preLoaderRoute: typeof AppPrintSupplierLedgerIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/print/purchase/$id': {
@@ -1590,33 +1562,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPrintPurchaseIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/print/supplier-ledger/$id': {
-      id: '/_app/print/supplier-ledger/$id'
-      path: '/print/supplier-ledger/$id'
-      fullPath: '/print/supplier-ledger/$id'
-      preLoaderRoute: typeof AppPrintSupplierLedgerIdRouteImport
+    '/_app/print/party-ledger/$id': {
+      id: '/_app/print/party-ledger/$id'
+      path: '/print/party-ledger/$id'
+      fullPath: '/print/party-ledger/$id'
+      preLoaderRoute: typeof AppPrintPartyLedgerIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/vendor/purchase-orders/$id': {
-      id: '/_app/vendor/purchase-orders/$id'
+    '/_app/print/invoice/$id': {
+      id: '/_app/print/invoice/$id'
+      path: '/print/invoice/$id'
+      fullPath: '/print/invoice/$id'
+      preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/gst/returns/$id': {
+      id: '/_app/gst/returns/$id'
       path: '/$id'
-      fullPath: '/vendor/purchase-orders/$id'
-      preLoaderRoute: typeof AppVendorPurchaseOrdersIdRouteImport
-      parentRoute: typeof AppVendorPurchaseOrdersRoute
+      fullPath: '/gst/returns/$id'
+      preLoaderRoute: typeof AppGstReturnsIdRouteImport
+      parentRoute: typeof AppGstReturnsRoute
     }
-    '/api/public/biometric/punch': {
-      id: '/api/public/biometric/punch'
-      path: '/api/public/biometric/punch'
-      fullPath: '/api/public/biometric/punch'
-      preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_app/banking/reconcile/$id': {
+      id: '/_app/banking/reconcile/$id'
+      path: '/$id'
+      fullPath: '/banking/reconcile/$id'
+      preLoaderRoute: typeof AppBankingReconcileIdRouteImport
+      parentRoute: typeof AppBankingReconcileRoute
     }
-    '/api/public/whatsapp/interakt': {
-      id: '/api/public/whatsapp/interakt'
-      path: '/api/public/whatsapp/interakt'
-      fullPath: '/api/public/whatsapp/interakt'
-      preLoaderRoute: typeof ApiPublicWhatsappInteraktRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_app/banking/cheque-print/$id': {
+      id: '/_app/banking/cheque-print/$id'
+      path: '/cheque-print/$id'
+      fullPath: '/banking/cheque-print/$id'
+      preLoaderRoute: typeof AppBankingChequePrintIdRouteImport
+      parentRoute: typeof AppBankingRoute
+    }
+    '/_app/accounting/vouchers/new': {
+      id: '/_app/accounting/vouchers/new'
+      path: '/vouchers/new'
+      fullPath: '/accounting/vouchers/new'
+      preLoaderRoute: typeof AppAccountingVouchersNewRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/voucher/$id': {
+      id: '/_app/accounting/voucher/$id'
+      path: '/voucher/$id'
+      fullPath: '/accounting/voucher/$id'
+      preLoaderRoute: typeof AppAccountingVoucherIdRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/ledger/$id': {
+      id: '/_app/accounting/ledger/$id'
+      path: '/ledger/$id'
+      fullPath: '/accounting/ledger/$id'
+      preLoaderRoute: typeof AppAccountingLedgerIdRouteImport
+      parentRoute: typeof AppAccountingRoute
     }
   }
 }
