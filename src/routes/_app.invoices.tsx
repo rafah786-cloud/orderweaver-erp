@@ -184,7 +184,7 @@ function InvoicesPage() {
       });
       let posted = false;
       if (prepared.ok) {
-        const { error: postErr } = await supabase.rpc("create_gl_voucher", {
+        const { error: postErr } = await supabase.rpc("create_gl_voucher" as never, {
           _type: prepared.call.type, _date: prepared.call.date, _entries: prepared.call.entries,
           _narration: prepared.call.narration, _reference: prepared.call.reference, _idempotency_key: prepared.call.idempotencyKey,
         });

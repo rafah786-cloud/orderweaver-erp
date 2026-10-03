@@ -32,7 +32,7 @@ function StockSummaryPage() {
 
   return (
     <>
-      <PageHeader title="Stock Summary" description={`${rows.length} items · Total value ${inr(totalValue)}`} actions={<AiInsightButton topic="inventory" label="Analyze stock" />} />
+      <PageHeader title="Stock Summary" description={`${rows.length} items · Stored value ${inr(totalValue)}. Opening movement value is not assigned.`} actions={<AiInsightButton topic="inventory" label="Analyze stock" />} />
       <PageBody>
         <div className="mb-4 max-w-md">
           <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />

@@ -115,7 +115,7 @@ export function prepareInvoiceVoucher(input: {
   }
 
   async post(lines: GlLineInput[], key: string, date = "2026-04-01") {
-    let release = () => undefined;
+    let release: () => void = () => undefined;
     const prior = this.queue;
     this.queue = new Promise<void>((resolve) => { release = resolve; });
     await prior;

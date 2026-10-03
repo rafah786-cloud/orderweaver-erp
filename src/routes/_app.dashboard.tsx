@@ -253,7 +253,7 @@ function AdminPanels() {
   return (
     <>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <KpiCard label="Total Outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
+        <KpiCard label="Invoice outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
         <KpiCard label="Overdue >90d" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
         <KpiCard label="In Production" value={String((pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0))} icon={Factory} />
         <KpiCard label="Active Employees" value={String(employees ?? 0)} icon={Users} />
@@ -262,7 +262,7 @@ function AdminPanels() {
       <div className="grid gap-4 lg:grid-cols-2">
         <ProductionPipelineCard pipeline={pipeline} />
         <Card>
-          <CardHeader><CardTitle>Top Customers by Outstanding</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Top customers by invoice outstanding</CardTitle></CardHeader>
           <CardContent>
             {topCustomers.length === 0 ? (
               <p className="text-sm text-muted-foreground">No data yet.</p>

@@ -69,8 +69,8 @@ function MaterialsTab({ canEdit }: { canEdit: boolean }) {
       if (!error && data) {
         for (const row of data) {
           // @ts-expect-error This RPC requires the unapplied accounting migration.
-          const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: row.id });
-          row.current_stock = Number(onHand ?? 0);
+          const { data: onHand, error: handErr } = await supabase.rpc("material_on_hand", { p_material: row.id });
+          if (!handErr && onHand != null) row.current_stock = Number(onHand);
         }
       }
       if (error) throw error;
@@ -114,7 +114,7 @@ function MaterialsTab({ canEdit }: { canEdit: boolean }) {
     <Card className="mt-4">
       <CardContent className="p-0">
         <div className="flex items-center justify-between p-4">
-          <div className="text-sm text-muted-foreground">Stock auto-updates from purchase bills and sales orders.</div>
+          <div className="text-sm text-muted-foreground">Stored quantity is shown. Movement posting is not installed, and opening stock has no value.</div>
           {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />New Material</Button>}
         </div>
         <Table>
