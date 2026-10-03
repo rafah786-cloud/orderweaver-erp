@@ -77,7 +77,6 @@ function InvoicesPage() {
         .order("invoice_date", { ascending: false });
       if (error) throw error;
       const rows = await Promise.all((data ?? []).map(async (inv) => {
-        // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { data: due } = await supabase.rpc("bill_outstanding", { p_bill: inv.id });
         const outstanding = Number(due ?? inv.total_amount);
         return { ...inv, paid_amount: Number(inv.total_amount) - outstanding };
