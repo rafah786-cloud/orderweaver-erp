@@ -610,10 +610,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
         .eq("id", id)
         .single();
       const opening = Number(p?.opening_balance ?? 0);
-      await supabase
-        .from("parties")
       await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
-        .eq("id", id);
       recomputedParties++;
     }
     for (const id of data.supplierIds) {
@@ -629,10 +626,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
         .eq("id", id)
         .single();
       const opening = Number(s?.opening_balance ?? 0);
-      await supabase
-        .from("suppliers")
-      await supabase.rpc("record_tally_balance", { p_entity_type: "party", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
-        .eq("id", id);
+      await supabase.rpc("record_tally_balance", { p_entity_type: "supplier", p_entity_id: id, p_source_key: id, p_reported: opening + totalDr - totalCr });
       recomputedSuppliers++;
     }
     return { recomputedParties, recomputedSuppliers };
