@@ -99,7 +99,8 @@ function ProductionPage() {
         if (bomErr && !uninstalledAccountingFunction(bomErr)) throw bomErr;
       }
       if (next === "dispatched" && o.sales_order_id) {
-        const { error: stockErr } = await supabase.rpc("post_stock_issue" as never, {
+        // @ts-expect-error The optional stock RPC is absent from the live generated schema until its migration is applied.
+        const { error: stockErr } = await supabase.rpc("post_stock_issue", {
           p_item: null, p_godown: null, p_qty: 0, p_date: new Date().toISOString().slice(0, 10), p_key: `dispatch:${o.sales_order_id}`,
         });
         if (stockErr && !uninstalledAccountingFunction(stockErr)) throw stockErr;
