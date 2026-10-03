@@ -68,6 +68,13 @@ export class IsolatedStockLedger {
     }, 0);
   }
 
+  weightedRate(itemId: string, godownId: string) {
+    const inward = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId && row.rate > 0 && ["purchase", "transfer_in"].includes(row.type));
+    const qty = inward.reduce((sum, row) => sum + row.quantity, 0);
+    if (qty <= 0) return 0;
+    return inward.reduce((sum, row) => sum + row.amount, 0) / qty;
+  }
+
   async receive(itemId: string, godownId: string, quantity: number, rate: number, key: string) {
     return this.locked(() => {
       const existing = this.rows.find((row) => row.key === key);
@@ -83,10 +90,10 @@ export class IsolatedStockLedger {
     return this.locked(() => {
       const existing = this.rows.find((row) => row.key === key);
       if (existing) return existing;
+      if (quantity <= 0) throw new Error("invalid issue");
       if (this.available(itemId, godownId) < quantity) throw new Error("insufficient stock");
-      const inward = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId && row.rate > 0);
-      if (inward.length === 0) throw new Error("opening stock has no rate");
-      const rate = inward.reduce((sum, row) => sum + row.amount, 0) / inward.reduce((sum, row) => sum + row.quantity, 0);
+      const rate = this.weightedRate(itemId, godownId);
+      if (rate <= 0) throw new Error("opening stock has no rate");
       const row: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId, type: "sale", quantity, rate, amount: quantity * rate, date: "2026-04-02", source: "dispatch", key, reverses: null };
       this.rows.push(row);
       return row;
@@ -97,9 +104,12 @@ export class IsolatedStockLedger {
     return this.locked(() => {
       const existing = this.rows.filter((row) => row.key === key);
       if (existing.length) return existing;
-      if (from === to || this.available(itemId, from) < quantity) throw new Error("insufficient stock");
-      const out: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: from, type: "transfer_out", quantity, rate: 0, amount: 0, date: "2026-04-03", source: "transfer", key, reverses: null };
-      const inn: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: to, type: "transfer_in", quantity, rate: 0, amount: 0, date: "2026-04-03", source: "transfer", key, reverses: null };
+      if (from === to || quantity <= 0 || this.available(itemId, from) < quantity) throw new Error("insufficient stock");
+      const rate = this.weightedRate(itemId, from);
+      if (rate <= 0) throw new Error("opening stock has no rate");
+      const amount = quantity * rate;
+      const out: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: from, type: "transfer_out", quantity, rate, amount, date: "2026-04-03", source: "transfer", key, reverses: null };
+      const inn: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: to, type: "transfer_in", quantity, rate, amount, date: "2026-04-03", source: "transfer", key, reverses: null };
       this.rows.push(out, inn);
       return [out, inn];
     });
