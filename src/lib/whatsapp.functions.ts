@@ -45,6 +45,7 @@ async function sendForEvent(opts: {
   to: string;
   eventKey: string;
   vars: Record<string, string | number | null | undefined>;
+  requireTemplate?: boolean;
 }) {
   const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
   const provider = await getWhatsAppProvider();
@@ -58,6 +59,9 @@ async function sendForEvent(opts: {
     };
   }
   const tpl = await resolveTemplate(opts.eventKey);
+  if (opts.requireTemplate && !tpl?.template_name) {
+    return { ok: false as const, status: "skipped" as const, error: "Active template required", template_name: null, messageId: "" };
+  }
   if (tpl?.template_name) {
     const varNames = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
     const bodyValues = varNames.map((n) => String(opts.vars[n] ?? ""));
@@ -244,7 +248,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       await logWhatsAppNotification({ party_kind: "customer", party_id: party.id, event_type: data.event, ref_table: data.ref_table ?? null, ref_id: data.ref_id ?? null, status: "skipped", failure_reason: "no phone" });
       return { ok: false, reason: "no_phone" };
     }
-    const result = await sendForEvent({ to, eventKey: data.event, vars: { ...verifiedVars, customer_name: party.name } });
+    const result = await sendForEvent({ to, eventKey: data.event, vars: { ...verifiedVars, customer_name: party.name }, requireTemplate: true });
     await logWhatsAppNotification({
       party_kind: "customer",
       party_id: party.id,
