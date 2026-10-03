@@ -28,6 +28,9 @@
 - [x] Hardened isolated inventory ledger to preserve perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
 - [x] Hardened the prepared stock posting SQL with item-row locking, idempotency enforcement, signed running-value weighted average, valued transfers, and immutable reversal posting; remains uninstalled
 - [x] Added isolated weighted-average issue and destination-transfer test coverage
+- [x] Fixed prepared transfer idempotency so one business transfer uses distinct :out/:in movement keys under the unique movement-key constraint
+- [x] Hardened prepared invoice-bill creation to reuse an existing canonical invoice voucher instead of creating a duplicate GL posting
+- [x] Hardened receipt retry handling to resolve the existing allocation's bill correctly before returning outstanding
 - [ ] Do not install accounting/inventory SQL until production compatibility and recovery requirements are explicitly satisfied
 
 ## 2026-10-04 repository engineering checkpoint
@@ -35,3 +38,4 @@
 - No prepared accounting/inventory SQL was installed.
 - GitHub repository changes are source-code/prepared-SQL changes only; live deployment status must be verified separately.
 - Inventory SQL still requires database-level integration tests before installation.
+- Accounting SQL still requires database-level integration tests against the actual live schema before installation.
