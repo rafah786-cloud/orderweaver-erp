@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_opening_snapshot: {
+        Row: {
+          amount: number
+          entity_id: string | null
+          entity_kind: string
+          id: string
+          quantity: number | null
+          snapshot_key: string
+          source_table: string
+          taken_at: string
+        }
+        Insert: {
+          amount?: number
+          entity_id?: string | null
+          entity_kind: string
+          id?: string
+          quantity?: number | null
+          snapshot_key: string
+          source_table: string
+          taken_at?: string
+        }
+        Update: {
+          amount?: number
+          entity_id?: string | null
+          entity_kind?: string
+          id?: string
+          quantity?: number | null
+          snapshot_key?: string
+          source_table?: string
+          taken_at?: string
+        }
+        Relationships: []
+      }
       ai_audit_log: {
         Row: {
           action: string
@@ -549,6 +582,107 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bill_allocations: {
+        Row: {
+          allocation_date: string
+          allocation_type: string
+          amount: number
+          bill_id: string
+          created_at: string
+          effect: number
+          id: string
+          idempotency_key: string | null
+          settlement_voucher_entry_id: string | null
+          settlement_voucher_id: string | null
+        }
+        Insert: {
+          allocation_date?: string
+          allocation_type: string
+          amount: number
+          bill_id: string
+          created_at?: string
+          effect?: number
+          id?: string
+          idempotency_key?: string | null
+          settlement_voucher_entry_id?: string | null
+          settlement_voucher_id?: string | null
+        }
+        Update: {
+          allocation_date?: string
+          allocation_type?: string
+          amount?: number
+          bill_id?: string
+          created_at?: string
+          effect?: number
+          id?: string
+          idempotency_key?: string | null
+          settlement_voucher_entry_id?: string | null
+          settlement_voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_allocations_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bills: {
+        Row: {
+          bill_date: string
+          bill_reference: string | null
+          created_at: string
+          due_date: string | null
+          external_ref: string | null
+          id: string
+          ledger_account_id: string | null
+          original_amount: number
+          party_id: string
+          party_kind: string
+          reference_type: string
+          source_invoice_id: string | null
+          source_voucher_entry_id: string | null
+          source_voucher_id: string | null
+          status: string
+        }
+        Insert: {
+          bill_date?: string
+          bill_reference?: string | null
+          created_at?: string
+          due_date?: string | null
+          external_ref?: string | null
+          id?: string
+          ledger_account_id?: string | null
+          original_amount: number
+          party_id: string
+          party_kind: string
+          reference_type?: string
+          source_invoice_id?: string | null
+          source_voucher_entry_id?: string | null
+          source_voucher_id?: string | null
+          status?: string
+        }
+        Update: {
+          bill_date?: string
+          bill_reference?: string | null
+          created_at?: string
+          due_date?: string | null
+          external_ref?: string | null
+          id?: string
+          ledger_account_id?: string | null
+          original_amount?: number
+          party_id?: string
+          party_kind?: string
+          reference_type?: string
+          source_invoice_id?: string | null
+          source_voucher_entry_id?: string | null
+          source_voucher_id?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       cheques: {
         Row: {
@@ -1303,6 +1437,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invoice_tax_snapshots: {
+        Row: {
+          cess: number
+          cgst: number
+          created_at: string
+          igst: number
+          invoice_id: string
+          sgst: number
+          taxable_value: number
+        }
+        Insert: {
+          cess?: number
+          cgst?: number
+          created_at?: string
+          igst?: number
+          invoice_id: string
+          sgst?: number
+          taxable_value: number
+        }
+        Update: {
+          cess?: number
+          cgst?: number
+          created_at?: string
+          igst?: number
+          invoice_id?: string
+          sgst?: number
+          taxable_value?: number
+        }
+        Relationships: []
       }
       invoices: {
         Row: {
@@ -2705,8 +2869,10 @@ export type Database = {
           movement_date: string
           movement_type: Database["public"]["Enums"]["stock_movement_type"]
           narration: string | null
+          posting_id: string | null
           quantity: number
           rate: number
+          reverses_posting_id: string | null
           source_id: string | null
           source_table: string | null
           stock_item_id: string
@@ -2722,8 +2888,10 @@ export type Database = {
           movement_date?: string
           movement_type: Database["public"]["Enums"]["stock_movement_type"]
           narration?: string | null
+          posting_id?: string | null
           quantity: number
           rate?: number
+          reverses_posting_id?: string | null
           source_id?: string | null
           source_table?: string | null
           stock_item_id: string
@@ -2739,8 +2907,10 @@ export type Database = {
           movement_date?: string
           movement_type?: Database["public"]["Enums"]["stock_movement_type"]
           narration?: string | null
+          posting_id?: string | null
           quantity?: number
           rate?: number
+          reverses_posting_id?: string | null
           source_id?: string | null
           source_table?: string | null
           stock_item_id?: string
@@ -2795,6 +2965,108 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vouchers"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_postings: {
+        Row: {
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          posting_type: string
+          source_id: string | null
+          source_table: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          posting_type: string
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          posting_type?: string
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      stock_reservations: {
+        Row: {
+          created_at: string
+          godown_id: string | null
+          id: string
+          idempotency_key: string | null
+          qty: number
+          source_id: string
+          source_table: string
+          status: string
+          stock_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          godown_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          qty: number
+          source_id: string
+          source_table: string
+          status?: string
+          stock_item_id: string
+        }
+        Update: {
+          created_at?: string
+          godown_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          qty?: number
+          source_id?: string
+          source_table?: string
+          status?: string
+          stock_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_godown_id_fkey"
+            columns: ["godown_id"]
+            isOneToOne: false
+            referencedRelation: "godowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_godown_id_fkey"
+            columns: ["godown_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["godown_id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_godown_summary"
+            referencedColumns: ["stock_item_id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_summary"
+            referencedColumns: ["stock_item_id"]
           },
         ]
       }
@@ -3435,6 +3707,11 @@ export type Database = {
       }
     }
     Functions: {
+      _apply_raw_delta: {
+        Args: { p_item: string; p_qty: number }
+        Returns: undefined
+      }
+      bill_outstanding: { Args: { p_bill: string }; Returns: number }
       check_voucher_balanced: {
         Args: { _voucher_id: string }
         Returns: undefined
@@ -3482,6 +3759,14 @@ export type Database = {
       recalc_attendance_day: {
         Args: { _date: string; _employee_id: string }
         Returns: undefined
+      }
+      stock_available: {
+        Args: { p_godown?: string; p_item: string }
+        Returns: number
+      }
+      stock_on_hand: {
+        Args: { p_godown?: string; p_item: string }
+        Returns: number
       }
     }
     Enums: {
