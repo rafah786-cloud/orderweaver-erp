@@ -18,6 +18,14 @@ import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } fr
 import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_app/tally-import")({
+  head: () => ({ meta: [
+    { title: "Tally Import | Mattress Maestro" },
+    { name: "description", content: "Review Tally exports and accounting import integrity in Mattress Maestro." },
+    { property: "og:title", content: "Tally Import | Mattress Maestro" },
+    { property: "og:description", content: "Review Tally exports and accounting import integrity in Mattress Maestro." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: TallyImportPage,
 });
 
