@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -140,11 +141,11 @@ function SalesOrdersPage() {
       if (itemErr) throw itemErr;
       // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error: reserveErr } = await supabase.rpc("reserve_sales_order", { p_order: so.id });
-      if (reserveErr) throw reserveErr;
-      return { id: so.id as string, orderNumber };
+      if (reserveErr && !uninstalledAccountingFunction(reserveErr)) throw reserveErr;
+      return { id: so.id as string, orderNumber, reserved: !reserveErr };
     },
     onSuccess: async (res) => {
-      toast.success("Sales order created. Production order generated automatically.");
+      toast.success(res.reserved ? "Sales order created and stock reserved." : "Sales order created. Stock reservation is not installed.");
       qc.invalidateQueries({ queryKey: ["sales-orders"] });
       qc.invalidateQueries({ queryKey: ["production-orders"] });
       setOpen(false);

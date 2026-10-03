@@ -8,6 +8,11 @@ type AnySupabase = {
 };
 export const sb = supabase as unknown as AnySupabase;
 
+export function uninstalledAccountingFunction(error: { message?: string } | null) {
+  const message = error?.message ?? "";
+  return /could not find the function|schema cache|does not exist/i.test(message);
+}
+
 export type VoucherType =
   | "sales" | "purchase" | "receipt" | "payment"
   | "contra" | "journal" | "debit_note" | "credit_note" | "stock_journal";

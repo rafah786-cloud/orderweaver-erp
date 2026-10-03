@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -95,19 +96,19 @@ function ProductionPage() {
       if (next === "in_production" && o.sales_order_id) {
         // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { error: bomErr } = await supabase.rpc("produce_sales_order_bom", { p_order: o.sales_order_id, p_godown: null, p_idempotency: `bom:${o.id}` });
-        if (bomErr) throw bomErr;
+        if (bomErr && !uninstalledAccountingFunction(bomErr)) throw bomErr;
       }
       if (next === "dispatched" && o.sales_order_id) {
         // @ts-expect-error This RPC requires the unapplied accounting migration.
         const { error: stockErr } = await supabase.rpc("dispatch_sales_order", { p_order: o.sales_order_id });
-        if (stockErr) throw stockErr;
+        if (stockErr && !uninstalledAccountingFunction(stockErr)) throw stockErr;
       }
       const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
       if (error) throw error;
       return { next, order: { ...o, tracking_number: tracking, transporter_name: transporter } };
     },
     onSuccess: async (res) => {
-      toast.success("Status advanced");
+      toast.success("Status advanced. Stock functions are used only when installed.");
       qc.invalidateQueries({ queryKey: ["production-orders"] });
       if (!res) return;
       const partyId = res.order.sales_orders?.party_id;

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -176,11 +177,11 @@ function InvoicesPage() {
       if (itemErr) throw itemErr;
       // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error: taxErr } = await supabase.rpc("snapshot_invoice_tax", { p_invoice: inv.id });
-      if (taxErr) throw taxErr;
-      return { id: inv.id as string, invoiceNumber };
+      if (taxErr && !uninstalledAccountingFunction(taxErr)) throw taxErr;
+      return { id: inv.id as string, invoiceNumber, taxSnapshotted: !taxErr };
     },
     onSuccess: async (res) => {
-      toast.success("Invoice created");
+      toast.success(res.taxSnapshotted ? "Invoice created" : "Invoice created. Tax snapshot function is not installed.");
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["party-outstanding"] });
       const savedParty = partyId;

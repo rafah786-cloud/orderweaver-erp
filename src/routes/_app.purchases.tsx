@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -387,11 +388,12 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
       if (iErr) throw iErr;
       // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error: stockErr } = await supabase.rpc("receive_purchase_bill", { p_bill: bill.id });
-      if (stockErr) throw stockErr;
-      return bill.id as string;
+      if (stockErr && !uninstalledAccountingFunction(stockErr)) throw stockErr;
+      return { id: bill.id as string, stockPosted: !stockErr };
     },
-    onSuccess: async (billId) => {
-      toast.success("Purchase bill saved and stock receipt posted.");
+    onSuccess: async (res) => {
+      const billId = res.id;
+      toast.success(res.stockPosted ? "Purchase bill saved and stock receipt posted." : "Purchase bill saved. Stock receipt function is not installed.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
       qc.invalidateQueries({ queryKey: ["purchase-bill-notifs"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
