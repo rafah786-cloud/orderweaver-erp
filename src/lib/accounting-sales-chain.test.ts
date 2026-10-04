@@ -46,7 +46,7 @@ describe("canonical sales subledger → GL → receivable chain", () => {
     ]);
     expect(db.ledgerBalance("cash")).toBe(4000);
     expect(db.ledgerBalance("customer-ledger")).toBe(6000);
-    expect(db.ledgerBalance("sales-ledger")).toBe(-10000);
+    expect(db.ledgerBalance("sales-ledger", "credit")).toBe(10000);
   });
 
   it("is idempotent and reaches fully paid state after the remaining receipt", async () => {
@@ -64,7 +64,7 @@ describe("canonical sales subledger → GL → receivable chain", () => {
     expect(db.getInvoice(invoice.id)).toMatchObject({ status: "paid", paidAmount: 10000 });
     expect(db.ledgerBalance("cash")).toBe(10000);
     expect(db.ledgerBalance("customer-ledger")).toBe(0);
-    expect(db.ledgerBalance("sales-ledger")).toBe(-10000);
+    expect(db.ledgerBalance("sales-ledger", "credit")).toBe(10000);
   });
 
   it("rejects over-settlement and preserves the bill unchanged", async () => {
@@ -114,7 +114,7 @@ describe("canonical sales subledger → GL → receivable chain", () => {
     expect(db.outstanding(invoice.id)).toBe(10000);
     expect(db.ledgerBalance("cash")).toBe(0);
     expect(db.ledgerBalance("customer-ledger")).toBe(0);
-    expect(db.ledgerBalance("sales-ledger")).toBe(0);
+    expect(db.ledgerBalance("sales-ledger", "credit")).toBe(0);
   });
 
   it("never mutates the invoice or GL on an invalid receipt", async () => {
