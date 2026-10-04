@@ -28,6 +28,7 @@
 - [x] Prepared production BOM consumption, finished-goods receipt and sales-order dispatch functions use `stock_items.mapped_raw_material_id` / `mapped_model_id`
 - [x] Production UI no longer calls the stock issue function with null item/godown/quantity; it calls the dedicated production lifecycle functions
 - [x] Invoice taxed-posting path remains fail-closed because the current invoice schema stores only aggregate `tax_amount`
+- [x] Added `accounting-phase3/PRODUCTION_TALLY_REPLACEMENT_PREFLIGHT.sql` as a read-only live reconciliation gate covering GL, years, bills, party/supplier mappings, system ledgers, inventory valuation, BOM validity and database grants
 - [ ] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
 
 ## 2026-10-04 repository engineering checkpoint
@@ -36,3 +37,4 @@
 - Inventory and accounting SQL still require database-level integration tests against the actual live schema before installation.
 - Tally opening-stock valuation is intentionally not invented; it must come from Tally/source records.
 - Production finished-goods valuation is intentionally blocked unless the mapped finished-good stock item has a positive valuation rate.
+- The repository connection can modify GitHub source, but it does not provide a privileged live PostgreSQL/Supabase session; live reconciliation and production migration cannot truthfully be marked PASS from GitHub alone.
