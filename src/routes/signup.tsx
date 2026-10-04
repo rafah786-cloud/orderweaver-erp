@@ -9,13 +9,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
 import { setKeepSignedInPref } from "@/lib/device";
+import { safeLocalRedirect } from "@/lib/safe-local-redirect";
 
 export const Route = createFileRoute("/signup")({
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
+    safeLocalRedirect(s.redirect) ? { redirect: safeLocalRedirect(s.redirect) } : {},
+  head: () => ({ meta: [
+    { title: "Request access | Mattress Maestro ERP" },
+    { name: "description", content: "Request an account for the House of Abood Tradings ERP." },
+    { property: "og:title", content: "Request access | Mattress Maestro ERP" },
+    { property: "og:description", content: "Request an account for the House of Abood Tradings ERP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SignupPage,
 });
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -30,7 +42,7 @@ function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}${redirect ?? "/"}`,
         data: { full_name: fullName, phone },
       },
     });
@@ -96,7 +108,7 @@ function SignupPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-primary hover:underline">Sign in</Link>
+              <Link to="/login" search={redirect ? { redirect } : {}} className="font-medium text-primary hover:underline">Sign in</Link>
             </p>
           </form>
         </CardContent>
