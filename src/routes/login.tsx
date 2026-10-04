@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { safeLocalRedirect } from "@/lib/safe-local-redirect";
 import { getDeviceId, getDeviceName, setKeepSignedInPref } from "@/lib/device";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 import softnights from "@/assets/brands/softnights.jpeg.asset.json";
@@ -15,13 +16,18 @@ import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
 import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
 import drspine from "@/assets/brands/drspine.jpeg.asset.json";
 
-function isSafeRedirect(target: unknown): target is string {
-  return typeof target === "string" && target.startsWith("/") && !target.startsWith("//");
-}
-
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
-    isSafeRedirect(s.redirect) ? { redirect: s.redirect } : {},
+    safeLocalRedirect(s.redirect) ? { redirect: safeLocalRedirect(s.redirect) } : {},
+
+  head: () => ({ meta: [
+    { title: "Sign in | Mattress Maestro ERP" },
+    { name: "description", content: "Sign in securely to the House of Abood Tradings ERP." },
+    { property: "og:title", content: "Sign in | Mattress Maestro ERP" },
+    { property: "og:description", content: "Sign in securely to the House of Abood Tradings ERP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 
   component: LoginPage,
 });
@@ -178,7 +184,7 @@ function LoginPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               No account?{" "}
-              <Link to="/signup" className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md">
+              <Link to="/signup" search={redirect ? { redirect } : {}} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md">
                 Request access
               </Link>
             </p>

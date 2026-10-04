@@ -1,4 +1,5 @@
 ## Open tasks
+- [x] Add OAuth-protected agent integrations with read-only account and recent-invoice tools; republish to activate the new connection catalog
 - [x] Add Tally Connect as an admin-only dashboard action linking to its separate signed-in app
 - [x] Resolve the reported publishing build failure: latest build signal is OK; preview responds successfully
 - [x] Make Tally accounting uploads fail closed and display voucher-line control totals and integrity issues without saving incomplete accounting data
