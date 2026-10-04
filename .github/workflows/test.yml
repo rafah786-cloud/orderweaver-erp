@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  unit-tests:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,4 +14,6 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - run: bun run lint
       - run: bun run test
+      - run: bun run build
