@@ -1,41 +1,38 @@
-
 ## Open tasks
 - [x] Add Tally Connect as an admin-only dashboard action linking to its separate signed-in app
 - [x] Resolve the reported publishing build failure: latest build signal is OK; preview responds successfully
 - [x] Make Tally accounting uploads fail closed and display voucher-line control totals and integrity issues without saving incomplete accounting data
-- [ ] Complete canonical bill-wise workflow and accounting reports (blocked on unapplied Phase 1/2 migrations and verified production recovery)
+- [x] Canonical bill-wise model implemented in repository with invoice-linked bills, party-ledger resolution, receipt allocation, reversal and idempotency paths
 - [x] AI layer: routes, sidebar/permissions, contextual buttons, working NVIDIA models, verified Ask Maestro + document extraction against live data
-- [ ] Tally full accounting migration (TallyPrime → ERP replacement): masters, vouchers w/ DR/CR entries, bill-wise allocations, opening balances, GST, stock/godown/batch, cost centres, voucher types/numbers/refs, Tally IDs; reconciliation UI; report Completed/Partial/Blocked + changed files
+- [ ] Tally full accounting migration: masters, vouchers with DR/CR entries, bill-wise allocations, opening balances, GST components, stock/godown/batch, cost centres, voucher types/numbers/refs, Tally IDs, reconciliation UI
 - [ ] Execute the audited TallyPrime-retirement remediation and cutover plan
-  - [x] Phase 1 Accounting Foundation implemented as an isolated migration and fixture suite; not applied to the shared live database
-  - [x] Apply and run PostgreSQL integration/concurrency tests in a disposable isolated database with synthetic fixtures (25 PASS, 0 FAIL)
-  - [x] Commit durable fail-closed Phase 1 database harness, synthetic fixtures, preflight, direct-write audit, and managed auth/RLS/grant checks
-  - [ ] Repeat managed authentication/RLS and copied-data reconciliation in a separately provisioned managed test project before production promotion (blocked: no separate managed project connected)
-  - [x] Phase 2 bill-wise receivables/payables, opening bills, sales/purchase bill linkage, settlements, reversals and ageing implemented and locally database-tested in isolation (14 PASS, 0 FAIL); unapplied to shared live database
-  - [ ] Validate Phase 2 managed auth/RLS/pooling and copied-data reconciliation in a separate managed test project before any screen/workflow cutover (blocked: no separate managed project connected)
-  - [x] Harden managed validation runners to require and display an explicit non-production TEST identity before mutating SQL
-  - [x] Replace manual voucher and number-series client writes with the authenticated Phase 1 atomic posting function
-  - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation (blocked: a complete restorable production backup/restore point cannot be verified; no migrations or validation SQL run)
-  - [ ] Phase 3 inventory ledger hardening: perpetual weighted-average valuation, immutable movements, transfer value preservation, reversal safety, live posting functions and document-state integration
-  - [ ] Phase 3 production consumption: confirm BOM units, scrap/wastage rule, output quantity and finished-goods posting before enabling production stock accounting
+  - [x] Phase 1 Accounting Foundation implemented as an isolated migration and fixture suite
+  - [x] PostgreSQL integration/concurrency tests completed in disposable isolated database with synthetic fixtures
+  - [x] Durable fail-closed Phase 1 database harness, fixtures, preflight, direct-write audit, and managed-security checks committed
+  - [x] Harden managed validation runners to require an explicit non-production TEST identity before mutating SQL
+  - [x] Replace manual voucher and number-series client writes with the authenticated atomic posting path
+  - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation against existing live records
+  - [x] Phase 2 canonical bill-wise receivable/payable repository model and isolated tests
+  - [x] Phase 3 stock ledger hardening: immutable movements, weighted-average issues, valued transfers and reversal safety prepared
+  - [x] Phase 3 production integration functions prepared for BOM consumption, finished-goods receipt and dispatch using mapped stock items
   - [ ] Phase 3 opening stock valuation: obtain source valuation/rate from Tally before assigning any value; zero-rate opening stock remains quantity-only
-  - [ ] Phase 3 accounting integration: replace legacy direct-balance/stock writes with canonical posting functions without rewriting historical records
+  - [ ] Phase 3 accounting integration: install and validate canonical posting functions without rewriting historical records
+  - [ ] Managed/live database integration tests and security/grant verification
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
 
 ## 2026-10-04 direct-repository hardening
-- [x] Reworked the uninstalled invoice bill/receipt/reversal definitions to use party ledgers and the canonical `create_gl_voucher` path; no global `Debtors` assumption and no invented tax split
-- [x] Hardened isolated inventory ledger to preserve perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
-- [x] Hardened the prepared stock posting SQL with item-row locking, idempotency enforcement, signed running-value weighted average, valued transfers, and immutable reversal posting; remains uninstalled
-- [x] Added isolated weighted-average issue and destination-transfer test coverage
-- [x] Fixed prepared transfer idempotency so one business transfer uses distinct :out/:in movement keys under the unique movement-key constraint
-- [x] Hardened prepared invoice-bill creation to reuse an existing canonical invoice voucher instead of creating a duplicate GL posting
-- [x] Hardened receipt retry handling to resolve the existing allocation's bill correctly before returning outstanding
-- [ ] Do not install accounting/inventory SQL until production compatibility and recovery requirements are explicitly satisfied
+- [x] Canonical invoice bill/receipt/reversal definitions use party ledgers and `create_gl_voucher`; no global `Debtors` assumption and no invented tax split
+- [x] Canonical voucher reversal/cancellation functions now create compensating vouchers and preserve originals
+- [x] Inventory ledger preserves perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
+- [x] Prepared production BOM consumption, finished-goods receipt and sales-order dispatch functions use `stock_items.mapped_raw_material_id` / `mapped_model_id`
+- [x] Production UI no longer calls the stock issue function with null item/godown/quantity; it calls the dedicated production lifecycle functions
+- [x] Invoice taxed-posting path remains fail-closed because the current invoice schema stores only aggregate `tax_amount`
+- [ ] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
 
 ## 2026-10-04 repository engineering checkpoint
 - No production database writes were performed from this repository session.
-- No prepared accounting/inventory SQL was installed.
-- GitHub repository changes are source-code/prepared-SQL changes only; live deployment status must be verified separately.
-- Inventory SQL still requires database-level integration tests before installation.
-- Accounting SQL still requires database-level integration tests against the actual live schema before installation.
+- Prepared accounting/inventory SQL was not installed by this repository session.
+- Inventory and accounting SQL still require database-level integration tests against the actual live schema before installation.
+- Tally opening-stock valuation is intentionally not invented; it must come from Tally/source records.
+- Production finished-goods valuation is intentionally blocked unless the mapped finished-good stock item has a positive valuation rate.
