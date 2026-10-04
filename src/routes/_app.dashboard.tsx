@@ -226,7 +226,14 @@ function AdminPanels() {
       return data ?? [];
     },
   });
-  const { data: employees } = useQuery({
+  const { data: storedBalance } = useQuery({
+    queryKey: ["dash-stored-balance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("parties").select("current_balance");
+      if (error) throw error;
+      return (data ?? []).reduce((sum, row) => sum + Number(row.current_balance ?? 0), 0);
+    },
+  });
     queryKey: ["dash-employees"],
     queryFn: async () => {
       const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
@@ -254,6 +261,7 @@ function AdminPanels() {
     <>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <KpiCard label="Invoice outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
+        <KpiCard label="Stored customer balance" value={inr(storedBalance ?? 0)} icon={IndianRupee} />
         <KpiCard label="Overdue >90d" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
         <KpiCard label="In Production" value={String((pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0))} icon={Factory} />
         <KpiCard label="Active Employees" value={String(employees ?? 0)} icon={Users} />

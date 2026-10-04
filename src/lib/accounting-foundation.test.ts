@@ -136,6 +136,12 @@ describe("invoice voucher preparation", () => {
     expect(prepared).toMatchObject({ ok: false, reason: "aggregate tax has no stored split" });
   });
 
+  it("uses an explicit tax split and does not invent one", () => {
+    const explicit = prepareInvoiceVoucher({ ...base, taxAmount: 180, taxComponents: [{ ledgerAccountId: "output-cgst", amount: 90 }, { ledgerAccountId: "output-sgst", amount: 90 }] });
+    expect(explicit.ok).toBe(true);
+    expect(prepareInvoiceVoucher({ ...base, taxAmount: 180 }).reason).toBe("aggregate tax has no stored split");
+  });
+
   it("reports a missing customer or Sales ledger", () => {
     expect(prepareInvoiceVoucher({ ...base, partyLedgerId: null }).reason).toBe("missing customer ledger");
     expect(prepareInvoiceVoucher({ ...base, salesLedgerId: null }).reason).toBe("missing Sales ledger");

@@ -56,6 +56,7 @@ function InvoicesPage() {
   const [partyId, setPartyId] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState("");
+  const [supply, setSupply] = useState<"" | "intra" | "inter">("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Item[]>([{ description: "", quantity: 1, unit_price: 0 }]);
   const [blockMsg, setBlockMsg] = useState<{ title: string; reason: string } | null>(null);
@@ -100,6 +101,9 @@ function InvoicesPage() {
 
   const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0);
   const tax = subtotal * TAX_RATE;
+  const cgst = supply === "intra" ? tax / 2 : 0;
+  const sgst = supply === "intra" ? tax - cgst : 0;
+  const igst = supply === "inter" ? tax : 0;
   const total = subtotal + tax;
 
   const resetForm = () => {
@@ -158,10 +162,13 @@ function InvoicesPage() {
           due_date: dueDate || null,
           subtotal,
           tax_amount: tax,
+          cgst_amount: supply ? cgst : null,
+          sgst_amount: supply ? sgst : null,
+          igst_amount: supply ? igst : null,
           total_amount: total,
           notes: notes || null,
           created_by: user?.id ?? null,
-        })
+        } as never)
         .select("id")
         .single();
       if (invErr) throw invErr;
@@ -181,6 +188,11 @@ function InvoicesPage() {
       const prepared = prepareInvoiceVoucher({
         invoiceId: inv.id, invoiceNumber, invoiceDate, partyLedgerId: partyLedger?.id ?? null,
         salesLedgerId: salesLedger?.id ?? null, subtotal, taxAmount: tax,
+        taxComponents: supply ? [
+          ...(cgst ? [{ ledgerAccountId: "output-cgst", amount: cgst }] : []),
+          ...(sgst ? [{ ledgerAccountId: "output-sgst", amount: sgst }] : []),
+          ...(igst ? [{ ledgerAccountId: "output-igst", amount: igst }] : []),
+        ] : undefined,
       });
       let posted = false;
       if (prepared.ok) {
@@ -479,6 +491,15 @@ function InvoicesPage() {
             <div className="rounded-md border bg-muted/40 p-3 space-y-1 text-sm">
               <Row label="Subtotal" value={inr(subtotal)} />
               <Row label={`GST (${(TAX_RATE * 100).toFixed(0)}%)`} value={inr(tax)} />
+              <Label className="text-xs text-muted-foreground">Tax split</Label>
+              <Select value={supply || "unset"} onValueChange={(value) => setSupply(value === "unset" ? "" : value as "intra" | "inter")}>
+                <SelectTrigger><SelectValue placeholder="Choose before posting tax" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unset">Not selected — tax will not be posted</SelectItem>
+                  <SelectItem value="intra">Intra-state CGST + SGST</SelectItem>
+                  <SelectItem value="inter">Inter-state IGST</SelectItem>
+                </SelectContent>
+              </Select>
               <div className="border-t pt-1 mt-1"><Row label="Total" value={inr(total)} bold /></div>
             </div>
           </div>

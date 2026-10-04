@@ -1,5 +1,7 @@
 # Mattress Maestro — Production Cutover Runbook
 
+NOT STARTED. Do not execute this runbook. Tally remains the accounting authority.
+
 This runbook is intentionally fail-closed. It does not authorize a production migration by itself.
 
 ## 1. Freeze and backup
