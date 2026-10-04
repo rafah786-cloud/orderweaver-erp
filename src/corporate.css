@@ -1,0 +1,204 @@
+/* Mattress Maestro — corporate ERP visual system v1 */
+
+:root {
+  --background: #f3f6f9;
+  --foreground: #142033;
+  --card: #ffffff;
+  --card-foreground: #142033;
+  --popover: #ffffff;
+  --popover-foreground: #142033;
+  --primary: #16324f;
+  --primary-foreground: #ffffff;
+  --secondary: #e9eef3;
+  --secondary-foreground: #233247;
+  --muted: #eef2f6;
+  --muted-foreground: #687587;
+  --accent: #f5e8b8;
+  --accent-foreground: #765900;
+  --border: #dbe2ea;
+  --input: #d3dce6;
+  --ring: rgb(22 50 79 / 0.22);
+  --sidebar: #0d1b2a;
+  --sidebar-foreground: #e9eef5;
+  --sidebar-accent: #172b40;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-active: #d8ad38;
+  --sidebar-active-foreground: #101923;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --shadow-sm: 0 1px 2px rgb(15 30 48 / 0.05);
+  --shadow-md: 0 10px 28px -18px rgb(15 30 48 / 0.28);
+  --shadow-lg: 0 24px 60px -28px rgb(15 30 48 / 0.34);
+  --gradient-primary: #d8ad38;
+  --radius: 0.65rem;
+}
+
+html, body { background: var(--background) !important; color: var(--foreground); }
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-image: none !important;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.app-shell { background: var(--background); }
+.app-shell-content { background: var(--background); }
+.app-shell-main { scrollbar-color: #b8c4d1 transparent; }
+.app-shell-sidebar > aside {
+  width: 15.75rem !important;
+  background: var(--sidebar) !important;
+  box-shadow: 10px 0 28px -26px rgb(0 0 0 / .5);
+}
+
+.app-shell-sidebar .btn-gold {
+  background: #d8ad38 !important;
+  color: #13202d !important;
+  box-shadow: 0 5px 16px rgb(0 0 0 / .18);
+}
+.app-shell-sidebar nav { padding-top: 1rem !important; }
+.app-shell-sidebar nav a {
+  min-height: 2.55rem;
+  border: 1px solid transparent;
+  border-radius: .55rem !important;
+  font-size: .82rem !important;
+  letter-spacing: .005em;
+}
+.app-shell-sidebar nav a:not(.bg-sidebar-active):hover { background: #14273b !important; }
+.app-shell-sidebar nav a.bg-sidebar-active {
+  background: rgb(216 173 56 / .14) !important;
+  color: #f7d875 !important;
+  border-color: rgb(216 173 56 / .18);
+  box-shadow: none !important;
+}
+.app-shell-sidebar nav a.bg-sidebar-active::before { background: #d8ad38 !important; }
+
+.corporate-topbar {
+  min-height: 4.25rem !important;
+  padding: 0 1.75rem !important;
+  background: rgb(255 255 255 / .96) !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: 0 1px 0 rgb(15 30 48 / .02);
+  backdrop-filter: blur(14px);
+}
+.corporate-wordmark span { color: #7b8796 !important; font-size: .58rem !important; }
+.corporate-wordmark strong {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -.02em;
+}
+.corporate-topbar nav > a {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  border-radius: .55rem !important;
+  color: #64748b !important;
+}
+.corporate-topbar nav > a:hover { background: #eef2f6 !important; color: #16324f !important; }
+.profile-chip {
+  border: 1px solid var(--border) !important;
+  background: #f8fafc !important;
+  border-radius: 999px !important;
+  padding: .38rem .75rem !important;
+  color: #334155 !important;
+}
+
+.page-header {
+  padding: 1.35rem 1.75rem !important;
+  background: #fff;
+  border-bottom: 1px solid var(--border) !important;
+}
+.page-header h1 { font-size: 1.55rem !important; line-height: 1.15; }
+.page-header p { font-size: .82rem !important; }
+
+.app-shell-main > * { min-width: 0; }
+main .glass, main .hoa-panel, main [data-slot="card"] {
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+main [data-slot="card"] { border-radius: .75rem !important; }
+main [data-slot="card-header"] { padding: 1rem 1.1rem .75rem !important; }
+main [data-slot="card-content"] { padding: .85rem 1.1rem 1.1rem !important; }
+
+main button, main a[class*="bg-primary"] { border-radius: .55rem; }
+main input, main textarea, main select, main [role="combobox"] { border-radius: .55rem !important; }
+.btn-3d {
+  border-color: var(--border) !important;
+  background: #fff !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.btn-3d:hover { background: #f6f8fa !important; box-shadow: var(--shadow-md) !important; }
+.btn-gold { background: #d8ad38 !important; color: #142033 !important; }
+
+main table thead tr { background: #f7f9fb; }
+main table thead th {
+  color: #667487 !important;
+  font-size: .69rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+main table tbody tr:hover { background: #f8fafc; }
+
+.dashboard-editorial { max-width: 100% !important; gap: 1rem !important; }
+.dashboard-editorial > section[aria-labelledby="our-brands"],
+.dashboard-editorial > section[aria-labelledby="hoa-why"],
+.dashboard-editorial > .hoa-band,
+.dashboard-editorial > .hoa-footer { display: none !important; }
+.dashboard-editorial .hoa-hero {
+  min-height: 16.5rem !important;
+  height: 16.5rem;
+  border-radius: .85rem !important;
+  box-shadow: var(--shadow-md) !important;
+  border-color: #cfd8e2 !important;
+}
+.dashboard-editorial .hoa-hero-veil {
+  background: linear-gradient(90deg, rgb(8 24 40 / .92) 0%, rgb(8 24 40 / .78) 45%, rgb(8 24 40 / .22) 75%, transparent 100%) !important;
+}
+.dashboard-editorial .hoa-hero-body {
+  width: min(43rem, 70%) !important;
+  min-height: 16.5rem !important;
+  padding: 1.8rem 2rem !important;
+  color: #fff !important;
+}
+.dashboard-editorial .hoa-hero-body h1 {
+  font-size: clamp(1.75rem, 3vw, 2.65rem) !important;
+  line-height: 1.08 !important;
+  margin: .45rem 0 .7rem !important;
+  color: #fff !important;
+}
+.dashboard-editorial .hoa-hero-body h1 em { color: #f1cf62 !important; font-style: normal; }
+.dashboard-editorial .hoa-hero-lead { max-width: 34rem; font-size: .83rem !important; color: rgb(255 255 255 / .78) !important; }
+.dashboard-editorial .hoa-hero-cta { margin-top: 1rem !important; }
+.dashboard-editorial .hoa-trust, .dashboard-editorial .hoa-hero-quote { display: none !important; }
+.dashboard-editorial .hoa-kicker { color: #9aa8b8 !important; font-size: .65rem !important; letter-spacing: .12em !important; }
+.dashboard-editorial .hoa-panel {
+  padding: 1.15rem !important;
+  border-radius: .85rem !important;
+  background: #fff !important;
+}
+.dashboard-editorial .hoa-section-head { margin-bottom: .25rem !important; }
+.dashboard-editorial .hoa-title { font-size: 1.25rem !important; }
+.dashboard-editorial .hoa-title em { color: #16324f !important; }
+.dashboard-editorial .hoa-sub { font-size: .78rem !important; color: #718096 !important; }
+.dashboard-editorial .hoa-action-grid { gap: .65rem !important; }
+.dashboard-editorial .hoa-action {
+  min-height: 3.25rem !important;
+  border-radius: .65rem !important;
+  border-color: var(--border) !important;
+  background: #f8fafc !important;
+}
+.dashboard-editorial .hoa-action:hover { background: #eef4f8 !important; border-color: #c8d4e0 !important; transform: translateY(-1px); }
+
+main .grid > [data-slot="card"] { min-width: 0; }
+main .grid > [data-slot="card"] [data-slot="card-title"] { font-size: .78rem !important; color: #667487 !important; font-weight: 650 !important; }
+
+@media (max-width: 767px) {
+  .app-shell-sidebar > aside { width: 17.5rem !important; }
+  .page-header { padding: 1rem !important; }
+  .dashboard-editorial .hoa-hero { height: 14rem; min-height: 14rem !important; }
+  .dashboard-editorial .hoa-hero-body { min-height: 14rem !important; width: 100% !important; padding: 1.35rem !important; }
+  .dashboard-editorial .hoa-hero-img { object-position: 65% center; }
+  .dashboard-editorial .hoa-hero-body h1 { font-size: 1.8rem !important; }
+}
