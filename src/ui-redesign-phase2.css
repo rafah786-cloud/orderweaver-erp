@@ -1,0 +1,342 @@
+/* Mattress Maestro — UI redesign phase 2
+ * Visual-only layer. No data, queries, permissions, routing or business rules are changed here.
+ */
+
+:root {
+  --mm-navy-950: #0b1c2d;
+  --mm-navy-900: #10283f;
+  --mm-navy-800: #173a59;
+  --mm-gold: #d6ad43;
+  --mm-gold-soft: #f7efd5;
+  --mm-ink: #17283a;
+  --mm-ink-soft: #617184;
+  --mm-line: #dfe6ed;
+  --mm-surface: #ffffff;
+  --mm-surface-2: #f7f9fb;
+  --mm-radius: 10px;
+}
+
+/* App chrome */
+.app-shell-sidebar > aside {
+  background: linear-gradient(180deg, var(--mm-navy-950) 0%, #10283e 100%) !important;
+  box-shadow: 10px 0 30px -28px rgb(3 16 29 / 55%) !important;
+}
+
+.app-shell-sidebar nav a {
+  min-height: 2.65rem !important;
+  border-radius: 7px !important;
+  font-size: .79rem !important;
+  color: rgb(235 242 248 / 82%) !important;
+}
+
+.app-shell-sidebar nav a:hover {
+  background: rgb(255 255 255 / 7%) !important;
+}
+
+.app-shell-sidebar nav a.bg-sidebar-active {
+  background: linear-gradient(90deg, rgb(214 173 67 / 17%), rgb(214 173 67 / 7%)) !important;
+  color: #f5d875 !important;
+  border-color: rgb(214 173 67 / 17%) !important;
+}
+
+.app-shell-sidebar nav a.bg-sidebar-active::before {
+  width: 3px !important;
+  height: 1.35rem !important;
+  border-radius: 0 3px 3px 0;
+  background: var(--mm-gold) !important;
+}
+
+.corporate-topbar {
+  min-height: 4.15rem !important;
+  padding-inline: 1.35rem !important;
+  background: rgb(255 255 255 / 96%) !important;
+  box-shadow: 0 1px 0 rgb(15 30 48 / 3%), 0 7px 20px -20px rgb(15 30 48 / 25%) !important;
+}
+
+.corporate-wordmark strong {
+  font-size: .98rem !important;
+  letter-spacing: -.015em !important;
+}
+
+.profile-chip {
+  background: #fff !important;
+  border-color: #d9e1e8 !important;
+  box-shadow: 0 1px 2px rgb(15 30 48 / 4%);
+}
+
+/* Content frame */
+.app-shell-main {
+  background:
+    linear-gradient(180deg, #f7f9fb 0, #f4f7fa 13rem, #f4f7fa 100%) !important;
+}
+
+.app-shell-main > * {
+  min-height: 100%;
+}
+
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  padding: 1rem 1.5rem !important;
+  background: rgb(255 255 255 / 96%) !important;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgb(15 30 48 / 3%);
+}
+
+.page-header h1 {
+  font-size: 1.35rem !important;
+  letter-spacing: -.025em !important;
+}
+
+/* Consistent enterprise surfaces */
+main [data-slot="card"],
+main .hoa-panel,
+main .glass,
+main .hoa-action,
+main [role="dialog"] {
+  border-color: var(--mm-line) !important;
+  box-shadow: 0 1px 2px rgb(18 39 59 / 4%), 0 8px 24px -24px rgb(18 39 59 / 18%) !important;
+}
+
+main [data-slot="card"] {
+  border-radius: var(--mm-radius) !important;
+}
+
+main [data-slot="card-header"] {
+  border-bottom: 1px solid #edf1f5;
+}
+
+main [data-slot="card-title"] {
+  color: var(--mm-ink) !important;
+  font-size: .82rem !important;
+  letter-spacing: -.005em !important;
+}
+
+/* KPI cards — make numbers the visual priority */
+main .grid > [data-slot="card"]:has([data-slot="card-title"]) {
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+main .grid > [data-slot="card"]:has([data-slot="card-title"]):hover {
+  transform: translateY(-1px);
+  border-color: #cbd7e2 !important;
+  box-shadow: 0 12px 28px -24px rgb(18 39 59 / 32%) !important;
+}
+
+/* Tables */
+main table thead tr {
+  background: #f5f8fa !important;
+}
+
+main table thead th {
+  height: 2.5rem;
+  color: #657588 !important;
+  font-size: .62rem !important;
+  letter-spacing: .065em !important;
+}
+
+main table tbody tr {
+  transition: background .12s ease;
+}
+
+main table tbody td {
+  font-size: .79rem;
+}
+
+main table tbody tr:nth-child(even) {
+  background: rgb(248 250 252 / 45%);
+}
+
+/* Inputs / controls */
+main input,
+main textarea,
+main select,
+main [role="combobox"] {
+  min-height: 2.35rem;
+  background: #fff !important;
+  border-color: #d4dee7 !important;
+  box-shadow: inset 0 1px 1px rgb(15 30 48 / 2%);
+}
+
+main input:focus,
+main textarea:focus,
+main select:focus,
+main [role="combobox"]:focus {
+  border-color: #8da6bb !important;
+  box-shadow: 0 0 0 3px rgb(23 58 89 / 8%) !important;
+}
+
+main button:not([data-sidebar="trigger"]),
+main a[class*="bg-primary"] {
+  font-weight: 600;
+}
+
+main button[class*="bg-primary"],
+main a[class*="bg-primary"] {
+  box-shadow: 0 3px 8px -5px rgb(16 40 63 / 50%);
+}
+
+.btn-gold {
+  background: linear-gradient(180deg, #e4c05a, #d3aa3e) !important;
+  color: #17283a !important;
+}
+
+/* Dashboard — operational command-center, not marketing landing page */
+.dashboard-editorial {
+  padding: 1.25rem 1.35rem 2rem !important;
+  max-width: 1500px !important;
+  margin-inline: auto;
+}
+
+.dashboard-editorial .hoa-hero {
+  min-height: 13.75rem !important;
+  height: 13.75rem !important;
+  border-radius: 12px !important;
+  border: 1px solid rgb(16 40 63 / 15%) !important;
+  overflow: hidden;
+}
+
+.dashboard-editorial .hoa-hero-body {
+  min-height: 13.75rem !important;
+  padding: 1.55rem 1.7rem !important;
+}
+
+.dashboard-editorial .hoa-hero-body h1 {
+  font-size: clamp(1.65rem, 2.4vw, 2.2rem) !important;
+  max-width: 30rem;
+}
+
+.dashboard-editorial .hoa-hero-lead {
+  max-width: 39rem !important;
+  font-size: .78rem !important;
+}
+
+.dashboard-editorial .hoa-hero-cta .hoa-btn {
+  min-height: 2.35rem;
+  padding: .55rem .85rem !important;
+  border-radius: 7px !important;
+  font-size: .72rem !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="business-overview"] {
+  padding: 1.1rem !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="business-overview"] > .hoa-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: .65rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #edf1f5;
+  padding-bottom: .8rem;
+}
+
+.dashboard-editorial > section[aria-labelledby="business-overview"] .hoa-kicker {
+  margin: 0 !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="business-overview"] .hoa-title {
+  margin: 0 !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="business-overview"] .hoa-sub {
+  width: 100%;
+  margin: -.2rem 0 0;
+}
+
+/* Quick actions become a compact command rail */
+.dashboard-editorial > section[aria-labelledby="quick-actions"] {
+  padding: .85rem 1rem !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="quick-actions"] .hoa-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: .55rem;
+  margin-bottom: .55rem !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="quick-actions"] .hoa-kicker {
+  margin: 0 !important;
+}
+
+.dashboard-editorial > section[aria-labelledby="quick-actions"] .hoa-title {
+  margin: 0 !important;
+  font-size: .95rem !important;
+}
+
+.dashboard-editorial .hoa-action-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.dashboard-editorial .hoa-action {
+  min-height: 2.9rem !important;
+  padding: .55rem .7rem !important;
+  background: #fbfcfd !important;
+  font-size: .72rem !important;
+}
+
+.dashboard-editorial .hoa-action svg:first-child {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+/* Dialogs, popovers, menus */
+[data-radix-popper-content-wrapper] > *,
+main [data-slot="dialog-content"],
+main [data-slot="sheet-content"] {
+  border: 1px solid var(--mm-line) !important;
+  box-shadow: 0 24px 60px -30px rgb(8 28 45 / 32%) !important;
+  border-radius: 10px !important;
+}
+
+/* Toasts */
+[data-sonner-toaster] [data-sonner-toast] {
+  border: 1px solid var(--mm-line) !important;
+  border-radius: 9px !important;
+  box-shadow: 0 18px 40px -25px rgb(8 28 45 / 35%) !important;
+}
+
+/* Mobile */
+@media (max-width: 1023px) {
+  .dashboard-editorial .hoa-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-editorial {
+    padding: .75rem .7rem 1.25rem !important;
+  }
+
+  .page-header {
+    padding: .85rem 1rem !important;
+  }
+
+  .dashboard-editorial .hoa-hero,
+  .dashboard-editorial .hoa-hero-body {
+    min-height: 13rem !important;
+    height: 13rem !important;
+  }
+
+  .dashboard-editorial .hoa-hero-body {
+    padding: 1.1rem !important;
+  }
+
+  .dashboard-editorial .hoa-action-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  main table {
+    min-width: 680px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
