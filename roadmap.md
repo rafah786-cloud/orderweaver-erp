@@ -29,6 +29,12 @@
 - [x] Production UI no longer calls the stock issue function with null item/godown/quantity; it calls the dedicated production lifecycle functions
 - [x] Invoice taxed-posting path remains fail-closed because the current invoice schema stores only aggregate `tax_amount`
 - [x] Added `accounting-phase3/PRODUCTION_TALLY_REPLACEMENT_PREFLIGHT.sql` as a read-only live reconciliation gate covering GL, years, bills, party/supplier mappings, system ledgers, inventory valuation, BOM validity and database grants
+- [x] Added Tally-style multi-company foundation: companies, per-user company access, active-company switching, company-scoped masters/transactions, independent financial years, voucher series and chart of accounts
+- [x] Existing company data is assigned to Abood Tradings; Zizz Smart Sleep Technologies LLP is provisioned as a separate empty company shell
+- [x] Company creation clones the chart structure, creates a fresh financial year and resets voucher series for the new company
+- [x] Restrictive company-scope RLS prevents authenticated users from crossing the active-company boundary while preserving existing role/ownership policies
+- [x] Company selector added to desktop and mobile ERP shell; administrators can create additional companies from the selector
+- [ ] Add company/group consolidated reporting and controlled inter-company transactions
 - [ ] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
 
 ## 2026-10-04 repository engineering checkpoint
