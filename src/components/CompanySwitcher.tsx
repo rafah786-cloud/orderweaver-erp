@@ -27,28 +27,27 @@ export function CompanySwitcher() {
       toast.error("Code, legal name and display name are required");
       return;
     }
-    const { data: company, error } = await db.from("companies").insert({
-      code: form.code.trim().toUpperCase(),
-      legal_name: form.legal_name.trim(),
-      display_name: form.display_name.trim(),
-      gstin: form.gstin.trim().toUpperCase() || null,
-      pan: form.pan.trim().toUpperCase() || null,
-      state: form.state.trim() || null,
-      address: form.address.trim() || null,
-    }).select("id").single();
+    const { data: companyId, error } = await db.rpc("create_company", {
+      _code: form.code.trim().toUpperCase(),
+      _legal_name: form.legal_name.trim(),
+      _display_name: form.display_name.trim(),
+      _mailing_name: form.display_name.trim(),
+      _address: form.address.trim() || null,
+      _state: form.state.trim() || null,
+      _gstin: form.gstin.trim().toUpperCase() || null,
+      _pan: form.pan.trim().toUpperCase() || null,
+      _base_currency: "INR",
+      _currency_symbol: "₹",
+    });
     if (error) {
       toast.error(error.message);
       return;
     }
-    const { error: accessError } = await db.from("user_company_access").insert({ user_id: (await supabase.auth.getUser()).data.user?.id, company_id: company.id, is_default: false });
-    if (accessError) {
-      toast.error(accessError.message);
-      return;
-    }
-    toast.success("Company created");
+    toast.success("Company created with a separate chart, fiscal year and voucher series");
     setOpenCreate(false);
     setForm({ code: "", legal_name: "", display_name: "", gstin: "", pan: "", state: "", address: "" });
     await refresh();
+    if (companyId) await switchCompany(companyId);
   };
 
   return (
@@ -106,9 +105,7 @@ export function CompanySwitcher() {
 
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Create Company</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Create Company</DialogTitle></DialogHeader>
           <div className="grid gap-4 md:grid-cols-2">
             <div><Label>Company Code *</Label><Input placeholder="NEWCO" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
             <div><Label>Legal Name *</Label><Input value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} /></div>
