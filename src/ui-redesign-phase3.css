@@ -1,0 +1,167 @@
+/* Mattress Maestro — UI redesign phase 3
+ * Module-level visual layer only. No data, queries, permissions, routing or business rules.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Shared page rhythm                                                        */
+/* -------------------------------------------------------------------------- */
+
+.page-body {
+  max-width: 1500px !important;
+  margin-inline: auto;
+  width: 100%;
+  padding: 1.15rem 1.35rem 2rem !important;
+}
+
+.page-header > div {
+  max-width: 1500px;
+  margin-inline: auto;
+}
+
+.page-header [class*="text-muted"] {
+  max-width: 52rem;
+}
+
+/* Make every module's primary toolbar read as an operational control bar. */
+.page-header button,
+.page-header a[class*="bg-primary"] {
+  min-height: 2.35rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sales / commercial modules                                                 */
+/* -------------------------------------------------------------------------- */
+
+main table tbody td:first-child {
+  color: #20354a;
+}
+
+main table tbody td:first-child.font-medium,
+main table tbody td.font-medium:first-child {
+  font-weight: 700 !important;
+}
+
+/* Order-stage cards: stronger hierarchy without changing their content. */
+main .grid > [data-slot="card"] [data-slot="card-header"] + [data-slot="card-content"] {
+  min-height: 3rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Forms                                                                      */
+/* -------------------------------------------------------------------------- */
+
+main [data-slot="dialog-content"] {
+  overflow: hidden;
+}
+
+main [data-slot="dialog-header"] {
+  padding-bottom: .85rem;
+  border-bottom: 1px solid #edf1f5;
+}
+
+main [data-slot="dialog-footer"] {
+  padding-top: .85rem;
+  border-top: 1px solid #edf1f5;
+}
+
+main label {
+  font-weight: 600;
+}
+
+/* Dense forms remain readable on desktop without making mobile cramped. */
+main .grid.gap-4 > .grid.gap-1\.5,
+main .grid.gap-3 > .grid.gap-1\.5 {
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Inventory / production / finance tables                                    */
+/* -------------------------------------------------------------------------- */
+
+main table td.text-right,
+main table th.text-right {
+  font-variant-numeric: tabular-nums;
+}
+
+main table tbody tr {
+  height: 3rem;
+}
+
+main table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Status badges should look like deliberate operational states. */
+main [data-slot="badge"] {
+  border-radius: 999px !important;
+  padding-inline: .55rem !important;
+  font-size: .66rem !important;
+  line-height: 1.35rem !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Empty / loading states                                                      */
+/* -------------------------------------------------------------------------- */
+
+main table tbody td.py-10 {
+  color: #7a8897;
+  background: #fbfcfd;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tabs and segmented navigation                                               */
+/* -------------------------------------------------------------------------- */
+
+main [role="tablist"] {
+  background: #f2f5f8 !important;
+  border: 1px solid #e0e7ed !important;
+  border-radius: 8px !important;
+  padding: .2rem !important;
+  gap: .15rem !important;
+}
+
+main [role="tab"] {
+  border-radius: 6px !important;
+  font-size: .74rem !important;
+  font-weight: 600 !important;
+}
+
+main [role="tab"][data-state="active"] {
+  background: #fff !important;
+  color: #173a59 !important;
+  box-shadow: 0 1px 3px rgb(16 40 63 / 10%) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Search / filters                                                            */
+/* -------------------------------------------------------------------------- */
+
+main input[placeholder*="Search"],
+main input[placeholder*="search"],
+main input[placeholder*="Filter"],
+main input[placeholder*="filter"] {
+  background: #fff !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive                                                                  */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .page-body {
+    padding: .8rem .7rem 1.25rem !important;
+  }
+
+  .page-header {
+    position: relative;
+  }
+
+  main [role="tablist"] {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  main [role="tab"] {
+    flex: 0 0 auto;
+  }
+}
