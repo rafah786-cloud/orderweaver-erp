@@ -658,7 +658,7 @@ export const createAiProposal = createServerFn({ method: "POST" })
       .object({
         kind: z.string().min(2).max(60),
         summary: z.string().min(2).max(400),
-        payload: z.record(z.unknown()),
+        payload: z.record(z.string(), z.unknown()),
         sourceDocumentId: z.string().uuid().nullable().optional(),
       })
       .parse(input),

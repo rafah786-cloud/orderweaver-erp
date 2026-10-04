@@ -62,23 +62,23 @@ function ProductionPage() {
       if (next === "in_production" && o.sales_order_id) {
         const { error } = await supabase.rpc("produce_sales_order_bom" as never, {
           p_order: o.sales_order_id, p_godown: null, p_idempotency: `bom:${o.id}`,
-        });
+        } as never);
         if (error && !uninstalledAccountingFunction(error)) throw error;
       }
       if (next === "ready" && o.sales_order_id) {
         const { error } = await supabase.rpc("receive_sales_order_finished_goods" as never, {
           p_order: o.sales_order_id, p_godown: null, p_idempotency: `fg:${o.id}`,
-        });
+        } as never);
         if (error && !uninstalledAccountingFunction(error)) throw error;
       }
       if (next === "dispatched" && o.sales_order_id) {
         const { error } = await supabase.rpc("dispatch_sales_order" as never, {
           p_order: o.sales_order_id, p_godown: null, p_idempotency: `dispatch:${o.id}`,
-        });
+        } as never);
         if (error && !uninstalledAccountingFunction(error)) throw error;
       }
 
-      const patch: Record<string, unknown> = {
+      const patch = {
         status: next,
         ...(col ? { [col]: new Date().toISOString() } : {}),
         ...(tracking !== null ? { tracking_number: tracking || null } : {}),

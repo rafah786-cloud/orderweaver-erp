@@ -9,10 +9,12 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_args, ctx) => {
     if (!ctx.isAuthenticated()) throw new ToolError("Sign in to view your account");
+    const userId = ctx.getUserId();
+    if (!userId) throw new ToolError("Sign in to view your account");
     const db = supabaseForUser(ctx);
     const [profile, roles] = await Promise.all([
-      db.from("profiles").select("full_name, status").eq("id", ctx.getUserId()).maybeSingle(),
-      db.from("user_roles").select("role").eq("user_id", ctx.getUserId()),
+      db.from("profiles").select("full_name, status").eq("id", userId).maybeSingle(),
+      db.from("user_roles").select("role").eq("user_id", userId),
     ]);
     if (profile.error || roles.error) throw new ToolError("Could not read your ERP account");
     if (profile.data?.status !== "approved") throw new ToolError("Your ERP account is not approved");

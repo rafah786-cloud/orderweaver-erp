@@ -10,10 +10,12 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit }, ctx) => {
     if (!ctx.isAuthenticated()) throw new ToolError("Sign in to view invoices");
+    const userId = ctx.getUserId();
+    if (!userId) throw new ToolError("Sign in to view invoices");
     const db = supabaseForUser(ctx);
     const [profile, roles] = await Promise.all([
-      db.from("profiles").select("status").eq("id", ctx.getUserId()).maybeSingle(),
-      db.from("user_roles").select("role").eq("user_id", ctx.getUserId()).in("role", ["admin", "accountant", "sales"]),
+      db.from("profiles").select("status").eq("id", userId).maybeSingle(),
+      db.from("user_roles").select("role").eq("user_id", userId).in("role", ["admin", "accountant", "sales"]),
     ]);
     if (profile.error || roles.error) throw new ToolError("Could not verify ERP access");
     if (profile.data?.status !== "approved" || !roles.data?.length) throw new ToolError("Sales or accounting access is required");

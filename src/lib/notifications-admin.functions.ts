@@ -209,7 +209,7 @@ const ProviderSchema = z.object({
   is_active: z.boolean().default(false),
   is_default: z.boolean().default(false),
   priority: z.number().int().min(0).max(1000).default(100),
-  config: z.record(z.any()).default({}),
+  config: z.record(z.string(), z.any()).default({}),
   secret_env_keys: z.array(z.string().min(1).max(80)).max(20).default([]),
   notes: z.string().max(1000).optional().nullable(),
 });
