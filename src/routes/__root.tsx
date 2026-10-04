@@ -12,6 +12,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 
 import appCss from "../styles.css?url";
 import corporateCss from "../corporate.css?url";
+import uiRedesignPhase2Css from "../ui-redesign-phase2.css?url";
 
 function NotFoundComponent() {
   return (
@@ -73,6 +74,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "stylesheet", href: corporateCss },
+      { rel: "stylesheet", href: uiRedesignPhase2Css },
       { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/zizz-logo-180.png" },
