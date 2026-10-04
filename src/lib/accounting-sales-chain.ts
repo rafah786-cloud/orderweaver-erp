@@ -134,7 +134,7 @@ export class IsolatedSalesAccountingChain {
     if (existing) return { receipt: existing, outstanding: this.outstanding(invoiceId) };
 
     const due = this.outstanding(invoiceId);
-    if (amount > due + 0.01) throw new Error("settlement exceeds outstanding");
+    if (amount > due) throw new Error("settlement exceeds outstanding");
 
     const voucher = await this.gl.post(
       "receipt",
@@ -209,11 +209,12 @@ export class IsolatedSalesAccountingChain {
     return reversal;
   }
 
-  ledgerBalance(ledgerId: string) {
-    return roundMoney(this.vouchers.reduce((sum, voucher) => {
+  ledgerBalance(ledgerId: string, normalBalance: "debit" | "credit" = "debit") {
+    const signedBalance = this.vouchers.reduce((sum, voucher) => {
       if (voucher.status !== "posted" && voucher.status !== "reversed") return sum;
       return sum + voucher.lines.reduce((lineSum, line) => lineSum + (line.ledger_account_id === ledgerId ? line.debit - line.credit : 0), 0);
-    }, 0));
+    }, 0);
+    return roundMoney(normalBalance === "debit" ? signedBalance : -signedBalance);
   }
 
   getInvoice(invoiceId: string) {
