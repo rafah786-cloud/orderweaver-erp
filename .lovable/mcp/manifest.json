@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.4",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ysaocrumxikgywdotkne.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "mattress-maestro-erp",
+      "version": "0.1.0",
+      "title": "Mattress Maestro ERP"
+    },
+    "tools": [
+      {
+        "name": "my_account",
+        "title": "My ERP account",
+        "description": "Read the signed-in person's approved ERP account name and assigned roles.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "recent_invoices",
+        "title": "Recent invoices",
+        "description": "List up to 20 recent invoices for approved ERP staff with sales or accounting access.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "default": 10,
+              "description": "Maximum invoices to return, from 1 to 20.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
