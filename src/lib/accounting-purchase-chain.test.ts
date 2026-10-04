@@ -45,7 +45,7 @@ describe("canonical purchase subledger → GL → payable chain", () => {
       expect.objectContaining({ amount: 4000, effect: 1, allocationType: "against_ref" }),
     ]);
     expect(db.ledgerBalance("cash")).toBe(-4000);
-    expect(db.ledgerBalance("supplier-ledger")).toBe(6000);
+    expect(db.ledgerBalance("supplier-ledger", "credit")).toBe(6000);
     expect(db.ledgerBalance("purchase-ledger")).toBe(10000);
   });
 
@@ -63,7 +63,7 @@ describe("canonical purchase subledger → GL → payable chain", () => {
     expect(db.outstanding(purchase.id)).toBe(0);
     expect(db.getPurchase(purchase.id)).toMatchObject({ status: "paid", paidAmount: 10000 });
     expect(db.ledgerBalance("cash")).toBe(-10000);
-    expect(db.ledgerBalance("supplier-ledger")).toBe(0);
+    expect(db.ledgerBalance("supplier-ledger", "credit")).toBe(0);
     expect(db.ledgerBalance("purchase-ledger")).toBe(10000);
   });
 
@@ -89,7 +89,7 @@ describe("canonical purchase subledger → GL → payable chain", () => {
     expect(db.outstanding(purchase.id)).toBe(10000);
     expect(db.getPurchase(purchase.id)).toMatchObject({ status: "posted", paidAmount: 0 });
     expect(db.ledgerBalance("cash")).toBe(0);
-    expect(db.ledgerBalance("supplier-ledger")).toBe(10000);
+    expect(db.ledgerBalance("supplier-ledger", "credit")).toBe(10000);
     expect(db.bills.get(`payable:${purchase.id}`)?.allocations).toMatchObject([
       expect.objectContaining({ effect: 1, amount: 10000 }),
       expect.objectContaining({ effect: -1, amount: 10000, allocationType: "reversal" }),
@@ -113,7 +113,7 @@ describe("canonical purchase subledger → GL → payable chain", () => {
     expect(db.bills.get(`payable:${purchase.id}`)?.status).toBe("cancelled");
     expect(db.outstanding(purchase.id)).toBe(10000);
     expect(db.ledgerBalance("cash")).toBe(0);
-    expect(db.ledgerBalance("supplier-ledger")).toBe(0);
+    expect(db.ledgerBalance("supplier-ledger", "credit")).toBe(0);
     expect(db.ledgerBalance("purchase-ledger")).toBe(0);
   });
 
