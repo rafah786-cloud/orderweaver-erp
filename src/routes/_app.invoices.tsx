@@ -79,12 +79,39 @@ function InvoicesPage() {
         .select("id, invoice_number, invoice_date, due_date, total_amount, paid_amount, status, party_id")
         .order("invoice_date", { ascending: false });
       if (error) throw error;
-      const rows = await Promise.all((data ?? []).map(async (inv) => {
-        const { data: due } = await supabase.rpc("bill_outstanding", { p_bill: inv.id });
-        const outstanding = Number(due ?? inv.total_amount);
+
+      const invoiceIds = (data ?? []).map((inv) => inv.id);
+      if (invoiceIds.length === 0) return [] as InvoiceRow[];
+
+      const { data: bills, error: billsError } = await supabase
+        .from("bills")
+        .select("id, source_invoice_id, original_amount")
+        .in("source_invoice_id", invoiceIds);
+      if (billsError) throw billsError;
+
+      const billIds = (bills ?? []).map((b) => b.id);
+      const allocationsByBill = new Map<string, number>();
+      if (billIds.length > 0) {
+        const { data: allocations, error: allocationError } = await supabase
+          .from("bill_allocations")
+          .select("bill_id, amount, effect")
+          .in("bill_id", billIds);
+        if (allocationError) throw allocationError;
+        for (const row of allocations ?? []) {
+          const current = allocationsByBill.get(row.bill_id) ?? 0;
+          allocationsByBill.set(row.bill_id, current + Number(row.amount) * Number(row.effect));
+        }
+      }
+
+      const billByInvoice = new Map((bills ?? []).map((bill) => [bill.source_invoice_id, bill]));
+      return (data ?? []).map((inv) => {
+        const bill = billByInvoice.get(inv.id);
+        const applied = bill ? (allocationsByBill.get(bill.id) ?? 0) : Number(inv.paid_amount ?? 0);
+        const outstanding = bill
+          ? Math.max(0, Number(bill.original_amount) - applied)
+          : Math.max(0, Number(inv.total_amount) - Number(inv.paid_amount ?? 0));
         return { ...inv, paid_amount: Number(inv.total_amount) - outstanding };
-      }));
-      return rows as InvoiceRow[];
+      }) as InvoiceRow[];
     },
   });
 
@@ -145,6 +172,7 @@ function InvoicesPage() {
       if (!partyId) throw new Error("Select a party");
       if (items.some((i) => !i.description.trim())) throw new Error("All line items need a description");
       if (total <= 0) throw new Error("Invoice total must be greater than zero");
+      if (tax > 0 && !supply) throw new Error("Select intra-state or inter-state tax treatment before creating the invoice");
 
       const blocked = await checkBlock(partyId, total);
       if (blocked) {
@@ -184,15 +212,27 @@ function InvoicesPage() {
       );
       if (itemErr) throw itemErr;
       const { data: partyLedger } = await supabase.from("ledger_accounts").select("id").eq("mapped_party_id", partyId).maybeSingle();
-      const { data: salesLedger } = await supabase.from("ledger_accounts").select("id").eq("name", "Sales").maybeSingle();
+      const { data: salesLedger } = await supabase.from("ledger_accounts").select("id").eq("name", "Sales").eq("is_active", true).maybeSingle();
+      const { data: taxLedgers } = await supabase
+        .from("ledger_accounts")
+        .select("id, name")
+        .in("name", ["Output CGST", "Output SGST", "Output IGST"])
+        .eq("is_active", true);
+      const taxLedgerByName = new Map((taxLedgers ?? []).map((ledger) => [ledger.name, ledger.id]));
+      const taxComponents = supply === "intra"
+        ? [
+            ...(cgst ? [{ ledgerAccountId: taxLedgerByName.get("Output CGST") ?? "", amount: cgst }] : []),
+            ...(sgst ? [{ ledgerAccountId: taxLedgerByName.get("Output SGST") ?? "", amount: sgst }] : []),
+          ]
+        : supply === "inter"
+          ? (igst ? [{ ledgerAccountId: taxLedgerByName.get("Output IGST") ?? "", amount: igst }] : [])
+          : undefined;
+      if (tax > 0 && taxComponents?.some((line) => !line.ledgerAccountId)) {
+        throw new Error("Required output tax ledgers are not configured");
+      }
       const prepared = prepareInvoiceVoucher({
         invoiceId: inv.id, invoiceNumber, invoiceDate, partyLedgerId: partyLedger?.id ?? null,
-        salesLedgerId: salesLedger?.id ?? null, subtotal, taxAmount: tax,
-        taxComponents: supply ? [
-          ...(cgst ? [{ ledgerAccountId: "output-cgst", amount: cgst }] : []),
-          ...(sgst ? [{ ledgerAccountId: "output-sgst", amount: sgst }] : []),
-          ...(igst ? [{ ledgerAccountId: "output-igst", amount: igst }] : []),
-        ] : undefined,
+        salesLedgerId: salesLedger?.id ?? null, subtotal, taxAmount: tax, taxComponents,
       });
       let posted = false;
       if (prepared.ok) {
