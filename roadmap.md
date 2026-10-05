@@ -12,13 +12,13 @@
   - [x] Durable fail-closed Phase 1 database harness, fixtures, preflight, direct-write audit, and managed-security checks committed
   - [x] Harden managed validation runners to require an explicit non-production TEST identity before mutating SQL
   - [x] Replace manual voucher and number-series client writes with the authenticated atomic posting path
-  - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation against existing live records
+  - [x] Production Phase 1/2 promotion, preflight, validation and reconciliation against existing live records
   - [x] Phase 2 canonical bill-wise receivable/payable repository model and isolated tests
   - [x] Phase 3 stock ledger hardening: immutable movements, weighted-average issues, valued transfers and reversal safety prepared
   - [x] Phase 3 production integration functions prepared for BOM consumption, finished-goods receipt and dispatch using mapped stock items
   - [ ] Phase 3 opening stock valuation: obtain source valuation/rate from Tally before assigning any value; zero-rate opening stock remains quantity-only
-  - [ ] Phase 3 accounting integration: install and validate canonical posting functions without rewriting historical records
-  - [ ] Managed/live database integration tests and security/grant verification
+  - [x] Phase 3 accounting integration: canonical posting functions installed and live-tested without rewriting historical records
+  - [x] Managed/live database integration tests and security/grant verification
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
 
@@ -36,7 +36,13 @@
 - [x] Restrictive company-scope RLS prevents authenticated users from crossing the active-company boundary while preserving existing role/ownership policies
 - [x] Company selector added to desktop and mobile ERP shell; administrators can create additional companies from the selector
 - [ ] Add company/group consolidated reporting and controlled inter-company transactions
-- [ ] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
+- [x] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
+
+## 2026-10-05 direct live hardening checkpoint
+- Canonical accounting/inventory/company-boundary functions were installed directly into the live database without using the Lovable agent credits.
+- Non-destructive live transaction tests passed for invoice posting, bill creation, partial receipt, idempotent receipt retry, receipt reversal, purchase receipt, payable voucher balancing and stock receipt; all tests were wrapped in transactions and rolled back.
+- A final migration mirror was committed at `supabase/migrations/20261005180000_final_production_alignment.sql` so the live hardening is reproducible from source.
+- Published project was redeployed from commit `3cf6b3d90a0c9c4f146d6c637e40ee5924d4993f` and the project reports ready with no build error.
 
 ## 2026-10-04 repository engineering checkpoint
 - No production database writes were performed from this repository session.
