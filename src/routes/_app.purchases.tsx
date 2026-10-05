@@ -58,7 +58,7 @@ function ReceiveBillButton({ billId, billNumber, onDone }: { billId: string; bil
 
 type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null; promo_opt_in?: boolean };
 
-type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null; receipt_status: "draft" | "received" | "cancelled" };
+type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; subtotal: number; tax_amount: number; cgst_amount: number; sgst_amount: number; igst_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null; receipt_status: "draft" | "received" | "cancelled" };
 type NotifLog = { ref_id: string | null; event_type: string; status: string; error: string | null; sent_at: string; recipient_phone: string | null };
 
 function PurchasesPage() {
@@ -339,13 +339,16 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
   const [supplierId, setSupplierId] = useState("");
   const [billDate, setBillDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+  const [cgstAmount, setCgstAmount] = useState(0);
+  const [sgstAmount, setSgstAmount] = useState(0);
+  const [igstAmount, setIgstAmount] = useState(0);
   const [items, setItems] = useState<BillItem[]>([{ raw_material_id: "", quantity: 1, unit_price: 0 }]);
 
   const { data: bills = [], isLoading } = useQuery({
     queryKey: ["purchase-bills"],
     queryFn: async () => {
       const { data, error } = await supabase.from("purchase_bills")
-        .select("id, bill_number, supplier_id, bill_date, total_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date, receipt_status")
+        .select("id, bill_number, supplier_id, bill_date, total_amount, subtotal, tax_amount, cgst_amount, sgst_amount, igst_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date, receipt_status")
         .order("bill_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Bill[];
@@ -387,11 +390,14 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
   });
 
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
-  const total = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0);
+  const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0);
+  const taxAmount = Number(cgstAmount || 0) + Number(sgstAmount || 0) + Number(igstAmount || 0);
+  const total = subtotal + taxAmount;
 
   const resetForm = () => {
     setBillNumber(""); setSupplierId(""); setBillDate(new Date().toISOString().slice(0, 10));
-    setNotes(""); setItems([{ raw_material_id: "", quantity: 1, unit_price: 0 }]);
+    setNotes(""); setCgstAmount(0); setSgstAmount(0); setIgstAmount(0);
+    setItems([{ raw_material_id: "", quantity: 1, unit_price: 0 }]);
   };
 
   const notifyVendor = useServerFn(notifyVendorPurchaseBill);
@@ -402,7 +408,8 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
       if (items.some((i) => !i.raw_material_id || !(i.quantity > 0))) throw new Error("All lines need material + qty");
       const { data: bill, error } = await supabase.from("purchase_bills").insert({
         bill_number: billNumber, supplier_id: supplierId || null, bill_date: billDate,
-        total_amount: total, notes: notes || null, created_by: user?.id ?? null,
+        subtotal, tax_amount: taxAmount, cgst_amount: Number(cgstAmount || 0), sgst_amount: Number(sgstAmount || 0),
+        igst_amount: Number(igstAmount || 0), total_amount: total, notes: notes || null, created_by: user?.id ?? null,
       }).select("id").single();
       if (error) throw error;
       const { error: iErr } = await supabase.from("purchase_bill_items").insert(
@@ -555,6 +562,26 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
                   );
                 })}
               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">CGST ₹</Label>
+                <Input type="number" min="0" step="0.01" value={cgstAmount} onChange={(e) => { setCgstAmount(Number(e.target.value) || 0); if (Number(e.target.value) > 0) setIgstAmount(0); }} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">SGST ₹</Label>
+                <Input type="number" min="0" step="0.01" value={sgstAmount} onChange={(e) => { setSgstAmount(Number(e.target.value) || 0); if (Number(e.target.value) > 0) setIgstAmount(0); }} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">IGST ₹</Label>
+                <Input type="number" min="0" step="0.01" value={igstAmount} onChange={(e) => { setIgstAmount(Number(e.target.value) || 0); if (Number(e.target.value) > 0) { setCgstAmount(0); setSgstAmount(0); } }} />
+              </div>
+            </div>
+
+            <div className="rounded-md border bg-muted/40 p-3 space-y-1 text-sm">
+              <div className="flex items-center justify-between"><span className="text-muted-foreground">Subtotal</span><span>{inr(subtotal)}</span></div>
+              <div className="flex items-center justify-between"><span className="text-muted-foreground">Tax</span><span>{inr(taxAmount)}</span></div>
             </div>
 
             <div><Label className="text-xs text-muted-foreground">Notes</Label>
