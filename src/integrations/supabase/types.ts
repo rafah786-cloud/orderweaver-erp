@@ -1521,11 +1521,9 @@ export type Database = {
           supplier_gstin: string | null
           tax_amount: number
           total_amount: number
-          fulfillment_status: string
           updated_at: string
         }
         Insert: {
-          cgst_amount?: number | null
           cgst_amount?: number | null
           sgst_amount?: number | null
           igst_amount?: number | null
@@ -1550,7 +1548,6 @@ export type Database = {
           supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
-          fulfillment_status?: string
           updated_at?: string
         }
         Update: {
@@ -1576,6 +1573,8 @@ export type Database = {
           tax_amount?: number
           total_amount?: number
           fulfillment_status?: string
+          sgst_amount?: number | null
+          igst_amount?: number | null
           updated_at?: string
         }
         Relationships: [
