@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { parseTallyMasters, TallyXmlError, type TallyParsed } from "@/lib/tally-import";
 import { inspectTallyAccounting } from "@/lib/tally-integrity";
 import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } from "@/lib/tally-import.functions";
+import { stageTallyMigration, listTallyMigrationRuns } from "@/lib/tally-migration.functions";
+import { useCompany } from "@/lib/company-context";
 import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_app/tally-import")({
@@ -74,13 +76,19 @@ function TallyImportPage() {
   const qc = useQueryClient();
   const runImport = useServerFn(importTallyMasters);
   const runRecompute = useServerFn(recomputeTallyBalances);
+  const stageMigration = useServerFn(stageTallyMigration);
+  const listRuns = useServerFn(listTallyMigrationRuns);
+  const { activeCompany } = useCompany();
 
   const [rawGroups, setRawGroups] = useState("Raw Materials, Components, Fabric, Foam");
   const [finishedGroups, setFinishedGroups] = useState("Finished Goods, Mattresses, Products");
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [parsed, setParsed] = useState<TallyParsed | null>(null);
+  const [migrationParsed, setMigrationParsed] = useState<TallyParsed | null>(null);
   const [result, setResult] = useState<TallyImportResult | null>(null);
+  const [staging, setStaging] = useState(false);
+  const [migrationRuns, setMigrationRuns] = useState<any[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
   const accountingExport = !!parsed && (parsed.vouchers.length > 0 || parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
@@ -102,11 +110,14 @@ function TallyImportPage() {
     setParsing(true);
     try {
       const xml = await readXmlFile(f);
-      const out = parseTallyMasters(xml, {
+      const opts = {
         rawGroups: rawGroups.split(",").map((s) => s.trim()).filter(Boolean),
         finishedGroups: finishedGroups.split(",").map((s) => s.trim()).filter(Boolean),
-      });
+      };
+      const out = parseTallyMasters(xml, opts);
+      const migrationOut = parseTallyMasters(xml, { ...opts, preserveLifecycle: true });
       setParsed(out);
+      setMigrationParsed(migrationOut);
       const total =
         out.customers.length + out.vendors.length + out.rawMaterials.length + out.finishedGoods.length +
         out.groups.length + out.ledgers.length + out.godowns.length + out.costCentres.length;
@@ -125,6 +136,76 @@ function TallyImportPage() {
       setParsed(null);
     } finally {
       setParsing(false);
+    }
+  };
+
+
+  const stageMigrationRun = async () => {
+    if (!migrationParsed || !activeCompany) return;
+    setStaging(true);
+    try {
+      const encoder = new TextEncoder();
+      const digest = await crypto.subtle.digest("SHA-256", encoder.encode(JSON.stringify(migrationParsed)));
+      const checksum = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+
+      const rows: Array<any> = [];
+      const add = (record_type: string, list: any[], keyFn: (x: any, i: number) => string, idFn?: (x: any) => string | null, parentFn?: (x: any) => string | null) => {
+        list.forEach((x, i) => rows.push({
+          record_type,
+          source_id: idFn?.(x) ?? null,
+          alter_id: null,
+          source_key: keyFn(x, i),
+          lifecycle_state: x.lifecycle_state ?? "posted",
+          parent_source_key: parentFn?.(x) ?? null,
+          payload: x,
+        }));
+      };
+      add("group", migrationParsed.groups, (x) => `group:${x.parent ?? ""}:${x.name}`, (x) => x.name);
+      add("ledger", migrationParsed.ledgers, (x) => `ledger:${x.name}`, (x) => x.name, (x) => x.parent ? `group::${x.parent}` : null);
+      add("stock_item", [...migrationParsed.rawMaterials, ...migrationParsed.finishedGoods], (x) => `stock:${x.name}`, (x) => x.name);
+      add("godown", migrationParsed.godowns, (x) => `godown:${x.parent ?? ""}:${x.name}`, (x) => x.name);
+      add("cost_center", migrationParsed.costCentres, (x) => `cost:center:${x.parent ?? ""}:${x.name}`, (x) => x.name);
+      add("party", migrationParsed.customers, (x) => `party:customer:${x.name}`, (x) => x.name);
+      add("party", migrationParsed.vendors, (x) => `party:vendor:${x.name}`, (x) => x.name);
+      add("opening_balance", migrationParsed.customers.filter((x) => x.opening_balance !== 0), (x) => `opening:customer:${x.name}`);
+      add("opening_balance", migrationParsed.vendors.filter((x) => x.opening_balance !== 0), (x) => `opening:vendor:${x.name}`);
+      add("voucher", migrationParsed.vouchers, (x) => `voucher:${x.source_id}`, (x) => x.source_id);
+      add("ledger", migrationParsed.ledgerEntries, (x) => `ledger-entry:${x.external_ref}`, (x) => x.external_ref);
+      add("bill_allocation", migrationParsed.bills, (x) => `bill:${x.external_ref}`, (x) => x.external_ref);
+      const stockOpen = [...migrationParsed.rawMaterials, ...migrationParsed.finishedGoods].filter((x) => x.opening_qty !== 0 || x.opening_rate !== 0);
+      add("inventory_line", stockOpen, (x) => `stock-opening:${x.name}`, (x) => x.name);
+      const dr = migrationParsed.vouchers.reduce((s,v)=>s+v.entries.reduce((a,e)=>a+e.debit,0),0);
+      const cr = migrationParsed.vouchers.reduce((s,v)=>s+v.entries.reduce((a,e)=>a+e.credit,0),0);
+      const controlTotals = {
+        vouchers: migrationParsed.vouchers.length,
+        voucherDebit: dr,
+        voucherCredit: cr,
+        customers: migrationParsed.customers.length,
+        vendors: migrationParsed.vendors.length,
+        ledgers: migrationParsed.ledgers.length,
+        groups: migrationParsed.groups.length,
+        stockItems: migrationParsed.rawMaterials.length + migrationParsed.finishedGoods.length,
+        godowns: migrationParsed.godowns.length,
+        costCentres: migrationParsed.costCentres.length,
+        bills: migrationParsed.bills.length,
+      };
+      const res = await stageMigration({
+        data: {
+          companyId: activeCompany.id,
+          sourceCompanyName: activeCompany.display_name,
+          sourceCompanyGuid: null,
+          sourceChecksum: checksum,
+          controlTotals,
+          rows,
+        },
+      });
+      toast.success(`Migration run staged: ${res.rowCount} source records. No ERP books were changed.`);
+      const runs = await listRuns();
+      setMigrationRuns(runs);
+    } catch (e) {
+      toast.error(`Migration staging failed: ${(e as Error).message}`);
+    } finally {
+      setStaging(false);
     }
   };
 
@@ -261,6 +342,17 @@ function TallyImportPage() {
         description="Upload a Tally Masters XML export to bring in customers, vendors, raw materials and finished goods."
       />
       <PageBody>
+        <Card className="mb-4">
+          <CardHeader><CardTitle className="text-base">Migration control plane</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">Stage a complete parsed Tally snapshot first. Staging preserves source payloads and lifecycle state and does not post anything into the accounting books.</p>
+            <Button onClick={() => void stageMigrationRun()} disabled={!migrationParsed || staging || !activeCompany}>
+              {staging ? "Staging…" : "Stage migration run safely"}
+            </Button>
+            {migrationRuns.length > 0 && <div className="text-xs text-muted-foreground">{migrationRuns.length} migration run(s) available for validation/reconciliation.</div>}
+          </CardContent>
+        </Card>
+
         <Card className="mb-4">
           <CardHeader><CardTitle className="text-base">How to export from Tally (Tally ERP 9 & TallyPrime 3/4/5)</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-1">
