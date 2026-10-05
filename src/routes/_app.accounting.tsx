@@ -3,7 +3,7 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   BookOpen, ListTree, FileEdit, CalendarDays, Scale,
-  TrendingUp, ClipboardList, Lock, ShieldCheck,
+  TrendingUp, ClipboardList, Lock, ShieldCheck, Network,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/accounting")({
@@ -19,6 +19,7 @@ const TILES = [
   { to: "/accounting/balance-sheet", label: "Balance Sheet", desc: "Assets vs liabilities", Icon: ClipboardList },
   { to: "/accounting/periods", label: "Financial Years", desc: "Lock/unlock periods", Icon: Lock },
   { to: "/accounting/audit-log", label: "Audit Trail", desc: "All voucher changes", Icon: ShieldCheck },
+  { to: "/accounting/consolidated", label: "Consolidated View", desc: "Read-only group reporting across companies", Icon: Network },
 ] as const;
 
 function AccountingHome() {
