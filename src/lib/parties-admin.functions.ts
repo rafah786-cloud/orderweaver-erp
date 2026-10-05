@@ -43,7 +43,13 @@ async function sendWa(opts: {
   const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
   const provider = await getWhatsAppProvider();
   if (!provider.isConfigured()) {
-    return { ok: false as const, status: "skipped" as const, error: "WhatsApp provider not configured", template_name: null as string | null, messageId: "" };
+    return {
+      ok: false as const,
+      status: "skipped" as const,
+      error: "WhatsApp provider not configured",
+      template_name: null as string | null,
+      messageId: "",
+    };
   }
   const tpl = await resolveTemplate(opts.eventKey);
   if (tpl?.template_name) {
@@ -57,11 +63,18 @@ async function sendWa(opts: {
     });
     return r.ok
       ? { ok: true as const, messageId: r.messageId, template_name: tpl.template_name }
-      : { ok: false as const, status: r.status, error: r.error, template_name: tpl.template_name, messageId: "" };
+      : {
+          ok: false as const,
+          status: r.status,
+          error: r.error,
+          template_name: tpl.template_name,
+          messageId: "",
+        };
   }
   const body = Object.entries(opts.vars)
     .filter(([, v]) => v !== null && v !== undefined && String(v).length > 0)
-    .map(([, v]) => String(v)).join(" ");
+    .map(([, v]) => String(v))
+    .join(" ");
   const r = await provider.sendFreeform({ to: opts.to, body });
   return r.ok
     ? { ok: true as const, messageId: r.messageId, template_name: null }
@@ -91,10 +104,15 @@ export const quickAddParty = createServerFn({ method: "POST" })
     if (to) {
       const r = await sendWa({ to, eventKey: "party.welcome", vars: { customer_name: row.name } });
       await logWhatsAppNotification({
-        party_kind: "customer", party_id: row.id, recipient_phone: to,
-        event_type: "party.welcome", template_name: r.template_name,
-        ref_table: "parties", ref_id: row.id,
-        status: r.ok ? "sent" : r.status, whatsapp_message_id: r.ok ? r.messageId : null,
+        party_kind: "customer",
+        party_id: row.id,
+        recipient_phone: to,
+        event_type: "party.welcome",
+        template_name: r.template_name,
+        ref_table: "parties",
+        ref_id: row.id,
+        status: r.ok ? "sent" : r.status,
+        whatsapp_message_id: r.ok ? r.messageId : null,
         failure_reason: r.ok ? null : r.error,
       });
     }
@@ -119,10 +137,15 @@ export const quickAddSupplier = createServerFn({ method: "POST" })
     if (to) {
       const r = await sendWa({ to, eventKey: "supplier.welcome", vars: { vendor_name: row.name } });
       await logWhatsAppNotification({
-        party_kind: "vendor", party_id: row.id, recipient_phone: to,
-        event_type: "supplier.welcome", template_name: r.template_name,
-        ref_table: "suppliers", ref_id: row.id,
-        status: r.ok ? "sent" : r.status, whatsapp_message_id: r.ok ? r.messageId : null,
+        party_kind: "vendor",
+        party_id: row.id,
+        recipient_phone: to,
+        event_type: "supplier.welcome",
+        template_name: r.template_name,
+        ref_table: "suppliers",
+        ref_id: row.id,
+        status: r.ok ? "sent" : r.status,
+        whatsapp_message_id: r.ok ? r.messageId : null,
         failure_reason: r.ok ? null : r.error,
       });
     }
@@ -174,28 +197,49 @@ export const broadcastPromo = createServerFn({ method: "POST" })
       .eq("whatsapp_opt_in", true)
       .eq("promo_opt_in", true);
 
-    const list = (rows ?? []) as Array<{ id: string; name: string; phone: string | null; whatsapp_number: string | null }>;
-    let sent = 0; let skipped = 0;
+    const list = (rows ?? []) as Array<{
+      id: string;
+      name: string;
+      phone: string | null;
+      whatsapp_number: string | null;
+    }>;
+    let sent = 0;
+    let skipped = 0;
     for (const r of list) {
       const to = normalizeWa(r.whatsapp_number ?? r.phone);
       if (!to) {
         skipped += 1;
         await logWhatsAppNotification({
-          party_kind: partyKind, party_id: r.id, event_type: eventKey,
-          ref_table: table, ref_id: r.id, status: "skipped", failure_reason: "no phone",
+          party_kind: partyKind,
+          party_id: r.id,
+          event_type: eventKey,
+          ref_table: table,
+          ref_id: r.id,
+          status: "skipped",
+          failure_reason: "no phone",
         });
         continue;
       }
-      const res = await sendWa({ to, eventKey, vars: { [nameVar]: r.name, message: data.message } });
+      const res = await sendWa({
+        to,
+        eventKey,
+        vars: { [nameVar]: r.name, message: data.message },
+      });
       await logWhatsAppNotification({
-        party_kind: partyKind, party_id: r.id, recipient_phone: to,
-        event_type: eventKey, template_name: res.template_name,
-        ref_table: table, ref_id: r.id,
-        status: res.ok ? "sent" : res.status, whatsapp_message_id: res.ok ? res.messageId : null,
+        party_kind: partyKind,
+        party_id: r.id,
+        recipient_phone: to,
+        event_type: eventKey,
+        template_name: res.template_name,
+        ref_table: table,
+        ref_id: r.id,
+        status: res.ok ? "sent" : res.status,
+        whatsapp_message_id: res.ok ? res.messageId : null,
         failure_reason: res.ok ? null : res.error,
         payload: { message: data.message },
       });
-      if (res.ok) sent += 1; else skipped += 1;
+      if (res.ok) sent += 1;
+      else skipped += 1;
     }
     return { ok: true, sent, skipped, total: list.length };
   });

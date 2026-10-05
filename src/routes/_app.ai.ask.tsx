@@ -77,7 +77,8 @@ function AskPage() {
 
       {status && !status.configured && (
         <div className="mx-4 mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-          The AI service is not configured yet. Add the <code>NVIDIA_API_KEY</code> secret to enable answers. The rest of the ERP works normally.
+          The AI service is not configured yet. Add the <code>NVIDIA_API_KEY</code> secret to enable
+          answers. The rest of the ERP works normally.
         </div>
       )}
 
@@ -143,12 +144,21 @@ function AskPage() {
               }
             }}
           />
-          <Button onClick={() => submit(question)} disabled={mutation.isPending || !question.trim()} className="self-end">
-            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          <Button
+            onClick={() => submit(question)}
+            disabled={mutation.isPending || !question.trim()}
+            className="self-end"
+          >
+            {mutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Answers are generated from figures calculated directly in the database. Always confirm before acting on a recommendation.
+          Answers are generated from figures calculated directly in the database. Always confirm
+          before acting on a recommendation.
         </p>
       </div>
     </div>

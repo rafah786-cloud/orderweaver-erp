@@ -31,19 +31,39 @@
   --radius: 0.65rem;
 }
 
-html, body {
+html,
+body {
   background: var(--background) !important;
   color: var(--foreground);
 }
 
 body {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   background-image: none !important;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
   font-weight: 650 !important;
   letter-spacing: -0.022em !important;
 }
@@ -78,13 +98,13 @@ h1, h2, h3, h4, h5, h6 {
   width: 16.5rem !important;
   background: var(--sidebar) !important;
   border-right: 1px solid rgb(255 255 255 / 0.07) !important;
-  box-shadow: 8px 0 28px -28px rgb(0 0 0 / .55);
+  box-shadow: 8px 0 28px -28px rgb(0 0 0 / 0.55);
 }
 
 .app-shell-sidebar .btn-gold {
   background: #e0b83f !important;
   color: #142235 !important;
-  box-shadow: 0 4px 14px rgb(0 0 0 / .18);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -92,11 +112,11 @@ h1, h2, h3, h4, h5, h6 {
 /* -------------------------------------------------------------------------- */
 
 .app-shell-sidebar nav {
-  padding: .9rem .75rem 1rem !important;
+  padding: 0.9rem 0.75rem 1rem !important;
 }
 
 .app-shell-sidebar nav section {
-  margin-bottom: .9rem;
+  margin-bottom: 0.9rem;
 }
 
 .app-shell-sidebar nav section:last-child {
@@ -104,17 +124,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .app-shell-sidebar nav section > div:first-child {
-  color: rgb(224 234 242 / .43) !important;
-  font-size: .61rem !important;
-  letter-spacing: .14em !important;
+  color: rgb(224 234 242 / 0.43) !important;
+  font-size: 0.61rem !important;
+  letter-spacing: 0.14em !important;
 }
 
 .app-shell-sidebar nav a {
   min-height: 2.5rem;
   border: 1px solid transparent;
-  border-radius: .5rem !important;
-  font-size: .82rem !important;
-  letter-spacing: .003em;
+  border-radius: 0.5rem !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.003em;
 }
 
 .app-shell-sidebar nav a:not(.bg-sidebar-active):hover {
@@ -123,9 +143,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .app-shell-sidebar nav a.bg-sidebar-active {
-  background: rgb(224 184 63 / .13) !important;
+  background: rgb(224 184 63 / 0.13) !important;
   color: #f2d36f !important;
-  border-color: rgb(224 184 63 / .16);
+  border-color: rgb(224 184 63 / 0.16);
   box-shadow: none !important;
 }
 
@@ -136,7 +156,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .app-shell-sidebar > aside > div > div:first-child {
   min-height: 4.6rem;
-  border-bottom-color: rgb(255 255 255 / .08) !important;
+  border-bottom-color: rgb(255 255 255 / 0.08) !important;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -146,9 +166,9 @@ h1, h2, h3, h4, h5, h6 {
 .corporate-topbar {
   min-height: 4.25rem !important;
   padding: 0 1.5rem !important;
-  background: rgb(255 255 255 / .98) !important;
+  background: rgb(255 255 255 / 0.98) !important;
   border-bottom: 1px solid var(--border) !important;
-  box-shadow: 0 1px 0 rgb(15 30 48 / .025);
+  box-shadow: 0 1px 0 rgb(15 30 48 / 0.025);
   backdrop-filter: blur(14px);
 }
 
@@ -159,9 +179,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .corporate-wordmark span {
   color: #8490a0 !important;
-  font-size: .57rem !important;
+  font-size: 0.57rem !important;
   font-weight: 650;
-  letter-spacing: .18em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -170,7 +190,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
   font-size: 1rem !important;
   font-weight: 750 !important;
-  letter-spacing: -.018em;
+  letter-spacing: -0.018em;
 }
 
 .corporate-topbar > .flex.min-w-0 {
@@ -180,18 +200,20 @@ h1, h2, h3, h4, h5, h6 {
 .corporate-topbar nav {
   display: flex;
   align-items: center;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .corporate-topbar nav > a {
   width: 2.25rem !important;
   height: 2.25rem !important;
-  border-radius: .5rem !important;
+  border-radius: 0.5rem !important;
   color: #64748b !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background .16s ease, color .16s ease;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
 }
 
 .corporate-topbar nav > a:hover {
@@ -207,13 +229,13 @@ h1, h2, h3, h4, h5, h6 {
 .profile-chip {
   border: 1px solid var(--border) !important;
   background: #f8fafc !important;
-  border-radius: .55rem !important;
-  padding: .4rem .7rem !important;
+  border-radius: 0.55rem !important;
+  padding: 0.4rem 0.7rem !important;
   color: #334155 !important;
   display: inline-flex;
   align-items: center;
-  gap: .45rem;
-  font-size: .76rem;
+  gap: 0.45rem;
+  font-size: 0.76rem;
   font-weight: 600;
 }
 
@@ -239,8 +261,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .page-header p {
-  margin-top: .28rem;
-  font-size: .78rem !important;
+  margin-top: 0.28rem;
+  font-size: 0.78rem !important;
   color: #718096 !important;
 }
 
@@ -256,34 +278,34 @@ main [data-slot="card"] {
 }
 
 main [data-slot="card"] {
-  border-radius: .7rem !important;
+  border-radius: 0.7rem !important;
   background: #fff !important;
 }
 
 main [data-slot="card-header"] {
-  padding: .95rem 1.1rem .7rem !important;
+  padding: 0.95rem 1.1rem 0.7rem !important;
 }
 
 main [data-slot="card-content"] {
-  padding: .8rem 1.1rem 1.05rem !important;
+  padding: 0.8rem 1.1rem 1.05rem !important;
 }
 
 main [data-slot="card-title"] {
-  font-size: .84rem !important;
+  font-size: 0.84rem !important;
   font-weight: 650 !important;
   color: #26384d !important;
 }
 
 main button,
 main a[class*="bg-primary"] {
-  border-radius: .5rem;
+  border-radius: 0.5rem;
 }
 
 main input,
 main textarea,
 main select,
 main [role="combobox"] {
-  border-radius: .5rem !important;
+  border-radius: 0.5rem !important;
 }
 
 .btn-3d {
@@ -318,10 +340,10 @@ main table thead tr {
 
 main table thead th {
   color: #69778a !important;
-  font-size: .65rem !important;
+  font-size: 0.65rem !important;
   font-weight: 750 !important;
   text-transform: uppercase;
-  letter-spacing: .055em;
+  letter-spacing: 0.055em;
   white-space: nowrap;
 }
 
@@ -339,7 +361,7 @@ main table td {
 
 main [data-slot="badge"] {
   font-weight: 650;
-  letter-spacing: .01em;
+  letter-spacing: 0.01em;
 }
 
 main .grid > [data-slot="card"] {
@@ -350,7 +372,7 @@ main .grid > [data-slot="card"] {
 main [data-slot="dialog-content"] {
   border: 1px solid var(--border) !important;
   box-shadow: var(--shadow-lg) !important;
-  border-radius: .8rem !important;
+  border-radius: 0.8rem !important;
 }
 
 main [data-slot="popover-content"],
@@ -378,13 +400,19 @@ main [data-radix-popper-content-wrapper] > * {
 .dashboard-editorial .hoa-hero {
   min-height: 15.5rem !important;
   height: 15.5rem;
-  border-radius: .8rem !important;
+  border-radius: 0.8rem !important;
   box-shadow: var(--shadow-md) !important;
   border-color: #cfd8e2 !important;
 }
 
 .dashboard-editorial .hoa-hero-veil {
-  background: linear-gradient(90deg, rgb(8 24 40 / .94) 0%, rgb(8 24 40 / .78) 46%, rgb(8 24 40 / .22) 78%, transparent 100%) !important;
+  background: linear-gradient(
+    90deg,
+    rgb(8 24 40 / 0.94) 0%,
+    rgb(8 24 40 / 0.78) 46%,
+    rgb(8 24 40 / 0.22) 78%,
+    transparent 100%
+  ) !important;
 }
 
 .dashboard-editorial .hoa-hero-body {
@@ -397,7 +425,7 @@ main [data-radix-popper-content-wrapper] > * {
 .dashboard-editorial .hoa-hero-body h1 {
   font-size: clamp(1.7rem, 2.8vw, 2.45rem) !important;
   line-height: 1.08 !important;
-  margin: .4rem 0 .65rem !important;
+  margin: 0.4rem 0 0.65rem !important;
   color: #fff !important;
 }
 
@@ -408,12 +436,12 @@ main [data-radix-popper-content-wrapper] > * {
 
 .dashboard-editorial .hoa-hero-lead {
   max-width: 34rem;
-  font-size: .8rem !important;
-  color: rgb(255 255 255 / .76) !important;
+  font-size: 0.8rem !important;
+  color: rgb(255 255 255 / 0.76) !important;
 }
 
 .dashboard-editorial .hoa-hero-cta {
-  margin-top: .95rem !important;
+  margin-top: 0.95rem !important;
 }
 
 .dashboard-editorial .hoa-trust,
@@ -423,18 +451,18 @@ main [data-radix-popper-content-wrapper] > * {
 
 .dashboard-editorial .hoa-kicker {
   color: #9aa8b8 !important;
-  font-size: .62rem !important;
-  letter-spacing: .13em !important;
+  font-size: 0.62rem !important;
+  letter-spacing: 0.13em !important;
 }
 
 .dashboard-editorial .hoa-panel {
   padding: 1.05rem !important;
-  border-radius: .8rem !important;
+  border-radius: 0.8rem !important;
   background: #fff !important;
 }
 
 .dashboard-editorial .hoa-section-head {
-  margin-bottom: .25rem !important;
+  margin-bottom: 0.25rem !important;
 }
 
 .dashboard-editorial .hoa-title {
@@ -446,17 +474,17 @@ main [data-radix-popper-content-wrapper] > * {
 }
 
 .dashboard-editorial .hoa-sub {
-  font-size: .76rem !important;
+  font-size: 0.76rem !important;
   color: #718096 !important;
 }
 
 .dashboard-editorial .hoa-action-grid {
-  gap: .6rem !important;
+  gap: 0.6rem !important;
 }
 
 .dashboard-editorial .hoa-action {
   min-height: 3.15rem !important;
-  border-radius: .6rem !important;
+  border-radius: 0.6rem !important;
   border-color: var(--border) !important;
   background: #f8fafc !important;
 }
@@ -492,7 +520,7 @@ select:focus-visible,
 
   .corporate-topbar {
     min-height: 3.75rem !important;
-    padding: 0 .85rem !important;
+    padding: 0 0.85rem !important;
   }
 
   .profile-chip span {
@@ -520,7 +548,9 @@ select:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

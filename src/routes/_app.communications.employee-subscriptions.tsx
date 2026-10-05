@@ -13,7 +13,14 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import { useMemo } from "react";
 
@@ -39,8 +46,11 @@ function EmployeeSubscriptionsPage() {
   }, [subsQ.data]);
 
   const toggle = useMutation({
-    mutationFn: (vars: { department: (typeof DEPARTMENTS)[number]; event_key: (typeof STAFF_EVENTS)[number]; is_active: boolean }) =>
-      setFn({ data: vars }),
+    mutationFn: (vars: {
+      department: (typeof DEPARTMENTS)[number];
+      event_key: (typeof STAFF_EVENTS)[number];
+      is_active: boolean;
+    }) => setFn({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["staff_subs"] });
     },
@@ -57,7 +67,9 @@ function EmployeeSubscriptionsPage() {
         <Card className="mb-4">
           <CardHeader>
             <CardTitle className="text-base">Departments</CardTitle>
-            <CardDescription>Active employees in each department. "With phone" counts those reachable on WhatsApp.</CardDescription>
+            <CardDescription>
+              Active employees in each department. "With phone" counts those reachable on WhatsApp.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {DEPARTMENTS.map((d) => {
@@ -77,7 +89,9 @@ function EmployeeSubscriptionsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Trigger subscriptions</CardTitle>
-            <CardDescription>Toggle which department gets notified for each ERP event.</CardDescription>
+            <CardDescription>
+              Toggle which department gets notified for each ERP event.
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -85,7 +99,9 @@ function EmployeeSubscriptionsPage() {
                 <TableRow>
                   <TableHead className="w-[280px]">Event</TableHead>
                   {DEPARTMENTS.map((d) => (
-                    <TableHead key={d} className="text-center">{d}</TableHead>
+                    <TableHead key={d} className="text-center">
+                      {d}
+                    </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -94,7 +110,9 @@ function EmployeeSubscriptionsPage() {
                   <TableRow key={evt}>
                     <TableCell>
                       <div className="font-medium">{STAFF_EVENT_LABEL[evt]}</div>
-                      <div className="text-xs text-muted-foreground"><Badge variant="outline">{evt}</Badge></div>
+                      <div className="text-xs text-muted-foreground">
+                        <Badge variant="outline">{evt}</Badge>
+                      </div>
                     </TableCell>
                     {DEPARTMENTS.map((d) => {
                       const on = isOn.get(`${d}::${evt}`) ?? false;
@@ -102,7 +120,9 @@ function EmployeeSubscriptionsPage() {
                         <TableCell key={d} className="text-center">
                           <Switch
                             checked={on}
-                            onCheckedChange={(v) => toggle.mutate({ department: d, event_key: evt, is_active: v })}
+                            onCheckedChange={(v) =>
+                              toggle.mutate({ department: d, event_key: evt, is_active: v })
+                            }
                             disabled={toggle.isPending}
                           />
                         </TableCell>

@@ -72,7 +72,9 @@ describe("canonical sales subledger → GL → receivable chain", () => {
     db.createInvoice(invoice);
     await db.postInvoice(invoice.id);
 
-    await expect(db.recordReceipt(invoice.id, 10000.01, "receipt:inv-1001:bad")).rejects.toThrow("settlement exceeds outstanding");
+    await expect(db.recordReceipt(invoice.id, 10000.01, "receipt:inv-1001:bad")).rejects.toThrow(
+      "settlement exceeds outstanding",
+    );
     expect(db.outstanding(invoice.id)).toBe(10000);
     expect(db.bills.get(`bill:${invoice.id}`)?.allocations).toHaveLength(0);
   });

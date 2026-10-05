@@ -87,7 +87,12 @@ export class IsolatedPurchaseAccountingChain {
     ];
     if (!validateGlLines(entries).valid) throw new Error("unbalanced purchase voucher");
 
-    const voucher = await this.gl.post("purchase", purchase.billDate, entries, `purchase:${purchase.id}`);
+    const voucher = await this.gl.post(
+      "purchase",
+      purchase.billDate,
+      entries,
+      `purchase:${purchase.id}`,
+    );
     this.vouchers.push(voucher);
 
     const supplierEntry = voucher.lines.find(
@@ -120,10 +125,16 @@ export class IsolatedPurchaseAccountingChain {
     return roundMoney(bill.originalAmount - allocated);
   }
 
-  async recordPayment(purchaseId: string, amount: number, idempotencyKey: string, date = "2026-04-02") {
+  async recordPayment(
+    purchaseId: string,
+    amount: number,
+    idempotencyKey: string,
+    date = "2026-04-02",
+  ) {
     const purchase = this.requirePurchase(purchaseId);
     if (purchase.status === "cancelled") throw new Error("purchase cancelled");
-    if (!purchase.sourceVoucherId || !purchase.payableBillId) throw new Error("purchase must be posted before payment");
+    if (!purchase.sourceVoucherId || !purchase.payableBillId)
+      throw new Error("purchase must be posted before payment");
     if (amount <= 0) throw new Error("payment amount must be positive");
     if (idempotencyKey.trim().length < 8) throw new Error("idempotency key required");
 
@@ -156,7 +167,13 @@ export class IsolatedPurchaseAccountingChain {
       idempotencyKey,
     });
 
-    const payment: Payment = { id: idempotencyKey, purchaseId, amount, voucherId: voucher.id, reversalVoucherId: null };
+    const payment: Payment = {
+      id: idempotencyKey,
+      purchaseId,
+      amount,
+      voucherId: voucher.id,
+      reversalVoucherId: null,
+    };
     this.payments.set(idempotencyKey, payment);
     this.refreshPurchaseStatus(purchase);
     return { payment, outstanding: this.outstanding(purchaseId) };
@@ -191,7 +208,8 @@ export class IsolatedPurchaseAccountingChain {
   async reversePurchase(purchaseId: string, date = "2026-04-04") {
     const purchase = this.requirePurchase(purchaseId);
     if (purchase.status === "cancelled") throw new Error("purchase already cancelled");
-    if (!purchase.sourceVoucherId || !purchase.payableBillId) throw new Error("purchase has no source voucher");
+    if (!purchase.sourceVoucherId || !purchase.payableBillId)
+      throw new Error("purchase has no source voucher");
     if (Math.abs(this.outstanding(purchaseId) - purchase.totalAmount) > 0.01) {
       throw new Error("reverse payments before purchase");
     }
@@ -209,7 +227,14 @@ export class IsolatedPurchaseAccountingChain {
   ledgerBalance(ledgerId: string, normalBalance: "debit" | "credit" = "debit") {
     const signedBalance = this.vouchers.reduce((sum, voucher) => {
       if (voucher.status !== "posted" && voucher.status !== "reversed") return sum;
-      return sum + voucher.lines.reduce((lineSum, line) => lineSum + (line.ledger_account_id === ledgerId ? line.debit - line.credit : 0), 0);
+      return (
+        sum +
+        voucher.lines.reduce(
+          (lineSum, line) =>
+            lineSum + (line.ledger_account_id === ledgerId ? line.debit - line.credit : 0),
+          0,
+        )
+      );
     }, 0);
     return roundMoney(normalBalance === "debit" ? signedBalance : -signedBalance);
   }

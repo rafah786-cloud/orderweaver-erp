@@ -62,7 +62,10 @@ async function planTools(question: string): Promise<PlanStep[]> {
           `Operators: eq, neq, gt, gte, lt, lte, ilike, in, is_null, not_null. Dates are ISO yyyy-mm-dd.\n` +
           'Reply as JSON: {"steps":[{"tool":"...","args":{...}}]}',
       },
-      { role: "user", content: `Today is ${new Date().toISOString().slice(0, 10)}. Question: ${question}` },
+      {
+        role: "user",
+        content: `Today is ${new Date().toISOString().slice(0, 10)}. Question: ${question}`,
+      },
     ],
     { model: AI_MODELS.fast, maxTokens: 500, temperature: 0 },
   ).catch(() => ({ steps: [] as PlanStep[] }));
@@ -84,7 +87,10 @@ function periodFor(args: Record<string, unknown> | undefined, fallbackDays: numb
   return defaultPeriod(num(args, "days", fallbackDays));
 }
 
-export async function runRetriever(db: Db, step: PlanStep): Promise<{ tool: string; data: unknown }> {
+export async function runRetriever(
+  db: Db,
+  step: PlanStep,
+): Promise<{ tool: string; data: unknown }> {
   const a = step.args;
   switch (step.tool) {
     case "sales_summary":
@@ -135,7 +141,10 @@ export async function askMaestro(
     try {
       results.push(await runRetriever(db, step));
     } catch (e) {
-      results.push({ tool: step.tool, data: { error: e instanceof Error ? e.message : "retrieval failed" } });
+      results.push({
+        tool: step.tool,
+        data: { error: e instanceof Error ? e.message : "retrieval failed" },
+      });
     }
   }
 
@@ -156,7 +165,10 @@ export async function askMaestro(
           "Use short markdown: bold labels, bullet lists, small tables. Never claim to have changed anything in the ERP.",
       },
       ...history.slice(-6).map((m) => ({ role: m.role, content: m.content }) as const),
-      { role: "user", content: `Question: ${question}\n\nERP DATA (authoritative):\n${serialised}` },
+      {
+        role: "user",
+        content: `Question: ${question}\n\nERP DATA (authoritative):\n${serialised}`,
+      },
     ],
     { maxTokens: 1400, temperature: 0.15 },
   );
@@ -171,15 +183,25 @@ export async function contextualAnalysis(
   focus?: string,
 ): Promise<AskResult> {
   const map: Record<typeof topic, PlanStep[]> = {
-    sales: [{ tool: "sales_summary", args: { days: 90 } }, { tool: "monthly_series", args: { months: 12 } }],
-    profitability: [{ tool: "product_profitability", args: { days: 90 } }, { tool: "monthly_series", args: { months: 12 } }],
+    sales: [
+      { tool: "sales_summary", args: { days: 90 } },
+      { tool: "monthly_series", args: { months: 12 } },
+    ],
+    profitability: [
+      { tool: "product_profitability", args: { days: 90 } },
+      { tool: "monthly_series", args: { months: 12 } },
+    ],
     inventory: [{ tool: "inventory", args: { days: 90 } }, { tool: "forecasts" }],
     production: [{ tool: "production", args: { days: 90 } }],
     receivables: [{ tool: "receivables" }],
     suppliers: [{ tool: "supplier_pricing", args: { days: 365 } }],
   };
 
-  const results = await Promise.all(map[topic].map((s) => runRetriever(db, s).catch((e) => ({ tool: s.tool, data: { error: String(e) } }))));
+  const results = await Promise.all(
+    map[topic].map((s) =>
+      runRetriever(db, s).catch((e) => ({ tool: s.tool, data: { error: String(e) } })),
+    ),
+  );
   const evidence = Object.fromEntries(results.map((r) => [r.tool, r.data]));
 
   const { text, model } = await aiChat(

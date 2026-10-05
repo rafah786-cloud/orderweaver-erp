@@ -20,30 +20,30 @@ export const listNotificationEvents = createServerFn({ method: "GET" })
 export const setEventChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      event_key: z.string().min(1).max(120),
-      channel: ChannelEnum,
-      is_enabled: z.boolean().optional(),
-      template_name: z.string().max(200).nullable().optional(),
-      subject_template: z.string().max(500).nullable().optional(),
-      body_template: z.string().max(4000).nullable().optional(),
-    }).parse(d),
+    z
+      .object({
+        event_key: z.string().min(1).max(120),
+        channel: ChannelEnum,
+        is_enabled: z.boolean().optional(),
+        template_name: z.string().max(200).nullable().optional(),
+        subject_template: z.string().max(500).nullable().optional(),
+        body_template: z.string().max(4000).nullable().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { error } = await supabase
-      .from("notification_event_channels")
-      .upsert(
-        {
-          event_key: data.event_key,
-          channel: data.channel,
-          is_enabled: data.is_enabled ?? false,
-          template_name: data.template_name ?? null,
-          subject_template: data.subject_template ?? null,
-          body_template: data.body_template ?? null,
-        },
-        { onConflict: "event_key,channel" },
-      );
+    const { error } = await supabase.from("notification_event_channels").upsert(
+      {
+        event_key: data.event_key,
+        channel: data.channel,
+        is_enabled: data.is_enabled ?? false,
+        template_name: data.template_name ?? null,
+        subject_template: data.subject_template ?? null,
+        body_template: data.body_template ?? null,
+      },
+      { onConflict: "event_key,channel" },
+    );
     if (error) throw error;
     return { ok: true };
   });
@@ -92,13 +92,15 @@ export const markInAppRead = createServerFn({ method: "POST" })
 export const dispatchTestEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      event_key: z.string().min(1).max(120),
-      phone: z.string().max(32).optional(),
-      email: z.string().email().max(320).optional(),
-      user_ids: z.array(z.string().uuid()).max(50).optional(),
-      variables: z.record(z.string(), z.any()).optional(),
-    }).parse(d),
+    z
+      .object({
+        event_key: z.string().min(1).max(120),
+        phone: z.string().max(32).optional(),
+        email: z.string().email().max(320).optional(),
+        user_ids: z.array(z.string().uuid()).max(50).optional(),
+        variables: z.record(z.string(), z.any()).optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

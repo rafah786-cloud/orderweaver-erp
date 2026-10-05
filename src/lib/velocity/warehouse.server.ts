@@ -45,9 +45,11 @@ function pick(o: Record<string, unknown>, keys: string[]): string | null {
 }
 
 function normalize(item: Record<string, unknown>, index: number): VelocityWarehouse {
-  const addr = (item["address"] && typeof item["address"] === "object"
-    ? (item["address"] as Record<string, unknown>)
-    : item) as Record<string, unknown>;
+  const addr = (
+    item["address"] && typeof item["address"] === "object"
+      ? (item["address"] as Record<string, unknown>)
+      : item
+  ) as Record<string, unknown>;
   const active = item["is_active"] ?? item["active"] ?? item["status"];
   return {
     velocity_id:
@@ -63,7 +65,10 @@ function normalize(item: Record<string, unknown>, index: number): VelocityWareho
     state: pick(addr, ["state", "state_name"]),
     pincode: pick(addr, ["pincode", "pin_code", "zip", "postal_code", "zipcode"]),
     country: pick(addr, ["country", "country_name"]),
-    is_active: active === undefined || active === null ? true : active === true || active === "active" || active === 1 || active === "1",
+    is_active:
+      active === undefined || active === null
+        ? true
+        : active === true || active === "active" || active === 1 || active === "1",
     raw: item,
   };
 }
@@ -120,14 +125,18 @@ export async function fetchVelocityWarehouses(): Promise<VelocityWarehouse[]> {
     }
 
     const meta =
-      body && typeof body === "object" && typeof (body as Record<string, unknown>)["meta"] === "object"
+      body &&
+      typeof body === "object" &&
+      typeof (body as Record<string, unknown>)["meta"] === "object"
         ? ((body as Record<string, unknown>)["meta"] as Record<string, unknown>)
         : {};
     const code = str(meta["message"]);
     const message =
       str(meta["details"]) ||
       code ||
-      (body && typeof body === "object" ? str((body as Record<string, unknown>)["message"]) : null) ||
+      (body && typeof body === "object"
+        ? str((body as Record<string, unknown>)["message"])
+        : null) ||
       `Velocity returned HTTP ${res.status}`;
 
     // 404 just means this path variant does not exist — keep probing.
@@ -146,22 +155,23 @@ export async function fetchVelocityWarehouses(): Promise<VelocityWarehouse[]> {
 }
 
 /** Fetches from Velocity and mirrors the result into the database. */
-export async function syncVelocityWarehouses(): Promise<{ synced: number; warehouses: VelocityWarehouse[] }> {
+export async function syncVelocityWarehouses(): Promise<{
+  synced: number;
+  warehouses: VelocityWarehouse[];
+}> {
   const warehouses = await fetchVelocityWarehouses();
   if (warehouses.length) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date().toISOString();
-    const { error } = await supabaseAdmin
-      .from("velocity_warehouses")
-      .upsert(
-        warehouses.map((w) => ({
-          ...w,
-          raw: w.raw as unknown as Record<string, never>,
-          last_synced_at: now,
-          updated_at: now,
-        })),
-        { onConflict: "velocity_id" },
-      );
+    const { error } = await supabaseAdmin.from("velocity_warehouses").upsert(
+      warehouses.map((w) => ({
+        ...w,
+        raw: w.raw as unknown as Record<string, never>,
+        last_synced_at: now,
+        updated_at: now,
+      })),
+      { onConflict: "velocity_id" },
+    );
     if (error) throw new Error(error.message);
   }
   return { synced: warehouses.length, warehouses };

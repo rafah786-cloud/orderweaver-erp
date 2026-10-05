@@ -1,4 +1,5 @@
 ## Open tasks
+
 - [x] Add OAuth-protected agent integrations with read-only account and recent-invoice tools; republish to activate the new connection catalog
 - [x] Add Tally Connect as an admin-only dashboard action linking to its separate signed-in app
 - [x] Resolve the reported publishing build failure: latest build signal is OK; preview responds successfully
@@ -23,6 +24,7 @@
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
 
 ## 2026-10-04 direct-repository hardening
+
 - [x] Canonical invoice bill/receipt/reversal definitions use party ledgers and `create_gl_voucher`; no global `Debtors` assumption and no invented tax split
 - [x] Canonical voucher reversal/cancellation functions now create compensating vouchers and preserve originals
 - [x] Inventory ledger preserves perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
@@ -39,12 +41,14 @@
 - [x] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
 
 ## 2026-10-05 direct live hardening checkpoint
+
 - Canonical accounting/inventory/company-boundary functions were installed directly into the live database without using the Lovable agent credits.
 - Non-destructive live transaction tests passed for invoice posting, bill creation, partial receipt, idempotent receipt retry, receipt reversal, purchase receipt, payable voucher balancing and stock receipt; all tests were wrapped in transactions and rolled back.
 - A final migration mirror was committed at `supabase/migrations/20261005180000_final_production_alignment.sql` so the live hardening is reproducible from source.
 - Published project was redeployed from commit `3cf6b3d90a0c9c4f146d6c637e40ee5924d4993f` and the project reports ready with no build error.
 
 ## 2026-10-04 repository engineering checkpoint
+
 - No production database writes were performed from this repository session.
 - Prepared accounting/inventory SQL was not installed by this repository session.
 - Inventory and accounting SQL still require database-level integration tests against the actual live schema before installation.
@@ -53,6 +57,7 @@
 - The repository connection can modify GitHub source, but it does not provide a privileged live PostgreSQL/Supabase session; live reconciliation and production migration cannot truthfully be marked PASS from GitHub alone.
 
 ## 2026-10-05 remaining-work status
+
 - Trial Balance, Profit & Loss and Balance Sheet now support explicit date ranges and server-side period-aware ledger calculations.
 - Voucher lifecycle now has explicit posted/reversed/cancelled state metadata without changing existing historical voucher amounts.
 

@@ -120,12 +120,10 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { sendWhatsAppMessage } = await import("./whatsapp/send.server");
-    const result = await sendWhatsAppMessage(
-      data.mobileNumber,
-      data.templateName,
-      data.variables,
-      { party_kind: "admin", event_type: "test.send" },
-    );
+    const result = await sendWhatsAppMessage(data.mobileNumber, data.templateName, data.variables, {
+      party_kind: "admin",
+      event_type: "test.send",
+    });
     // Strip non-serializable fields for the RPC boundary
     return {
       ok: result.ok,

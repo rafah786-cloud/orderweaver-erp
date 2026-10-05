@@ -29,7 +29,10 @@ db.exec(`CREATE TABLE IF NOT EXISTS queue (
 CREATE TABLE IF NOT EXISTS state (k TEXT PRIMARY KEY, v TEXT);`);
 
 const getState = (k) => db.prepare("SELECT v FROM state WHERE k=?").get(k)?.v;
-const setState = (k, v) => db.prepare("INSERT INTO state(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").run(k, v);
+const setState = (k, v) =>
+  db
+    .prepare("INSERT INTO state(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v")
+    .run(k, v);
 
 function enqueue(payload) {
   db.prepare("INSERT INTO queue(payload) VALUES(?)").run(JSON.stringify(payload));
@@ -87,7 +90,9 @@ async function connect() {
 
   // Realtime push
   try {
-    await zk.getRealTimeLogs((log) => { forward(log); });
+    await zk.getRealTimeLogs((log) => {
+      forward(log);
+    });
     console.log("[device] realtime listener active");
   } catch (e) {
     console.warn(`[device] realtime not available, polling fallback: ${e.message}`);
@@ -105,7 +110,9 @@ async function pollOnce() {
     if (fresh.length) setState("last_poll_ts", new Date(fresh.at(-1).recordTime).toISOString());
   } catch (e) {
     console.warn(`[poll] ${e.message}`);
-    try { await zk.disconnect(); } catch {}
+    try {
+      await zk.disconnect();
+    } catch {}
     zk = null;
     setTimeout(connect, 5000);
   }
@@ -124,6 +131,8 @@ async function main() {
 main();
 
 process.on("SIGINT", async () => {
-  try { await zk?.disconnect(); } catch {}
+  try {
+    await zk?.disconnect();
+  } catch {}
   process.exit(0);
 });

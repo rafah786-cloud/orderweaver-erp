@@ -5,8 +5,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
@@ -18,14 +31,14 @@ type UserStatus = Database["public"]["Enums"]["user_status"];
 
 // Display order + friendly labels for the 8 assignable roles.
 const ROLES: { value: AppRole; label: string }[] = [
-  { value: "admin",      label: "Admin/Management" },
+  { value: "admin", label: "Admin/Management" },
   { value: "accountant", label: "Accounts" },
-  { value: "sales",      label: "Sales" },
+  { value: "sales", label: "Sales" },
   { value: "production", label: "Production" },
-  { value: "customer",   label: "Customers" },
-  { value: "vendor",     label: "Vendors" },
-  { value: "hr",         label: "HR" },
-  { value: "employee",   label: "Employee" },
+  { value: "customer", label: "Customers" },
+  { value: "vendor", label: "Vendors" },
+  { value: "hr", label: "HR" },
+  { value: "employee", label: "Employee" },
 ];
 const ROLE_LABELS: Record<string, string> = Object.fromEntries(
   ROLES.map((r) => [r.value, r.label]),
@@ -109,56 +122,88 @@ function ApprovalsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
-                ) : users?.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No users yet.</TableCell></TableRow>
-                ) : users?.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(u.created_at)}</TableCell>
-                    <TableCell>
-                      <Badge variant={u.status === "approved" ? "default" : u.status === "rejected" ? "destructive" : "secondary"}>
-                        {u.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {u.roles.map((r) => (
-                          <button
-                            key={r}
-                            onClick={() => removeRole(u.id, r)}
-                            className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-destructive hover:text-destructive-foreground"
-                            title="Click to remove"
-                          >
-                            {roleLabel(r)} ×
-                          </button>
-                        ))}
-                        {u.roles.length === 0 && <span className="text-xs text-muted-foreground">No roles</span>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 items-center">
-                        <Select onValueChange={(v) => assignRole(u.id, v as AppRole)}>
-                          <SelectTrigger className="w-40 h-8 text-xs">
-                            <SelectValue placeholder="+ Role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLES.filter((r) => !u.roles.includes(r.value)).map((r) => (
-                              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {u.status !== "approved" && (
-                          <Button size="sm" onClick={() => setStatus(u.id, "approved")}>Approve</Button>
-                        )}
-                        {u.status !== "rejected" && (
-                          <Button size="sm" variant="outline" onClick={() => setStatus(u.id, "rejected")}>Reject</Button>
-                        )}
-                      </div>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Loading…
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : users?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      No users yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  users?.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.full_name}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(u.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            u.status === "approved"
+                              ? "default"
+                              : u.status === "rejected"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                        >
+                          {u.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {u.roles.map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => removeRole(u.id, r)}
+                              className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-destructive hover:text-destructive-foreground"
+                              title="Click to remove"
+                            >
+                              {roleLabel(r)} ×
+                            </button>
+                          ))}
+                          {u.roles.length === 0 && (
+                            <span className="text-xs text-muted-foreground">No roles</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2 items-center">
+                          <Select onValueChange={(v) => assignRole(u.id, v as AppRole)}>
+                            <SelectTrigger className="w-40 h-8 text-xs">
+                              <SelectValue placeholder="+ Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ROLES.filter((r) => !u.roles.includes(r.value)).map((r) => (
+                                <SelectItem key={r.value} value={r.value}>
+                                  {r.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {u.status !== "approved" && (
+                            <Button size="sm" onClick={() => setStatus(u.id, "approved")}>
+                              Approve
+                            </Button>
+                          )}
+                          {u.status !== "rejected" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setStatus(u.id, "rejected")}
+                            >
+                              Reject
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

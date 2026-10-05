@@ -43,7 +43,9 @@ function VendorShell() {
           <nav className="flex gap-1 flex-1 flex-wrap">
             {NAV.map((n) => {
               const Icon = n.icon;
-              const active = n.exact ? location.pathname === n.to : location.pathname.startsWith(n.to);
+              const active = n.exact
+                ? location.pathname === n.to
+                : location.pathname.startsWith(n.to);
               return (
                 <Link
                   key={n.to}
@@ -56,8 +58,13 @@ function VendorShell() {
               );
             })}
           </nav>
-          <div className="text-xs text-muted-foreground">{profile?.full_name ?? profile?.email}</div>
-          <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4 mr-1" />Sign out</Button>
+          <div className="text-xs text-muted-foreground">
+            {profile?.full_name ?? profile?.email}
+          </div>
+          <Button variant="ghost" size="sm" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-1" />
+            Sign out
+          </Button>
         </div>
       </div>
       <div className="mx-auto max-w-6xl p-4">

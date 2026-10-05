@@ -86,7 +86,7 @@ describe("Tally import — idempotent re-import", () => {
     const b = parseTallyMasters(SAMPLE_XML, groups);
     expect(a.ledgerEntries).toHaveLength(2);
     expect(a.ledgerEntries.map((e) => e.external_ref).sort()).toEqual(
-      b.ledgerEntries.map((e) => e.external_ref).sort()
+      b.ledgerEntries.map((e) => e.external_ref).sort(),
     );
     // GUID + ledger name form the external_ref, matching the DB unique index.
     for (const e of a.ledgerEntries) {
@@ -222,8 +222,19 @@ describe("Tally import — bill-wise references", () => {
     </VOUCHER></TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
     const parsed = parseTallyMasters(xml, groups);
     expect(parsed.bills).toHaveLength(2);
-    expect(parsed.bills[0]).toMatchObject({ bill_name: "OPEN-1", bill_date: "2026-04-01", amount: 750, reference_type: "opening", voucher_guid: null });
-    expect(parsed.bills[1]).toMatchObject({ bill_name: "OPEN-1", amount: -250, reference_type: "against_ref", voucher_guid: "receipt-guid" });
+    expect(parsed.bills[0]).toMatchObject({
+      bill_name: "OPEN-1",
+      bill_date: "2026-04-01",
+      amount: 750,
+      reference_type: "opening",
+      voucher_guid: null,
+    });
+    expect(parsed.bills[1]).toMatchObject({
+      bill_name: "OPEN-1",
+      amount: -250,
+      reference_type: "against_ref",
+      voucher_guid: "receipt-guid",
+    });
     expect(new Set(parsed.bills.map((bill) => bill.external_ref)).size).toBe(2);
   });
 });

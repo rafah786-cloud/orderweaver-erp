@@ -9,13 +9,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { MessageCircle, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_app/whatsapp")({ component: WhatsAppSettings });
 
-const DEPARTMENTS = ["Admin", "Sales", "Production", "HR", "Accounts", "Dispatch", "Quality", "Other"] as const;
+const DEPARTMENTS = [
+  "Admin",
+  "Sales",
+  "Production",
+  "HR",
+  "Accounts",
+  "Dispatch",
+  "Quality",
+  "Other",
+] as const;
 
 // E.164: + then 8–15 digits. We accept user-friendly input and normalize.
 function normalizePhone(raw: string): string | null {
@@ -99,8 +114,8 @@ function WhatsAppSettings() {
                 Your WhatsApp Profile
               </CardTitle>
               <CardDescription>
-                Signed in as <span className="font-medium">{profile?.full_name}</span>.
-                These details determine which alerts route to you.
+                Signed in as <span className="font-medium">{profile?.full_name}</span>. These
+                details determine which alerts route to you.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -124,24 +139,31 @@ function WhatsAppSettings() {
               <div className="space-y-2">
                 <Label htmlFor="dept">Department</Label>
                 <Select value={department} onValueChange={setDepartment} disabled={isLoading}>
-                  <SelectTrigger id="dept"><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectTrigger id="dept">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
                   <SelectContent>
                     {DEPARTMENTS.map((d) => (
-                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Department-wide broadcasts (e.g. new sales order → Production) will reach you when this matches.
+                  Department-wide broadcasts (e.g. new sales order → Production) will reach you when
+                  this matches.
                 </p>
               </div>
 
               <div className="flex items-start justify-between gap-4 rounded-md border p-4">
                 <div className="space-y-1">
-                  <Label htmlFor="opt" className="text-sm font-medium">Enable WhatsApp notifications</Label>
+                  <Label htmlFor="opt" className="text-sm font-medium">
+                    Enable WhatsApp notifications
+                  </Label>
                   <p className="text-xs text-muted-foreground">
-                    You'll receive automated messages from the company WhatsApp number.
-                    Reply STOP at any time to opt out.
+                    You'll receive automated messages from the company WhatsApp number. Reply STOP
+                    at any time to opt out.
                   </p>
                 </div>
                 <Switch id="opt" checked={optIn} onCheckedChange={setOptIn} disabled={isLoading} />
@@ -163,7 +185,9 @@ function WhatsAppSettings() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>Your number is visible only to you and to system administrators.</p>
-              <p>Department is used to route role-based alerts (e.g. new order → Production team).</p>
+              <p>
+                Department is used to route role-based alerts (e.g. new order → Production team).
+              </p>
               <p>Admin broadcasts reach everyone opted in, regardless of department.</p>
               <p className="pt-2 border-t">
                 Need to update your name, email or phone? Contact your administrator.

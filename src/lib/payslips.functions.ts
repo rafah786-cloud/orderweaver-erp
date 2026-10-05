@@ -15,11 +15,17 @@ export const generatePayslips = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // role check
     const { data: roles } = await supabaseAdmin
-      .from("user_roles").select("role").eq("user_id", context.userId);
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
     const ok = (roles ?? []).some((r) => r.role === "admin" || r.role === "hr");
     if (!ok) throw new Error("Admin/HR only");
 
-    const { data: shift } = await supabaseAdmin.from("shift_settings").select("*").limit(1).maybeSingle();
+    const { data: shift } = await supabaseAdmin
+      .from("shift_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
     const workingDays = shift?.working_days_per_month ?? 26;
     const halfPct = Number(shift?.half_day_deduction_pct ?? 50);
     const latePct = Number(shift?.late_deduction_pct ?? 0);
@@ -50,26 +56,32 @@ export const generatePayslips = createServerFn({ method: "POST" })
       const lateDays = rows.filter((r) => r.is_late).length;
       const absent = Math.max(0, workingDays - present);
 
-      const ctc = Number(emp.basic_salary || 0) + Number(emp.da || 0) +
-                  Number(emp.hra || 0) + Number(emp.other_allowances || 0);
+      const ctc =
+        Number(emp.basic_salary || 0) +
+        Number(emp.da || 0) +
+        Number(emp.hra || 0) +
+        Number(emp.other_allowances || 0);
       const gross = (present / workingDays) * ctc;
-      const halfDayDeduction = ((ctc / workingDays) * halfDays) * (halfPct / 100);
-      const lateDeduction = ((ctc / workingDays) * lateDays) * (latePct / 100);
+      const halfDayDeduction = (ctc / workingDays) * halfDays * (halfPct / 100);
+      const lateDeduction = (ctc / workingDays) * lateDays * (latePct / 100);
       const statutory = Number(emp.pf_deduction || 0) + Number(emp.esi_deduction || 0);
       const totalDeductions = halfDayDeduction + lateDeduction + statutory;
       const net = Math.max(0, gross - totalDeductions);
 
-      await supabaseAdmin.from("payslips").upsert({
-        employee_id: emp.id,
-        period_year: data.year,
-        period_month: data.month,
-        days_worked: present,
-        days_absent: absent,
-        ot_hours: 0,
-        gross_salary: gross,
-        deductions: totalDeductions,
-        net_salary: net,
-      }, { onConflict: "employee_id,period_year,period_month" } as never);
+      await supabaseAdmin.from("payslips").upsert(
+        {
+          employee_id: emp.id,
+          period_year: data.year,
+          period_month: data.month,
+          days_worked: present,
+          days_absent: absent,
+          ot_hours: 0,
+          gross_salary: gross,
+          deductions: totalDeductions,
+          net_salary: net,
+        },
+        { onConflict: "employee_id,period_year,period_month" } as never,
+      );
 
       results.push({ employee_id: emp.id, net_salary: net });
     }

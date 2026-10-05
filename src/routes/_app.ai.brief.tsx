@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RefreshCw, TrendingUp, Boxes, Factory, Wallet, Truck, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  RefreshCw,
+  TrendingUp,
+  Boxes,
+  Factory,
+  Wallet,
+  Truck,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +22,25 @@ import { inr } from "@/lib/format";
 export const Route = createFileRoute("/_app/ai/brief")({ component: BriefPage });
 
 interface Snapshot {
-  sales: { netRevenue: number; invoiceCount: number; revenueChangePct: number | null; period: { from: string; to: string } };
-  inventory: { totals: { materials: number; belowReorder: number; stockOutRisk: number; overstock: number; dormant: number } };
-  production: { orders: number; materialMovement: { wastagePct: number | null; variancePct: number | null } };
+  sales: {
+    netRevenue: number;
+    invoiceCount: number;
+    revenueChangePct: number | null;
+    period: { from: string; to: string };
+  };
+  inventory: {
+    totals: {
+      materials: number;
+      belowReorder: number;
+      stockOutRisk: number;
+      overstock: number;
+      dormant: number;
+    };
+  };
+  production: {
+    orders: number;
+    materialMovement: { wastagePct: number | null; variancePct: number | null };
+  };
   receivables: { totalOutstanding: number; ageing: Record<string, number> };
   suppliers: { increases: { material: string; changePct: number | null }[] };
   profitability: { totals: { revenue: number; materialCost: number } };
@@ -56,8 +81,17 @@ function BriefPage() {
         title="AI Business Brief"
         description="A management view across sales, profitability, inventory, production, receivables and suppliers — built from live ERP data."
         actions={
-          <Button onClick={() => refresh.mutate()} disabled={refresh.isPending} variant="outline" size="sm">
-            {refresh.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}
+          <Button
+            onClick={() => refresh.mutate()}
+            disabled={refresh.isPending}
+            variant="outline"
+            size="sm"
+          >
+            {refresh.isPending ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1.5 h-4 w-4" />
+            )}
             Refresh
           </Button>
         }
@@ -74,16 +108,50 @@ function BriefPage() {
         {snapshot && (
           <div className="space-y-6">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <Metric icon={TrendingUp} label="Revenue (30 days)" value={inr(snapshot.sales.netRevenue)} sub={
-                snapshot.sales.revenueChangePct != null ? `${snapshot.sales.revenueChangePct > 0 ? "+" : ""}${snapshot.sales.revenueChangePct}% vs previous` : "No comparison"
-              } />
-              <Metric icon={TrendingUp} label="Invoices" value={String(snapshot.sales.invoiceCount)} sub="Last 30 days" />
-              <Metric icon={Boxes} label="Stock alerts" value={String(snapshot.inventory.totals.belowReorder)} sub={`${snapshot.inventory.totals.stockOutRisk} at stock-out risk`} />
-              <Metric icon={Factory} label="Production orders" value={String(snapshot.production.orders)} sub={
-                snapshot.production.materialMovement.wastagePct != null ? `${snapshot.production.materialMovement.wastagePct}% wastage` : "Wastage not measurable"
-              } />
-              <Metric icon={Wallet} label="Receivables" value={inr(snapshot.receivables.totalOutstanding)} sub={`${inr(snapshot.receivables.ageing["90+"] ?? 0)} over 90 days`} />
-              <Metric icon={Truck} label="Price increases" value={String(snapshot.suppliers.increases.length)} sub="Materials costing more" />
+              <Metric
+                icon={TrendingUp}
+                label="Revenue (30 days)"
+                value={inr(snapshot.sales.netRevenue)}
+                sub={
+                  snapshot.sales.revenueChangePct != null
+                    ? `${snapshot.sales.revenueChangePct > 0 ? "+" : ""}${snapshot.sales.revenueChangePct}% vs previous`
+                    : "No comparison"
+                }
+              />
+              <Metric
+                icon={TrendingUp}
+                label="Invoices"
+                value={String(snapshot.sales.invoiceCount)}
+                sub="Last 30 days"
+              />
+              <Metric
+                icon={Boxes}
+                label="Stock alerts"
+                value={String(snapshot.inventory.totals.belowReorder)}
+                sub={`${snapshot.inventory.totals.stockOutRisk} at stock-out risk`}
+              />
+              <Metric
+                icon={Factory}
+                label="Production orders"
+                value={String(snapshot.production.orders)}
+                sub={
+                  snapshot.production.materialMovement.wastagePct != null
+                    ? `${snapshot.production.materialMovement.wastagePct}% wastage`
+                    : "Wastage not measurable"
+                }
+              />
+              <Metric
+                icon={Wallet}
+                label="Receivables"
+                value={inr(snapshot.receivables.totalOutstanding)}
+                sub={`${inr(snapshot.receivables.ageing["90+"] ?? 0)} over 90 days`}
+              />
+              <Metric
+                icon={Truck}
+                label="Price increases"
+                value={String(snapshot.suppliers.increases.length)}
+                sub="Materials costing more"
+              />
             </div>
 
             {snapshot.anomalies.length > 0 && (
@@ -96,14 +164,19 @@ function BriefPage() {
                 <CardContent className="space-y-2">
                   {snapshot.anomalies.map((a, i) => (
                     <div key={i} className="flex items-start gap-3 rounded-lg border p-3">
-                      <Badge variant={a.severity === "high" ? "destructive" : "secondary"} className="mt-0.5 capitalize">
+                      <Badge
+                        variant={a.severity === "high" ? "destructive" : "secondary"}
+                        className="mt-0.5 capitalize"
+                      >
                         {a.severity}
                       </Badge>
                       <div>
                         <p className="text-sm font-medium">{a.title}</p>
                         <p className="text-xs text-muted-foreground">{a.detail}</p>
                       </div>
-                      <Badge variant="outline" className="ml-auto capitalize">{a.area}</Badge>
+                      <Badge variant="outline" className="ml-auto capitalize">
+                        {a.area}
+                      </Badge>
                     </div>
                   ))}
                 </CardContent>
@@ -124,7 +197,8 @@ function BriefPage() {
               <CardContent>
                 {aiError ? (
                   <p className="text-sm text-muted-foreground">
-                    The figures above are live and correct. The written summary is unavailable right now: {aiError}
+                    The figures above are live and correct. The written summary is unavailable right
+                    now: {aiError}
                   </p>
                 ) : (
                   <Markdown>{narrative}</Markdown>

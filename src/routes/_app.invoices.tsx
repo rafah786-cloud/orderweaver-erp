@@ -13,14 +13,50 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Ban, FileDown, MoreHorizontal, IndianRupee, XCircle, Printer } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Ban,
+  FileDown,
+  MoreHorizontal,
+  IndianRupee,
+  XCircle,
+  Printer,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
@@ -76,7 +112,9 @@ function InvoicesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("id, invoice_number, invoice_date, due_date, total_amount, paid_amount, status, party_id")
+        .select(
+          "id, invoice_number, invoice_date, due_date, total_amount, paid_amount, status, party_id",
+        )
         .order("invoice_date", { ascending: false });
       if (error) throw error;
 
@@ -118,7 +156,10 @@ function InvoicesPage() {
   const { data: parties = [] } = useQuery({
     queryKey: ["parties-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("parties").select("id, name, credit_limit").order("name");
+      const { data, error } = await supabase
+        .from("parties")
+        .select("id, name, credit_limit")
+        .order("name");
       if (error) throw error;
       return (data ?? []) as { id: string; name: string; credit_limit: number }[];
     },
@@ -126,7 +167,10 @@ function InvoicesPage() {
 
   const partyMap = new Map(parties.map((p) => [p.id, p]));
 
-  const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0);
+  const subtotal = items.reduce(
+    (s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0),
+    0,
+  );
   const tax = subtotal * TAX_RATE;
   const cgst = supply === "intra" ? tax / 2 : 0;
   const sgst = supply === "intra" ? tax - cgst : 0;
@@ -157,7 +201,11 @@ function InvoicesPage() {
         reason: `Current outstanding ${inr(out)} + new invoice ${inr(newTotal)} = ${inr(projected)} which meets or exceeds the credit limit of ${inr(limit)}.`,
       };
     }
-    if (out >= OVERDUE_THRESHOLD && data?.oldest_unpaid_date && daysBetween(data.oldest_unpaid_date) > OVERDUE_DAYS) {
+    if (
+      out >= OVERDUE_THRESHOLD &&
+      data?.oldest_unpaid_date &&
+      daysBetween(data.oldest_unpaid_date) > OVERDUE_DAYS
+    ) {
       return {
         title: "Overdue payments",
         reason: `Party has ${inr(out)} outstanding with the oldest invoice from ${formatDate(data.oldest_unpaid_date)} (${daysBetween(data.oldest_unpaid_date)} days). Clear overdue invoices first.`,
@@ -170,9 +218,13 @@ function InvoicesPage() {
   const create = useMutation({
     mutationFn: async () => {
       if (!partyId) throw new Error("Select a party");
-      if (items.some((i) => !i.description.trim())) throw new Error("All line items need a description");
+      if (items.some((i) => !i.description.trim()))
+        throw new Error("All line items need a description");
       if (total <= 0) throw new Error("Invoice total must be greater than zero");
-      if (tax > 0 && !supply) throw new Error("Select intra-state or inter-state tax treatment before creating the invoice");
+      if (tax > 0 && !supply)
+        throw new Error(
+          "Select intra-state or inter-state tax treatment before creating the invoice",
+        );
 
       const blocked = await checkBlock(partyId, total);
       if (blocked) {
@@ -208,45 +260,83 @@ function InvoicesPage() {
           quantity: Number(i.quantity),
           unit_price: Number(i.unit_price),
           amount: Number(i.quantity) * Number(i.unit_price),
-        }))
+        })),
       );
       if (itemErr) throw itemErr;
-      const { data: partyLedger } = await supabase.from("ledger_accounts").select("id").eq("mapped_party_id", partyId).maybeSingle();
-      const { data: salesLedger } = await supabase.from("ledger_accounts").select("id").eq("name", "Sales").eq("is_active", true).maybeSingle();
+      const { data: partyLedger } = await supabase
+        .from("ledger_accounts")
+        .select("id")
+        .eq("mapped_party_id", partyId)
+        .maybeSingle();
+      const { data: salesLedger } = await supabase
+        .from("ledger_accounts")
+        .select("id")
+        .eq("name", "Sales")
+        .eq("is_active", true)
+        .maybeSingle();
       const { data: taxLedgers } = await supabase
         .from("ledger_accounts")
         .select("id, name")
         .in("name", ["Output CGST", "Output SGST", "Output IGST"])
         .eq("is_active", true);
       const taxLedgerByName = new Map((taxLedgers ?? []).map((ledger) => [ledger.name, ledger.id]));
-      const taxComponents = supply === "intra"
-        ? [
-            ...(cgst ? [{ ledgerAccountId: taxLedgerByName.get("Output CGST") ?? "", amount: cgst }] : []),
-            ...(sgst ? [{ ledgerAccountId: taxLedgerByName.get("Output SGST") ?? "", amount: sgst }] : []),
-          ]
-        : supply === "inter"
-          ? (igst ? [{ ledgerAccountId: taxLedgerByName.get("Output IGST") ?? "", amount: igst }] : [])
-          : undefined;
+      const taxComponents =
+        supply === "intra"
+          ? [
+              ...(cgst
+                ? [{ ledgerAccountId: taxLedgerByName.get("Output CGST") ?? "", amount: cgst }]
+                : []),
+              ...(sgst
+                ? [{ ledgerAccountId: taxLedgerByName.get("Output SGST") ?? "", amount: sgst }]
+                : []),
+            ]
+          : supply === "inter"
+            ? igst
+              ? [{ ledgerAccountId: taxLedgerByName.get("Output IGST") ?? "", amount: igst }]
+              : []
+            : undefined;
       if (tax > 0 && taxComponents?.some((line) => !line.ledgerAccountId)) {
         throw new Error("Required output tax ledgers are not configured");
       }
       const prepared = prepareInvoiceVoucher({
-        invoiceId: inv.id, invoiceNumber, invoiceDate, partyLedgerId: partyLedger?.id ?? null,
-        salesLedgerId: salesLedger?.id ?? null, subtotal, taxAmount: tax, taxComponents,
+        invoiceId: inv.id,
+        invoiceNumber,
+        invoiceDate,
+        partyLedgerId: partyLedger?.id ?? null,
+        salesLedgerId: salesLedger?.id ?? null,
+        subtotal,
+        taxAmount: tax,
+        taxComponents,
       });
       let posted = false;
       if (prepared.ok) {
-        const { error: postErr } = await supabase.rpc("create_gl_voucher" as never, {
-          _type: prepared.call.type, _date: prepared.call.date, _entries: prepared.call.entries,
-          _narration: prepared.call.narration, _reference: prepared.call.reference, _idempotency_key: prepared.call.idempotencyKey,
-        } as never);
+        const { error: postErr } = await supabase.rpc(
+          "create_gl_voucher" as never,
+          {
+            _type: prepared.call.type,
+            _date: prepared.call.date,
+            _entries: prepared.call.entries,
+            _narration: prepared.call.narration,
+            _reference: prepared.call.reference,
+            _idempotency_key: prepared.call.idempotencyKey,
+          } as never,
+        );
         if (postErr && !uninstalledAccountingFunction(postErr)) throw postErr;
         posted = !postErr;
       }
-      return { id: inv.id as string, invoiceNumber, posted, postingReason: prepared.ok ? null : prepared.reason };
+      return {
+        id: inv.id as string,
+        invoiceNumber,
+        posted,
+        postingReason: prepared.ok ? null : prepared.reason,
+      };
     },
     onSuccess: async (res) => {
-      toast.success(res.posted ? "Invoice created and posted." : `Invoice created. Accounting not posted: ${res.postingReason ?? "create_gl_voucher is not installed"}.`);
+      toast.success(
+        res.posted
+          ? "Invoice created and posted."
+          : `Invoice created. Accounting not posted: ${res.postingReason ?? "create_gl_voucher is not installed"}.`,
+      );
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["party-outstanding"] });
       const savedParty = partyId;
@@ -257,21 +347,24 @@ function InvoicesPage() {
       try {
         const origin = typeof window !== "undefined" ? window.location.origin : "";
         const invoice_url = `${origin}/print/invoice/${res.id}`;
-        const r = await notifyCustomer({ data: {
-          party_id: savedParty,
-          event: "invoice.issued",
-          ref_table: "invoices",
-          ref_id: res.id,
-          vars: {
-            invoice_no: res.invoiceNumber,
-            invoice_amount: savedTotal.toFixed(2),
-            due_date: savedDue || "",
-            invoice_url,
+        const r = await notifyCustomer({
+          data: {
+            party_id: savedParty,
+            event: "invoice.issued",
+            ref_table: "invoices",
+            ref_id: res.id,
+            vars: {
+              invoice_no: res.invoiceNumber,
+              invoice_amount: savedTotal.toFixed(2),
+              due_date: savedDue || "",
+              invoice_url,
+            },
           },
-        } });
+        });
         if (r?.ok) toast.success("Customer notified via WhatsApp with invoice link");
-      } catch { /* non-fatal */ }
-
+      } catch {
+        /* non-fatal */
+      }
     },
     onError: (e: Error) => {
       if (!blockMsg) toast.error(e.message);
@@ -284,11 +377,15 @@ function InvoicesPage() {
       const amt = Number(payAmount);
       if (!amt || amt <= 0) throw new Error("Enter a payment amount greater than zero");
       const newPaid = Number(payInv.paid_amount) + amt;
-      if (newPaid > Number(payInv.total_amount) + 0.01) throw new Error("Payment exceeds invoice total");
-      const status: InvoiceRow["status"] = newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
+      if (newPaid > Number(payInv.total_amount) + 0.01)
+        throw new Error("Payment exceeds invoice total");
+      const status: InvoiceRow["status"] =
+        newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
       // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error } = await supabase.rpc("record_invoice_receipt", {
-        p_invoice: payInv.id, p_amount: amt, p_idempotency: `receipt:${payInv.id}:${newPaid}`,
+        p_invoice: payInv.id,
+        p_amount: amt,
+        p_idempotency: `receipt:${payInv.id}:${newPaid}`,
       });
       if (error) throw error;
       return { inv: payInv, amt, status };
@@ -301,19 +398,22 @@ function InvoicesPage() {
       setPayAmount("");
       if (res && res.status === "paid") {
         try {
-          const r = await notifyCustomer({ data: {
-            party_id: res.inv.party_id,
-            event: "invoice.paid",
-            ref_table: "invoices",
-            ref_id: res.inv.id,
-            vars: {
-              invoice_no: res.inv.invoice_number,
-              payment_amount: Number(res.inv.total_amount).toFixed(2),
+          const r = await notifyCustomer({
+            data: {
+              party_id: res.inv.party_id,
+              event: "invoice.paid",
+              ref_table: "invoices",
+              ref_id: res.inv.id,
+              vars: {
+                invoice_no: res.inv.invoice_number,
+                payment_amount: Number(res.inv.total_amount).toFixed(2),
+              },
             },
-          } });
+          });
           if (r?.ok) toast.success("Customer notified via WhatsApp");
-        } catch { /* non-fatal */ }
-
+        } catch {
+          /* non-fatal */
+        }
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -322,7 +422,10 @@ function InvoicesPage() {
   const cancelInvoice = useMutation({
     mutationFn: async (inv: InvoiceRow) => {
       // @ts-expect-error This RPC requires the unapplied accounting migration.
-      const { error } = await supabase.rpc("reverse_invoice", { p_invoice: inv.id, p_idempotency: `cancel:${inv.id}` });
+      const { error } = await supabase.rpc("reverse_invoice", {
+        p_invoice: inv.id,
+        p_idempotency: `cancel:${inv.id}`,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -332,8 +435,6 @@ function InvoicesPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-
 
   const handleExport = async () => {
     if (!/^\d{2}[A-Z0-9]{13}$/.test(supplierGstin.trim().toUpperCase())) {
@@ -346,7 +447,9 @@ function InvoicesPage() {
       const end = new Date(Date.UTC(exportYear, exportMonth, 1)).toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("invoices")
-        .select("id, invoice_number, invoice_date, total_amount, subtotal, tax_amount, party_id, invoice_items(description, quantity, unit_price, amount, hsn_code, tax_rate)")
+        .select(
+          "id, invoice_number, invoice_date, total_amount, subtotal, tax_amount, party_id, invoice_items(description, quantity, unit_price, amount, hsn_code, tax_rate)",
+        )
         .neq("status", "cancelled")
         .gte("invoice_date", start)
         .lt("invoice_date", end);
@@ -367,7 +470,10 @@ function InvoicesPage() {
         parties: partyData as never,
         supplierStateCode: supplierState,
       });
-      downloadJson(`gstr1_${supplierGstin.trim().toUpperCase()}_${String(exportMonth).padStart(2, "0")}${exportYear}.json`, json);
+      downloadJson(
+        `gstr1_${supplierGstin.trim().toUpperCase()}_${String(exportMonth).padStart(2, "0")}${exportYear}.json`,
+        json,
+      );
       toast.success(`Exported ${data.length} invoice(s)`);
       setExportOpen(false);
     } catch (e) {
@@ -387,16 +493,24 @@ function InvoicesPage() {
             <AiInsightButton topic="receivables" label="Analyze receivables" />
             {hasAnyRole(["admin", "sales"]) && (
               <Button variant="outline" onClick={() => setExportOpen(true)}>
-                <FileDown className="h-4 w-4 mr-1" />Export GSTR-1 JSON
+                <FileDown className="h-4 w-4 mr-1" />
+                Export GSTR-1 JSON
               </Button>
             )}
             {canCreate && (
-              <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Invoice</Button>
+              <Button
+                onClick={() => {
+                  resetForm();
+                  setOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New Invoice
+              </Button>
             )}
           </div>
         }
       />
-
 
       <PageBody>
         <Card>
@@ -416,55 +530,100 @@ function InvoicesPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
-                ) : invoices.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No invoices yet.</TableCell></TableRow>
-                ) : invoices.map((inv) => {
-                  const canManage = hasAnyRole(["admin", "sales"]);
-                  const closed = inv.status === "paid" || inv.status === "cancelled";
-                  return (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.invoice_number}</TableCell>
-                    <TableCell>{partyMap.get(inv.party_id)?.name ?? "—"}</TableCell>
-                    <TableCell>{formatDate(inv.invoice_date)}</TableCell>
-                    <TableCell>{formatDate(inv.due_date)}</TableCell>
-                    <TableCell className="text-right font-medium">{inr(inv.total_amount)}</TableCell>
-                    <TableCell className="text-right">{inr(inv.paid_amount)}</TableCell>
-                    <TableCell>
-                      <Badge variant={inv.status === "paid" ? "secondary" : inv.status === "cancelled" ? "outline" : "default"} className="capitalize">
-                        {inv.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
-                          onClick={() => setPreviewUrl(`/print/invoice/${inv.id}`)}>
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                        {canManage && !closed && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => { setPayInv(inv); setPayAmount(String(Math.max(0, Number(inv.total_amount) - Number(inv.paid_amount)))); }}>
-                                <IndianRupee className="h-4 w-4 mr-2" />Record payment
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => { if (confirm(`Cancel invoice ${inv.invoice_number}?`)) cancelInvoice.mutate(inv); }}
-                              >
-                                <XCircle className="h-4 w-4 mr-2" />Cancel invoice
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                      Loading…
                     </TableCell>
                   </TableRow>
-                  );
-                })}
+                ) : invoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                      No invoices yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  invoices.map((inv) => {
+                    const canManage = hasAnyRole(["admin", "sales"]);
+                    const closed = inv.status === "paid" || inv.status === "cancelled";
+                    return (
+                      <TableRow key={inv.id}>
+                        <TableCell className="font-medium">{inv.invoice_number}</TableCell>
+                        <TableCell>{partyMap.get(inv.party_id)?.name ?? "—"}</TableCell>
+                        <TableCell>{formatDate(inv.invoice_date)}</TableCell>
+                        <TableCell>{formatDate(inv.due_date)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {inr(inv.total_amount)}
+                        </TableCell>
+                        <TableCell className="text-right">{inr(inv.paid_amount)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              inv.status === "paid"
+                                ? "secondary"
+                                : inv.status === "cancelled"
+                                  ? "outline"
+                                  : "default"
+                            }
+                            className="capitalize"
+                          >
+                            {inv.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              title="Print preview"
+                              onClick={() => setPreviewUrl(`/print/invoice/${inv.id}`)}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            {canManage && !closed && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setPayInv(inv);
+                                      setPayAmount(
+                                        String(
+                                          Math.max(
+                                            0,
+                                            Number(inv.total_amount) - Number(inv.paid_amount),
+                                          ),
+                                        ),
+                                      );
+                                    }}
+                                  >
+                                    <IndianRupee className="h-4 w-4 mr-2" />
+                                    Record payment
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => {
+                                      if (confirm(`Cancel invoice ${inv.invoice_number}?`))
+                                        cancelInvoice.mutate(inv);
+                                    }}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Cancel invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -475,22 +634,34 @@ function InvoicesPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Invoice</DialogTitle>
-            <DialogDescription>GST 18% is applied automatically. Credit checks run on save.</DialogDescription>
+            <DialogDescription>
+              GST 18% is applied automatically. Credit checks run on save.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">Party *</Label>
               <Select value={partyId} onValueChange={setPartyId}>
-                <SelectTrigger><SelectValue placeholder="Select party" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select party" />
+                </SelectTrigger>
                 <SelectContent>
-                  {parties.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  {parties.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs text-muted-foreground">Invoice Date</Label>
-                <Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs text-muted-foreground">Due Date</Label>
@@ -501,21 +672,68 @@ function InvoicesPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-sm font-medium">Line Items</Label>
-                <Button size="sm" variant="outline" onClick={() => setItems([...items, { description: "", quantity: 1, unit_price: 0 }])}>
-                  <Plus className="h-3 w-3 mr-1" />Add
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setItems([...items, { description: "", quantity: 1, unit_price: 0 }])
+                  }
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
                 </Button>
               </div>
               <div className="space-y-2">
                 {items.map((it, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-start">
-                    <Input className="col-span-6" placeholder="Description (e.g. King Mattress 6x6.5)" value={it.description}
-                      onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, description: e.target.value } : x))} />
-                    <Input className="col-span-2" type="number" min="0" placeholder="Qty" value={it.quantity}
-                      onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value) } : x))} />
-                    <Input className="col-span-3" type="number" min="0" placeholder="Unit ₹" value={it.unit_price}
-                      onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, unit_price: Number(e.target.value) } : x))} />
-                    <Button className="col-span-1" size="icon" variant="ghost"
-                      onClick={() => setItems(items.length > 1 ? items.filter((_, i) => i !== idx) : items)}>
+                    <Input
+                      className="col-span-6"
+                      placeholder="Description (e.g. King Mattress 6x6.5)"
+                      value={it.description}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, description: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <Input
+                      className="col-span-2"
+                      type="number"
+                      min="0"
+                      placeholder="Qty"
+                      value={it.quantity}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, quantity: Number(e.target.value) } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <Input
+                      className="col-span-3"
+                      type="number"
+                      min="0"
+                      placeholder="Unit ₹"
+                      value={it.unit_price}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, unit_price: Number(e.target.value) } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <Button
+                      className="col-span-1"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() =>
+                        setItems(items.length > 1 ? items.filter((_, i) => i !== idx) : items)
+                      }
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -532,20 +750,33 @@ function InvoicesPage() {
               <Row label="Subtotal" value={inr(subtotal)} />
               <Row label={`GST (${(TAX_RATE * 100).toFixed(0)}%)`} value={inr(tax)} />
               <Label className="text-xs text-muted-foreground">Tax split</Label>
-              <Select value={supply || "unset"} onValueChange={(value) => setSupply(value === "unset" ? "" : value as "intra" | "inter")}>
-                <SelectTrigger><SelectValue placeholder="Choose before posting tax" /></SelectTrigger>
+              <Select
+                value={supply || "unset"}
+                onValueChange={(value) =>
+                  setSupply(value === "unset" ? "" : (value as "intra" | "inter"))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose before posting tax" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unset">Not selected — tax will not be posted</SelectItem>
                   <SelectItem value="intra">Intra-state CGST + SGST</SelectItem>
                   <SelectItem value="inter">Inter-state IGST</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="border-t pt-1 mt-1"><Row label="Total" value={inr(total)} bold /></div>
+              <div className="border-t pt-1 mt-1">
+                <Row label="Total" value={inr(total)} bold />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending}>{create.isPending ? "Creating…" : "Create Invoice"}</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => create.mutate()} disabled={create.isPending}>
+              {create.isPending ? "Creating…" : "Create Invoice"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -554,7 +785,8 @@ function InvoicesPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Ban className="h-5 w-5" />Invoice Blocked
+              <Ban className="h-5 w-5" />
+              Invoice Blocked
             </DialogTitle>
           </DialogHeader>
           {blockMsg && (
@@ -569,7 +801,8 @@ function InvoicesPage() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Collect payment or contact an admin to override before creating new invoices for this party.
+                Collect payment or contact an admin to override before creating new invoices for
+                this party.
               </p>
             </div>
           )}
@@ -584,7 +817,8 @@ function InvoicesPage() {
           <DialogHeader>
             <DialogTitle>Export GSTR-1 JSON</DialogTitle>
             <DialogDescription>
-              Generates a GSTR-1 JSON file for the selected month. Upload it on the GST portal via the Returns Offline Tool.
+              Generates a GSTR-1 JSON file for the selected month. Upload it on the GST portal via
+              the Returns Offline Tool.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2">
@@ -609,8 +843,13 @@ function InvoicesPage() {
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs text-muted-foreground">Month</Label>
-                <Select value={String(exportMonth)} onValueChange={(v) => setExportMonth(Number(v))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={String(exportMonth)}
+                  onValueChange={(v) => setExportMonth(Number(v))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                       <SelectItem key={m} value={String(m)}>
@@ -632,11 +871,14 @@ function InvoicesPage() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Invoices with a valid party GSTIN are exported as B2B; the rest are aggregated as B2CS. Cancelled invoices are excluded.
+              Invoices with a valid party GSTIN are exported as B2B; the rest are aggregated as
+              B2CS. Cancelled invoices are excluded.
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setExportOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setExportOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleExport} disabled={exporting}>
               {exporting ? "Generating…" : "Download JSON"}
             </Button>
@@ -644,14 +886,25 @@ function InvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!payInv} onOpenChange={(o) => { if (!o) { setPayInv(null); setPayAmount(""); } }}>
+      <Dialog
+        open={!!payInv}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPayInv(null);
+            setPayAmount("");
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Record Payment</DialogTitle>
             <DialogDescription>
               {payInv && (
-                <>Invoice <span className="font-medium">{payInv.invoice_number}</span> · Balance{" "}
-                  <span className="font-medium">{inr(Number(payInv.total_amount) - Number(payInv.paid_amount))}</span>
+                <>
+                  Invoice <span className="font-medium">{payInv.invoice_number}</span> · Balance{" "}
+                  <span className="font-medium">
+                    {inr(Number(payInv.total_amount) - Number(payInv.paid_amount))}
+                  </span>
                 </>
               )}
             </DialogDescription>
@@ -659,11 +912,25 @@ function InvoicesPage() {
           <div className="grid gap-3 py-2">
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">Amount received (₹)</Label>
-              <Input type="number" min="0" step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setPayInv(null); setPayAmount(""); }}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPayInv(null);
+                setPayAmount("");
+              }}
+            >
+              Cancel
+            </Button>
             <Button onClick={() => recordPayment.mutate()} disabled={recordPayment.isPending}>
               {recordPayment.isPending ? "Saving…" : "Record Payment"}
             </Button>

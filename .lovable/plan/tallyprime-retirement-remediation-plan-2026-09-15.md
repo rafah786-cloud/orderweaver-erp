@@ -9,6 +9,7 @@ Current verdict: **BLOCKED**. Existing live rows happen to balance, but the cont
 ## 1. Accounting foundation — CRITICAL
 
 ### Atomic, server-enforced double-entry GL
+
 - Replace browser-side voucher number allocation and multi-call saves with one restricted database operation that locks the numbering series, creates the voucher and all lines atomically, validates period/status/permissions, and commits only when total debit equals total credit within the currency precision.
 - Add voucher lifecycle fields: `status` (`draft`, `posted`, `cancelled`, `reversed`), `posted_at/by`, `cancelled_at/by`, `cancellation_reason`, `reversal_voucher_id`, immutable source identifiers, and row version.
 - Drafts must never affect books. Posted vouchers become immutable; corrections use cancellation plus linked reversal/replacement, preserving numbers and history.
@@ -20,6 +21,7 @@ Current verdict: **BLOCKED**. Existing live rows happen to balance, but the cont
 **Tally test:** recreate sales, purchase, receipt, payment, contra, journal, debit note, credit note, stock journal, cancellation, reversal, backdated and concurrent-entry scenarios; compare day book, ledger, trial balance, sequence gaps and audit history exactly.
 
 ### Period-aware books and closing
+
 - Replace all-time balance views with date/FY-aware reporting functions supporting opening-as-of, period movement and closing-as-of.
 - Add controlled financial-year close/reopen runs with retained-earnings transfer, balance carry-forward, lock state, actor, timestamp, reason and generated voucher links.
 - Prevent overlapping current years and posting outside allowed periods; admin override requires explicit approval and audit reason.
@@ -75,11 +77,13 @@ Current verdict: **BLOCKED**. Existing live rows happen to balance, but the cont
 ## 6. Complete historical migration — CRITICAL
 
 ### Staging and canonical identifiers
+
 - Create append-only `migration_runs`, uploaded-file manifests/checksums, staging tables for every master/voucher/ledger line/inventory allocation/bill allocation/tax/cost-centre/batch relation, validation issues and reconciliation snapshots.
 - Preserve Tally company, GUID, master ID, alter ID, voucher key, voucher type/number/date/reference, original payload hash and relationship identifiers. Never identity-match solely by name.
 - Parse every voucher leg, not only party lines. Preserve cancelled/optional/deleted states for audit rather than silently discarding them; only valid posted records affect books.
 
 ### Idempotency, commit and rollback
+
 - Use `(company_id, tally_guid, alter_id)` and payload hash for deterministic deduplication/version detection. Re-importing identical data must produce zero accounting change.
 - Stage and validate first; commit an approved migration run atomically in bounded transactions. Tag every created canonical row with the run/source version.
 - Rollback means reversing/removing only an unaccepted run with dependency checks. Accepted posted history is corrected through controlled superseding entries, not destructive deletion.
@@ -125,12 +129,14 @@ Current verdict: **BLOCKED**. Existing live rows happen to balance, but the cont
 ## 10. Medium/low remediation
 
 ### MEDIUM
+
 - Add maker/checker approval for sensitive vouchers, master changes, period reopen, negative stock and migration acceptance.
 - Fix ledger statements to calculate opening as of the selected start date.
 - Implement bank-statement import matching, partial/one-to-many reconciliation and immutable reconciliation history; compare book/bank balances to Tally.
 - Add controlled exports of all books and audit data in durable formats, with checksum manifests.
 
 ### LOW
+
 - Guarantee AI audit writes or clearly flag audit failure; AI remains read-only and deterministic for accounting figures until separately approved.
 - Add correlation IDs and structured operational logs. These support diagnosis but never become the accounting source of truth.
 

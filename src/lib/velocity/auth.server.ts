@@ -21,7 +21,9 @@ function getCredentials(): { username: string; password: string } {
   const username = process.env["VELOCITY_USERNAME"];
   const password = process.env["VELOCITY_PASSWORD"];
   if (!username || !password) {
-    throw new Error("Velocity credentials are not configured (VELOCITY_USERNAME / VELOCITY_PASSWORD).");
+    throw new Error(
+      "Velocity credentials are not configured (VELOCITY_USERNAME / VELOCITY_PASSWORD).",
+    );
   }
   return { username, password };
 }
@@ -41,17 +43,15 @@ async function readCachedToken(): Promise<CachedToken | null> {
 
 async function writeCachedToken(token: string, expiresAt: Date): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin
-    .from("velocity_auth_token")
-    .upsert(
-      {
-        id: TOKEN_ROW_ID,
-        token,
-        expires_at: expiresAt.toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "id" },
-    );
+  await supabaseAdmin.from("velocity_auth_token").upsert(
+    {
+      id: TOKEN_ROW_ID,
+      token,
+      expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
 }
 
 function parseExpiry(raw: unknown): Date {
@@ -129,6 +129,11 @@ export async function checkVelocityAuth(forceRefresh = false): Promise<{
     const fresh = await requestNewToken();
     return { ok: true, source: "fresh", expiresAt: fresh.expiresAt.toISOString() };
   } catch (e) {
-    return { ok: false, source: "fresh", expiresAt: null, error: e instanceof Error ? e.message : "Unknown error" };
+    return {
+      ok: false,
+      source: "fresh",
+      expiresAt: null,
+      error: e instanceof Error ? e.message : "Unknown error",
+    };
   }
 }

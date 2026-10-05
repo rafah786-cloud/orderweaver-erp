@@ -8,7 +8,7 @@ const rowSchema = z.object({
   source_id: z.string().max(500).nullable().optional(),
   alter_id: z.string().max(200).nullable().optional(),
   source_key: z.string().min(1).max(1000),
-  lifecycle_state: z.enum(["posted","cancelled","optional","deleted"]).default("posted"),
+  lifecycle_state: z.enum(["posted", "cancelled", "optional", "deleted"]).default("posted"),
   parent_source_key: z.string().max(1000).nullable().optional(),
   payload: z.record(z.unknown()),
 });
@@ -27,10 +27,21 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
     if (!role) throw new Error("Admin only");
 
-    const { data: access } = await supabase.from("user_company_access").select("company_id").eq("user_id", userId).eq("company_id", data.companyId).eq("can_view", true).maybeSingle();
+    const { data: access } = await supabase
+      .from("user_company_access")
+      .select("company_id")
+      .eq("user_id", userId)
+      .eq("company_id", data.companyId)
+      .eq("can_view", true)
+      .maybeSingle();
     if (!access) throw new Error("No access to selected company");
 
     const { data: run, error: runError } = await supabase
@@ -73,11 +84,18 @@ export const listTallyMigrationRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
     if (!role) throw new Error("Admin only");
     const { data, error } = await supabase
       .from("tally_migration_runs")
-      .select("id,company_id,source_company_name,source_company_guid,status,source_checksum,started_at,completed_at,created_by,approved_by,approved_at,notes,control_totals")
+      .select(
+        "id,company_id,source_company_name,source_company_guid,status,source_checksum,started_at,completed_at,created_by,approved_by,approved_at,notes,control_totals",
+      )
       .order("started_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -88,21 +106,40 @@ export const validateTallyMigration = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ runId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
     if (!role) throw new Error("Admin only");
-    const { data: result, error } = await supabase.rpc("validate_tally_migration_run", { p_run: data.runId });
+    const { data: result, error } = await supabase.rpc("validate_tally_migration_run", {
+      p_run: data.runId,
+    });
     if (error) throw error;
     return result?.[0] ?? null;
   });
 
 export const reconcileTallyMigration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ runId: z.string().uuid(), asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({ runId: z.string().uuid(), asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
     if (!role) throw new Error("Admin only");
-    const { data: rows, error } = await supabase.rpc("reconcile_tally_migration_run", { p_run: data.runId, p_as_of: data.asOf });
+    const { data: rows, error } = await supabase.rpc("reconcile_tally_migration_run", {
+      p_run: data.runId,
+      p_as_of: data.asOf,
+    });
     if (error) throw error;
     return rows ?? [];
   });

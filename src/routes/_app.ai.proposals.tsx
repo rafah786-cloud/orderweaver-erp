@@ -6,7 +6,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PageBody, PageHeader } from "@/components/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { listAiAuditLog, listAiProposals, reviewAiProposal } from "@/lib/ai.functions";
@@ -29,7 +36,11 @@ function ProposalsPage() {
   const decide = useMutation({
     mutationFn: (v: { id: string; decision: "approved" | "rejected" }) => review({ data: v }),
     onSuccess: (_r, v) => {
-      toast.success(v.decision === "approved" ? "Proposal approved — complete it in the normal ERP screen." : "Proposal rejected");
+      toast.success(
+        v.decision === "approved"
+          ? "Proposal approved — complete it in the normal ERP screen."
+          : "Proposal rejected",
+      );
       qc.invalidateQueries({ queryKey: ["ai-proposals"] });
       qc.invalidateQueries({ queryKey: ["ai-audit"] });
     },
@@ -54,7 +65,10 @@ function ProposalsPage() {
             <CardContent>
               {proposals.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {proposals.data && proposals.data.length === 0 && (
-                <p className="text-sm text-muted-foreground">No proposals yet. They appear when you accept an AI suggestion from a document or analysis.</p>
+                <p className="text-sm text-muted-foreground">
+                  No proposals yet. They appear when you accept an AI suggestion from a document or
+                  analysis.
+                </p>
               )}
               {proposals.data && proposals.data.length > 0 && (
                 <div className="overflow-x-auto">
@@ -74,10 +88,21 @@ function ProposalsPage() {
                           <TableCell className="capitalize">{p.kind.replace(/_/g, " ")}</TableCell>
                           <TableCell className="max-w-[360px]">
                             <p className="text-sm">{p.summary}</p>
-                            {p.review_note && <p className="text-xs text-muted-foreground">Note: {p.review_note}</p>}
+                            {p.review_note && (
+                              <p className="text-xs text-muted-foreground">Note: {p.review_note}</p>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={p.status === "approved" ? "secondary" : p.status === "rejected" ? "destructive" : "outline"} className="capitalize">
+                            <Badge
+                              variant={
+                                p.status === "approved"
+                                  ? "secondary"
+                                  : p.status === "rejected"
+                                    ? "destructive"
+                                    : "outline"
+                              }
+                              className="capitalize"
+                            >
                               {p.status}
                             </Badge>
                           </TableCell>
@@ -85,10 +110,20 @@ function ProposalsPage() {
                           <TableCell className="text-right">
                             {isAdmin && p.status === "pending" && (
                               <div className="flex justify-end gap-1">
-                                <Button size="sm" variant="outline" onClick={() => decide.mutate({ id: p.id, decision: "approved" })} disabled={decide.isPending}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => decide.mutate({ id: p.id, decision: "approved" })}
+                                  disabled={decide.isPending}
+                                >
                                   <CheckCircle2 className="mr-1 h-4 w-4" /> Approve
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={() => decide.mutate({ id: p.id, decision: "rejected" })} disabled={decide.isPending}>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => decide.mutate({ id: p.id, decision: "rejected" })}
+                                  disabled={decide.isPending}
+                                >
                                   <XCircle className="mr-1 h-4 w-4" /> Reject
                                 </Button>
                               </div>
@@ -110,7 +145,9 @@ function ProposalsPage() {
               </CardHeader>
               <CardContent>
                 {log.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {log.data && log.data.length === 0 && <p className="text-sm text-muted-foreground">No AI activity recorded yet.</p>}
+                {log.data && log.data.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No AI activity recorded yet.</p>
+                )}
                 {log.data && log.data.length > 0 && (
                   <div className="overflow-x-auto">
                     <Table>
@@ -128,17 +165,30 @@ function ProposalsPage() {
                       <TableBody>
                         {log.data.map((row) => (
                           <TableRow key={row.id}>
-                            <TableCell className="whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {formatDate(row.created_at)}
+                            </TableCell>
                             <TableCell>{row.feature}</TableCell>
                             <TableCell>{row.action ?? "—"}</TableCell>
-                            <TableCell className="max-w-[160px] truncate text-xs">{row.model ?? "—"}</TableCell>
+                            <TableCell className="max-w-[160px] truncate text-xs">
+                              {row.model ?? "—"}
+                            </TableCell>
                             <TableCell>
-                              <Badge variant={row.status === "error" ? "destructive" : "secondary"} title={row.error ?? undefined}>
+                              <Badge
+                                variant={row.status === "error" ? "destructive" : "secondary"}
+                                title={row.error ?? undefined}
+                              >
                                 {row.status}
                               </Badge>
                             </TableCell>
-                            <TableCell>{row.duration_ms != null ? `${(row.duration_ms / 1000).toFixed(1)}s` : "—"}</TableCell>
-                            <TableCell className="max-w-[280px] truncate text-xs">{row.prompt_summary ?? "—"}</TableCell>
+                            <TableCell>
+                              {row.duration_ms != null
+                                ? `${(row.duration_ms / 1000).toFixed(1)}s`
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="max-w-[280px] truncate text-xs">
+                              {row.prompt_summary ?? "—"}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

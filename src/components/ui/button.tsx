@@ -12,8 +12,7 @@ const buttonVariants = cva(
         default: "btn-gold",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:translate-y-px",
-        outline:
-          "glass-sm text-foreground hover:bg-secondary",
+        outline: "glass-sm text-foreground hover:bg-secondary",
         secondary: "btn-3d text-foreground",
         ghost: "hover:bg-secondary hover:text-foreground text-foreground/80",
         link: "text-primary underline-offset-4 hover:underline",

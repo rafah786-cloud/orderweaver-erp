@@ -55,9 +55,18 @@ export type Cheque = {
   narration: string | null;
 };
 
-export type Currency = { code: string; name: string; symbol: string | null; is_base: boolean; is_active: boolean };
+export type Currency = {
+  code: string;
+  name: string;
+  symbol: string | null;
+  is_base: boolean;
+  is_active: boolean;
+};
 export type ExchangeRate = { id: string; currency_code: string; rate_date: string; rate: number };
 
 export const CHEQUE_STATUS_LABEL: Record<Cheque["status"], string> = {
-  pending: "Pending", cleared: "Cleared", bounced: "Bounced", cancelled: "Cancelled",
+  pending: "Pending",
+  cleared: "Cleared",
+  bounced: "Bounced",
+  cancelled: "Cancelled",
 };

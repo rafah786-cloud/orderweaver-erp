@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { calculatePeriodBalance, IsolatedAccountingFixture, IsolatedFinancialYearFixture, IsolatedVoucherPoster, prepareInvoiceVoucher, reverseGlLines, validateGlLines, type GlLineInput, type VoucherStatus } from "./accounting-foundation";
+import {
+  calculatePeriodBalance,
+  IsolatedAccountingFixture,
+  IsolatedFinancialYearFixture,
+  IsolatedVoucherPoster,
+  prepareInvoiceVoucher,
+  reverseGlLines,
+  validateGlLines,
+  type GlLineInput,
+  type VoucherStatus,
+} from "./accounting-foundation";
 
 const a = "ledger-a";
 const b = "ledger-b";
@@ -9,19 +19,33 @@ const balanced = (amount: number): GlLineInput[] => [
 ];
 
 describe("Phase 1 accounting foundation", () => {
-  it.each(["sales", "purchase", "receipt", "payment", "contra", "journal", "debit_note", "credit_note"] as const)(
-    "posts a realistic balanced %s voucher", async (type) => {
-      const db = new IsolatedAccountingFixture();
-      const voucher = await db.post(type, "2026-04-01", balanced(1250.55), `test:${type}`);
-      expect(voucher).toMatchObject({ type, status: "posted", number: 1 });
-    },
-  );
+  it.each([
+    "sales",
+    "purchase",
+    "receipt",
+    "payment",
+    "contra",
+    "journal",
+    "debit_note",
+    "credit_note",
+  ] as const)("posts a realistic balanced %s voucher", async (type) => {
+    const db = new IsolatedAccountingFixture();
+    const voucher = await db.post(type, "2026-04-01", balanced(1250.55), `test:${type}`);
+    expect(voucher).toMatchObject({ type, status: "posted", number: 1 });
+  });
 
   it("rejects malformed and unbalanced double entries atomically", async () => {
     const db = new IsolatedAccountingFixture();
-    await expect(db.post("journal", "2026-04-01", [{ ledger_account_id: a, debit: 10, credit: 0 }], "bad:1")).rejects.toThrow();
+    await expect(
+      db.post("journal", "2026-04-01", [{ ledger_account_id: a, debit: 10, credit: 0 }], "bad:1"),
+    ).rejects.toThrow();
     await expect(db.post("journal", "2026-04-01", balanced(0), "bad:2")).rejects.toThrow();
-    expect(validateGlLines([{ ledger_account_id: a, debit: 10, credit: 0 }, { ledger_account_id: b, debit: 0, credit: 9 }])).toEqual({ valid: false, difference: 1 });
+    expect(
+      validateGlLines([
+        { ledger_account_id: a, debit: 10, credit: 0 },
+        { ledger_account_id: b, debit: 0, credit: 9 },
+      ]),
+    ).toEqual({ valid: false, difference: 1 });
   });
 
   it("returns the original result for an idempotent retry", async () => {
@@ -33,9 +57,15 @@ describe("Phase 1 accounting foundation", () => {
 
   it("assigns unique sequential numbers under concurrent entry", async () => {
     const db = new IsolatedAccountingFixture();
-    const rows = await Promise.all(Array.from({ length: 100 }, (_, index) => db.post("payment", "2026-04-01", balanced(index + 1), `concurrent:${index}`)));
+    const rows = await Promise.all(
+      Array.from({ length: 100 }, (_, index) =>
+        db.post("payment", "2026-04-01", balanced(index + 1), `concurrent:${index}`),
+      ),
+    );
     expect(new Set(rows.map((row) => row.number)).size).toBe(100);
-    expect(rows.map((row) => row.number).sort((x, y) => x - y)).toEqual(Array.from({ length: 100 }, (_, index) => index + 1));
+    expect(rows.map((row) => row.number).sort((x, y) => x - y)).toEqual(
+      Array.from({ length: 100 }, (_, index) => index + 1),
+    );
   });
 
   it("creates a linked reversal whose ledger effects net to zero", async () => {
@@ -45,7 +75,12 @@ describe("Phase 1 accounting foundation", () => {
     expect(reversal.reversalOf).toBe(original.id);
     expect(original.status).toBe("reversed");
     expect(validateGlLines(reverseGlLines(original.lines)).valid).toBe(true);
-    expect([...original.lines, ...reversal.lines].reduce((sum, line) => sum + line.debit - line.credit, 0)).toBe(0);
+    expect(
+      [...original.lines, ...reversal.lines].reduce(
+        (sum, line) => sum + line.debit - line.credit,
+        0,
+      ),
+    ).toBe(0);
   });
 
   it("models cancellation through a compensating reversal rather than deleting history", async () => {
@@ -57,14 +92,20 @@ describe("Phase 1 accounting foundation", () => {
   });
 
   it("calculates backdated FY opening, movement and closing without drafts or cancellations", () => {
-    const movements: Array<{ date: string; debit: number; credit: number; status: VoucherStatus }> = [
-      { date: "2026-03-31", debit: 100, credit: 0, status: "posted" },
-      { date: "2026-04-01", debit: 25, credit: 0, status: "posted" },
-      { date: "2026-04-02", debit: 0, credit: 10, status: "reversed" },
-      { date: "2026-04-03", debit: 999, credit: 0, status: "draft" },
-      { date: "2026-04-04", debit: 999, credit: 0, status: "cancelled" },
-    ];
-    expect(calculatePeriodBalance(50, movements, "2026-04-01", "2027-03-31")).toEqual({ opening: 150, debit: 25, credit: 10, closing: 165 });
+    const movements: Array<{ date: string; debit: number; credit: number; status: VoucherStatus }> =
+      [
+        { date: "2026-03-31", debit: 100, credit: 0, status: "posted" },
+        { date: "2026-04-01", debit: 25, credit: 0, status: "posted" },
+        { date: "2026-04-02", debit: 0, credit: 10, status: "reversed" },
+        { date: "2026-04-03", debit: 999, credit: 0, status: "draft" },
+        { date: "2026-04-04", debit: 999, credit: 0, status: "cancelled" },
+      ];
+    expect(calculatePeriodBalance(50, movements, "2026-04-01", "2027-03-31")).toEqual({
+      opening: 150,
+      debit: 25,
+      credit: 10,
+      closing: 165,
+    });
   });
 
   it("enforces FY boundaries and controlled close/reopen", () => {
@@ -79,13 +120,19 @@ describe("Phase 1 accounting foundation", () => {
     expect(() => year.reopen("x")).toThrow("reason");
     year.reopen("Approved correction");
     expect(year.accepts("2026-09-01")).toBe(true);
-    expect(year.events).toEqual([{ action: "closed" }, { action: "reopened", reason: "Approved correction" }]);
+    expect(year.events).toEqual([
+      { action: "closed" },
+      { action: "reopened", reason: "Approved correction" },
+    ]);
   });
 });
 
 describe("create_gl_voucher fixture", () => {
   const ledgers = { a: { active: true }, b: { active: true }, old: { active: false } };
-  const lines = [{ ledger_account_id: "a", debit: 100, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 100 }];
+  const lines = [
+    { ledger_account_id: "a", debit: 100, credit: 0 },
+    { ledger_account_id: "b", debit: 0, credit: 100 },
+  ];
 
   it("posts a balanced voucher and leaves the existing seven untouched", async () => {
     const db = new IsolatedVoucherPoster(ledgers);
@@ -96,28 +143,65 @@ describe("create_gl_voucher fixture", () => {
 
   it("rejects an unbalanced voucher without consuming a number", async () => {
     const db = new IsolatedVoucherPoster(ledgers);
-    await expect(db.post([{ ledger_account_id: "a", debit: 100, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 90 }], "voucher-key-2")).rejects.toThrow("unbalanced");
+    await expect(
+      db.post(
+        [
+          { ledger_account_id: "a", debit: 100, credit: 0 },
+          { ledger_account_id: "b", debit: 0, credit: 90 },
+        ],
+        "voucher-key-2",
+      ),
+    ).rejects.toThrow("unbalanced");
     expect(db.series()).toBe(8);
   });
 
   it("returns the same voucher for a duplicate key, including concurrent calls", async () => {
     const db = new IsolatedVoucherPoster(ledgers);
-    const [first, second] = await Promise.all([db.post(lines, "same-key-1"), db.post(lines, "same-key-1")]);
+    const [first, second] = await Promise.all([
+      db.post(lines, "same-key-1"),
+      db.post(lines, "same-key-1"),
+    ]);
     expect(first.id).toBe(second.id);
     expect(db.series()).toBe(9);
   });
 
   it("rejects an invalid or inactive ledger and a closed year", async () => {
     const db = new IsolatedVoucherPoster(ledgers);
-    await expect(db.post([{ ledger_account_id: "missing", debit: 10, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 10 }], "voucher-key-3")).rejects.toThrow("invalid ledger");
-    await expect(db.post([{ ledger_account_id: "old", debit: 10, credit: 0 }, { ledger_account_id: "b", debit: 0, credit: 10 }], "voucher-key-4")).rejects.toThrow("inactive ledger");
+    await expect(
+      db.post(
+        [
+          { ledger_account_id: "missing", debit: 10, credit: 0 },
+          { ledger_account_id: "b", debit: 0, credit: 10 },
+        ],
+        "voucher-key-3",
+      ),
+    ).rejects.toThrow("invalid ledger");
+    await expect(
+      db.post(
+        [
+          { ledger_account_id: "old", debit: 10, credit: 0 },
+          { ledger_account_id: "b", debit: 0, credit: 10 },
+        ],
+        "voucher-key-4",
+      ),
+    ).rejects.toThrow("inactive ledger");
     const closed = new IsolatedVoucherPoster(ledgers, false);
-    await expect(closed.post(lines, "voucher-key-5", "2026-04-02")).rejects.toThrow("financial year");
+    await expect(closed.post(lines, "voucher-key-5", "2026-04-02")).rejects.toThrow(
+      "financial year",
+    );
   });
 });
 
 describe("invoice voucher preparation", () => {
-  const base = { invoiceId: "inv-1", invoiceNumber: "INV-1", invoiceDate: "2026-04-01", partyLedgerId: "party-ledger", salesLedgerId: "sales-ledger", subtotal: 1000, taxAmount: 0 };
+  const base = {
+    invoiceId: "inv-1",
+    invoiceNumber: "INV-1",
+    invoiceDate: "2026-04-01",
+    partyLedgerId: "party-ledger",
+    salesLedgerId: "sales-ledger",
+    subtotal: 1000,
+    taxAmount: 0,
+  };
 
   it("prepares a balanced sales voucher for the mapped customer ledger", () => {
     const prepared = prepareInvoiceVoucher(base);
@@ -137,13 +221,26 @@ describe("invoice voucher preparation", () => {
   });
 
   it("uses an explicit tax split and does not invent one", () => {
-    const explicit = prepareInvoiceVoucher({ ...base, taxAmount: 180, taxComponents: [{ ledgerAccountId: "output-cgst", amount: 90 }, { ledgerAccountId: "output-sgst", amount: 90 }] });
+    const explicit = prepareInvoiceVoucher({
+      ...base,
+      taxAmount: 180,
+      taxComponents: [
+        { ledgerAccountId: "output-cgst", amount: 90 },
+        { ledgerAccountId: "output-sgst", amount: 90 },
+      ],
+    });
     expect(explicit.ok).toBe(true);
-    expect(prepareInvoiceVoucher({ ...base, taxAmount: 180 }).reason).toBe("aggregate tax has no stored split");
+    expect(prepareInvoiceVoucher({ ...base, taxAmount: 180 }).reason).toBe(
+      "aggregate tax has no stored split",
+    );
   });
 
   it("reports a missing customer or Sales ledger", () => {
-    expect(prepareInvoiceVoucher({ ...base, partyLedgerId: null }).reason).toBe("missing customer ledger");
-    expect(prepareInvoiceVoucher({ ...base, salesLedgerId: null }).reason).toBe("missing Sales ledger");
+    expect(prepareInvoiceVoucher({ ...base, partyLedgerId: null }).reason).toBe(
+      "missing customer ledger",
+    );
+    expect(prepareInvoiceVoucher({ ...base, salesLedgerId: null }).reason).toBe(
+      "missing Sales ledger",
+    );
   });
 });

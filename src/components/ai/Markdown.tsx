@@ -73,7 +73,11 @@ export function Markdown({ children, className = "" }: { children: string; class
     const line = raw.trimEnd();
     const key = `b-${index}`;
     if (/^\s*\|.*\|\s*$/.test(line)) {
-      const cells = line.trim().slice(1, -1).split("|").map((c) => c.trim());
+      const cells = line
+        .trim()
+        .slice(1, -1)
+        .split("|")
+        .map((c) => c.trim());
       if (cells.every((c) => /^:?-{2,}:?$/.test(c))) return;
       table.push(cells);
       return;
@@ -91,7 +95,12 @@ export function Markdown({ children, className = "" }: { children: string; class
     if (heading) {
       const level = heading[1]!.length;
       blocks.push(
-        <p key={key} className={level <= 2 ? "mt-4 mb-1 text-base font-semibold" : "mt-3 mb-1 text-sm font-semibold"}>
+        <p
+          key={key}
+          className={
+            level <= 2 ? "mt-4 mb-1 text-base font-semibold" : "mt-3 mb-1 text-sm font-semibold"
+          }
+        >
           {inline(heading[2] ?? "", key)}
         </p>,
       );
