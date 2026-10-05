@@ -1572,7 +1572,6 @@ export type Database = {
           supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
-          fulfillment_status?: string
           sgst_amount?: number | null
           igst_amount?: number | null
           updated_at?: string
@@ -2340,6 +2339,9 @@ export type Database = {
         Row: {
           bill_date: string
           bill_number: string
+          cgst_amount: number
+          sgst_amount: number
+          igst_amount: number
           created_at: string
           created_by: string | null
           eligibility_for_itc: string
@@ -2366,6 +2368,9 @@ export type Database = {
         Insert: {
           bill_date?: string
           bill_number: string
+          cgst_amount?: number
+          sgst_amount?: number
+          igst_amount?: number
           created_at?: string
           created_by?: string | null
           eligibility_for_itc?: string
@@ -2395,6 +2400,9 @@ export type Database = {
         Update: {
           bill_date?: string
           bill_number?: string
+          cgst_amount?: number
+          sgst_amount?: number
+          igst_amount?: number
           created_at?: string
           created_by?: string | null
           eligibility_for_itc?: string
@@ -2514,6 +2522,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           expected_delivery: string | null
+          fulfillment_status: string
           id: string
           notes: string | null
           order_date: string
@@ -2527,6 +2536,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expected_delivery?: string | null
+          fulfillment_status?: string
           id?: string
           notes?: string | null
           order_date?: string
