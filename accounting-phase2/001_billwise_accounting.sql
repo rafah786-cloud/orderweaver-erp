@@ -136,20 +136,18 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.post_invoice_to_voucher()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE party_ledger uuid; sales_ledger uuid; cgst_ledger uuid; sgst_ledger uuid; igst_ledger uuid;
-  interstate boolean; half_tax numeric; entries jsonb; posted public.vouchers; party_entry uuid;
+DECLARE party_ledger uuid; sales_ledger uuid;
+  entries jsonb; posted public.vouchers; party_entry uuid;
 BEGIN
+  -- Aggregate tax alone cannot identify the CGST/SGST/IGST ledger split.
+  -- Do not synthesize tax legs from dispatch state; abort this insert atomically
+  -- until a verified component-level tax snapshot is available.
+  IF COALESCE(NEW.tax_amount,0) <> 0 THEN RAISE EXCEPTION 'Taxed invoice requires verified tax components before GL posting'; END IF;
+  IF NEW.total_amount <= 0 OR NEW.subtotal IS DISTINCT FROM NEW.total_amount THEN RAISE EXCEPTION 'Invoice amount and subtotal must agree for tax-free posting'; END IF;
   party_ledger:=public.get_or_create_party_ledger(NEW.party_id);
   SELECT id INTO sales_ledger FROM public.ledger_accounts WHERE name='Sales' AND is_active LIMIT 1;
-  SELECT id INTO cgst_ledger FROM public.ledger_accounts WHERE name='Output CGST' AND is_active LIMIT 1;
-  SELECT id INTO sgst_ledger FROM public.ledger_accounts WHERE name='Output SGST' AND is_active LIMIT 1;
-  SELECT id INTO igst_ledger FROM public.ledger_accounts WHERE name='Output IGST' AND is_active LIMIT 1;
-  interstate:=NEW.dispatch_state_code IS NOT NULL AND NEW.supplier_gstin IS NOT NULL AND NEW.dispatch_state_code<>substring(NEW.supplier_gstin,1,2);
+  IF sales_ledger IS NULL THEN RAISE EXCEPTION 'Active Sales ledger required'; END IF;
   entries:=jsonb_build_array(jsonb_build_object('ledger_account_id',party_ledger,'debit',NEW.total_amount,'credit',0),jsonb_build_object('ledger_account_id',sales_ledger,'debit',0,'credit',NEW.subtotal));
-  IF NEW.tax_amount>0 THEN
-    IF interstate THEN entries:=entries||jsonb_build_array(jsonb_build_object('ledger_account_id',igst_ledger,'debit',0,'credit',NEW.tax_amount));
-    ELSE half_tax:=NEW.tax_amount/2; entries:=entries||jsonb_build_array(jsonb_build_object('ledger_account_id',cgst_ledger,'debit',0,'credit',half_tax),jsonb_build_object('ledger_account_id',sgst_ledger,'debit',0,'credit',NEW.tax_amount-half_tax)); END IF;
-  END IF;
   posted:=public.create_gl_voucher_internal('sales',NEW.invoice_date,entries,'Auto: Invoice '||NEW.invoice_number,NEW.invoice_number,'invoices',NEW.id,'invoice:'||NEW.id::text,'posted',auth.uid(),NULL);
   SELECT id INTO party_entry FROM public.voucher_entries WHERE voucher_id=posted.id AND ledger_account_id=party_ledger;
   PERFORM public.create_bill_internal('customer',NEW.party_id,NULL,party_ledger,NEW.invoice_number,NEW.invoice_date,NEW.due_date,'new_ref',NEW.total_amount,COALESCE(posted.currency_code,'INR'),posted.id,party_entry,'invoice:'||NEW.id::text,auth.uid());
@@ -177,19 +175,24 @@ DECLARE item jsonb; b public.bills; first_kind public.bill_party_kind; first_led
 BEGIN
   PERFORM public.assert_accounting_role();
   IF _type NOT IN ('receipt','payment') THEN RAISE EXCEPTION 'Bill settlement must be receipt or payment'; END IF;
+  IF _idempotency_key IS NULL OR length(trim(_idempotency_key)) < 8 THEN RAISE EXCEPTION 'Settlement idempotency key required'; END IF;
+  IF _allocations IS NULL OR jsonb_typeof(_allocations)<>'array' THEN RAISE EXCEPTION 'Allocations must be an array'; END IF;
   SELECT * INTO existing FROM public.vouchers WHERE idempotency_key=_idempotency_key;
   IF FOUND THEN RETURN existing; END IF;
   IF jsonb_array_length(_allocations)=0 THEN RAISE EXCEPTION 'At least one allocation required'; END IF;
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(_allocations) x GROUP BY x.value->>'bill_id' HAVING count(*)>1) THEN RAISE EXCEPTION 'Duplicate bill in settlement'; END IF;
   FOR item IN SELECT value FROM jsonb_array_elements(_allocations) ORDER BY value->>'bill_id' LOOP
     SELECT * INTO b FROM public.bills WHERE id=(item->>'bill_id')::uuid FOR UPDATE;
     IF NOT FOUND OR b.status='cancelled' THEN RAISE EXCEPTION 'Open bill not found'; END IF;
+    IF b.bill_date>_date THEN RAISE EXCEPTION 'Cannot settle a future bill'; END IF;
     IF first_kind IS NULL THEN first_kind:=b.party_kind; first_ledger:=b.ledger_account_id; first_currency:=b.currency_code; END IF;
     IF b.party_kind<>first_kind OR b.ledger_account_id<>first_ledger OR b.currency_code<>first_currency THEN RAISE EXCEPTION 'All allocations must use one party and currency'; END IF;
     IF (_type='receipt' AND b.party_kind<>'customer') OR (_type='payment' AND b.party_kind<>'supplier') THEN RAISE EXCEPTION 'Settlement type does not match bill party'; END IF;
-    IF (item->>'amount')::numeric<=0 THEN RAISE EXCEPTION 'Allocation amount must be positive'; END IF;
+    IF (item->>'amount')::numeric<=0 OR (item->>'amount')::numeric<>round((item->>'amount')::numeric,2) THEN RAISE EXCEPTION 'Allocation amount must be positive with at most two decimals'; END IF;
     IF (item->>'amount')::numeric > b.original_amount-COALESCE((SELECT sum(effect*amount) FROM public.bill_allocations WHERE bill_id=b.id),0) THEN RAISE EXCEPTION 'Allocation exceeds outstanding amount'; END IF;
     total:=total+(item->>'amount')::numeric;
   END LOOP;
+  IF _cash_ledger_id=first_ledger THEN RAISE EXCEPTION 'Settlement and party ledgers must differ'; END IF;
   IF _type='receipt' THEN entries:=jsonb_build_array(jsonb_build_object('ledger_account_id',_cash_ledger_id,'debit',total,'credit',0),jsonb_build_object('ledger_account_id',first_ledger,'debit',0,'credit',total));
   ELSE entries:=jsonb_build_array(jsonb_build_object('ledger_account_id',first_ledger,'debit',total,'credit',0),jsonb_build_object('ledger_account_id',_cash_ledger_id,'debit',0,'credit',total)); END IF;
   v:=public.create_gl_voucher_internal(_type,_date,entries,'Bill settlement',_reference,'bill_settlements',NULL,_idempotency_key,'posted',auth.uid(),NULL);
