@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
                 args = ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-q", "-f", str(file)]
             else:
                 args = ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-At", "-c", (ADMIN if admin else "") + query]
-            output = command(args).stdout.strip().splitlines()
+            output = [line for line in command(args).stdout.strip().splitlines() if line not in {"SET", "INSERT 0 1", "UPDATE 1", "CREATE TRIGGER"}]
             return output[-1] if query is not None and output else None
 
         def rejected(query):
