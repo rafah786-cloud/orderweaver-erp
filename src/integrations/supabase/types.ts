@@ -2361,9 +2361,6 @@ export type Database = {
           vendor_ack_note: string | null
           vendor_ack_status: string
           receipt_status: string
-          cgst_amount: number
-          sgst_amount: number
-          igst_amount: number
         }
         Insert: {
           bill_date?: string
@@ -2390,12 +2387,6 @@ export type Database = {
           vendor_ack_note?: string | null
           vendor_ack_status?: string
           receipt_status?: string
-          cgst_amount?: number
-          sgst_amount?: number
-          igst_amount?: number
-          cgst_amount?: number
-          sgst_amount?: number
-          igst_amount?: number
         }
         Update: {
           bill_date?: string
@@ -2529,7 +2520,6 @@ export type Database = {
           order_number: string
           party_id: string
           total_amount: number
-          fulfillment_status: string
           updated_at: string
         }
         Insert: {
@@ -2543,20 +2533,19 @@ export type Database = {
           order_number: string
           party_id: string
           total_amount?: number
-          fulfillment_status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
           expected_delivery?: string | null
+          fulfillment_status?: string
           id?: string
           notes?: string | null
           order_date?: string
           order_number?: string
           party_id?: string
           total_amount?: number
-          fulfillment_status?: string
           updated_at?: string
         }
         Relationships: [
