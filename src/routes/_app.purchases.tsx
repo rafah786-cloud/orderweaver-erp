@@ -17,7 +17,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone, MessageCircle } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Send, Mail, Zap, Megaphone, MessageCircle, PackageCheck } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
@@ -32,9 +32,33 @@ import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
 export const Route = createFileRoute("/_app/purchases")({ component: PurchasesPage });
 
+function ReceiveBillButton({ billId, billNumber, onDone }: { billId: string; billNumber: string; onDone: () => void }) {
+  const [pending, setPending] = useState(false);
+  const receive = async () => {
+    if (!confirm(`Mark purchase bill ${billNumber} as received? This will post inventory and the supplier payable.`)) return;
+    setPending(true);
+    try {
+      const { error } = await supabase.rpc("receive_purchase_bill", { p_bill: billId } as never);
+      if (error) throw error;
+      toast.success(`Purchase bill ${billNumber} received. Inventory and payable posted.`);
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Receipt failed");
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <Button size="sm" variant="outline" className="h-8 px-2" onClick={receive} disabled={pending}>
+      <PackageCheck className="h-4 w-4 mr-1" />
+      {pending ? "Posting…" : "Receive"}
+    </Button>
+  );
+}
+
 type Supplier = { id: string; name: string; gstin: string | null; phone: string | null; email: string | null; address: string | null; user_id: string | null; promo_opt_in?: boolean };
 
-type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null };
+type Bill = { id: string; bill_number: string; supplier_id: string | null; bill_date: string; total_amount: number; notes: string | null; vendor_ack_status: string; vendor_ack_at: string | null; vendor_ack_note: string | null; expected_dispatch_date: string | null; receipt_status: "draft" | "received" | "cancelled" };
 type NotifLog = { ref_id: string | null; event_type: string; status: string; error: string | null; sent_at: string; recipient_phone: string | null };
 
 function PurchasesPage() {
@@ -321,7 +345,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     queryKey: ["purchase-bills"],
     queryFn: async () => {
       const { data, error } = await supabase.from("purchase_bills")
-        .select("id, bill_number, supplier_id, bill_date, total_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date")
+        .select("id, bill_number, supplier_id, bill_date, total_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date, receipt_status")
         .order("bill_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Bill[];
@@ -430,13 +454,14 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
           <TableHeader><TableRow>
             <TableHead>Bill #</TableHead><TableHead>Supplier</TableHead><TableHead>Date</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Vendor Ack</TableHead>
             <TableHead>WhatsApp</TableHead>
-            <TableHead className="w-12" />
+            <TableHead className="w-28" />
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            : bills.length === 0 ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No purchase bills yet.</TableCell></TableRow>
+            {isLoading ? <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+            : bills.length === 0 ? <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No purchase bills yet.</TableCell></TableRow>
             : bills.map((b) => {
               const n = latestNotif.get(b.id);
               return (
@@ -445,13 +470,26 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
                 <TableCell>{b.supplier_id ? (supplierMap.get(b.supplier_id) ?? "—") : "—"}</TableCell>
                 <TableCell>{formatDate(b.bill_date)}</TableCell>
                 <TableCell className="text-right font-medium">{inr(b.total_amount)}</TableCell>
+                <TableCell>
+                  <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${b.receipt_status === "received" ? "bg-emerald-100 text-emerald-800" : b.receipt_status === "cancelled" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>
+                    {b.receipt_status === "received" ? "Received" : b.receipt_status === "cancelled" ? "Cancelled" : "Draft"}
+                  </span>
+                </TableCell>
                 <TableCell><AckBadge bill={b} /></TableCell>
                 <TableCell><NotifBadge notif={n} /></TableCell>
                 <TableCell>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
-                    onClick={() => onPreview(`/print/purchase/${b.id}`)}>
-                    <Printer className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 justify-end">
+                    {b.receipt_status === "draft" && canEdit && (
+                      <ReceiveBillButton billId={b.id} billNumber={b.bill_number} onDone={() => {
+                        qc.invalidateQueries({ queryKey: ["purchase-bills"] });
+                        qc.invalidateQueries({ queryKey: ["raw-materials"] });
+                      }} />
+                    )}
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Print preview"
+                      onClick={() => onPreview(`/print/purchase/${b.id}`)}>
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
               );
