@@ -23,8 +23,8 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
 
     # initdb refuses root; run the isolated server under a local, unprivileged OS user.
     if os.geteuid() == 0:
-        subprocess.run(["chown", "-R", "nobody", str(base)], check=True)
-        def local(args): return ["runuser", "-u", "nobody", "--", *args]
+        subprocess.run(["chown", "-R", "lovable", str(base)], check=True)
+        def local(args): return ["runuser", "-u", "lovable", "--", *args]
     else:
         def local(args): return args
     command(local(["initdb", "-D", str(data), "-A", "trust", "-U", "postgres", "--no-instructions"]))
