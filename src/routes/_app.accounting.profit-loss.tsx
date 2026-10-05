@@ -34,7 +34,7 @@ function ProfitLossPage() {
     // Expense ledgers normally have debit balance → closing_balance positive.
     const grouped = new Map<string, { nature: "income" | "expenses"; total: number; ledgers: { id: string; name: string; amount: number }[] }>();
     for (const r of rows) {
-      const amount = r.nature === "income" ? -r.closing_balance : r.closing_balance;
+      const amount = r.nature === "income" ? (Number(r.total_credit ?? 0) - Number(r.total_debit ?? 0)) : (Number(r.total_debit ?? 0) - Number(r.total_credit ?? 0));
       const g = grouped.get(r.group_name) ?? { nature: r.nature as "income" | "expenses", total: 0, ledgers: [] };
       g.total += amount;
       g.ledgers.push({ id: r.ledger_id, name: r.name, amount });
