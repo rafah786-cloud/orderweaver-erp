@@ -22,6 +22,7 @@ export type TallyStockItem = {
   opening_qty: number;
   opening_rate: number;
   group: string;
+  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 export type TallyLedgerEntry = {
@@ -43,6 +44,7 @@ export type TallyGroup = {
   parent: string | null;
   nature: "assets" | "liabilities" | "income" | "expenses";
   affects_gross_profit: boolean;
+  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 /** Any Tally ledger master, regardless of group. */
@@ -54,10 +56,11 @@ export type TallyLedgerMaster = {
   /** "dr" when the opening balance is a debit. */
   opening_type: "dr" | "cr";
   notes: string | null;
+  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
-export type TallyGodown = { name: string; parent: string | null; address: string | null };
-export type TallyCostCentre = { name: string; parent: string | null };
+export type TallyGodown = { name: string; parent: string | null; address: string | null; lifecycle_state: "posted" | "cancelled" | "optional" | "deleted" };
+export type TallyCostCentre = { name: string; parent: string | null; lifecycle_state: "posted" | "cancelled" | "optional" | "deleted" };
 
 /** Bill-wise outstanding reference carried on a ledger master or voucher. */
 export type TallyBill = {
@@ -69,6 +72,7 @@ export type TallyBill = {
   reference_type: "opening" | "new_ref" | "against_ref" | "on_account" | "advance" | "cleared";
   voucher_guid: string | null;
   external_ref: string;
+  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 /** Complete source voucher for pre-import reconciliation; never inferred from party balances. */
@@ -79,6 +83,7 @@ export type TallyVoucher = {
   voucher_number: string | null;
   voucher_date: string;
   entries: Array<{ ledger_name: string; debit: number; credit: number }>;
+  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 export type TallyParsed = {
@@ -176,7 +181,7 @@ export class TallyXmlError extends Error {
 
 export function parseTallyMasters(
   xml: string,
-  opts: { rawGroups: string[]; finishedGroups: string[] }
+  opts: { rawGroups: string[]; finishedGroups: string[]; preserveLifecycle?: boolean }
 ): TallyParsed {
   if (!xml || !xml.trim()) {
     throw new TallyXmlError(
@@ -256,6 +261,7 @@ export function parseTallyMasters(
   const godowns: TallyGodown[] = [];
   const costCentres: TallyCostCentre[] = [];
   const bills: TallyBill[] = [];
+  const preserveLifecycle = opts.preserveLifecycle === true;
   const vouchersOut: TallyVoucher[] = [];
 
   // Build a map of ledger-name → party type to classify vouchers
@@ -279,6 +285,9 @@ export function parseTallyMasters(
 
   const isYes = (v: unknown) => text(v).toLowerCase() === "yes";
 
+  const lifecycleState = (node: Record<string, unknown>): "posted" | "cancelled" | "optional" | "deleted" =>
+    isYes(node.ISDELETED) ? "deleted" : isYes(node.ISCANCELLED) || isYes(node.CANCELLED) ? "cancelled" : isYes(node.ISOPTIONAL) ? "optional" : "posted";
+
   /** Infer the accounting nature of a Tally group from its own / parent name. */
   const natureOf = (name: string, parent: string): TallyGroup["nature"] => {
     const known = groupNature.get(parent.toLowerCase());
@@ -298,6 +307,7 @@ export function parseTallyMasters(
       { values: arr<Record<string, unknown>>(node["BILLSCLEARED.LIST"] as never), fallback: "cleared" },
     ];
     for (const { values, fallback } of lists) for (const b of values) {
+      if (!preserveLifecycle && lifecycleState(b) !== "posted") continue;
       const bill_name = text(b.NAME ?? b.BILLNAME);
       if (!bill_name) continue;
       const method = text(b.BILLTYPE ?? b.METHOD).toLowerCase().replace(/[\s-]+/g, "_");
@@ -314,6 +324,7 @@ export function parseTallyMasters(
         reference_type,
         voucher_guid: voucherGuid,
         external_ref: [voucherGuid ?? "master", partyName, bill_name, bill_date ?? "", reference_type].join("|"),
+        lifecycle_state: lifecycleState(b),
       });
     }
   };
@@ -321,7 +332,7 @@ export function parseTallyMasters(
   for (const msg of messages) {
     /* ---------------- GROUP masters (Chart of Accounts) ---------------- */
     for (const g of arr<Record<string, unknown>>(msg.GROUP as never)) {
-      if (isYes(g.ISDELETED)) continue;
+      if (!preserveLifecycle && lifecycleState(g) !== "posted") continue;
       const name = text(g["@_NAME"] ?? g.NAME);
       if (!name) continue;
       const parent = text(g.PARENT);
@@ -332,27 +343,29 @@ export function parseTallyMasters(
         parent: parent || null,
         nature,
         affects_gross_profit: isYes(g.AFFECTSGROSSPROFIT),
+        lifecycle_state: lifecycleState(g),
       });
     }
 
     /* ---------------- GODOWN masters ---------------- */
     for (const g of arr<Record<string, unknown>>(msg.GODOWN as never)) {
-      if (isYes(g.ISDELETED)) continue;
+      if (!preserveLifecycle && lifecycleState(g) !== "posted") continue;
       const name = text(g["@_NAME"] ?? g.NAME);
       if (!name) continue;
       godowns.push({
         name,
         parent: text(g.PARENT) || null,
         address: flattenAddress(g["ADDRESS.LIST"]) || null,
+        lifecycle_state: lifecycleState(g),
       });
     }
 
     /* ---------------- COSTCENTRE masters ---------------- */
     for (const c of arr<Record<string, unknown>>(msg.COSTCENTRE as never)) {
-      if (isYes(c.ISDELETED)) continue;
+      if (!preserveLifecycle && lifecycleState(c) !== "posted") continue;
       const name = text(c["@_NAME"] ?? c.NAME);
       if (!name) continue;
-      costCentres.push({ name, parent: text(c.PARENT) || null });
+      costCentres.push({ name, parent: text(c.PARENT) || null, lifecycle_state: lifecycleState(c) });
     }
 
     /* ---------------- LEDGER masters ---------------- */
@@ -360,8 +373,7 @@ export function parseTallyMasters(
       msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const l of ledgers) {
-      // TallyPrime marks deleted masters with ISDELETED=Yes — skip them
-      if (isYes(l.ISDELETED)) continue;
+      if (!preserveLifecycle && lifecycleState(l) !== "posted") continue;
       const name = text(l["@_NAME"] ?? l.NAME) || text(l.MAILINGNAME);
       if (!name) continue;
       const parentRaw = text(l.PARENT);
@@ -379,6 +391,7 @@ export function parseTallyMasters(
         opening_balance: Math.abs(opening),
         opening_type: opening >= 0 ? "dr" : "cr",
         notes: parentRaw ? `Tally group: ${parentRaw}` : null,
+        lifecycle_state: lifecycleState(l),
       });
 
       const isCustomer = parent.includes("sundry debtor") || parent.includes("debtor");
@@ -410,7 +423,7 @@ export function parseTallyMasters(
       msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const it of items) {
-      if (isYes(it.ISDELETED)) continue;
+      if (!preserveLifecycle && lifecycleState(it) !== "posted") continue;
       const name = text(it["@_NAME"] ?? it.NAME);
       if (!name) continue;
       const parent = text(it.PARENT);
@@ -425,6 +438,7 @@ export function parseTallyMasters(
         opening_qty: qty,
         opening_rate: rate,
         group: parent,
+        lifecycle_state: lifecycleState(it),
       };
 
       const isRaw = parentMatches(parent, opts.rawGroups);
@@ -443,10 +457,7 @@ export function parseTallyMasters(
       msg.VOUCHER as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const v of vouchers) {
-      // Skip cancelled, optional, deleted vouchers in TallyPrime exports
-      if (isYes(v.ISCANCELLED) || isYes(v.CANCELLED) || isYes(v.ISOPTIONAL) || isYes(v.ISDELETED)) {
-        continue;
-      }
+      if (!preserveLifecycle && lifecycleState(v) !== "posted") continue;
       const dateRaw = text(v.DATE ?? v["@_DATE"]);
       const entry_date = parseTallyDate(dateRaw);
       if (!entry_date) continue;
@@ -477,6 +488,7 @@ export function parseTallyMasters(
           const debit = isYes(line.ISDEEMEDPOSITIVE) ? Math.abs(amount) : 0;
           return { ledger_name: text(line.LEDGERNAME), debit, credit: debit ? 0 : Math.abs(amount) };
         }),
+        lifecycle_state: lifecycleState(v),
       });
 
       for (const line of lines) {
