@@ -19,7 +19,7 @@ const inputSchema = z.object({
   sourceCompanyGuid: z.string().max(255).nullable().optional(),
   sourceChecksum: z.string().min(16).max(128),
   controlTotals: z.record(z.unknown()),
-  rows: z.array(rowSchema).max(10000),
+  rows: z.array(rowSchema).max(50000),
 });
 
 export const stageTallyMigration = createServerFn({ method: "POST" })
