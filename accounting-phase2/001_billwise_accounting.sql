@@ -136,11 +136,11 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.post_invoice_to_voucher()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE party_ledger uuid; sales_ledger uuid; cgst_ledger uuid; sgst_ledger uuid; igst_ledger uuid;
+DECLARE party_ledger uuid; sales_ledger uuid;
   entries jsonb; posted public.vouchers; party_entry uuid;
 BEGIN
   -- Aggregate tax alone cannot identify the CGST/SGST/IGST ledger split.
-  -- Do not synthesize tax legs from dispatch state; retain the invoice unposted
+  -- Do not synthesize tax legs from dispatch state; abort this insert atomically
   -- until a verified component-level tax snapshot is available.
   IF COALESCE(NEW.tax_amount,0) <> 0 THEN RAISE EXCEPTION 'Taxed invoice requires verified tax components before GL posting'; END IF;
   IF NEW.total_amount <= 0 OR NEW.subtotal IS DISTINCT FROM NEW.total_amount THEN RAISE EXCEPTION 'Invoice amount and subtotal must agree for tax-free posting'; END IF;

@@ -3,6 +3,7 @@
 import os
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -60,6 +61,7 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
 
         check("tax without verified split rolls back invoice and GL", rejected(f"INSERT INTO invoices(invoice_number,party_id,invoice_date,subtotal,tax_amount,total_amount) VALUES ('CHAIN-TAX','{CUSTOMER}','2026-04-02',100,18,118)"))
         check("tax rollback leaves no document or voucher", sql("SELECT (SELECT count(*) FROM invoices WHERE invoice_number='CHAIN-TAX')::text || ':' || (SELECT count(*) FROM vouchers WHERE reference='CHAIN-TAX')") == "0:0")
+        check("closed FY invoice rolls back completely", rejected(f"INSERT INTO invoices(invoice_number,party_id,invoice_date,subtotal,tax_amount,total_amount) VALUES ('CHAIN-CLOSED','{CUSTOMER}','2026-02-02',100,0,100)") and sql("SELECT count(*) FROM invoices WHERE invoice_number='CHAIN-CLOSED'") == "0")
         invoice = sql(f"INSERT INTO invoices(invoice_number,party_id,invoice_date,due_date,subtotal,tax_amount,total_amount) VALUES ('CHAIN-1','{CUSTOMER}','2026-04-02','2026-05-02',1180,0,1180) RETURNING id")
         check("invoice-to-party-ledger-to-balanced-GL-to-receivable", sql(f"SELECT count(*) FROM bills b JOIN vouchers v ON v.id=b.source_voucher_id JOIN voucher_entries e ON e.id=b.source_voucher_entry_id JOIN ledger_accounts l ON l.id=e.ledger_account_id WHERE v.source_table='invoices' AND v.source_id='{invoice}' AND v.status='posted' AND l.mapped_party_id='{CUSTOMER}' AND e.debit=1180 AND b.original_amount=e.debit AND b.ledger_account_id=l.id") == "1")
         bill = sql(f"SELECT id FROM bills WHERE bill_reference='CHAIN-1'")
@@ -81,5 +83,24 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
         sql(f"SELECT reverse_gl_voucher('{source}','2026-04-05','void source invoice')")
         check("source reversal cancels bill, not historical balance", sql(f"SELECT status FROM bills WHERE id='{bill}'") == "cancelled" and sql(f"SELECT count(*) FROM bill_outstanding_as_of('2026-04-04','customer') WHERE bill_id='{bill}'") == "1" and sql(f"SELECT count(*) FROM bill_outstanding_as_of('2026-04-05','customer') WHERE bill_id='{bill}'") == "0")
         check("all posted voucher legs balance", sql("SELECT count(*) FROM (SELECT v.id FROM vouchers v JOIN voucher_entries e ON e.voucher_id=v.id WHERE v.status IN ('posted','reversed') GROUP BY v.id HAVING sum(e.debit)<>sum(e.credit)) unbalanced") == "0")
+        supplier = "20000000-0000-0000-0000-000000000001"
+        sql(f"INSERT INTO purchase_bills(bill_number,supplier_id,bill_date,total_amount) VALUES('CHAIN-PURCHASE','{supplier}','2026-04-02',590)")
+        supplier_bill = sql("SELECT id FROM bills WHERE bill_reference='CHAIN-PURCHASE'")
+        check("purchase-to-supplier-ledger-to-payable", sql(f"SELECT count(*) FROM bills b JOIN voucher_entries e ON e.id=b.source_voucher_entry_id JOIN vouchers v ON v.id=e.voucher_id JOIN ledger_accounts l ON l.id=e.ledger_account_id WHERE b.id='{supplier_bill}' AND v.voucher_type='purchase' AND l.mapped_supplier_id='{supplier}' AND e.credit=590 AND b.original_amount=e.credit") == "1")
+        bank = sql("SELECT id FROM ledger_accounts WHERE name='Bank'")
+        payment = sql(f"SELECT id FROM post_bill_settlement('payment','2026-04-03','{bank}',jsonb_build_array(jsonb_build_object('bill_id','{supplier_bill}','amount',200)),'CHAIN-PAY','chain:payment1')")
+        check("payment allocates payable and balances GL", sql(f"SELECT outstanding_amount FROM bill_outstanding_as_of('2026-04-03','supplier') WHERE bill_id='{supplier_bill}'") == "390.00" and sql(f"SELECT sum(debit)-sum(credit) FROM voucher_entries WHERE voucher_id='{payment}'") == "0")
+        sql(f"SELECT reverse_gl_voucher('{payment}','2026-04-04','reverse supplier payment')")
+        check("payment reversal restores payable", sql(f"SELECT outstanding_amount FROM bill_outstanding_as_of('2026-04-04','supplier') WHERE bill_id='{supplier_bill}'") == "590.00")
+        def concurrent_receipt(i):
+            try:
+                sql(f"SELECT post_bill_settlement('receipt','2026-04-05','{cash}',jsonb_build_array(jsonb_build_object('bill_id','{bill}','amount',800)),'CHAIN-RACE','chain:race:{i}')")
+                return "posted"
+            except RuntimeError:
+                return "rejected"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(concurrent_receipt, range(2)))
+        # The source invoice is already reversed, so neither receipt may post.
+        check("reversed source rejects concurrent settlements", results == ["rejected", "rejected"] and sql("SELECT count(*) FROM vouchers WHERE idempotency_key LIKE 'chain:race:%'") == "0")
     finally:
         command(local(["pg_ctl", "-D", str(data), "stop", "-m", "immediate"]))
