@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Repair dashboard syntax
         run: >-
-          python3 -c 'from pathlib import Path; p=Path("src/routes/_app.dashboard.tsx"); s=p.read_text(); old="    queryKey: [\\"dash-employees\\"],"; new="  const { data: employees } = useQuery({\\n    queryKey: [\\"dash-employees\\"],"; assert s.count(old)==1, "dashboard marker not found exactly once"; p.write_text(s.replace(old,new,1))'
+          python3 -c 'from pathlib import Path; p=Path("src/routes/_app.dashboard.tsx"); s=p.read_text(); q=chr(34); old="    queryKey: ["+q+"dash-employees"+q+"],"; new="  const { data: employees } = useQuery({"+chr(10)+"    queryKey: ["+q+"dash-employees"+q+"],"; assert s.count(old)==1, "dashboard marker not found exactly once"; p.write_text(s.replace(old,new,1))'
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
