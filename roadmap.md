@@ -53,6 +53,9 @@
 - The repository connection can modify GitHub source, but it does not provide a privileged live PostgreSQL/Supabase session; live reconciliation and production migration cannot truthfully be marked PASS from GitHub alone.
 
 ## 2026-10-05 remaining-work status
+- Trial Balance, Profit & Loss and Balance Sheet now support explicit date ranges and server-side period-aware ledger calculations.
+- Voucher lifecycle now has explicit posted/reversed/cancelled state metadata without changing existing historical voucher amounts.
+
 - Safe Tally migration control plane is live: append-only run metadata, staged source payloads, lifecycle states, validation issues and reconciliation snapshots.
 - The migration UI can stage a parsed Tally snapshot without posting anything into canonical ERP books, then validate source voucher balance/duplicate/stability controls.
 - A read-only consolidated trial-balance function/report now spans companies the signed-in user is authorized to view.
