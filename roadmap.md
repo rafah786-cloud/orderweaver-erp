@@ -5,7 +5,7 @@
 - [x] Make Tally accounting uploads fail closed and display voucher-line control totals and integrity issues without saving incomplete accounting data
 - [x] Canonical bill-wise model implemented in repository with invoice-linked bills, party-ledger resolution, receipt allocation, reversal and idempotency paths
 - [x] AI layer: routes, sidebar/permissions, contextual buttons, working NVIDIA models, verified Ask Maestro + document extraction against live data
-- [ ] Tally full accounting migration: masters, vouchers with DR/CR entries, bill-wise allocations, opening balances, GST components, stock/godown/batch, cost centres, voucher types/numbers/refs, Tally IDs, reconciliation UI
+- [~] Tally full accounting migration: safe staging control plane, lifecycle preservation, validation and reconciliation UI are implemented; canonical historical commit still requires the real Tally export/source identifiers and final accountant-approved control totals
 - [ ] Execute the audited TallyPrime-retirement remediation and cutover plan
   - [x] Phase 1 Accounting Foundation implemented as an isolated migration and fixture suite
   - [x] PostgreSQL integration/concurrency tests completed in disposable isolated database with synthetic fixtures
@@ -16,7 +16,7 @@
   - [x] Phase 2 canonical bill-wise receivable/payable repository model and isolated tests
   - [x] Phase 3 stock ledger hardening: immutable movements, weighted-average issues, valued transfers and reversal safety prepared
   - [x] Phase 3 production integration functions prepared for BOM consumption, finished-goods receipt and dispatch using mapped stock items
-  - [ ] Phase 3 opening stock valuation: obtain source valuation/rate from Tally before assigning any value; zero-rate opening stock remains quantity-only
+  - [~] Phase 3 opening stock valuation: migration staging preserves Tally opening quantity/rate; actual opening valuation remains source-dependent and will stay quantity-only where Tally provides no value
   - [x] Phase 3 accounting integration: canonical posting functions installed and live-tested without rewriting historical records
   - [x] Managed/live database integration tests and security/grant verification
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
@@ -35,7 +35,7 @@
 - [x] Company creation clones the chart structure, creates a fresh financial year and resets voucher series for the new company
 - [x] Restrictive company-scope RLS prevents authenticated users from crossing the active-company boundary while preserving existing role/ownership policies
 - [x] Company selector added to desktop and mobile ERP shell; administrators can create additional companies from the selector
-- [ ] Add company/group consolidated reporting and controlled inter-company transactions
+- [x] Add company/group consolidated reporting and controlled inter-company transactions
 - [x] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
 
 ## 2026-10-05 direct live hardening checkpoint
@@ -51,3 +51,10 @@
 - Tally opening-stock valuation is intentionally not invented; it must come from Tally/source records.
 - Production finished-goods valuation is intentionally blocked unless the mapped finished-good stock item has a positive valuation rate.
 - The repository connection can modify GitHub source, but it does not provide a privileged live PostgreSQL/Supabase session; live reconciliation and production migration cannot truthfully be marked PASS from GitHub alone.
+
+## 2026-10-05 remaining-work status
+- Safe Tally migration control plane is live: append-only run metadata, staged source payloads, lifecycle states, validation issues and reconciliation snapshots.
+- The migration UI can stage a parsed Tally snapshot without posting anything into canonical ERP books, then validate source voucher balance/duplicate/stability controls.
+- A read-only consolidated trial-balance function/report now spans companies the signed-in user is authorized to view.
+- Controlled inter-company journal posting is available to administrators with access to both companies; source and target vouchers are linked by a single transaction/idempotency key.
+- The only remaining Tally migration gate is the real source export and accountant-approved reconciliation/cutover. This cannot be completed truthfully without the company's actual Tally data and operational dress rehearsals.
