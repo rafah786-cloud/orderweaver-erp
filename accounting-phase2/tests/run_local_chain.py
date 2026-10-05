@@ -19,7 +19,10 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
     env.update(PGHOST=str(socket), PGPORT="55439", PGDATABASE="postgres", PGUSER="postgres")
 
     def command(args, *, check=True):
-        return subprocess.run(args, env=env, text=True, capture_output=True, check=check)
+        result = subprocess.run(args, env=env, text=True, capture_output=True)
+        if check and result.returncode:
+            raise RuntimeError(result.stderr.strip())
+        return result
 
     # initdb refuses root; run the isolated server under a local, unprivileged OS user.
     if os.geteuid() == 0:
@@ -35,12 +38,13 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
                 args = ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-q", "-f", str(file)]
             else:
                 args = ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-At", "-c", (ADMIN if admin else "") + query]
-            return command(args).stdout.strip().splitlines()[-1] if query is not None else None
+            output = command(args).stdout.strip().splitlines()
+            return output[-1] if query is not None and output else None
 
         def rejected(query):
             try:
                 sql(query)
-            except subprocess.CalledProcessError:
+            except RuntimeError:
                 return True
             return False
 
