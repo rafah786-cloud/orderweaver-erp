@@ -39,7 +39,7 @@ opening_without_external=scalar(f"SELECT id FROM create_opening_bill('customer',
 opening_without_external_retry=scalar(f"SELECT id FROM create_opening_bill('customer','{customer}',NULL,'MANUAL-OPEN-1','2026-04-01','2026-04-30',125,'{opening}',NULL,'INR')")
 check('opening_bill_without_external_ref_idempotent',opening_without_external==opening_without_external_retry and scalar("SELECT count(*) FROM bills WHERE bill_reference='MANUAL-OPEN-1'")=='1')
 
-sql("INSERT INTO invoices(invoice_number,party_id,invoice_date,due_date,subtotal,tax_amount,total_amount,dispatch_state_code,supplier_gstin) VALUES('INV-P2','10000000-0000-0000-0000-000000000001','2026-05-01','2026-05-31',1000,180,1180,'32','32AAAAA0000A1Z1')")
+sql("INSERT INTO invoices(invoice_number,party_id,invoice_date,due_date,subtotal,tax_amount,total_amount,dispatch_state_code,supplier_gstin) VALUES('INV-P2','10000000-0000-0000-0000-000000000001','2026-05-01','2026-05-31',1180,0,1180,'32','32AAAAA0000A1Z1')")
 invoice_bill=scalar("SELECT id FROM bills WHERE bill_reference='INV-P2'")
 check('sales_bill_atomic_link',bool(invoice_bill) and scalar(f"SELECT original_amount FROM bills WHERE id='{invoice_bill}'")=='1180.00')
 sql("INSERT INTO purchase_bills(bill_number,supplier_id,bill_date,total_amount) VALUES('PB-P2','20000000-0000-0000-0000-000000000001','2026-05-02',590)")

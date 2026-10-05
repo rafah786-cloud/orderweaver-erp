@@ -137,7 +137,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.post_invoice_to_voucher()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE party_ledger uuid; sales_ledger uuid; cgst_ledger uuid; sgst_ledger uuid; igst_ledger uuid;
-  interstate boolean; half_tax numeric; entries jsonb; posted public.vouchers; party_entry uuid;
+  entries jsonb; posted public.vouchers; party_entry uuid;
 BEGIN
   -- Aggregate tax alone cannot identify the CGST/SGST/IGST ledger split.
   -- Do not synthesize tax legs from dispatch state; retain the invoice unposted
@@ -147,15 +147,7 @@ BEGIN
   party_ledger:=public.get_or_create_party_ledger(NEW.party_id);
   SELECT id INTO sales_ledger FROM public.ledger_accounts WHERE name='Sales' AND is_active LIMIT 1;
   IF sales_ledger IS NULL THEN RAISE EXCEPTION 'Active Sales ledger required'; END IF;
-  SELECT id INTO cgst_ledger FROM public.ledger_accounts WHERE name='Output CGST' AND is_active LIMIT 1;
-  SELECT id INTO sgst_ledger FROM public.ledger_accounts WHERE name='Output SGST' AND is_active LIMIT 1;
-  SELECT id INTO igst_ledger FROM public.ledger_accounts WHERE name='Output IGST' AND is_active LIMIT 1;
-  interstate:=NEW.dispatch_state_code IS NOT NULL AND NEW.supplier_gstin IS NOT NULL AND NEW.dispatch_state_code<>substring(NEW.supplier_gstin,1,2);
   entries:=jsonb_build_array(jsonb_build_object('ledger_account_id',party_ledger,'debit',NEW.total_amount,'credit',0),jsonb_build_object('ledger_account_id',sales_ledger,'debit',0,'credit',NEW.subtotal));
-  IF NEW.tax_amount>0 THEN
-    IF interstate THEN entries:=entries||jsonb_build_array(jsonb_build_object('ledger_account_id',igst_ledger,'debit',0,'credit',NEW.tax_amount));
-    ELSE half_tax:=NEW.tax_amount/2; entries:=entries||jsonb_build_array(jsonb_build_object('ledger_account_id',cgst_ledger,'debit',0,'credit',half_tax),jsonb_build_object('ledger_account_id',sgst_ledger,'debit',0,'credit',NEW.tax_amount-half_tax)); END IF;
-  END IF;
   posted:=public.create_gl_voucher_internal('sales',NEW.invoice_date,entries,'Auto: Invoice '||NEW.invoice_number,NEW.invoice_number,'invoices',NEW.id,'invoice:'||NEW.id::text,'posted',auth.uid(),NULL);
   SELECT id INTO party_entry FROM public.voucher_entries WHERE voucher_id=posted.id AND ledger_account_id=party_ledger;
   PERFORM public.create_bill_internal('customer',NEW.party_id,NULL,party_ledger,NEW.invoice_number,NEW.invoice_date,NEW.due_date,'new_ref',NEW.total_amount,COALESCE(posted.currency_code,'INR'),posted.id,party_entry,'invoice:'||NEW.id::text,auth.uid());
