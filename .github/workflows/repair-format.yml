@@ -1,8 +1,6 @@
-name: Repair formatting and verify
+name: One-time CI repair
 
-on:
-  push:
-    branches: [main]
+on: push
 
 permissions:
   contents: write
@@ -12,37 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Repair dashboard syntax
+        run: >-
+          python3 -c 'from pathlib import Path; p=Path("src/routes/_app.dashboard.tsx"); s=p.read_text(); old="    queryKey: [\\"dash-employees\\"],"; new="  const { data: employees } = useQuery({\\n    queryKey: [\\"dash-employees\\"],"; assert s.count(old)==1, "dashboard marker not found exactly once"; p.write_text(s.replace(old,new,1))'
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - name: Repair known dashboard syntax error
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("src/routes/_app.dashboard.tsx")
-          text = path.read_text()
-          broken = '''    queryKey: ["dash-employees"],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });'''
-          fixed = '''  const { data: employees } = useQuery({
-    queryKey: ["dash-employees"],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });'''
-          if text.count(broken) != 1:
-              raise SystemExit("Expected dashboard syntax block was not found exactly once")
-          path.write_text(text.replace(broken, fixed, 1))
-          PY
-      - name: Apply repository formatting
+      - name: Format repository
         run: bun run format
       - name: Verify lint
         run: bun run lint
@@ -50,14 +25,14 @@ jobs:
         run: bun run test
       - name: Verify build
         run: bun run build
-      - name: Commit formatting repair
+      - name: Commit repair
         run: |
-          if git diff --quiet; then
-            echo "No formatting changes were needed."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore: repair syntax and format repository"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: repair dashboard and format code"
+            git push
+          fi
