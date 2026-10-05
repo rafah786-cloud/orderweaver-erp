@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { parseTallyMasters, TallyXmlError, type TallyParsed } from "@/lib/tally-import";
 import { inspectTallyAccounting } from "@/lib/tally-integrity";
 import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } from "@/lib/tally-import.functions";
-import { stageTallyMigration, listTallyMigrationRuns } from "@/lib/tally-migration.functions";
+import { stageTallyMigration, listTallyMigrationRuns, validateTallyMigration } from "@/lib/tally-migration.functions";
 import { useCompany } from "@/lib/company-context";
 import { Progress } from "@/components/ui/progress";
 
@@ -78,6 +78,7 @@ function TallyImportPage() {
   const runRecompute = useServerFn(recomputeTallyBalances);
   const stageMigration = useServerFn(stageTallyMigration);
   const listRuns = useServerFn(listTallyMigrationRuns);
+  const validateMigration = useServerFn(validateTallyMigration);
   const { activeCompany } = useCompany();
 
   const [rawGroups, setRawGroups] = useState("Raw Materials, Components, Fabric, Foam");
@@ -89,6 +90,7 @@ function TallyImportPage() {
   const [result, setResult] = useState<TallyImportResult | null>(null);
   const [staging, setStaging] = useState(false);
   const [migrationRuns, setMigrationRuns] = useState<any[]>([]);
+  const [migrationValidation, setMigrationValidation] = useState<any | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
   const accountingExport = !!parsed && (parsed.vouchers.length > 0 || parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
@@ -199,7 +201,9 @@ function TallyImportPage() {
           rows,
         },
       });
-      toast.success(`Migration run staged: ${res.rowCount} source records. No ERP books were changed.`);
+      const validation = await validateMigration({ data: { runId: res.runId } });
+      setMigrationValidation(validation);
+      toast.success(`Migration run staged and validated: ${res.rowCount} source records. No ERP books were changed.`);
       const runs = await listRuns();
       setMigrationRuns(runs);
     } catch (e) {
@@ -350,6 +354,14 @@ function TallyImportPage() {
               {staging ? "Staging…" : "Stage migration run safely"}
             </Button>
             {migrationRuns.length > 0 && <div className="text-xs text-muted-foreground">{migrationRuns.length} migration run(s) available for validation/reconciliation.</div>}
+            {migrationValidation && (
+              <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                <div className="font-medium">Latest staging validation: {migrationValidation.status}</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {migrationValidation.total_rows} rows · {migrationValidation.voucher_count} vouchers · {migrationValidation.critical_issues} critical · {migrationValidation.warning_issues} warnings · {migrationValidation.unbalanced_vouchers} unbalanced vouchers
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
