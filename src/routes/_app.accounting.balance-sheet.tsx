@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,13 +14,18 @@ export const Route = createFileRoute("/_app/accounting/balance-sheet")({
 });
 
 function BalanceSheetPage() {
+  const today = new Date();
+  const fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  const [startDate, setStartDate] = useState(`${fyStartYear}-04-01`);
+  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
   const balQ = useQuery({
-    queryKey: ["bs_balances"],
+    queryKey: ["bs_balances", startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await sb.from("ledger_balances").select("*").order("group_name").order("name");
+      const { data, error } = await sb.rpc("get_ledger_balances_period", { p_start: startDate, p_end: endDate });
       if (error) throw error;
       return data as LedgerBalance[];
     },
+    enabled: !!startDate && !!endDate && startDate <= endDate,
   });
 
   const { assets, liabilities, pnlProfit } = useMemo(() => {
@@ -55,8 +61,12 @@ function BalanceSheetPage() {
 
   return (
     <>
-      <PageHeader title="Balance Sheet" description="Assets, liabilities, and capital — including current period profit." />
+      <PageHeader title="Balance Sheet" description="Assets, liabilities, and capital — using balances as of the selected end date." />
       <PageBody>
+        <Card className="mb-4"><CardContent className="p-4"><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="text-sm"><span className="block text-xs text-muted-foreground mb-1">From</span><input type="date" value={startDate} onChange={(e)=>setStartDate(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3" /></label>
+          <label className="text-sm"><span className="block text-xs text-muted-foreground mb-1">To</span><input type="date" value={endDate} onChange={(e)=>setEndDate(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3" /></label>
+        </div></CardContent></Card>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <BsSide
             title="Liabilities"
