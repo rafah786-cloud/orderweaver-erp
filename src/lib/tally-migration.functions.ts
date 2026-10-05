@@ -82,3 +82,15 @@ export const listTallyMigrationRuns = createServerFn({ method: "GET" })
     if (error) throw error;
     return data ?? [];
   });
+
+export const validateTallyMigration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ runId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    if (!role) throw new Error("Admin only");
+    const { data: result, error } = await supabase.rpc("validate_tally_migration_run", { p_run: data.runId });
+    if (error) throw error;
+    return result?.[0] ?? null;
+  });
