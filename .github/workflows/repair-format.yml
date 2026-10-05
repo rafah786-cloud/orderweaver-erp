@@ -1,0 +1,37 @@
+name: Repair formatting and verify
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Apply repository formatting
+        run: bun run format
+      - name: Verify lint
+        run: bun run lint
+      - name: Verify tests
+        run: bun run test
+      - name: Verify build
+        run: bun run build
+      - name: Commit formatting repair
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes were needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: format repository for CI"
+          git push
