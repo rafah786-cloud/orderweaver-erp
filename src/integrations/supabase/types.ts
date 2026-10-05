@@ -1551,6 +1551,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cgst_amount?: number | null
+          sgst_amount?: number | null
+          igst_amount?: number | null
           created_at?: string
           created_by?: string | null
           dispatch_pincode?: string | null
@@ -1572,8 +1575,6 @@ export type Database = {
           supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
-          sgst_amount?: number | null
-          igst_amount?: number | null
           updated_at?: string
         }
         Relationships: [
