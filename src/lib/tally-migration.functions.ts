@@ -94,3 +94,15 @@ export const validateTallyMigration = createServerFn({ method: "POST" })
     if (error) throw error;
     return result?.[0] ?? null;
   });
+
+export const reconcileTallyMigration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ runId: z.string().uuid(), asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    if (!role) throw new Error("Admin only");
+    const { data: rows, error } = await supabase.rpc("reconcile_tally_migration_run", { p_run: data.runId, p_as_of: data.asOf });
+    if (error) throw error;
+    return rows ?? [];
+  });
