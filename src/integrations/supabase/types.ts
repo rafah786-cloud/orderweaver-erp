@@ -593,6 +593,9 @@ export type Database = {
           effect: number
           id: string
           idempotency_key: string | null
+          currency_code: string
+          created_by: string | null
+          reverses_allocation_id: string | null
           settlement_voucher_entry_id: string | null
           settlement_voucher_id: string | null
         }
@@ -605,6 +608,9 @@ export type Database = {
           effect?: number
           id?: string
           idempotency_key?: string | null
+          currency_code?: string
+          created_by?: string | null
+          reverses_allocation_id?: string | null
           settlement_voucher_entry_id?: string | null
           settlement_voucher_id?: string | null
         }
@@ -617,6 +623,9 @@ export type Database = {
           effect?: number
           id?: string
           idempotency_key?: string | null
+          currency_code?: string
+          created_by?: string | null
+          reverses_allocation_id?: string | null
           settlement_voucher_entry_id?: string | null
           settlement_voucher_id?: string | null
         }
@@ -635,52 +644,70 @@ export type Database = {
           bill_date: string
           bill_reference: string | null
           created_at: string
+          created_by: string | null
+          currency_code: string
           due_date: string | null
           external_ref: string | null
           id: string
           ledger_account_id: string | null
           original_amount: number
-          party_id: string
+          party_id: string | null
           party_kind: string
+          supplier_id: string | null
           reference_type: string
           source_invoice_id: string | null
           source_voucher_entry_id: string | null
           source_voucher_id: string | null
           status: string
+          cancelled_on: string | null
+          source_voiding_voucher_id: string | null
+          updated_at: string
         }
         Insert: {
           bill_date?: string
           bill_reference?: string | null
           created_at?: string
+          created_by?: string | null
+          currency_code?: string
           due_date?: string | null
           external_ref?: string | null
           id?: string
           ledger_account_id?: string | null
           original_amount: number
-          party_id: string
+          party_id?: string | null
           party_kind: string
+          supplier_id?: string | null
           reference_type?: string
           source_invoice_id?: string | null
           source_voucher_entry_id?: string | null
           source_voucher_id?: string | null
           status?: string
+          cancelled_on?: string | null
+          source_voiding_voucher_id?: string | null
+          updated_at?: string
         }
         Update: {
           bill_date?: string
           bill_reference?: string | null
           created_at?: string
+          created_by?: string | null
+          currency_code?: string
           due_date?: string | null
           external_ref?: string | null
           id?: string
           ledger_account_id?: string | null
           original_amount?: number
-          party_id?: string
+          party_id?: string | null
           party_kind?: string
+          supplier_id?: string | null
           reference_type?: string
           source_invoice_id?: string | null
           source_voucher_entry_id?: string | null
           source_voucher_id?: string | null
           status?: string
+          cancelled_on?: string | null
+          source_voiding_voucher_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1470,6 +1497,9 @@ export type Database = {
       }
       invoices: {
         Row: {
+          cgst_amount: number | null
+          sgst_amount: number | null
+          igst_amount: number | null
           created_at: string
           created_by: string | null
           dispatch_pincode: string | null
@@ -1491,9 +1521,14 @@ export type Database = {
           supplier_gstin: string | null
           tax_amount: number
           total_amount: number
+          fulfillment_status: string
           updated_at: string
         }
         Insert: {
+          cgst_amount?: number | null
+          cgst_amount?: number | null
+          sgst_amount?: number | null
+          igst_amount?: number | null
           created_at?: string
           created_by?: string | null
           dispatch_pincode?: string | null
@@ -1515,6 +1550,7 @@ export type Database = {
           supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
+          fulfillment_status?: string
           updated_at?: string
         }
         Update: {
@@ -1539,6 +1575,7 @@ export type Database = {
           supplier_gstin?: string | null
           tax_amount?: number
           total_amount?: number
+          fulfillment_status?: string
           updated_at?: string
         }
         Relationships: [
@@ -2322,6 +2359,7 @@ export type Database = {
           vendor_ack_at: string | null
           vendor_ack_note: string | null
           vendor_ack_status: string
+          receipt_status: string
         }
         Insert: {
           bill_date?: string
@@ -2344,6 +2382,7 @@ export type Database = {
           vendor_ack_at?: string | null
           vendor_ack_note?: string | null
           vendor_ack_status?: string
+          receipt_status?: string
         }
         Update: {
           bill_date?: string
@@ -2366,6 +2405,7 @@ export type Database = {
           vendor_ack_at?: string | null
           vendor_ack_note?: string | null
           vendor_ack_status?: string
+          receipt_status?: string
         }
         Relationships: [
           {
@@ -2866,6 +2906,7 @@ export type Database = {
           created_by: string | null
           godown_id: string | null
           id: string
+          idempotency_key: string | null
           movement_date: string
           movement_type: Database["public"]["Enums"]["stock_movement_type"]
           narration: string | null
@@ -2885,6 +2926,7 @@ export type Database = {
           created_by?: string | null
           godown_id?: string | null
           id?: string
+          idempotency_key?: string | null
           movement_date?: string
           movement_type: Database["public"]["Enums"]["stock_movement_type"]
           narration?: string | null
@@ -2904,6 +2946,7 @@ export type Database = {
           created_by?: string | null
           godown_id?: string | null
           id?: string
+          idempotency_key?: string | null
           movement_date?: string
           movement_type?: Database["public"]["Enums"]["stock_movement_type"]
           narration?: string | null
@@ -3552,6 +3595,10 @@ export type Database = {
           is_locked: boolean
           narration: string | null
           reference: string | null
+          reversal_of: string | null
+          reversed_by: string | null
+          reversal_reason: string | null
+          idempotency_key: string | null
           source_id: string | null
           source_table: string | null
           updated_at: string
@@ -3569,6 +3616,10 @@ export type Database = {
           is_locked?: boolean
           narration?: string | null
           reference?: string | null
+          reversal_of?: string | null
+          reversed_by?: string | null
+          reversal_reason?: string | null
+          idempotency_key?: string | null
           source_id?: string | null
           source_table?: string | null
           updated_at?: string
@@ -3586,6 +3637,10 @@ export type Database = {
           is_locked?: boolean
           narration?: string | null
           reference?: string | null
+          reversal_of?: string | null
+          reversed_by?: string | null
+          reversal_reason?: string | null
+          idempotency_key?: string | null
           source_id?: string | null
           source_table?: string | null
           updated_at?: string
