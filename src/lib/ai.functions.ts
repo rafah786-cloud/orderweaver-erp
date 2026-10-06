@@ -591,6 +591,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
 export const listAiDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertRole(context.supabase);
     const { data, error } = await context.supabase
       .from("ai_documents")
       .select(
@@ -606,6 +607,7 @@ export const getAiDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await assertRole(context.supabase);
     const { data: doc, error } = await context.supabase
       .from("ai_documents")
       .select(
