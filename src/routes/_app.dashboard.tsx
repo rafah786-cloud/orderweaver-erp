@@ -107,7 +107,7 @@ function DashboardPage() {
           </div>
           <a
             className="hoa-btn hoa-btn-light"
-            href="https://zizzmattress.com"
+            href="https://www.zizzmattress.com"
             target="_blank"
             rel="noreferrer"
           >
