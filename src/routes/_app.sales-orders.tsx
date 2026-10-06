@@ -222,14 +222,7 @@ function SalesOrdersPage() {
         // non-fatal
       }
       // Fan out to subscribed staff departments
-      notifyStaff({
-        data: {
-          event: "staff.sales_order.created",
-          ref_id: res.id,
-          customer_party_id: savedParty,
-          vars: { order_no: res.orderNumber, order_value: total.toFixed(2) },
-        },
-      }).catch(() => {});
+      notifyStaff({ data: { event: "staff.sales_order.created", ref_id: res.id } }).catch(() => {});
     },
     onError: (e: Error) => toast.error(e.message),
   });
