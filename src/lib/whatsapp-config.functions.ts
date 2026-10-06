@@ -166,6 +166,5 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
       status: result.status,
       attempts: result.attempts,
       error: result.error ?? null,
-      response_summary: JSON.stringify(result.response ?? null).slice(0, 500),
     };
   });
