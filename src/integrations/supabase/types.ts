@@ -55,6 +55,7 @@ export type Database = {
       ai_audit_log: {
         Row: {
           action: string;
+          company_id: string;
           created_at: string;
           duration_ms: number | null;
           error: string | null;
@@ -70,6 +71,7 @@ export type Database = {
         };
         Insert: {
           action?: string;
+          company_id: string;
           created_at?: string;
           duration_ms?: number | null;
           error?: string | null;
@@ -85,6 +87,7 @@ export type Database = {
         };
         Update: {
           action?: string;
+          company_id?: string;
           created_at?: string;
           duration_ms?: number | null;
           error?: string | null;
