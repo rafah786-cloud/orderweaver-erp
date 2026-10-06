@@ -94,6 +94,7 @@ export const listPartyMessages = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertVisibleParty(context.supabase, data.party_kind, data.party_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("notification_log")
@@ -125,6 +126,23 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!log) throw new Error("Log not found");
     if (log.channel !== "whatsapp") throw new Error("Only WhatsApp messages can be retried here");
+    if (log.party_kind === "customer" || log.party_kind === "vendor") {
+      if (!log.party_id) throw new Error("Notification has no party owner");
+      await assertVisibleParty(context.supabase, log.party_kind, log.party_id);
+    } else if (log.party_id) {
+      const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+      if (companyError || !companyId) throw new Error("No active company selected");
+      const { data: membership, error: membershipError } = await context.supabase
+        .from("user_company_access")
+        .select("user_id")
+        .eq("user_id", log.party_id)
+        .eq("company_id", companyId)
+        .eq("can_view", true)
+        .maybeSingle();
+      if (membershipError || !membership) throw new Error("Notification recipient is not visible in the active company");
+    } else {
+      throw new Error("Notification has no visible recipient");
+    }
     await assertVisibleNotificationSource(context.supabase, log.ref_table, log.ref_id);
 
     // Try to recover recipient phone if missing (from the party/supplier record)
