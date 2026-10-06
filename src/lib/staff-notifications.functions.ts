@@ -26,15 +26,23 @@ export const STAFF_EVENT_LABEL: Record<StaffEvent, string> = {
   "staff.dispatch.ready": "Dispatch Ready",
 };
 
-async function assertHasAnyRole(userId: string, roles: AllowedRole[]) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function assertHasAnyRole(db: any, userId: string, roles: AllowedRole[]) {
+  const { data, error } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .in("role", roles as any);
-  if (!data || data.length === 0) throw new Error("Forbidden");
+  if (error || !data || data.length === 0) throw new Error("Forbidden");
 }
+
+const EVENT_ROLES: Record<StaffEvent, AllowedRole[]> = {
+  "staff.sales_order.created": ["admin", "sales"],
+  "staff.purchase_request.created": ["admin", "production"],
+  "staff.approval.pending": ["admin", "accountant"],
+  "staff.invoice.overdue": ["admin", "accountant"],
+  "staff.payment.received": ["admin", "accountant"],
+  "staff.dispatch.ready": ["admin", "production"],
+};
 
 function normalizeWa(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -63,19 +71,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    // Any staff member writing business events may fan out
-    await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant", "hr"]);
-    // Check supplier access before any fan-out, even when a vendor name was supplied.
-    let supplierName: string | undefined;
-    if (data.supplier_id) {
-      const { data: supplier, error } = await context.supabase
-        .from("suppliers")
-        .select("name")
-        .eq("id", data.supplier_id)
-        .maybeSingle();
-      if (error || !supplier) throw new Error("Supplier not found");
-      supplierName = supplier.name;
-    }
+    await assertHasAnyRole(context.supabase, context.userId, EVENT_ROLES[data.event]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
@@ -90,26 +86,88 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     const depts = Array.from(new Set((subs ?? []).map((s) => s.department)));
     if (depts.length === 0) return { ok: true, sent: 0, recipients: 0 };
 
-    // 2. Resolve active employees in those departments with a phone
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+
     const { data: emps } = await supabaseAdmin
       .from("employees")
-      .select("id, full_name, phone, department, is_active")
+      .select("id, full_name, phone, department, is_active, company_id")
+      .eq("company_id", companyId)
       .in("department", depts)
       .eq("is_active", true);
 
     if (!emps || emps.length === 0) return { ok: true, sent: 0, recipients: 0 };
 
-    // 2b. Resolve optional party/supplier names so callers don't need to pre-fetch them
-    const enrichedVars: Record<string, string | number | null | undefined> = { ...data.vars };
-    if (data.customer_party_id && enrichedVars.customer_name === undefined) {
-      const { data: party } = await supabaseAdmin
-        .from("parties")
-        .select("name")
-        .eq("id", data.customer_party_id)
-        .maybeSingle();
-      if (party?.name) enrichedVars.customer_name = party.name;
+    const enrichedVars: Record<string, string | number | null | undefined> = {};
+    if (data.event === "staff.sales_order.created") {
+      if (!data.ref_id) throw new Error("Sales-order notification requires a reference");
+      const { data: order, error } = await context.supabase.from("sales_orders")
+        .select("id, order_number, total_amount, party_id").eq("id", data.ref_id).maybeSingle();
+      if (error || !order) throw new Error("Sales order not found");
+      if (data.customer_party_id && data.customer_party_id !== order.party_id)
+        throw new Error("Customer reference does not match the sales order");
+      enrichedVars.order_no = order.order_number;
+      enrichedVars.order_value = Number(order.total_amount ?? 0).toFixed(2);
+      if (order.party_id) {
+        const { data: party } = await context.supabase.from("parties")
+          .select("name").eq("id", order.party_id).maybeSingle();
+        if (!party) throw new Error("Customer not found");
+        enrichedVars.customer_name = party.name;
+      }
+    } else if (data.event === "staff.purchase_request.created") {
+      if (!data.ref_id) throw new Error("Purchase notification requires a reference");
+      const { data: bill, error } = await context.supabase.from("purchase_bills")
+        .select("id, bill_number, total_amount, supplier_id").eq("id", data.ref_id).maybeSingle();
+      if (error || !bill) throw new Error("Purchase bill not found");
+      if (data.supplier_id && data.supplier_id !== bill.supplier_id)
+        throw new Error("Supplier reference does not match the purchase bill");
+      enrichedVars.po_number = bill.bill_number;
+      enrichedVars.po_value = Number(bill.total_amount ?? 0).toFixed(2);
+      if (bill.supplier_id) {
+        const { data: supplier } = await context.supabase.from("suppliers")
+          .select("name").eq("id", bill.supplier_id).maybeSingle();
+        if (!supplier) throw new Error("Supplier not found");
+        enrichedVars.vendor_name = supplier.name;
+      }
+    } else if (data.event === "staff.payment.received") {
+      if (!data.ref_id) throw new Error("Payment notification requires a reference");
+      const { data: voucher, error } = await context.supabase.from("vouchers")
+        .select("id, voucher_number, voucher_entries!inner(credit, ledger_accounts!inner(mapped_party_id))")
+        .eq("id", data.ref_id).maybeSingle();
+      if (error || !voucher) throw new Error("Payment voucher not found");
+      const entries = (voucher.voucher_entries ?? []) as Array<any>;
+      enrichedVars.receipt_no = voucher.voucher_number;
+      enrichedVars.payment_amount = entries.reduce((sum, row) => sum + Number(row.credit ?? 0), 0).toFixed(2);
+      const mappedPartyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)?.ledger_accounts?.mapped_party_id;
+      const partyId = data.customer_party_id ?? mappedPartyId;
+      if (partyId) {
+        const { data: party } = await context.supabase.from("parties")
+          .select("name").eq("id", partyId).maybeSingle();
+        if (!party) throw new Error("Customer not found");
+        enrichedVars.customer_name = party.name;
+      }
+    } else if (data.event === "staff.dispatch.ready") {
+      if (!data.ref_id) throw new Error("Dispatch notification requires a reference");
+      const { data: order, error } = await context.supabase.from("production_orders")
+        .select("id, production_number, tracking_number, transporter_name, sales_orders!inner(order_number, party_id)")
+        .eq("id", data.ref_id).maybeSingle();
+      if (error || !order) throw new Error("Production order not found");
+      const so = Array.isArray(order.sales_orders) ? order.sales_orders[0] : order.sales_orders;
+      enrichedVars.order_no = so?.order_number ?? order.production_number;
+      enrichedVars.tracking_no = order.tracking_number ?? "";
+      enrichedVars.transporter_name = order.transporter_name ?? "";
+      const partyId = data.customer_party_id ?? so?.party_id;
+      if (partyId) {
+        if (so?.party_id && so.party_id !== partyId)
+          throw new Error("Customer reference does not match the production order");
+        const { data: party } = await context.supabase.from("parties")
+          .select("name").eq("id", partyId).maybeSingle();
+        if (!party) throw new Error("Customer not found");
+        enrichedVars.customer_name = party.name;
+      }
+    } else {
+      throw new Error("This notification event is not enabled for direct dispatch");
     }
-    if (supplierName !== undefined) enrichedVars.vendor_name = supplierName;
 
     // 3. Resolve template
     const { data: tpl } = await supabaseAdmin
@@ -165,11 +223,13 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
           bodyVariables: bodyValues,
         });
       } else {
-        const body = [
-          `Notification: ${data.event}`,
-          ...Object.entries(allVars).map(([k, v]) => `${k}: ${v}`),
-        ].join("\n");
-        result = await provider.sendFreeform({ to, body });
+        await logWhatsAppNotification({
+          ...baseLog,
+          recipient_phone: to,
+          status: "skipped",
+          failure_reason: "no approved WhatsApp template configured",
+        });
+        continue;
       }
       await logWhatsAppNotification({
         ...baseLog,
@@ -188,7 +248,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
 export const listSubscriptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertHasAnyRole(context.userId, ["admin", "hr"]);
+    await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("employee_notification_subscriptions")
@@ -211,7 +271,7 @@ export const setSubscription = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertHasAnyRole(context.userId, ["admin", "hr"]);
+    await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("employee_notification_subscriptions")
@@ -227,7 +287,7 @@ export const setSubscription = createServerFn({ method: "POST" })
 export const departmentEmployeeCounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertHasAnyRole(context.userId, ["admin", "hr"]);
+    await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("employees")
