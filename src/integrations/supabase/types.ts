@@ -340,6 +340,7 @@ export type Database = {
         Row: {
           applied_id: string | null
           applied_table: string | null
+          company_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -356,6 +357,7 @@ export type Database = {
         Insert: {
           applied_id?: string | null
           applied_table?: string | null
+          company_id: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -372,6 +374,7 @@ export type Database = {
         Update: {
           applied_id?: string | null
           applied_table?: string | null
+          company_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1245,6 +1248,7 @@ export type Database = {
       }
       employee_notification_subscriptions: {
         Row: {
+          company_id: string
           created_at: string
           department: string
           event_key: string
@@ -1253,6 +1257,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_id: string
           created_at?: string
           department: string
           event_key: string
@@ -1261,6 +1266,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           department?: string
           event_key?: string
@@ -3010,6 +3016,7 @@ export type Database = {
       }
       shift_settings: {
         Row: {
+          company_id: string
           half_day_deduction_pct: number
           half_day_hours: number
           id: string
@@ -3021,6 +3028,7 @@ export type Database = {
           working_days_per_month: number
         }
         Insert: {
+          company_id: string
           half_day_deduction_pct?: number
           half_day_hours?: number
           id?: string
@@ -3032,6 +3040,7 @@ export type Database = {
           working_days_per_month?: number
         }
         Update: {
+          company_id?: string
           half_day_deduction_pct?: number
           half_day_hours?: number
           id?: string
