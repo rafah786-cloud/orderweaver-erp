@@ -2,9 +2,10 @@ import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar, MobileTopBar } from "@/components/AppSidebar";
 import { allowedRolesFor, defaultRouteForRoles } from "@/lib/permissions";
-import { Bell, Search, ShieldAlert, UserRound } from "lucide-react";
+import { Bell, Search, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider, useCompany } from "@/lib/company-context";
+import { AccountMenu } from "@/components/AccountMenu";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 
 export const Route = createFileRoute("/_app")({
@@ -94,10 +95,7 @@ function AppFrame({
                 <Bell aria-hidden="true" />
               </Link>
             )}
-            <div className="profile-chip" title={profile?.email ?? undefined}>
-              <UserRound aria-hidden="true" />
-              <span>{profile?.full_name ?? "Account"}</span>
-            </div>
+            <AccountMenu />
           </nav>
         </header>
 
