@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Building2, ChevronDown, Factory, Mail, Menu, X } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 import softnights from "@/assets/brands/softnights.jpeg.asset.json";
@@ -57,23 +57,32 @@ const loginItems = [
 
 function LoginMenu() {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
   }, []);
 
   return (
-    <div className="relative">
+    <div ref={menuRef} className="relative">
       <button
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         onPointerEnter={() => setOpen(true)}
+        onFocus={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-md border border-[#cfd8df] bg-white px-4 py-2.5 text-sm font-semibold text-[#19324b] shadow-sm transition hover:border-[#b7c5d2] hover:bg-[#f7f9fb]"
       >
         Login
@@ -171,7 +180,14 @@ function CorporateHome() {
         )}
       </header>
 
-      <main>
+      <a
+        href="#main-content"
+        className="sr-only fixed left-3 top-3 z-[100] rounded-md bg-[#e0b83f] px-4 py-2 text-sm font-semibold text-[#142235] focus:not-sr-only"
+      >
+        Skip to content
+      </a>
+
+      <main id="main-content">
         <section className="border-b border-[#dce3ea] bg-[#f7f9fb]">
           <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
             <div className="relative overflow-hidden rounded-2xl border border-[#d7e0e7] bg-[#102235]">
