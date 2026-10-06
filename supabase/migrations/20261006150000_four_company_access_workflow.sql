@@ -123,7 +123,7 @@ AFTER INSERT ON public.profiles
 FOR EACH ROW EXECUTE FUNCTION public.provision_user_abood_access();
 
 CREATE OR REPLACE FUNCTION public.set_user_company_access(p_user_id uuid,p_company_ids uuid[])
-RETURNS TABLE(company_id uuid,can_view boolean,can_create boolean,can_edit boolean,can_delete boolean)
+RETURNS TABLE(out_company_id uuid,out_can_view boolean,out_can_create boolean,out_can_edit boolean,out_can_delete boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE abood uuid;
 BEGIN
@@ -155,10 +155,10 @@ BEGIN
   WHERE user_id=p_user_id;
 
   RETURN QUERY
-  SELECT u.company_id,u.can_view,u.can_create,u.can_edit,u.can_delete
-  FROM public.user_company_access u
-  WHERE u.user_id=p_user_id
-  ORDER BY u.is_default DESC,u.company_id;
+  SELECT uca.company_id,uca.can_view,uca.can_create,uca.can_edit,uca.can_delete
+  FROM public.user_company_access uca
+  WHERE uca.user_id=p_user_id
+  ORDER BY uca.is_default DESC,uca.company_id;
 END $$;
 
 REVOKE ALL ON FUNCTION public.set_user_company_access(uuid,uuid[]) FROM PUBLIC,anon;
