@@ -75,7 +75,7 @@ export const deleteDevice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const companyId = await activeCompanyId(context.supabase);
     const { error } = await supabaseAdmin
       .from("device_settings")
