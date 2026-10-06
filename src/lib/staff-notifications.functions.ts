@@ -62,11 +62,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     z
       .object({
         event: z.enum(STAFF_EVENTS),
-        ref_table: z.string().optional(),
-        ref_id: z.string().uuid().optional(),
-        vars: z.record(z.string(), z.union([z.string(), z.number()])).default({}),
-        customer_party_id: z.string().uuid().optional(),
-        supplier_id: z.string().uuid().optional(),
+        ref_id: z.string().uuid(),
       })
       .parse(d),
   )
@@ -110,9 +106,6 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       "staff.payment.received": "vouchers",
       "staff.dispatch.ready": "production_orders",
     };
-    if (data.ref_table && data.ref_table !== expectedRefTable[data.event]) {
-      throw new Error("Reference table does not match the notification event");
-    }
     if (data.event === "staff.sales_order.created") {
       if (!data.ref_id) throw new Error("Sales-order notification requires a reference");
       const { data: order, error } = await context.supabase
@@ -121,8 +114,6 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
         .eq("id", data.ref_id)
         .maybeSingle();
       if (error || !order) throw new Error("Sales order not found");
-      if (data.customer_party_id && data.customer_party_id !== order.party_id)
-        throw new Error("Customer reference does not match the sales order");
       enrichedVars.order_no = order.order_number;
       enrichedVars.order_value = Number(order.total_amount ?? 0).toFixed(2);
       if (order.party_id) {
@@ -142,8 +133,6 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
         .eq("id", data.ref_id)
         .maybeSingle();
       if (error || !bill) throw new Error("Purchase bill not found");
-      if (data.supplier_id && data.supplier_id !== bill.supplier_id)
-        throw new Error("Supplier reference does not match the purchase bill");
       enrichedVars.po_number = bill.bill_number;
       enrichedVars.po_value = Number(bill.total_amount ?? 0).toFixed(2);
       if (bill.supplier_id) {
@@ -170,18 +159,16 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       enrichedVars.payment_amount = entries
         .reduce((sum, row) => sum + Number(row.credit ?? 0), 0)
         .toFixed(2);
-      const mappedPartyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)
+      const partyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)
         ?.ledger_accounts?.mapped_party_id;
-      const partyId = data.customer_party_id ?? mappedPartyId;
-      if (partyId) {
-        const { data: party } = await context.supabase
-          .from("parties")
-          .select("name")
-          .eq("id", partyId)
-          .maybeSingle();
-        if (!party) throw new Error("Customer not found");
-        enrichedVars.customer_name = party.name;
-      }
+      if (!partyId) throw new Error("Payment voucher is not linked to a customer");
+      const { data: party } = await context.supabase
+        .from("parties")
+        .select("name")
+        .eq("id", partyId)
+        .maybeSingle();
+      if (!party) throw new Error("Customer not found");
+      enrichedVars.customer_name = party.name;
     } else if (data.event === "staff.dispatch.ready") {
       if (!data.ref_id) throw new Error("Dispatch notification requires a reference");
       const { data: order, error } = await context.supabase
@@ -196,18 +183,15 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       enrichedVars.order_no = so?.order_number ?? order.production_number;
       enrichedVars.tracking_no = order.tracking_number ?? "";
       enrichedVars.transporter_name = order.transporter_name ?? "";
-      const partyId = data.customer_party_id ?? so?.party_id;
-      if (partyId) {
-        if (so?.party_id && so.party_id !== partyId)
-          throw new Error("Customer reference does not match the production order");
-        const { data: party } = await context.supabase
-          .from("parties")
-          .select("name")
-          .eq("id", partyId)
-          .maybeSingle();
-        if (!party) throw new Error("Customer not found");
-        enrichedVars.customer_name = party.name;
-      }
+      const partyId = so?.party_id;
+      if (!partyId) throw new Error("Production order is not linked to a customer");
+      const { data: party } = await context.supabase
+        .from("parties")
+        .select("name")
+        .eq("id", partyId)
+        .maybeSingle();
+      if (!party) throw new Error("Customer not found");
+      enrichedVars.customer_name = party.name;
     } else {
       throw new Error("This notification event is not enabled for direct dispatch");
     }
@@ -231,7 +215,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
         party_kind: "staff" as const,
         event_type: data.event,
         ref_table: expectedRefTable[data.event],
-        ref_id: data.ref_id ?? null,
+        ref_id: data.ref_id,
         payload: { employee_id: emp.id, department: emp.department, source: "verified-record" },
       };
       if (!to) {
