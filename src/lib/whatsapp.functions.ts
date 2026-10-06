@@ -5,14 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 type AllowedRole = "admin" | "sales" | "production" | "accountant" | "hr" | "vendor";
 const APP_ORIGIN = "https://orderweaver-erp.lovable.app";
 
-async function assertHasAnyRole(userId: string, roles: AllowedRole[]) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function assertHasAnyRole(db: any, userId: string, roles: AllowedRole[]) {
+  const { data, error } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .in("role", roles as any);
-  if (!data || data.length === 0) throw new Error("Forbidden");
+  if (error || !data || data.length === 0) throw new Error("Forbidden");
 }
 
 function normalizeWa(raw: string | null | undefined): string | null {
@@ -22,20 +21,9 @@ function normalizeWa(raw: string | null | undefined): string | null {
   return /^\+[1-9]\d{7,14}$/.test(withPlus) ? withPlus : null;
 }
 
-/** Build a freeform fallback body used when no Interakt template is registered for an event. */
-function fallbackBody(
-  event: string,
-  vars: Record<string, string | number | null | undefined>,
-): string {
-  const lines = Object.entries(vars)
-    .filter(([, v]) => v !== null && v !== undefined && String(v).length > 0)
-    .map(([k, v]) => `${k}: ${v}`);
-  return [`Notification: ${event}`, ...lines].join("\n");
-}
-
-async function resolveTemplate(eventKey: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+/** Resolve the active approved WhatsApp template for an event. */
+async function resolveTemplate(db: any, eventKey: string) {
+  const { data } = await db
     .from("whatsapp_templates")
     .select("template_name, language_code, variables, is_active")
     .eq("event_key", eventKey)
@@ -135,6 +123,7 @@ async function resolveCustomerEventReference(
 }
 
 async function sendForEvent(opts: {
+  db: any;
   to: string;
   eventKey: string;
   vars: Record<string, string | number | null | undefined>;
@@ -150,7 +139,7 @@ async function sendForEvent(opts: {
       messageId: "",
     };
   }
-  const tpl = await resolveTemplate(opts.eventKey);
+  const tpl = await resolveTemplate(opts.db, opts.eventKey);
   if (tpl?.template_name) {
     const varNames = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
     const bodyValues = varNames.map((n) => String(opts.vars[n] ?? ""));
@@ -170,21 +159,13 @@ async function sendForEvent(opts: {
           messageId: "",
         };
   }
-  // No template registered — try freeform (Interakt requires open session window; will likely fail outside 24h)
-  const result = await provider.sendFreeform({
-    to: opts.to,
-    body: fallbackBody(opts.eventKey, opts.vars),
-  });
-  return result.ok
-    ? { ok: true as const, messageId: result.messageId, template_name: null }
-    : {
-        ok: false as const,
-        status: result.status,
-        error: result.error,
-        template_name: null,
-        messageId: "",
-      };
-}
+  return {
+    ok: false as const,
+    status: "skipped" as const,
+    error: "No approved WhatsApp template is active",
+    template_name: null as string | null,
+    messageId: "",
+  };
 
 /** Sales/Admin → notify vendor about a new or updated purchase order */
 export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
@@ -198,7 +179,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertHasAnyRole(context.userId, ["admin", "sales", "production"]);
+    await assertHasAnyRole(context.supabase, context.userId, ["admin", "sales", "production"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     // Resolve the bill and joined supplier as the caller; existing RLS is authoritative.
     const { data: bill, error } = await context.supabase
@@ -249,6 +230,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     }
     const po_url = `${APP_ORIGIN}/print/purchase/${bill.id}`;
     const result = await sendForEvent({
+      db: context.supabase,
       to,
       eventKey,
       vars: {
@@ -297,7 +279,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
+    await assertHasAnyRole(context.supabase, context.userId, ["admin", "sales", "production", "accountant"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const reference = await resolveCustomerEventReference(
       context.supabase,
@@ -337,6 +319,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       return { ok: false, reason: "no_phone" };
     }
     const result = await sendForEvent({
+      db: context.supabase,
       to,
       eventKey: data.event,
       vars: { customer_name: party.name, ...reference.vars },
@@ -371,30 +354,42 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertHasAnyRole(context.userId, ["vendor", "admin"]);
+    await assertHasAnyRole(context.supabase, context.userId, ["vendor", "admin"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: bill } = await supabaseAdmin
+    const { data: bill, error: billError } = await context.supabase
       .from("purchase_bills")
       .select("id, bill_number, total_amount, supplier_id, suppliers(name, user_id)")
       .eq("id", data.bill_id)
       .maybeSingle();
-    if (!bill) throw new Error("Bill not found");
+    if (billError || !bill) throw new Error("Bill not found");
     const supUserId = (bill as any).suppliers?.user_id ?? null;
-    const { data: adminRow } = await supabaseAdmin
+    const { data: adminRow, error: adminError } = await context.supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
       .eq("role", "admin")
       .maybeSingle();
+    if (adminError) throw new Error("Forbidden");
     if (!adminRow && supUserId !== context.userId) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const vendorName = (bill as any).suppliers?.name ?? "Vendor";
     const eventKey = `purchase_order.${data.status}`;
-    const { data: recipients } = await supabaseAdmin
-      .from("profiles")
-      .select("id, whatsapp_number, phone, whatsapp_opt_in, user_roles!inner(role)")
-      .eq("whatsapp_opt_in", true)
-      .in("user_roles.role", ["admin"]);
+    const { data: activeCompanyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !activeCompanyId) throw new Error("No active company selected");
+    const { data: memberRows } = await supabaseAdmin
+      .from("user_company_access")
+      .select("user_id")
+      .eq("company_id", activeCompanyId)
+      .eq("can_view", true);
+    const memberIds = Array.from(new Set((memberRows ?? []).map((r) => r.user_id)));
+    const { data: recipients } = memberIds.length
+      ? await supabaseAdmin
+          .from("profiles")
+          .select("id, whatsapp_number, phone, whatsapp_opt_in, user_roles!inner(role)")
+          .in("id", memberIds)
+          .eq("whatsapp_opt_in", true)
+          .in("user_roles.role", ["admin"])
+      : { data: [] };
     const list = (recipients ?? []) as any[];
     if (list.length === 0) {
       await logWhatsAppNotification({
@@ -412,6 +407,7 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
       const to = normalizeWa(r.whatsapp_number ?? r.phone);
       if (!to) continue;
       const result = await sendForEvent({
+        db: context.supabase,
         to,
         eventKey,
         vars: {
@@ -442,7 +438,8 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
 
 export const getWhatsAppStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertHasAnyRole(context.supabase, context.userId, ["admin"]);
     return {
       provider: process.env.WHATSAPP_PROVIDER ?? "interakt",
       configured: Boolean(process.env.INTERAKT_API_KEY),
