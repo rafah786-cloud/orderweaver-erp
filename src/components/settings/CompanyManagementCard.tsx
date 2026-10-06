@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Plus, Save, Users } from "lucide-react";
+import { Building2, Save, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/lib/company-context";
 import { Button } from "@/components/ui/button";
@@ -88,14 +88,16 @@ export function CompanyManagementCard() {
       legal_name: form.legal_name.trim(),
       display_name: form.display_name.trim(),
     };
-    const result = editing
-      ? await db.from("companies").update(payload).eq("id", editing)
-      : await db.from("companies").insert(payload);
+    if (!editing) {
+      toast.error("Company creation is disabled. Configure one of the four approved books.");
+      return;
+    }
+    const result = await db.from("companies").update(payload).eq("id", editing);
     if (result.error) {
       toast.error(result.error.message);
       return;
     }
-    toast.success(editing ? "Company updated" : "Company created");
+    toast.success("Company updated");
     setOpen(false);
     setEditing(null);
     setForm(emptyForm);
@@ -113,15 +115,9 @@ export function CompanyManagementCard() {
             Maintain separate books, masters and transactions for every legal entity.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setForm(emptyForm);
-            setOpen(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" /> New Company
-        </Button>
+        <Badge variant="outline" className="shrink-0">
+          4 configured books
+        </Badge>
       </CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {companies.map((company) => (
@@ -154,7 +150,7 @@ export function CompanyManagementCard() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Company" : "Create Company"}</DialogTitle>
+            <DialogTitle>Edit Company</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
