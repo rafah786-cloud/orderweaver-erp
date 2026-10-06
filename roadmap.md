@@ -66,3 +66,10 @@
 - A read-only consolidated trial-balance function/report now spans companies the signed-in user is authorized to view.
 - Controlled inter-company journal posting is available to administrators with access to both companies; source and target vouchers are linked by a single transaction/idempotency key.
 - The only remaining Tally migration gate is the real source export and accountant-approved reconciliation/cutover. This cannot be completed truthfully without the company's actual Tally data and operational dress rehearsals.
+
+## 2026-10-06 four-company access workflow
+- [x] Four company books provisioned: ABOOD TRADINGS, ABRAZ SLEEPING SOLUTIONS, ABOOD TRADINGS - MANAGEMENT BOOKS, ABRAZ SLEEPING SOLUTIONS - MANAGEMENT BOOKS.
+- [x] Self-registration has no company selector; new profiles default to ABOOD TRADINGS.
+- [x] Existing users have been reset to ABOOD TRADINGS as their default/initial company access.
+- [x] Admin approval now includes multi-select company access and approval saves the selected access before approving.
+- [x] Admin company access is enforced server-side through a SECURITY DEFINER assignment function; ABOOD remains the default landing company.
