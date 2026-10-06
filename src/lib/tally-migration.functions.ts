@@ -34,6 +34,25 @@ const inputSchema = z.object({
   rows: z.array(rowSchema).max(50000),
 });
 
+async function assertMigrationRunAccess(db: any, userId: string, runId: string) {
+  const { data, error } = await db
+    .from("tally_migration_runs")
+    .select("id, company_id")
+    .eq("id", runId)
+    .maybeSingle();
+  if (error || !data) throw new Error("Migration run is not visible in the active company");
+
+  const { data: access, error: accessError } = await db
+    .from("user_company_access")
+    .select("company_id")
+    .eq("user_id", userId)
+    .eq("company_id", data.company_id)
+    .eq("can_view", true)
+    .maybeSingle();
+  if (accessError || !access) throw new Error("No access to the migration company");
+  return data;
+}
+
 export const stageTallyMigration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => inputSchema.parse(input))
@@ -103,11 +122,23 @@ export const listTallyMigrationRuns = createServerFn({ method: "GET" })
       .eq("role", "admin")
       .maybeSingle();
     if (!role) throw new Error("Admin only");
+    const { data: memberships, error: membershipError } = await supabase
+      .from("user_company_access")
+      .select("company_id")
+      .eq("user_id", userId)
+      .eq("can_view", true);
+    if (membershipError) throw membershipError;
+    const companyIds = Array.from(
+      new Set((memberships ?? []).map((row: { company_id: string }) => row.company_id)),
+    );
+    if (companyIds.length === 0) return [];
+
     const { data, error } = await supabase
       .from("tally_migration_runs")
       .select(
         "id,company_id,source_company_name,source_company_guid,status,source_checksum,started_at,completed_at,created_by,approved_by,approved_at,notes,control_totals",
       )
+      .in("company_id", companyIds)
       .order("started_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -125,6 +156,7 @@ export const validateTallyMigration = createServerFn({ method: "POST" })
       .eq("role", "admin")
       .maybeSingle();
     if (!role) throw new Error("Admin only");
+    await assertMigrationRunAccess(supabase, userId, data.runId);
     const { data: result, error } = await supabase.rpc("validate_tally_migration_run", {
       p_run: data.runId,
     });
@@ -148,6 +180,7 @@ export const reconcileTallyMigration = createServerFn({ method: "POST" })
       .eq("role", "admin")
       .maybeSingle();
     if (!role) throw new Error("Admin only");
+    await assertMigrationRunAccess(supabase, userId, data.runId);
     const { data: rows, error } = await supabase.rpc("reconcile_tally_migration_run", {
       p_run: data.runId,
       p_as_of: data.asOf,
