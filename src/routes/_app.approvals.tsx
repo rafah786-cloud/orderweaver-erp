@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,10 +22,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { setUserStatus, assignUserRole, removeUserRole } from "@/lib/approvals.functions";
+import { setUserStatus, assignUserRole, removeUserRole, setUserCompanyAccess } from "@/lib/approvals.functions";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 type UserStatus = Database["public"]["Enums"]["user_status"];
@@ -56,6 +59,8 @@ function ApprovalsPage() {
   const setStatusFn = useServerFn(setUserStatus);
   const assignRoleFn = useServerFn(assignUserRole);
   const removeRoleFn = useServerFn(removeUserRole);
+  const setCompanyAccessFn = useServerFn(setUserCompanyAccess);
+  const [companyDrafts, setCompanyDrafts] = useState<Record<string, string[]>>({});
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["all-profiles"],
@@ -65,12 +70,24 @@ function ApprovalsPage() {
         .select("id, full_name, email, status, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      const { data: rolesData } = await supabase.from("user_roles").select("user_id, role");
+      const [{ data: rolesData }, { data: memberships }, { data: companiesData }] = await Promise.all([
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("user_company_access").select("user_id, company_id, can_view"),
+        supabase.from("companies").select("id, code, display_name").eq("is_active", true).order("display_name"),
+      ]);
       const rolesByUser: Record<string, AppRole[]> = {};
-      (rolesData ?? []).forEach((r) => {
-        (rolesByUser[r.user_id] ??= []).push(r.role as AppRole);
+      (rolesData ?? []).forEach((r) => { (rolesByUser[r.user_id] ??= []).push(r.role as AppRole); });
+      const companies = (companiesData ?? []) as { id: string; code: string; display_name: string }[];
+      const companiesByUser: Record<string, string[]> = {};
+      (memberships ?? []).forEach((m) => {
+        if (m.can_view) (companiesByUser[m.user_id] ??= []).push(m.company_id);
       });
-      return (data ?? []).map((u) => ({ ...u, roles: rolesByUser[u.id] ?? [] }));
+      return (data ?? []).map((u) => ({
+        ...u,
+        roles: rolesByUser[u.id] ?? [],
+        company_ids: companiesByUser[u.id] ?? [],
+        companies,
+      }));
     },
   });
 
@@ -103,6 +120,25 @@ function ApprovalsPage() {
     }
   };
 
+  const toggleCompany = (userId: string, companyId: string, current: string[]) => {
+    const next = current.includes(companyId)
+      ? current.filter((id) => id !== companyId)
+      : [...current, companyId];
+    setCompanyDrafts((d) => ({ ...d, [userId]: next }));
+  };
+
+  const saveCompanyAccess = async (userId: string, fallback: string[]) => {
+    try {
+      const ids = companyDrafts[userId] ?? fallback;
+      await setCompanyAccessFn({ data: { user_id: userId, company_ids: ids } });
+      toast.success("Company access updated");
+      qc.invalidateQueries({ queryKey: ["all-profiles"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+      throw e;
+    }
+  };
+
   return (
     <>
       <PageHeader title="User Approvals" description="Approve new users and assign roles." />
@@ -117,13 +153,14 @@ function ApprovalsPage() {
                   <TableHead>Requested</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Roles</TableHead>
+                  <TableHead>Company access</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       Loading…
                     </TableCell>
                   </TableRow>
@@ -171,6 +208,41 @@ function ApprovalsPage() {
                           )}
                         </div>
                       </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const selected = companyDrafts[u.id] ?? u.company_ids;
+                          return (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-8 min-w-40 justify-between text-xs">
+                                  Companies ({selected.length}/4)
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent align="start" className="w-72">
+                                <div className="space-y-2">
+                                  <div className="text-xs font-medium">Grant access</div>
+                                  {u.companies.map((company: { id: string; code: string; display_name: string }) => (
+                                    <label key={company.id} className="flex items-start gap-2 rounded-md p-2 hover:bg-muted cursor-pointer">
+                                      <Checkbox
+                                        checked={selected.includes(company.id)}
+                                        onCheckedChange={() => toggleCompany(u.id, company.id, selected)}
+                                      />
+                                      <span className="leading-tight">
+                                        <span className="block text-sm">{company.display_name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{company.code}</span>
+                                      </span>
+                                    </label>
+                                  ))}
+                                  <p className="text-[10px] text-muted-foreground pt-1">ABOOD TRADINGS is always retained as the default company.</p>
+                                  <Button size="sm" className="w-full" onClick={() => void saveCompanyAccess(u.id, u.company_ids)}>
+                                    Save access
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          );
+                        })()}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2 items-center">
                           <Select onValueChange={(v) => assignRole(u.id, v as AppRole)}>
@@ -186,7 +258,7 @@ function ApprovalsPage() {
                             </SelectContent>
                           </Select>
                           {u.status !== "approved" && (
-                            <Button size="sm" onClick={() => setStatus(u.id, "approved")}>
+                            <Button size="sm" onClick={async () => { await saveCompanyAccess(u.id, u.company_ids); await setStatus(u.id, "approved"); }}>
                               Approve
                             </Button>
                           )}
