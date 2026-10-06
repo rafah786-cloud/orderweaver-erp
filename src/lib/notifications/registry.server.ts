@@ -78,10 +78,19 @@ export async function listProviders() {
     const implementation = PROVIDER_FACTORIES[`${record.channel}:${record.name}`];
     const missingEnv = record.secret_env_keys.filter((k) => !process.env[k]);
     return {
-      ...record,
+      id: record.id,
+      channel: record.channel,
+      name: record.name,
+      display_name: record.display_name,
+      is_active: record.is_active,
+      is_default: record.is_default,
+      priority: record.priority,
       has_implementation: Boolean(implementation),
       missing_env: missingEnv,
       ready: Boolean(implementation) && missingEnv.length === 0,
+      // Never return persisted provider configuration or secret-key names to the browser.
+      config: {},
+      secret_env_keys: [],
     };
   });
 }
