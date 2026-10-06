@@ -264,7 +264,19 @@ function ApprovalsPage() {
                             </SelectContent>
                           </Select>
                           {u.status !== "approved" && (
-                            <Button size="sm" onClick={async () => { await saveCompanyAccess(u.id, u.company_ids); await setStatus(u.id, "approved"); }}>
+                            <Button
+                              size="sm"
+                              disabled={u.roles.length === 0}
+                              title={u.roles.length === 0 ? "Assign at least one role before approval" : "Approve user"}
+                              onClick={async () => {
+                                if (u.roles.length === 0) {
+                                  toast.error("Assign at least one role before approval");
+                                  return;
+                                }
+                                await saveCompanyAccess(u.id, u.company_ids);
+                                await setStatus(u.id, "approved");
+                              }}
+                            >
                               Approve
                             </Button>
                           )}
