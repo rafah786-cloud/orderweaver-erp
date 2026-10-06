@@ -156,6 +156,11 @@ function ProductionPage() {
               event: "staff.dispatch.ready",
               ref_id: res.order.id,
               customer_party_id: partyId,
+              vars: {
+                order_no: res.order.sales_orders?.order_number ?? res.order.production_number,
+                tracking_no: res.order.tracking_number ?? "",
+                transporter_name: res.order.transporter_name ?? "",
+              },
             },
           }).catch(() => {});
       }

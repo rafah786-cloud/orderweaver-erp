@@ -340,13 +340,9 @@ function InvoicesPage() {
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["party-outstanding"] });
       const savedParty = partyId;
-      const savedTotal = total;
-      const savedDue = dueDate;
       setOpen(false);
       resetForm();
       try {
-        const origin = typeof window !== "undefined" ? window.location.origin : "";
-        const invoice_url = `${origin}/print/invoice/${res.id}`;
         const r = await notifyCustomer({
           data: {
             party_id: savedParty,
