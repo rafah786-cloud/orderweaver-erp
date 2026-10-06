@@ -88,7 +88,8 @@ export const listMyInAppNotifications = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("in_app_notifications")
-      .select("*")
+      .select("id, event_key, title, body, ref_table, ref_id, link, read_at, created_at")
+      .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw error;
@@ -102,7 +103,10 @@ export const markInAppRead = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    let q = supabase.from("in_app_notifications").update({ read_at: new Date().toISOString() });
+    let q = supabase
+      .from("in_app_notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("user_id", context.userId);
     if (data.id) q = q.eq("id", data.id);
     else q = q.is("read_at", null);
     const { error } = await q;
@@ -119,7 +123,7 @@ export const dispatchTestEvent = createServerFn({ method: "POST" })
         phone: z.string().max(32).optional(),
         email: z.string().email().max(320).optional(),
         user_ids: z.array(z.string().uuid()).max(1).optional(),
-        variables: z.record(z.string(), z.any()).optional(),
+        variables: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
       })
       .parse(d),
   )
