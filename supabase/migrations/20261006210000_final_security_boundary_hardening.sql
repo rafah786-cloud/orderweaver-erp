@@ -764,8 +764,7 @@ BEGIN
 END;
 $$;
 
--- 6) Company-access mutation is internal to the authenticated admin server
--- route. Keep it SECURITY DEFINER, but do not expose the RPC to REST clients.
+-- 6) Company-access mutation runs as the authenticated admin with RLS in force.
 CREATE OR REPLACE FUNCTION public.set_user_company_access(
   p_user_id uuid,
   p_company_ids uuid[]
