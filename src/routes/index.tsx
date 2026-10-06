@@ -208,7 +208,7 @@ function CorporateHome() {
                   <a href="#brands" className="inline-flex items-center gap-2 rounded-md bg-[#e0b83f] px-5 py-3 text-sm font-semibold text-[#142235] hover:bg-[#efd166]">
                     Explore our brands <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </a>
-                  <a href="mailto:info@zizzmattress.com" className="inline-flex items-center gap-2 rounded-md border border-white/25 bg-white/8 px-5 py-3 text-sm font-semibold text-white hover:bg-white/14">
+                  <a href="mailto:gm@zizzmattress.com" className="inline-flex items-center gap-2 rounded-md border border-white/25 bg-white/8 px-5 py-3 text-sm font-semibold text-white hover:bg-white/14">
                     Business enquiries
                   </a>
                 </div>
@@ -380,9 +380,9 @@ function CorporateHome() {
               </p>
             </div>
             <div className="space-y-3">
-              <a href="mailto:info@zizzmattress.com" className="flex items-center gap-3 text-sm font-semibold text-white hover:text-[#f0d15f]">
+              <a href="mailto:gm@zizzmattress.com" className="flex items-center gap-3 text-sm font-semibold text-white hover:text-[#f0d15f]">
                 <Mail className="h-4 w-4 text-[#e0b83f]" aria-hidden="true" />
-                info@zizzmattress.com
+                gm@zizzmattress.com
               </a>
               <Link to="/signup" className="inline-flex items-center gap-2 rounded-md bg-[#e0b83f] px-4 py-2.5 text-sm font-semibold text-[#142235] hover:bg-[#efd166]">
                 Request business access <ArrowRight className="h-4 w-4" aria-hidden="true" />
