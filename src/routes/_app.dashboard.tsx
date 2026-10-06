@@ -234,6 +234,7 @@ function AdminPanels() {
       return (data ?? []).reduce((sum, row) => sum + Number(row.current_balance ?? 0), 0);
     },
   });
+  const { data: employees } = useQuery({
     queryKey: ["dash-employees"],
     queryFn: async () => {
       const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
