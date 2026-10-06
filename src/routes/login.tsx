@@ -1,13 +1,13 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { safeLocalRedirect } from "@/lib/safe-local-redirect";
+import { defaultRouteForRoles, type AppRole } from "@/lib/permissions";
 import { getDeviceId, getDeviceName, setKeepSignedInPref } from "@/lib/device";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
@@ -49,7 +49,6 @@ function modeAllows(
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { session } = useAuth();
   const { redirect, mode } = useSearch({ from: "/login" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,7 +67,7 @@ function LoginPage() {
       if (profileError) throw profileError;
       if (roleError) throw roleError;
 
-      const roles = (roleRows ?? []).map((row) => String(row.role));
+      const roles = (roleRows ?? []).map((row) => row.role as AppRole);
       if (!profile || profile.status !== "approved") {
         navigate({ to: "/pending", replace: true });
         return;
@@ -80,7 +79,7 @@ function LoginPage() {
         return;
       }
 
-      const target = redirect ?? defaultRouteFromStrings(roles);
+      const target = redirect ?? defaultRouteForRoles(roles);
       setKeepSignedInPref(keepSignedIn);
       if (keepSignedIn) {
         const { error } = await supabase.from("trusted_devices").upsert(
@@ -106,10 +105,15 @@ function LoginPage() {
   };
 
   useEffect(() => {
-    if (session && !loading && !checkingSession) {
-      void finishAuthenticatedSession(session.user.id, session.user.email);
-    }
-  }, [session]);
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled || !data.session) return;
+      void finishAuthenticatedSession(data.session.user.id, data.session.user.email);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
