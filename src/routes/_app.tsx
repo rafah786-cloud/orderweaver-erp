@@ -49,21 +49,15 @@ function AppLayout() {
 
   return (
     <CompanyProvider>
-      <AppFrame
-        allowed={allowed}
-        denied={denied}
-        roles={roles}
-      />
+      <AppFrame denied={denied} roles={roles} />
     </CompanyProvider>
   );
 }
 
 function AppFrame({
-  allowed,
   denied,
   roles,
 }: {
-  allowed: ReturnType<typeof allowedRolesFor>;
   denied: boolean;
   roles: import("@/lib/permissions").AppRole[];
 }) {
@@ -120,14 +114,14 @@ function AppFrame({
         )}
 
         <main className="app-shell-main relative flex-1 overflow-y-auto overflow-x-auto">
-          {denied ? <AccessDenied allowed={allowed ?? []} /> : <Outlet />}
+          {denied ? <AccessDenied /> : <Outlet />}
         </main>
       </div>
     </div>
   );
 }
 
-function AccessDenied({ allowed }: { allowed: string[] }) {
+function AccessDenied() {
   const { roles } = useAuth();
   const destination = defaultRouteForRoles(roles);
 
