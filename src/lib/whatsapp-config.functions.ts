@@ -60,6 +60,11 @@ export const updateWhatsAppConfig = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const parsedBaseUrl = new URL(data.base_url);
+    if (parsedBaseUrl.protocol !== "https:" || parsedBaseUrl.hostname !== "api.interakt.ai") {
+      throw new Error("WhatsApp provider URL must use the approved Interakt HTTPS endpoint");
+    }
+
     const config = {
       workspace_id: data.workspace_id,
       business_number: data.business_number,
