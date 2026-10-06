@@ -133,12 +133,15 @@ export const listTallyMigrationRuns = createServerFn({ method: "GET" })
     );
     if (companyIds.length === 0) return [];
 
+    const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+    if (activeCompanyError || !activeCompanyId) throw new Error("No active company selected");
+
     const { data, error } = await supabase
       .from("tally_migration_runs")
       .select(
         "id,company_id,source_company_name,source_company_guid,status,source_checksum,started_at,completed_at,created_by,approved_by,approved_at,notes,control_totals",
       )
-      .in("company_id", companyIds)
+      .eq("company_id", activeCompanyId)
       .order("started_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -156,7 +159,11 @@ export const validateTallyMigration = createServerFn({ method: "POST" })
       .eq("role", "admin")
       .maybeSingle();
     if (!role) throw new Error("Admin only");
-    await assertMigrationRunAccess(supabase, userId, data.runId);
+    const run = await assertMigrationRunAccess(supabase, userId, data.runId);
+    const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+    if (activeCompanyError || !activeCompanyId || run.company_id !== activeCompanyId) {
+      throw new Error("Migration run is outside the active company");
+    }
     const { data: result, error } = await supabase.rpc("validate_tally_migration_run", {
       p_run: data.runId,
     });
@@ -180,7 +187,11 @@ export const reconcileTallyMigration = createServerFn({ method: "POST" })
       .eq("role", "admin")
       .maybeSingle();
     if (!role) throw new Error("Admin only");
-    await assertMigrationRunAccess(supabase, userId, data.runId);
+    const run = await assertMigrationRunAccess(supabase, userId, data.runId);
+    const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+    if (activeCompanyError || !activeCompanyId || run.company_id !== activeCompanyId) {
+      throw new Error("Migration run is outside the active company");
+    }
     const { data: rows, error } = await supabase.rpc("reconcile_tally_migration_run", {
       p_run: data.runId,
       p_as_of: data.asOf,
