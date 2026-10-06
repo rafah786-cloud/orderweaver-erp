@@ -32,25 +32,14 @@ function escapeXml(value: string): string {
 }
 
 function dateVariable(name: string, value?: string): string {
-  return value
-    ? "<" +
-        name +
-        ' TYPE="Date">' +
-        escapeXml(value) +
-        "</" +
-        name +
-        ">"
-    : "";
+  return value ? "<" + name + ' TYPE="Date">' + escapeXml(value) + "</" + name + ">" : "";
 }
 
 /**
  * Company is always explicit. This prevents a request from accidentally
  * exporting whichever company happens to be active in the Tally UI.
  */
-export function collectionRequest(
-  collection: string,
-  options: TallyRequestOptions,
-): string {
+export function collectionRequest(collection: string, options: TallyRequestOptions): string {
   return (
     "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>" +
     "<TYPE>Collection</TYPE><ID>" +
@@ -66,10 +55,7 @@ export function collectionRequest(
   );
 }
 
-export function dataRequest(
-  report: string,
-  options: TallyRequestOptions,
-): string {
+export function dataRequest(report: string, options: TallyRequestOptions): string {
   return (
     "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>" +
     "<TYPE>Data</TYPE><ID>" +
@@ -87,11 +73,8 @@ export function dataRequest(
 
 export class TallyClient {
   constructor(
-    private readonly baseUrl =
-      process.env.TALLY_URL || "http://127.0.0.1:9000",
-    private readonly defaultTimeoutMs = Number(
-      process.env.TALLY_TIMEOUT_MS || 120000,
-    ),
+    private readonly baseUrl = process.env.TALLY_URL || "http://127.0.0.1:9000",
+    private readonly defaultTimeoutMs = Number(process.env.TALLY_TIMEOUT_MS || 120000),
   ) {}
 
   async ping(): Promise<void> {
@@ -123,9 +106,7 @@ export class TallyClient {
     });
     const responseXml = await response.text();
     if (!response.ok) {
-      throw new Error(
-        "Tally HTTP " + response.status + ": " + responseXml.slice(0, 500),
-      );
+      throw new Error("Tally HTTP " + response.status + ": " + responseXml.slice(0, 500));
     }
 
     let status = 1;
@@ -134,9 +115,7 @@ export class TallyClient {
       status = Number(parsed?.ENVELOPE?.HEADER?.STATUS ?? 1);
     } catch {}
     if (status < 0) {
-      throw new Error(
-        "Tally request " + requestName + " returned STATUS=" + status,
-      );
+      throw new Error("Tally request " + requestName + " returned STATUS=" + status);
     }
 
     return {

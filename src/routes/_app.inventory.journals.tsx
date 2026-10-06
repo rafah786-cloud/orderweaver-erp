@@ -13,12 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  sb,
-  type StockItem,
-  type Godown,
-  type StockMovementType,
-} from "@/lib/inventory";
+import { sb, type StockItem, type Godown, type StockMovementType } from "@/lib/inventory";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -51,10 +46,7 @@ function JournalsPage() {
   const itemsQ = useQuery({
     queryKey: ["stock_items_basic"],
     queryFn: async () => {
-      const { data } = await sb
-        .from("stock_items")
-        .select("id, name, unit")
-        .order("name");
+      const { data } = await sb.from("stock_items").select("id, name, unit").order("name");
       return (data ?? []) as Pick<StockItem, "id" | "name" | "unit">[];
     },
   });
@@ -67,9 +59,7 @@ function JournalsPage() {
   });
 
   const setLine = (i: number, patch: Partial<Line>) => {
-    setLines((arr) =>
-      arr.map((l, idx) => (idx === i ? { ...l, ...patch } : l)),
-    );
+    setLines((arr) => arr.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   };
 
   const addLine = () =>
@@ -83,8 +73,7 @@ function JournalsPage() {
         rate: 0,
       },
     ]);
-  const removeLine = (i: number) =>
-    setLines((a) => a.filter((_, idx) => idx !== i));
+  const removeLine = (i: number) => setLines((a) => a.filter((_, idx) => idx !== i));
 
   const save = async () => {
     const valid = lines.filter((l) => l.stock_item_id && l.quantity !== 0);
@@ -99,9 +88,7 @@ function JournalsPage() {
       to_godown_id: l.movement_type === "production_out" ? null : l.godown_id,
       movement_type: l.movement_type,
       quantity:
-        l.movement_type === "adjustment"
-          ? Number(l.quantity)
-          : Math.abs(Number(l.quantity)),
+        l.movement_type === "adjustment" ? Number(l.quantity) : Math.abs(Number(l.quantity)),
       rate: Number(l.rate),
     }));
 
@@ -118,9 +105,7 @@ function JournalsPage() {
       toast.success("Stock journal saved");
       navigate({ to: "/inventory/movements" });
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not save stock journal",
-      );
+      toast.error(error instanceof Error ? error.message : "Could not save stock journal");
     }
   };
 
@@ -136,11 +121,7 @@ function JournalsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Date</Label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div>
                 <Label>Narration</Label>
@@ -159,9 +140,7 @@ function JournalsPage() {
                     <Label className="text-xs">Item</Label>
                     <Select
                       value={l.stock_item_id}
-                      onValueChange={(v) =>
-                        setLine(i, { stock_item_id: v })
-                      }
+                      onValueChange={(v) => setLine(i, { stock_item_id: v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select item" />
@@ -177,10 +156,7 @@ function JournalsPage() {
                   </div>
                   <div className="col-span-3">
                     <Label className="text-xs">Godown</Label>
-                    <Select
-                      value={l.godown_id}
-                      onValueChange={(v) => setLine(i, { godown_id: v })}
-                    >
+                    <Select value={l.godown_id} onValueChange={(v) => setLine(i, { godown_id: v })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Godown" />
                       </SelectTrigger>
@@ -208,12 +184,8 @@ function JournalsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="adjustment">Adjustment</SelectItem>
-                        <SelectItem value="production_in">
-                          Production In
-                        </SelectItem>
-                        <SelectItem value="production_out">
-                          Production Out
-                        </SelectItem>
+                        <SelectItem value="production_in">Production In</SelectItem>
+                        <SelectItem value="production_out">Production Out</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -222,9 +194,7 @@ function JournalsPage() {
                     <Input
                       type="number"
                       value={l.quantity}
-                      onChange={(e) =>
-                        setLine(i, { quantity: Number(e.target.value) })
-                      }
+                      onChange={(e) => setLine(i, { quantity: Number(e.target.value) })}
                     />
                   </div>
                   <div className="col-span-1">
@@ -232,9 +202,7 @@ function JournalsPage() {
                     <Input
                       type="number"
                       value={l.rate}
-                      onChange={(e) =>
-                        setLine(i, { rate: Number(e.target.value) })
-                      }
+                      onChange={(e) => setLine(i, { rate: Number(e.target.value) })}
                     />
                   </div>
                   <div className="col-span-1">

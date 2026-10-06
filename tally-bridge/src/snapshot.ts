@@ -44,14 +44,8 @@ async function save(root: string, name: string, xml: string) {
   };
 }
 
-export async function snapshotCompany(
-  client: TallyClient,
-  options: SnapshotOptions,
-) {
-  const root =
-    options.outputDir +
-    "/" +
-    options.company.replace(/[^a-z0-9._-]+/gi, "_");
+export async function snapshotCompany(client: TallyClient, options: SnapshotOptions) {
+  const root = options.outputDir + "/" + options.company.replace(/[^a-z0-9._-]+/gi, "_");
   await mkdir(root, { recursive: true });
   const segments: any[] = [];
 
@@ -66,9 +60,7 @@ export async function snapshotCompany(
       kind: "collection",
       ...(await save(
         root,
-        "master-" +
-          collection.toLowerCase().replace(/[^a-z0-9]+/g, "-") +
-          ".xml",
+        "master-" + collection.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".xml",
         response.xml,
       )),
     });
@@ -100,13 +92,7 @@ export async function snapshotCompany(
         toDate: chunkEnd,
         ...(await save(
           root,
-          "daybook-" +
-            String(index).padStart(4, "0") +
-            "-" +
-            cursor +
-            "-" +
-            chunkEnd +
-            ".xml",
+          "daybook-" + String(index).padStart(4, "0") + "-" + cursor + "-" + chunkEnd + ".xml",
           response.xml,
         )),
       });
@@ -123,10 +109,6 @@ export async function snapshotCompany(
     toDate: options.toDate,
     segments,
   };
-  await writeFile(
-    root + "/manifest.json",
-    JSON.stringify(manifest, null, 2),
-    "utf8",
-  );
+  await writeFile(root + "/manifest.json", JSON.stringify(manifest, null, 2), "utf8");
   return manifest;
 }

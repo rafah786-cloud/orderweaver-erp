@@ -17,13 +17,9 @@ function value(name: string, fallback?: string): string | undefined {
 const companies = values("--company");
 const fromDate = value("--from");
 const toDate = value("--to");
-const outputDir =
-  value("--output", "./tally-snapshots") || "./tally-snapshots";
+const outputDir = value("--output", "./tally-snapshots") || "./tally-snapshots";
 const includeDayBook = !process.argv.includes("--masters-only");
-const chunkMonths = Math.max(
-  1,
-  Number(value("--chunk-months", "1") || "1"),
-);
+const chunkMonths = Math.max(1, Number(value("--chunk-months", "1") || "1"));
 
 if (!companies.length) throw new Error("At least one --company is required.");
 if (!fromDate || !toDate) throw new Error("--from and --to are required.");
@@ -40,10 +36,7 @@ for (const company of companies) {
     chunkMonths,
     company,
   });
-  const bytes = manifest.segments.reduce(
-    (n: number, s: any) => n + s.bytes,
-    0,
-  );
+  const bytes = manifest.segments.reduce((n: number, s: any) => n + s.bytes, 0);
   console.log(
     "[tally-bridge] " +
       company +
