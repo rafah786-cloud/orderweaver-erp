@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +61,7 @@ import { toast } from "sonner";
 import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
+import { useCompany } from "@/lib/company-context";
 
 export const Route = createFileRoute("/_app/invoices")({
   component: InvoicesPage,
@@ -90,7 +91,8 @@ const OVERDUE_DAYS = 90;
 
 function InvoicesPage() {
   const { hasAnyRole, user } = useAuth();
-  const canCreate = hasAnyRole(["admin", "sales"]);
+  const { activeCompany } = useCompany();
+  const canCreate = hasAnyRole(["admin", "sales"]) && !activeCompany?.code.endsWith("_MGMT");
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [partyId, setPartyId] = useState("");
@@ -107,11 +109,17 @@ function InvoicesPage() {
   const [exportYear, setExportYear] = useState(today.getFullYear());
   const [exportMonth, setExportMonth] = useState(today.getMonth() + 1);
   const [supplierGstin, setSupplierGstin] = useState("");
-  const [supplierState, setSupplierState] = useState("32");
+  const [supplierState, setSupplierState] = useState("");
   const [exporting, setExporting] = useState(false);
   const [payInv, setPayInv] = useState<InvoiceRow | null>(null);
   const [payAmount, setPayAmount] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const gstin = activeCompany?.gstin?.trim().toUpperCase() ?? "";
+    setSupplierGstin(gstin);
+    setSupplierState(/^\d{2}/.test(gstin) ? gstin.slice(0, 2) : "");
+  }, [activeCompany?.id, activeCompany?.gstin]);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
@@ -428,8 +436,14 @@ function InvoicesPage() {
   });
 
   const handleExport = async () => {
-    if (!/^\d{2}[A-Z0-9]{13}$/.test(supplierGstin.trim().toUpperCase())) {
-      toast.error("Enter a valid 15-character supplier GSTIN");
+    const gstin = supplierGstin.trim().toUpperCase();
+    const stateCode = supplierState.trim();
+    if (!/^\d{2}[A-Z0-9]{13}$/.test(gstin)) {
+      toast.error("Configure or enter a valid 15-character GSTIN");
+      return;
+    }
+    if (!/^\d{2}$/.test(stateCode)) {
+      toast.error("Configure the company GSTIN so its state code can be determined");
       return;
     }
     setExporting(true);
