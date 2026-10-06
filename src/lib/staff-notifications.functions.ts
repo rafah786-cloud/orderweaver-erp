@@ -99,6 +99,17 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     if (!emps || emps.length === 0) return { ok: true, sent: 0, recipients: 0 };
 
     const enrichedVars: Record<string, string | number | null | undefined> = {};
+    const expectedRefTable: Record<StaffEvent, string> = {
+      "staff.sales_order.created": "sales_orders",
+      "staff.purchase_request.created": "purchase_bills",
+      "staff.approval.pending": "approvals",
+      "staff.invoice.overdue": "invoices",
+      "staff.payment.received": "vouchers",
+      "staff.dispatch.ready": "production_orders",
+    };
+    if (data.ref_table && data.ref_table !== expectedRefTable[data.event]) {
+      throw new Error("Reference table does not match the notification event");
+    }
     if (data.event === "staff.sales_order.created") {
       if (!data.ref_id) throw new Error("Sales-order notification requires a reference");
       const { data: order, error } = await context.supabase.from("sales_orders")
@@ -187,9 +198,9 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       const baseLog = {
         party_kind: "staff" as const,
         event_type: data.event,
-        ref_table: data.ref_table ?? null,
+        ref_table: expectedRefTable[data.event],
         ref_id: data.ref_id ?? null,
-        payload: { employee_id: emp.id, department: emp.department, vars: data.vars },
+        payload: { employee_id: emp.id, department: emp.department, source: "verified-record" },
       };
       if (!to) {
         await logWhatsAppNotification({
@@ -288,10 +299,13 @@ export const departmentEmployeeCounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("employees")
       .select("department, phone, is_active")
+      .eq("company_id", companyId)
       .eq("is_active", true);
     const counts: Record<string, { total: number; with_phone: number }> = {};
     for (const d of DEPARTMENTS) counts[d] = { total: 0, with_phone: 0 };
