@@ -1,5 +1,4 @@
 import { sb } from "@/lib/accounting";
-import { COMPANY } from "@/lib/print-config";
 import { buildGstr1Json } from "@/lib/gstr1";
 
 export type ReturnType = "GSTR-1" | "GSTR-3B" | "GSTR-9";
@@ -154,9 +153,9 @@ export async function fetchPartiesMap(ids: string[]): Promise<Map<string, Party>
 }
 
 // HSN/SAC summary aggregator — for GSTR-1 Table 12.
-export function buildHsnSummary(invoices: InvoiceFull[], parties: Map<string, Party>): HsnRow[] {
+export function buildHsnSummary(invoices: InvoiceFull[], parties: Map<string, Party>, supplierStateCode: string): HsnRow[] {
   const map = new Map<string, HsnRow>();
-  const supplierState = COMPANY.stateCode;
+  const supplierState = supplierStateCode.padStart(2, "0");
   for (const inv of invoices) {
     const party = parties.get(inv.party_id);
     const buyerState = (party?.state_code || supplierState).padStart(2, "0");
@@ -210,6 +209,7 @@ export function buildHsnSummary(invoices: InvoiceFull[], parties: Map<string, Pa
 export function summariseGstr1(
   invoices: InvoiceFull[],
   parties: Map<string, Party>,
+  supplierStateCode: string,
 ): GstReturnSummary {
   let b2b = 0,
     b2cs = 0,
@@ -218,7 +218,7 @@ export function summariseGstr1(
     cgst = 0,
     sgst = 0,
     totalInv = 0;
-  const supplierState = COMPANY.stateCode;
+  const supplierState = supplierStateCode.padStart(2, "0");
   for (const inv of invoices) {
     const party = parties.get(inv.party_id);
     const isB2b = !!party?.gstin && /^\d{2}[A-Z0-9]{13}$/.test(party.gstin.trim());
@@ -252,8 +252,9 @@ export function buildGstr3b(
   invoices: InvoiceFull[],
   purchases: PurchaseFull[],
   parties: Map<string, Party>,
+  supplierStateCode: string,
 ): Gstr3bSummary {
-  const supplierState = COMPANY.stateCode;
+  const supplierState = supplierStateCode.padStart(2, "0");
   const s: Gstr3bSummary = {
     outward_taxable: 0,
     outward_zero_rated: 0,
@@ -320,8 +321,16 @@ export async function generateReturn(opts: {
   year: number;
   month: number;
   gstin?: string;
+  supplierStateCode: string;
 }): Promise<{ id: string }> {
-  const gstin = opts.gstin || COMPANY.gstin;
+  const gstin = opts.gstin?.trim().toUpperCase();
+  if (!gstin || !/^\d{2}[A-Z0-9]{13}$/.test(gstin)) {
+    throw new Error("Configure a valid 15-character GSTIN for the active company before generating a return");
+  }
+  const supplierState = opts.supplierStateCode.trim();
+  if (!/^\d{2}$/.test(supplierState)) {
+    throw new Error("The active company GSTIN/state code is not configured");
+  }
   const invoices = await fetchPeriodInvoices(opts.year, opts.month);
   const partyIds = [...new Set(invoices.map((i) => i.party_id))];
   const parties = await fetchPartiesMap(partyIds);
@@ -338,10 +347,10 @@ export async function generateReturn(opts: {
       parties: [...parties.values()],
       supplierStateCode: COMPANY.stateCode,
     });
-    summary = summariseGstr1(invoices, parties);
+    summary = summariseGstr1(invoices, parties, supplierState);
   } else if (opts.type === "GSTR-3B") {
     const purchases = await fetchPeriodPurchases(opts.year, opts.month);
-    const s3b = buildGstr3b(invoices, purchases, parties);
+    const s3b = buildGstr3b(invoices, purchases, parties, supplierState);
     payload = { gstin, fp: `${String(opts.month).padStart(2, "0")}${opts.year}`, ...s3b };
     summary = {
       invoice_count: invoices.length,
