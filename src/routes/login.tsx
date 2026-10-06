@@ -17,8 +17,15 @@ import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
 import drspine from "@/assets/brands/drspine.jpeg.asset.json";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
-    safeLocalRedirect(s.redirect) ? { redirect: safeLocalRedirect(s.redirect) } : {},
+  validateSearch: (s: Record<string, unknown>): { redirect?: string; mode?: "customer" | "staff" | "supplier" | "admin" } => {
+    const mode = ["customer", "staff", "supplier", "admin"].includes(String(s.mode))
+      ? (String(s.mode) as "customer" | "staff" | "supplier" | "admin")
+      : undefined;
+    return {
+      redirect: safeLocalRedirect(s.redirect) ? safeLocalRedirect(s.redirect) : undefined,
+      mode,
+    };
+  },
 
   head: () => ({
     meta: [
@@ -47,8 +54,10 @@ const subBrands = [
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { session } = useAuth();
-  const { redirect } = useSearch({ from: "/login" });
+  const { session, roles, profile } = useAuth();
+  const { redirect, mode } = useSearch({ from: "/login" });
+  const modeLabel = mode === "customer" ? "Customer Login" : mode === "supplier" ? "Supplier Login" : mode === "admin" ? "Admin / Management Login" : "Staff Login";
+  const requiredRole = mode === "customer" ? "customer" : mode === "supplier" ? "vendor" : mode === "admin" ? "admin" : null;
   const target = redirect ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,6 +77,13 @@ function LoginPage() {
       toast.error(error.message);
       return;
     }
+    if (mode && profile?.status === "approved" && requiredRole && !roles.includes(requiredRole as any)) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      toast.error(`This account is not enabled for ${modeLabel.toLowerCase()}.`);
+      return;
+    }
+
     // Persist the preference; useAuth reads it to decide whether to run the
     // 2-minute inactivity timeout on non-trusted devices.
     setKeepSignedInPref(keepSignedIn);
@@ -188,9 +204,17 @@ function LoginPage() {
               className="text-xl sm:text-2xl font-semibold"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Abood Tradings ERP
+              {modeLabel}
             </h2>
-            <p className="text-sm text-muted-foreground">Sign in to your account</p>
+            <p className="text-sm text-muted-foreground">
+              {mode === "customer"
+                ? "Access your customer account"
+                : mode === "supplier"
+                  ? "Access your supplier account"
+                  : mode === "admin"
+                    ? "Access the management workspace"
+                    : "Access the staff workspace"}
+            </p>
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
