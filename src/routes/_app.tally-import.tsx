@@ -105,7 +105,8 @@ function TallyImportPage() {
   const stageMigration = useServerFn(stageTallyMigration);
   const listRuns = useServerFn(listTallyMigrationRuns);
   const validateMigration = useServerFn(validateTallyMigration);
-  const { activeCompany } = useCompany();
+  const { activeCompany, companies } = useCompany();
+  const [targetCompanyId, setTargetCompanyId] = useState("");
 
   const [rawGroups, setRawGroups] = useState("Raw Materials, Components, Fabric, Foam");
   const [finishedGroups, setFinishedGroups] = useState("Finished Goods, Mattresses, Products");
@@ -126,6 +127,7 @@ function TallyImportPage() {
     (parsed.vouchers.length > 0 || parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
   const integrity = parsed ? inspectTallyAccounting(parsed) : null;
 
+  const targetCompany = companies.find((c) => c.id === (targetCompanyId || activeCompany?.id));
   if (!hasRole("admin")) {
     return (
       <PageBody>
@@ -160,6 +162,7 @@ function TallyImportPage() {
       const migrationOut = parseTallyMasters(xml, { ...opts, preserveLifecycle: true });
       setParsed(out);
       setMigrationParsed(migrationOut);
+      if (!targetCompanyId && activeCompany?.id) setTargetCompanyId(activeCompany.id);
       const total =
         out.customers.length +
         out.vendors.length +
@@ -189,7 +192,11 @@ function TallyImportPage() {
   };
 
   const stageMigrationRun = async () => {
-    if (!migrationParsed || !activeCompany) return;
+    if (!migrationParsed || !targetCompany) return;
+    if (targetCompany.id !== activeCompany?.id) {
+      toast.error("Switch the active company to the selected target before posting live masters. Staging itself remains safe.");
+      return;
+    }
     setStaging(true);
     try {
       const encoder = new TextEncoder();
@@ -324,8 +331,8 @@ function TallyImportPage() {
       };
       const res = await stageMigration({
         data: {
-          companyId: activeCompany.id,
-          sourceCompanyName: activeCompany.display_name,
+          companyId: targetCompany.id,
+          sourceCompanyName: targetCompany.display_name,
           sourceCompanyGuid: null,
           sourceChecksum: checksum,
           controlTotals,
