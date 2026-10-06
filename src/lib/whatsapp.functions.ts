@@ -166,6 +166,7 @@ async function sendForEvent(opts: {
     template_name: null as string | null,
     messageId: "",
   };
+}
 
 /** Sales/Admin → notify vendor about a new or updated purchase order */
 export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
