@@ -53,6 +53,30 @@ CREATE POLICY "Analyst roles can read AI documents"
     )
   );
 
+DROP POLICY IF EXISTS "Operational roles can write AI documents" ON public.ai_documents;
+CREATE POLICY "Operational roles can write AI documents"
+  ON public.ai_documents FOR ALL TO authenticated
+  USING (
+    company_id = public.current_company_id()
+    AND public.has_company_access(company_id)
+    AND (
+      public.has_role(auth.uid(), 'admin')
+      OR public.has_role(auth.uid(), 'accountant')
+      OR public.has_role(auth.uid(), 'sales')
+      OR public.has_role(auth.uid(), 'production')
+    )
+  )
+  WITH CHECK (
+    company_id = public.current_company_id()
+    AND public.has_company_access(company_id)
+    AND (
+      public.has_role(auth.uid(), 'admin')
+      OR public.has_role(auth.uid(), 'accountant')
+      OR public.has_role(auth.uid(), 'sales')
+      OR public.has_role(auth.uid(), 'production')
+    )
+  );
+
 DROP POLICY IF EXISTS "Approved staff can read AI document chunks" ON public.ai_document_chunks;
 DROP POLICY IF EXISTS "Analyst roles can read AI document chunks" ON public.ai_document_chunks;
 CREATE POLICY "Analyst roles can read AI document chunks"
@@ -61,6 +85,38 @@ CREATE POLICY "Analyst roles can read AI document chunks"
     EXISTS (
       SELECT 1
       FROM public.ai_documents d
+      WHERE d.id = ai_document_chunks.document_id
+        AND d.company_id = public.current_company_id()
+        AND public.has_company_access(d.company_id)
+        AND (
+          public.has_role(auth.uid(), 'admin')
+          OR public.has_role(auth.uid(), 'accountant')
+          OR public.has_role(auth.uid(), 'sales')
+          OR public.has_role(auth.uid(), 'production')
+        )
+    )
+  );
+
+DROP POLICY IF EXISTS "Operational roles can write AI document chunks" ON public.ai_document_chunks;
+CREATE POLICY "Operational roles can write AI document chunks"
+  ON public.ai_document_chunks FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.ai_documents d
+      WHERE d.id = ai_document_chunks.document_id
+        AND d.company_id = public.current_company_id()
+        AND public.has_company_access(d.company_id)
+        AND (
+          public.has_role(auth.uid(), 'admin')
+          OR public.has_role(auth.uid(), 'accountant')
+          OR public.has_role(auth.uid(), 'sales')
+          OR public.has_role(auth.uid(), 'production')
+        )
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.ai_documents d
       WHERE d.id = ai_document_chunks.document_id
         AND d.company_id = public.current_company_id()
         AND public.has_company_access(d.company_id)
@@ -85,6 +141,26 @@ CREATE POLICY "Analyst roles can read AI insights"
       OR public.has_role(auth.uid(), 'accountant')
       OR public.has_role(auth.uid(), 'sales')
       OR public.has_role(auth.uid(), 'production')
+    )
+  );
+
+DROP POLICY IF EXISTS "Admins and accountants manage AI insights" ON public.ai_insights;
+CREATE POLICY "Admins and accountants manage AI insights"
+  ON public.ai_insights FOR ALL TO authenticated
+  USING (
+    company_id = public.current_company_id()
+    AND public.has_company_access(company_id)
+    AND (
+      public.has_role(auth.uid(), 'admin')
+      OR public.has_role(auth.uid(), 'accountant')
+    )
+  )
+  WITH CHECK (
+    company_id = public.current_company_id()
+    AND public.has_company_access(company_id)
+    AND (
+      public.has_role(auth.uid(), 'admin')
+      OR public.has_role(auth.uid(), 'accountant')
     )
   );
 
