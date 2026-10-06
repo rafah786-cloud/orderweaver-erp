@@ -736,6 +736,21 @@ export const createAiProposal = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+
+    if (data.sourceDocumentId) {
+      const { data: sourceDoc, error: sourceError } = await context.supabase
+        .from("ai_documents")
+        .select("id")
+        .eq("id", data.sourceDocumentId)
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (sourceError || !sourceDoc) {
+        throw new Error("Source document is not visible in the active company");
+      }
+    }
+
     const { data: row, error } = await context.supabase
       .from("ai_proposals")
       .insert({
@@ -821,6 +836,7 @@ export const reviewAiProposal = createServerFn({ method: "POST" })
 export const listAiAuditLog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertRole(context.supabase, ["admin"]);
     const { data, error } = await context.supabase
       .from("ai_audit_log")
       .select("id, feature, action, model, status, error, duration_ms, prompt_summary, created_at")
