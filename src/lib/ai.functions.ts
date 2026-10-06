@@ -758,6 +758,7 @@ export const createAiProposal = createServerFn({ method: "POST" })
         summary: data.summary,
         payload: data.payload as never,
         source_document_id: data.sourceDocumentId ?? null,
+        company_id: companyId,
         created_by: context.userId,
       })
       .select("id")
