@@ -17,9 +17,13 @@ function value(name: string, fallback?: string): string | undefined {
 const companies = values("--company");
 const fromDate = value("--from");
 const toDate = value("--to");
-const outputDir = value("--output", "./tally-snapshots") || "./tally-snapshots";
+const outputDir =
+  value("--output", "./tally-snapshots") || "./tally-snapshots";
 const includeDayBook = !process.argv.includes("--masters-only");
-const chunkMonths = Math.max(1, Number(value("--chunk-months", "1") || "1"));
+const chunkMonths = Math.max(
+  1,
+  Number(value("--chunk-months", "1") || "1"),
+);
 
 if (!companies.length) throw new Error("At least one --company is required.");
 if (!fromDate || !toDate) throw new Error("--from and --to are required.");
@@ -29,11 +33,26 @@ const client = new TallyClient();
 for (const company of companies) {
   console.log("[tally-bridge] Pulling " + company);
   const manifest = await snapshotCompany(client, {
-    company, fromDate, toDate, outputDir, includeDayBook, chunkMonths,
+    fromDate,
+    toDate,
+    outputDir,
+    includeDayBook,
+    chunkMonths,
+    company,
   });
-  const bytes = manifest.segments.reduce((n: number, s: any) => n + s.bytes, 0);
-  console.log("[tally-bridge] " + company + ": " + manifest.segments.length +
-    " segments, " + (bytes / 1024 / 1024).toFixed(1) + " MiB");
+  const bytes = manifest.segments.reduce(
+    (n: number, s: any) => n + s.bytes,
+    0,
+  );
+  console.log(
+    "[tally-bridge] " +
+      company +
+      ": " +
+      manifest.segments.length +
+      " segments, " +
+      (bytes / 1024 / 1024).toFixed(1) +
+      " MiB",
+  );
 }
 
 console.log("[tally-bridge] Read-only extraction complete.");
