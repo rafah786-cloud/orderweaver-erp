@@ -25,12 +25,22 @@ DROP POLICY IF EXISTS "pay write admin/hr" ON public.payslips;
 CREATE POLICY "pay write admin/hr active company"
   ON public.payslips FOR ALL TO authenticated
   USING (
-    public.has_role(auth.uid(), 'admin')
-    OR public.has_role(auth.uid(), 'hr')
+    (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'hr'))
+    AND EXISTS (
+      SELECT 1 FROM public.employees e
+      WHERE e.id = payslips.employee_id
+        AND e.company_id = public.current_company_id()
+        AND public.has_company_access(e.company_id)
+    )
   )
   WITH CHECK (
-    public.has_role(auth.uid(), 'admin')
-    OR public.has_role(auth.uid(), 'hr')
+    (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'hr'))
+    AND EXISTS (
+      SELECT 1 FROM public.employees e
+      WHERE e.id = payslips.employee_id
+        AND e.company_id = public.current_company_id()
+        AND public.has_company_access(e.company_id)
+    )
   );
 
 -- The active-company employee relationship remains the hard boundary for
