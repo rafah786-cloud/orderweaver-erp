@@ -262,10 +262,12 @@ function ShiftCard() {
   const { data: shift } = useQuery({
     queryKey: ["shift"],
     queryFn: async () => {
+      const { data: companyId } = await supabase.rpc("current_company_id");
+      if (!companyId) throw new Error("No active company selected");
       const { data, error } = await supabase
         .from("shift_settings")
         .select("*")
-        .limit(1)
+        .eq("company_id", companyId)
         .maybeSingle();
       if (error) throw error;
       return data;
