@@ -2,15 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function assertAdmin(db: any, userId: string) {
+  const { data, error } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  if (!data) throw new Error("Forbidden");
+  if (error || !data) throw new Error("Forbidden");
+}
+
+async function activeCompanyId(db: any): Promise<string> {
+  const { data, error } = await db.rpc("current_company_id");
+  if (error || !data) throw new Error("No active company selected");
+  return data;
 }
 
 export const KNOWN_EVENT_KEYS = [
@@ -31,7 +36,7 @@ export const KNOWN_EVENT_KEYS = [
 export const listWhatsAppTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("whatsapp_templates")
@@ -62,7 +67,7 @@ export const upsertWhatsAppTemplate = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const row = {
       template_name: data.template_name,
@@ -94,7 +99,7 @@ export const deleteWhatsAppTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("whatsapp_templates").delete().eq("id", data.id);
     if (error) throw error;
@@ -117,8 +122,27 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const companyId = await activeCompanyId(context.supabase);
+
+    // Admin reporting remains company-scoped unless the user explicitly uses
+    // the separate consolidated accounting views.
+    const [{ data: customerRows }, { data: vendorRows }, { data: memberRows }] = await Promise.all([
+      supabaseAdmin.from("parties").select("id").eq("company_id", companyId),
+      supabaseAdmin.from("suppliers").select("id").eq("company_id", companyId),
+      supabaseAdmin.from("user_company_access").select("user_id").eq("company_id", companyId).eq("can_view", true),
+    ]);
+    const customerIds = (customerRows ?? []).map((r) => r.id);
+    const vendorIds = (vendorRows ?? []).map((r) => r.id);
+    const memberIds = (memberRows ?? []).map((r) => r.user_id);
+    const scopeClauses = [
+      customerIds.length ? `and(party_kind.eq.customer,party_id.in.(${customerIds.join(",")}))` : null,
+      vendorIds.length ? `and(party_kind.eq.vendor,party_id.in.(${vendorIds.join(",")}))` : null,
+      memberIds.length ? `and(party_kind.in.(staff,admin),party_id.in.(${memberIds.join(",")}))` : null,
+    ].filter(Boolean);
+    if (scopeClauses.length === 0) throw new Error("No company-scoped notification recipients");
+    const scopedOr = scopeClauses.join(",");
     let q = supabaseAdmin
       .from("notification_log")
       .select(
@@ -127,6 +151,7 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
       .eq("channel", "whatsapp")
       .order("sent_at", { ascending: false })
       .limit(data.limit);
+    q = q.or(scopedOr);
     if (data.from) q = q.gte("sent_at", data.from);
     if (data.to) q = q.lte("sent_at", data.to);
     if (data.party_kind) q = q.eq("party_kind", data.party_kind);
@@ -186,11 +211,13 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
 export const listCustomersForFilter = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const companyId = await activeCompanyId(context.supabase);
     const { data } = await supabaseAdmin
       .from("parties")
       .select("id, name")
+      .eq("company_id", companyId)
       .order("name")
       .limit(500);
     return { customers: data ?? [] };
@@ -199,11 +226,13 @@ export const listCustomersForFilter = createServerFn({ method: "GET" })
 export const listVendorsForFilter = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const companyId = await activeCompanyId(context.supabase);
     const { data } = await supabaseAdmin
       .from("suppliers")
       .select("id, name")
+      .eq("company_id", companyId)
       .order("name")
       .limit(500);
     return { vendors: data ?? [] };
