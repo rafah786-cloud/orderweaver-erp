@@ -82,6 +82,7 @@ function LoginPage() {
 
       const roles = (roleRows ?? []).map((row) => row.role as AppRole);
       if (!profile || profile.status !== "approved") {
+        await supabase.auth.signOut();
         navigate({ to: "/pending", replace: true });
         return;
       }
