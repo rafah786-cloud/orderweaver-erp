@@ -15,20 +15,34 @@ import corporateCss from "../corporate.css?url";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+    <div className="min-h-screen bg-[#f7f7f4] px-4 py-10 text-[#17324d]">
+      <div className="mx-auto flex min-h-[80vh] max-w-xl items-center justify-center">
+        <div className="w-full rounded-2xl border border-[#dbe3e8] bg-white p-8 text-center shadow-[0_24px_60px_-32px_rgba(15,34,53,.35)] sm:p-10">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-[#17324d] text-sm font-bold text-white">
+            Z
+          </div>
+          <div className="mt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">
+            House of Abood Tradings
+          </div>
+          <h1 className="mt-3 text-6xl font-semibold tracking-[-0.04em]">404</h1>
+          <h2 className="mt-2 text-xl font-semibold">Page not found</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#6b7788]">
+            The page you requested does not exist or may have moved.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-md bg-[#17324d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#11283e]"
+            >
+              Return to website
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center rounded-md border border-[#cfd8e2] bg-white px-4 py-2.5 text-sm font-semibold text-[#243a50] hover:bg-[#f3f6f8]"
+            >
+              Portal login
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -39,21 +53,29 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   console.error(error);
   const router = useRouter();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold text-foreground">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          An unexpected error occurred. Please try again.
-        </p>
-        <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
-          className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Try again
-        </button>
+    <div className="min-h-screen bg-[#f7f7f4] px-4 py-10 text-[#17324d]">
+      <div className="mx-auto flex min-h-[80vh] max-w-xl items-center justify-center">
+        <div className="w-full rounded-2xl border border-[#dbe3e8] bg-white p-8 text-center shadow-[0_24px_60px_-32px_rgba(15,34,53,.35)] sm:p-10">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-[#17324d] text-sm font-bold text-white">
+            Z
+          </div>
+          <div className="mt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">
+            Mattress Maestro
+          </div>
+          <h1 className="mt-3 text-2xl font-semibold">Something went wrong</h1>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#6b7788]">
+            An unexpected error occurred. Your saved business data has not been intentionally changed by this screen.
+          </p>
+          <button
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+            className="mt-7 inline-flex items-center justify-center rounded-md bg-[#17324d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#11283e]"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     </div>
   );
