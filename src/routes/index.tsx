@@ -64,7 +64,7 @@ const loginItems = [
   { label: "Admin / Management", mode: "admin" as const },
 ];
 
-function LoginMenu({ mobile = false }: { mobile?: boolean }) {
+function LoginMenu({ mobile = false, compact = false }: { mobile?: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
 
@@ -81,8 +81,9 @@ function LoginMenu({ mobile = false }: { mobile?: boolean }) {
     "flex items-center gap-1.5 rounded-md text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c] focus-visible:ring-offset-2";
   const desktopButton =
     "border border-[#cfd8df] bg-white px-4 py-2.5 text-[#19324b] shadow-sm hover:border-[#b7c5d2] hover:bg-[#f7f9fb]";
-  const mobileButton =
-    "w-full justify-between border border-white/15 bg-white/5 px-4 py-3 text-white hover:bg-white/10";
+  const mobileButton = compact
+    ? "justify-between border border-white/15 bg-white/5 px-3 py-2.5 text-white hover:bg-white/10"
+    : "w-full justify-between border border-white/15 bg-white/5 px-4 py-3 text-white hover:bg-white/10";
 
   return (
     <div
