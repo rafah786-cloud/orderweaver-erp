@@ -85,9 +85,8 @@ export const quickAddParty = createServerFn({ method: "POST" })
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const to = normalizeWa(data.phone);
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await context.supabase
       .from("parties")
       .insert({ name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: true })
       .select("id, name")
@@ -102,9 +101,8 @@ export const quickAddSupplier = createServerFn({ method: "POST" })
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const to = normalizeWa(data.phone);
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await context.supabase
       .from("suppliers")
       .insert({ name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: true })
       .select("id, name")
@@ -118,8 +116,7 @@ export const deleteParty = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("parties").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("parties").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -129,8 +126,7 @@ export const deleteSupplier = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("suppliers").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("suppliers").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -153,9 +149,12 @@ export const broadcastPromo = createServerFn({ method: "POST" })
     const nameVar = data.audience === "parties" ? "customer_name" : "vendor_name";
     const template = await resolveTemplate(eventKey);
     if (!template?.template_name) throw new Error("No approved promotional template is active");
+    const { data: activeCompanyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !activeCompanyId) throw new Error("No active company selected");
     const { data: rows } = await supabaseAdmin
       .from(table)
-      .select("id, name, phone, whatsapp_number, whatsapp_opt_in, promo_opt_in")
+      .select("id, name, phone, whatsapp_number, whatsapp_opt_in, promo_opt_in, company_id")
+      .eq("company_id", activeCompanyId)
       .eq("whatsapp_opt_in", true)
       .eq("promo_opt_in", true);
 
