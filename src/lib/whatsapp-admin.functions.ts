@@ -177,7 +177,7 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
           .map((r) => r.party_id as string),
       ),
     );
-    const vendorIds = Array.from(
+    const vendorLogIds = Array.from(
       new Set(
         (rows ?? [])
           .filter((r) => r.party_kind === "vendor" && r.party_id)
