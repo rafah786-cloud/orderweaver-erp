@@ -47,12 +47,32 @@ export const setEventChannel = createServerFn({ method: "POST" })
       .eq("role", "admin")
       .maybeSingle();
     if (roleError || !admin) throw new Error("Forbidden");
+    const { data: eventRow, error: eventError } = await supabase
+      .from("notification_events")
+      .select("event_key, is_active")
+      .eq("event_key", data.event_key)
+      .maybeSingle();
+    if (eventError || !eventRow) throw new Error("Notification event does not exist");
+
+    let templateName = data.template_name ?? null;
+    if (data.channel === "whatsapp" && templateName) {
+      const { data: template } = await supabase
+        .from("whatsapp_templates")
+        .select("template_name, event_key, is_active")
+        .eq("template_name", templateName)
+        .eq("event_key", data.event_key)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!template) throw new Error("Selected WhatsApp template is not active for this event");
+      templateName = template.template_name;
+    }
+
     const { error } = await supabase.from("notification_event_channels").upsert(
       {
-        event_key: data.event_key,
+        event_key: eventRow.event_key,
         channel: data.channel,
-        is_enabled: data.is_enabled ?? false,
-        template_name: data.template_name ?? null,
+        is_enabled: Boolean(eventRow.is_active) && (data.is_enabled ?? false),
+        template_name: templateName,
         subject_template: data.subject_template ?? null,
         body_template: data.body_template ?? null,
       },
