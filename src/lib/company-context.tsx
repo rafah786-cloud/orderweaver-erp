@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Company = {
+export type Company = {
   id: string;
   code: string;
   legal_name: string;
