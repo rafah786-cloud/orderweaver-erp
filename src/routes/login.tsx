@@ -9,12 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { safeLocalRedirect } from "@/lib/safe-local-redirect";
 import { getDeviceId, getDeviceName, setKeepSignedInPref } from "@/lib/device";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
-import softnights from "@/assets/brands/softnights.jpeg.asset.json";
-import mrcoir from "@/assets/brands/mrcoir.jpeg.asset.json";
-import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
-import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
-import drspine from "@/assets/brands/drspine.jpeg.asset.json";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { redirect?: string; mode?: "customer" | "staff" | "supplier" | "admin" } => {
@@ -26,258 +22,244 @@ export const Route = createFileRoute("/login")({
       mode,
     };
   },
-
   head: () => ({
     meta: [
       { title: "Sign in | Mattress Maestro ERP" },
-      { name: "description", content: "Sign in securely to the House of Abood Tradings ERP." },
+      { name: "description", content: "Secure access to the House of Abood Tradings business workspace." },
       { property: "og:title", content: "Sign in | Mattress Maestro ERP" },
-      {
-        property: "og:description",
-        content: "Sign in securely to the House of Abood Tradings ERP.",
-      },
+      { property: "og:description", content: "Secure access to the House of Abood Tradings business workspace." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
-
   component: LoginPage,
 });
 
-const subBrands = [
-  { name: "OrthoMedic", desc: "Orthopedic", src: ortho.url },
-  { name: "Dr. Spine", desc: "Spine Care", src: drspine.url },
-  { name: "Mr. Coir", desc: "Coir Range", src: mrcoir.url },
-  { name: "Soft Nights", desc: "Comfort", src: softnights.url },
-  { name: "BYZ Bedding", desc: "Bedding", src: byz.url },
-];
+const STAFF_ROLES = ["admin", "accountant", "sales", "production", "hr", "employee"] as const;
+
+function modeAllows(
+  mode: "customer" | "staff" | "supplier" | "admin" | undefined,
+  roles: string[],
+) {
+  if (!mode) return true;
+  if (mode === "customer") return roles.includes("customer");
+  if (mode === "supplier") return roles.includes("vendor");
+  if (mode === "admin") return roles.includes("admin");
+  return roles.some((role) => STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number]));
+}
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { session, roles, profile } = useAuth();
+  const { session } = useAuth();
   const { redirect, mode } = useSearch({ from: "/login" });
-  const modeLabel = mode === "customer" ? "Customer Login" : mode === "supplier" ? "Supplier Login" : mode === "admin" ? "Admin / Management Login" : "Staff Login";
-  const requiredRole = mode === "customer" ? "customer" : mode === "supplier" ? "vendor" : mode === "admin" ? "admin" : null;
-  const target = redirect ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(false);
+
+  const finishAuthenticatedSession = async (userId: string, userEmail?: string | null) => {
+    setCheckingSession(true);
+    try {
+      const [{ data: profile, error: profileError }, { data: roleRows, error: roleError }] = await Promise.all([
+        supabase.from("profiles").select("full_name, email, status").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+
+      if (profileError) throw profileError;
+      if (roleError) throw roleError;
+
+      const roles = (roleRows ?? []).map((row) => String(row.role));
+      if (!profile || profile.status !== "approved") {
+        navigate({ to: "/pending", replace: true });
+        return;
+      }
+
+      if (!modeAllows(mode, roles)) {
+        await supabase.auth.signOut();
+        toast.error("This account is not enabled for " + (mode ?? "this login type") + ".");
+        return;
+      }
+
+      const target = redirect ?? defaultRouteFromStrings(roles);
+      setKeepSignedInPref(keepSignedIn);
+      if (keepSignedIn) {
+        const { error } = await supabase.from("trusted_devices").upsert(
+          {
+            user_id: userId,
+            device_id: getDeviceId(),
+            device_name: getDeviceName(),
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+            last_used_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,device_id" },
+        );
+        if (error) console.warn("[trusted_devices] upsert failed", error);
+      }
+      toast.success("Welcome back" + (userEmail ? ", " + userEmail : ""));
+      navigate({ to: target, replace: true });
+    } catch (error) {
+      console.error("Login session check failed", error);
+      toast.error("We could not finish signing you in. Please try again.");
+    } finally {
+      setCheckingSession(false);
+    }
+  };
 
   useEffect(() => {
-    if (session) navigate({ to: target, replace: true });
-  }, [session, target, navigate]);
+    if (session && !loading && !checkingSession) {
+      void finishAuthenticatedSession(session.user.id, session.user.email);
+    }
+  }, [session]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error || !data.user) {
       setLoading(false);
-      toast.error(error.message);
-      return;
-    }
-    if (mode && profile?.status === "approved" && requiredRole && !roles.includes(requiredRole as any)) {
-      await supabase.auth.signOut();
-      setLoading(false);
-      toast.error(`This account is not enabled for ${modeLabel.toLowerCase()}.`);
+      toast.error(error?.message ?? "Sign in failed");
       return;
     }
 
-    // Persist the preference; useAuth reads it to decide whether to run the
-    // 2-minute inactivity timeout on non-trusted devices.
-    setKeepSignedInPref(keepSignedIn);
-    // If the user opted in, mark this browser as a trusted device for their
-    // account. Trust is per-user, per-device.
-    if (keepSignedIn && data.user) {
-      const { error: tdErr } = await supabase.from("trusted_devices").upsert(
-        {
-          user_id: data.user.id,
-          device_id: getDeviceId(),
-          device_name: getDeviceName(),
-          user_agent: navigator.userAgent,
-          last_used_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,device_id" },
-      );
-      if (tdErr) console.warn("[trusted_devices] upsert failed", tdErr);
-    }
+    // Check mode and approval against fresh server state after authentication.
     setLoading(false);
-    toast.success("Welcome back");
-    navigate({ to: target, replace: true });
+    await finishAuthenticatedSession(data.user.id, data.user.email);
   };
 
+  const heading =
+    mode === "customer"
+      ? "Customer Login"
+      : mode === "supplier"
+        ? "Supplier Login"
+        : mode === "admin"
+          ? "Admin / Management Login"
+          : mode === "staff"
+            ? "Staff Login"
+            : "Sign in";
+
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div
-        aria-hidden
-        className="ambient-blob h-[520px] w-[520px] -top-40 -left-40"
-        style={{ background: "oklch(0.55 0.18 280 / 0.55)" }}
-      />
-      <div
-        aria-hidden
-        className="ambient-blob h-[420px] w-[420px] top-1/3 -right-32"
-        style={{ background: "oklch(0.70 0.14 85 / 0.35)" }}
-      />
-      <div
-        aria-hidden
-        className="ambient-blob h-[360px] w-[360px] bottom-[-120px] left-1/3"
-        style={{ background: "oklch(0.50 0.16 250 / 0.45)" }}
-      />
-
-      <main className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-start gap-6 px-4 py-6 sm:justify-center sm:gap-10 sm:py-12 lg:flex-row lg:gap-16">
-        {/* Brand showcase */}
-        <section aria-labelledby="brand-heading" className="w-full max-w-xl space-y-5 sm:space-y-8">
-          <div className="text-center lg:text-left">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              Est. Premium Sleep & Comfort
-            </p>
-            <h1
-              id="brand-heading"
-              className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              House of <span className="gold-text">Abood Tradings</span>
-            </h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
-              Premium Sleep & Comfort Solutions
-            </p>
-          </div>
-
-          {/* Zizz hero */}
-          <div className="glass rounded-2xl sm:rounded-3xl p-3 sm:p-4 gold-ring">
-            <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-white">
-              <img
-                src={zizz.url}
-                alt="Zizz — premium flagship brand"
-                className="w-full aspect-[16/6] object-contain p-2 sm:p-3"
-              />
+    <div className="min-h-screen bg-[#f5f7fa] text-[#172033]">
+      <header className="border-b border-[#dce3ea] bg-white">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" className="flex items-center gap-3" aria-label="Back to Zizz corporate website">
+            <div className="flex h-9 w-14 items-center justify-center rounded-md border border-[#dce3ea] bg-white px-1.5">
+              <img src={zizz.url} alt="Zizz" className="max-h-7 w-full object-contain" />
             </div>
-          </div>
+            <div className="hidden min-[420px]:block leading-tight">
+              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8490a0]">House of</div>
+              <div className="text-sm font-bold text-[#20374e]">Abood Tradings</div>
+            </div>
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-[#526273] hover:bg-[#f2f5f8]"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to website
+          </Link>
+        </div>
+      </header>
 
-          {/* Sub-brand grid */}
-          <div>
-            <p className="mb-2 sm:mb-3 text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground text-center lg:text-left">
-              Our Specialized Brands
+      <main className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_420px] lg:py-14">
+        <section className="hidden lg:block">
+          <div className="max-w-xl">
+            <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">
+              Secure workspace
+            </div>
+            <h1 className="text-5xl font-semibold leading-[1.03] tracking-[-0.04em] text-[#17324d]">
+              The business behind better sleep.
+            </h1>
+            <p className="mt-5 max-w-lg text-base leading-7 text-[#657486]">
+              Mattress Maestro brings sales, production, inventory, finance, people and business intelligence into one controlled workspace.
             </p>
-            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6" role="list">
-              {subBrands.map((b) => (
-                <li key={b.name} className="w-[calc(33.333%-0.667rem)] sm:w-[calc(33.333%-1rem)]">
-                  <div
-                    className="glass-sm rounded-lg sm:rounded-xl overflow-hidden flex flex-col"
-                    title={b.name}
-                  >
-                    <div className="bg-white/95 aspect-square flex items-center justify-center">
-                      <img
-                        src={b.src}
-                        alt={b.name}
-                        className="w-full h-full object-contain p-1 sm:p-1.5"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="px-1.5 py-1.5 text-center">
-                      <div className="text-[11px] sm:text-xs font-semibold leading-tight truncate">
-                        {b.name}
-                      </div>
-                      <div className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight truncate">
-                        {b.desc}
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-8 flex flex-wrap gap-3 text-xs text-[#5f6f80]">
+              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">Multi-company controls</span>
+              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">Accounting & GST</span>
+              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">AI business intelligence</span>
+            </div>
           </div>
         </section>
 
-        {/* Login card */}
-        <section
-          aria-labelledby="login-heading"
-          className="glass w-full max-w-md rounded-2xl p-6 sm:p-8"
-        >
-          <div className="text-center space-y-2 mb-5 sm:mb-6">
-            <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden bg-white">
-              <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain" />
+        <section aria-labelledby="login-heading" className="rounded-xl border border-[#dce3ea] bg-white p-6 shadow-[0_18px_50px_-28px_rgba(16,34,53,.35)] sm:p-8">
+          <div className="mb-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-[#dce3ea] bg-[#f7f9fb]">
+              <ShieldCheck className="h-5 w-5 text-[#17324d]" aria-hidden="true" />
             </div>
-            <h2
-              id="login-heading"
-              className="text-xl sm:text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {modeLabel}
+            <h2 id="login-heading" className="mt-4 text-2xl font-semibold tracking-tight text-[#17324d]">
+              {heading}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-[#6b7788]">
               {mode === "customer"
-                ? "Access your customer account"
+                ? "Access orders, invoices and customer information."
                 : mode === "supplier"
-                  ? "Access your supplier account"
+                  ? "Access purchase orders, documents and supplier information."
                   : mode === "admin"
-                    ? "Access the management workspace"
-                    : "Access the staff workspace"}
+                    ? "Access administration and management controls."
+                    : "Sign in to your approved Mattress Maestro account."}
             </p>
           </div>
+
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="password">Password</Label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md"
+                  className="text-xs font-semibold text-[#742f3f] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
+
             <div className="flex items-start gap-2">
               <Checkbox
                 id="keep-signed-in"
                 checked={keepSignedIn}
-                onCheckedChange={(v) => setKeepSignedIn(v === true)}
+                onCheckedChange={(value) => setKeepSignedIn(value === true)}
                 className="mt-0.5"
               />
-              <div className="grid gap-0.5 leading-tight">
+              <div className="leading-tight">
                 <Label htmlFor="keep-signed-in" className="cursor-pointer text-sm font-medium">
                   Keep me signed in
                 </Label>
-                <p className="text-[11px] text-muted-foreground">
-                  Marks this device as trusted. Untrusted devices are signed out after 2 minutes of
-                  inactivity.
+                <p className="mt-1 text-[11px] leading-5 text-[#758394]">
+                  This trusts the current device. Untrusted devices sign out after the configured inactivity period.
                 </p>
               </div>
             </div>
-            <Button type="submit" className="w-full btn-gold" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+
+            <Button type="submit" className="w-full btn-gold" disabled={loading || checkingSession}>
+              {loading || checkingSession ? "Signing in…" : "Sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+
+            <div className="border-t border-[#e6ebef] pt-4 text-center text-sm text-[#6b7788]">
               No account?{" "}
-              <Link
-                to="/signup"
-                search={redirect ? { redirect } : {}}
-                className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md"
-              >
+              <Link to="/signup" className="font-semibold text-[#742f3f] hover:underline">
                 Request access
               </Link>
-            </p>
+            </div>
           </form>
         </section>
       </main>
     </div>
   );
+}
+
+function defaultRouteFromStrings(roles: string) {
+  const list = roles.split(",");
+  if (list.includes("admin")) return "/dashboard";
+  if (list.includes("accountant")) return "/accounting";
+  if (list.includes("sales")) return "/dashboard";
+  if (list.includes("production")) return "/production";
+  if (list.includes("hr")) return "/employees";
+  if (list.includes("employee")) return "/attendance";
+  if (list.includes("customer")) return "/dashboard";
+  if (list.includes("vendor")) return "/vendor";
+  return "/pending";
 }
