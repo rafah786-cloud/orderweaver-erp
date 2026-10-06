@@ -45,7 +45,10 @@ function VendorShell() {
               Orders, purchase documents and account statement
             </div>
           </div>
-          <nav aria-label="Supplier portal" className="order-3 flex w-full gap-1 overflow-x-auto pb-0.5 sm:order-none sm:w-auto sm:flex-1 sm:flex-wrap">
+          <nav
+            aria-label="Supplier portal"
+            className="order-3 flex w-full gap-1 overflow-x-auto pb-0.5 sm:order-none sm:w-auto sm:flex-1 sm:flex-wrap"
+          >
             {NAV.map((n) => {
               const Icon = n.icon;
               const active = n.exact
