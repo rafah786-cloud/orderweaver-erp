@@ -81,7 +81,7 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("vendor_invites")
-      .select("id, supplier_id, email, expires_at, accepted_at")
+      .select("id, supplier_id, email, expires_at, accepted_at, invited_by")
       .eq("token_hash", hashToken(data.token))
       .maybeSingle();
     if (!row) throw new Error("Invalid invite");
@@ -148,7 +148,7 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
         active_company_id: supplier.company_id,
         status: "approved",
         approved_at: new Date().toISOString(),
-        approved_by: context.userId,
+        approved_by: row.invited_by ?? null,
       })
       .eq("id", context.userId);
     if (activeErr) throw new Error(activeErr.message);
