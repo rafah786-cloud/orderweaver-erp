@@ -48,7 +48,14 @@ function query(data: any, error: any = null) {
   const result = { data, error };
   const q: any = { then: (resolve: any) => Promise.resolve(result).then(resolve) };
   for (const method of ["select", "eq", "in", "limit", "order", "upsert", "update"]) {
-    q[method] = vi.fn(() => q);
+    q[method] = vi.fn((column: string, values?: unknown) => {
+      if (method === "in" && column === "role" && Array.isArray(result.data)) {
+        result.data = result.data.filter(
+          (row: any) => Array.isArray(values) && values.includes(row?.role),
+        );
+      }
+      return q;
+    });
   }
   q.maybeSingle = vi.fn(async () => result);
   return q;
@@ -217,10 +224,10 @@ describe("caller-scoped notification actions", () => {
 
 describe("approved promotional broadcasts", () => {
   it("rejects missing templates before reading recipients or sending", async () => {
-    mocks.adminFrom.mockImplementation((table: string) =>
+    const from = vi.fn((table: string) =>
       table === "user_roles" ? query({ role: "admin" }) : query(null),
     );
-    await expect(call(broadcastPromo, { audience: "parties" }, vi.fn())).rejects.toThrow(
+    await expect(call(broadcastPromo, { audience: "parties" }, from)).rejects.toThrow(
       "No approved",
     );
     expect(mocks.sendFreeform).not.toHaveBeenCalled();
