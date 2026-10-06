@@ -100,9 +100,7 @@ describe("caller-scoped notification actions", () => {
   });
 
   it("rejects staff notification events not allowed to the caller role", async () => {
-    const from = vi.fn((table: string) =>
-      table === "user_roles" ? query([]) : query(null),
-    );
+    const from = vi.fn((table: string) => (table === "user_roles" ? query([]) : query(null)));
     await expect(
       call(
         notifyStaffEvent,
