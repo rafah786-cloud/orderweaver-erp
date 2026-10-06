@@ -75,7 +75,7 @@ function LoginMenu() {
   }, []);
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={menuRef} className="relative" onPointerLeave={() => setOpen(false)}>
       <button
         type="button"
         aria-haspopup="menu"
@@ -91,6 +91,7 @@ function LoginMenu() {
 
       {open && (
         <div
+          id="login-menu"
           role="menu"
           className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-md border border-[#dbe3e9] bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,40,60,.45)]"
         >
