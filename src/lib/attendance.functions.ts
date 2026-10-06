@@ -64,11 +64,16 @@ export const deletePunchEvent = createServerFn({ method: "POST" })
     const companyId = await getActiveCompanyId(context.supabase);
     const { data: row } = await supabaseAdmin
       .from("punch_events")
-      .select("employee_id, punch_time, employees!inner(company_id)")
+      .select("id, employee_id, punch_time, employees!inner(company_id)")
       .eq("id", data.id)
       .eq("employees.company_id", companyId)
       .maybeSingle();
-    const { error } = await supabaseAdmin.from("punch_events").delete().eq("id", data.id);
+    if (!row) throw new Error("Punch event not found in the active company");
+    const { error } = await supabaseAdmin
+      .from("punch_events")
+      .delete()
+      .eq("id", data.id)
+      .eq("employee_id", row.employee_id);
     if (error) fail("deletePunchEvent", error, "Failed to delete punch. Please try again.");
     if (row?.employee_id) {
       const d = new Date(row.punch_time).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
