@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Building2 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import zizz from "@/assets/brands/zizz.png.asset.json";
 import { setKeepSignedInPref } from "@/lib/device";
 import { safeLocalRedirect } from "@/lib/safe-local-redirect";
 
@@ -65,14 +66,54 @@ function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-6 w-6" />
+    <div className="min-h-screen bg-[#f5f7fa] text-[#172033]">
+      <header className="border-b border-[#dce3ea] bg-white">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" className="flex items-center gap-3" aria-label="Back to Zizz corporate website">
+            <div className="flex h-9 w-14 items-center justify-center rounded-md border border-[#dce3ea] bg-white px-1.5">
+              <img src={zizz.url} alt="Zizz" className="max-h-7 w-full object-contain" />
+            </div>
+            <div className="hidden min-[420px]:block leading-tight">
+              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8490a0]">House of</div>
+              <div className="text-sm font-bold text-[#20374e]">Abood Tradings</div>
+            </div>
+          </Link>
+          <Link
+            to="/login"
+            search={redirect ? { redirect } : {}}
+            className="rounded-md px-3 py-2 text-sm font-semibold text-[#526273] hover:bg-[#f2f5f8]"
+          >
+            Sign in
+          </Link>
+        </div>
+      </header>
+
+      <main className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_420px] lg:py-14">
+        <section className="hidden lg:block">
+          <div className="max-w-xl">
+            <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">Request access</div>
+            <h1 className="text-5xl font-semibold leading-[1.03] tracking-[-0.04em] text-[#17324d]">
+              A controlled workspace for the business behind better sleep.
+            </h1>
+            <p className="mt-5 max-w-lg text-base leading-7 text-[#657486]">
+              Mattress Maestro brings sales, production, inventory, finance, people and business intelligence into one governed workspace.
+            </p>
+            <div className="mt-8 rounded-lg border border-[#dce3ea] bg-white p-4 text-sm">
+              <div className="font-semibold text-[#20374e]">ABOOD TRADINGS by default</div>
+              <p className="mt-1 text-xs leading-5 text-[#738295]">
+                New accounts begin with the default company. An administrator assigns additional company access and the appropriate role after approval.
+              </p>
+            </div>
           </div>
-          <CardTitle className="text-2xl">Request Access</CardTitle>
-          <CardDescription>An admin will approve your account</CardDescription>
+        </section>
+
+        <Card className="w-full max-w-md border-[#dce3ea] shadow-[0_18px_50px_-28px_rgba(16,34,53,.35)] lg:justify-self-end">
+        <CardHeader className="space-y-2 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-[#dce3ea] bg-[#f7f9fb]">
+            <ShieldCheck className="h-5 w-5 text-[#17324d]" />
+          </div>
+          <CardTitle className="text-2xl tracking-tight text-[#17324d]">Request Access</CardTitle>
+          <CardDescription className="text-[#6b7788]">Submit your details for administrator approval.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -99,8 +140,8 @@ function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              New accounts are automatically registered under <span className="font-medium text-foreground">ABOOD TRADINGS</span>. Company access is assigned by an administrator after approval.
+            <div className="rounded-lg border border-[#dce3ea] bg-[#f7f9fb] px-3 py-3 text-xs leading-5 text-[#66778a]">
+              New accounts are automatically registered under <span className="font-semibold text-[#20374e]">ABOOD TRADINGS</span>. Company access and the appropriate workspace role are assigned by an administrator after approval.
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -133,12 +174,12 @@ function SignupPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating…" : "Request access"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="border-t border-[#e6ebef] pt-4 text-center text-sm text-[#6b7788]">
               Already have an account?{" "}
               <Link
                 to="/login"
                 search={redirect ? { redirect } : {}}
-                className="font-medium text-primary hover:underline"
+                className="font-semibold text-[#742f3f] hover:underline"
               >
                 Sign in
               </Link>
