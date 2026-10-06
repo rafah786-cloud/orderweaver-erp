@@ -159,8 +159,8 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       enrichedVars.payment_amount = entries
         .reduce((sum, row) => sum + Number(row.credit ?? 0), 0)
         .toFixed(2);
-      const partyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)
-        ?.ledger_accounts?.mapped_party_id;
+      const partyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)?.ledger_accounts
+        ?.mapped_party_id;
       if (!partyId) throw new Error("Payment voucher is not linked to a customer");
       const { data: party } = await context.supabase
         .from("parties")
