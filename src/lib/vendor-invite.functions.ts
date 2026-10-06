@@ -30,10 +30,23 @@ export const createVendorInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+
+    // Supplier selection is resolved through the caller's RLS so an admin
+    // cannot create an invite for a supplier from another company.
+    const { data: supplier, error: supplierError } = await context.supabase
+      .from("suppliers")
+      .select("id, company_id")
+      .eq("id", data.supplier_id)
+      .eq("company_id", companyId)
+      .maybeSingle();
+    if (supplierError || !supplier) throw new Error("Supplier not found in the active company");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const token = randomBytes(24).toString("base64url");
     const { error } = await supabaseAdmin.from("vendor_invites").insert({
-      supplier_id: data.supplier_id,
+      supplier_id: supplier.id,
       email: data.email.toLowerCase(),
       token_hash: hashToken(token),
       invited_by: context.userId,
@@ -84,36 +97,61 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
       throw new Error("Invite email does not match your account");
     }
 
-    // Link supplier to this auth user
+    const { data: supplier } = await supabaseAdmin
+      .from("suppliers")
+      .select("id, company_id, user_id")
+      .eq("id", row.supplier_id)
+      .maybeSingle();
+    if (!supplier?.company_id) throw new Error("Supplier company is unavailable");
+    if (supplier.user_id && supplier.user_id !== context.userId) {
+      throw new Error("This supplier account is already linked");
+    }
+
+    // Link the supplier only when it is still unclaimed.
     const { error: sErr } = await supabaseAdmin
       .from("suppliers")
       .update({ user_id: context.userId })
-      .eq("id", row.supplier_id);
+      .eq("id", row.supplier_id)
+      .is("user_id", null);
     if (sErr) throw new Error(sErr.message);
 
+    // Vendor access is explicitly bound to the supplier's company.
+    const { error: accessErr } = await supabaseAdmin
+      .from("user_company_access")
+      .upsert(
+        { user_id: context.userId, company_id: supplier.company_id, can_view: true },
+        { onConflict: "user_id,company_id" },
+      );
+    if (accessErr) throw new Error(accessErr.message);
+
     // Grant vendor role (idempotent)
-    await supabaseAdmin
+    const { error: roleErr } = await supabaseAdmin
       .from("user_roles")
       .upsert(
         { user_id: context.userId, role: "vendor" as any },
         { onConflict: "user_id,role", ignoreDuplicates: true },
       );
+    if (roleErr) throw new Error(roleErr.message);
 
-    // Auto-approve vendor profile
-    await supabaseAdmin
+    // Put the invited vendor into the supplier's company after membership is granted.
+    const { error: activeErr } = await supabaseAdmin
       .from("profiles")
       .update({
+        active_company_id: supplier.company_id,
         status: "approved",
         approved_at: new Date().toISOString(),
         approved_by: context.userId,
       })
       .eq("id", context.userId);
+    if (activeErr) throw new Error(activeErr.message);
 
-    // Mark invite accepted
-    await supabaseAdmin
+    // Mark invite accepted.
+    const { error: inviteErr } = await supabaseAdmin
       .from("vendor_invites")
       .update({ accepted_at: new Date().toISOString() })
-      .eq("id", row.id);
+      .eq("id", row.id)
+      .is("accepted_at", null);
+    if (inviteErr) throw new Error(inviteErr.message);
 
-    return { ok: true, supplier_id: row.supplier_id };
+    return { ok: true, supplier_id: row.supplier_id, company_id: supplier.company_id };
   });
