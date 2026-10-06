@@ -13,13 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  sb,
-  nextStockJournalNumber,
-  type StockItem,
-  type Godown,
-  type StockMovementType,
-} from "@/lib/inventory";
+import { sb, type StockItem, type Godown, type StockMovementType } from "@/lib/inventory";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -73,73 +67,42 @@ function JournalsPage() {
       toast.error("Add at least one line");
       return;
     }
-    const num = await nextStockJournalNumber();
-    const { data: j, error: jErr } = await sb
-      .from("stock_journals")
-      .insert({
-        journal_number: num,
-        journal_date: date,
-        narration: narration || null,
-        journal_type: "adjustment",
-      })
-      .select("id")
-      .single();
-    if (jErr) {
-      toast.error(jErr.message);
-      return;
-    }
-    const entries = valid.map((l, idx) => ({
-      journal_id: j.id,
+
+    const journalLines = valid.map((l) => ({
       stock_item_id: l.stock_item_id,
-      from_godown_id: null,
-      to_godown_id: l.godown_id || null,
-      direction: l.quantity >= 0 ? "in" : "out",
-      quantity: l.quantity,
-      rate: l.rate,
-      amount: l.quantity * l.rate,
-      line_order: idx,
+      from_godown_id: l.movement_type === "production_out" ? l.godown_id : null,
+      to_godown_id: l.movement_type === "production_out" ? null : l.godown_id,
+      movement_type: l.movement_type,
+      quantity:
+        l.movement_type === "adjustment"
+          ? Number(l.quantity)
+          : Math.abs(Number(l.quantity)),
+      rate: Number(l.rate),
     }));
-    await sb.from("stock_journal_entries").insert(entries);
-    for (const [idx, l] of valid.entries()) {
-      const godown = l.godown_id;
-      if (!godown) throw new Error("Godown is required");
-      const key = `journal:${j.id}:${idx}`;
-      const qty = Math.abs(Number(l.quantity));
-      const fn = Number(l.quantity) >= 0 ? "post_stock_receipt" : "post_stock_issue";
-      const args =
-        Number(l.quantity) >= 0
-          ? {
-              p_item: l.stock_item_id,
-              p_godown: godown,
-              p_qty: qty,
-              p_rate: Number(l.rate),
-              p_date: date,
-              p_idempotency: key,
-              p_source_table: "stock_journals",
-              p_source_id: j.id,
-            }
-          : {
-              p_item: l.stock_item_id,
-              p_godown: godown,
-              p_qty: qty,
-              p_date: date,
-              p_idempotency: key,
-              p_source_table: "stock_journals",
-              p_source_id: j.id,
-              p_movement_type: l.movement_type,
-            };
-      const { error: postErr } = await sb.rpc(fn, args);
-      if (postErr) throw postErr;
+
+    try {
+      // The database function owns the entire transaction: header, entries and
+      // every stock movement either commit together or roll back together.
+      // @ts-expect-error RPC type is generated after the migration is applied.
+      const { data: journalId, error } = await sb.rpc("create_stock_journal", {
+        p_date: date,
+        p_narration: narration || null,
+        p_lines: journalLines,
+      });
+      if (error) throw error;
+      if (!journalId) throw new Error("Journal was not created");
+      toast.success("Stock journal saved");
+      navigate({ to: "/inventory/movements" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save stock journal");
     }
-    toast.success(`Journal ${num} saved`);
-    navigate({ to: "/inventory/movements" });
   };
 
   return (
     <>
       <PageHeader
         title="New Stock Journal"
-        description="Adjust, transfer or consume stock manually"
+        description="Adjust stock or record production consumption/output"
       />
       <PageBody>
         <Card>
@@ -206,8 +169,6 @@ function JournalsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="adjustment">Adjustment</SelectItem>
-                        <SelectItem value="transfer_in">Transfer In</SelectItem>
-                        <SelectItem value="transfer_out">Transfer Out</SelectItem>
                         <SelectItem value="production_in">Production In</SelectItem>
                         <SelectItem value="production_out">Production Out</SelectItem>
                       </SelectContent>
