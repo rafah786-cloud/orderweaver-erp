@@ -29,7 +29,7 @@ export const Route = createFileRoute("/api/public/biometric/punch")({
 
         const { data: device } = await supabaseAdmin
           .from("device_settings")
-          .select("id, api_key_hash, is_active")
+          .select("id, api_key_hash, is_active, company_id")
           .eq("device_id", device_id)
           .maybeSingle();
 
@@ -40,12 +40,17 @@ export const Route = createFileRoute("/api/public/biometric/punch")({
 
         const { data: emp } = await supabaseAdmin
           .from("employees")
-          .select("id")
+          .select("id, company_id")
           .eq("employee_code", employee_code)
+          .eq("company_id", device.company_id)
           .maybeSingle();
 
+        if (!emp) {
+          return new Response("Employee not registered for this device company", { status: 422 });
+        }
+
         const { error: insErr } = await supabaseAdmin.from("punch_events").insert({
-          employee_id: emp?.id ?? null,
+          employee_id: emp.id,
           employee_code,
           device_id,
           punch_type,
