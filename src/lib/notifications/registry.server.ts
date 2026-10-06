@@ -88,9 +88,19 @@ export async function listProviders() {
       has_implementation: Boolean(implementation),
       missing_env: missingEnv,
       ready: Boolean(implementation) && missingEnv.length === 0,
-      // Never return persisted provider configuration or secret-key names to the browser.
-      config: {},
-      secret_env_keys: [],
+      // Return only non-secret configuration needed for the admin settings screen.
+      // Secrets themselves remain in project environment variables and are never exposed.
+      config:
+        record.channel === "whatsapp" && record.name === "interakt"
+          ? {
+              workspace_id: record.config?.workspace_id ?? "",
+              business_number: record.config?.business_number ?? "",
+              sender_name: record.config?.sender_name ?? "",
+              base_url: record.config?.base_url ?? "",
+              default_language: record.config?.default_language ?? "",
+            }
+          : {},
+      secret_env_keys: record.secret_env_keys,
     };
   });
 }
