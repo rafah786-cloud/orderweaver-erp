@@ -70,7 +70,8 @@ function DashboardPage() {
   const isProduction = hasAnyRole(["production"]);
   const isHR = hasAnyRole(["hr"]);
   const isCustomer = hasAnyRole(["customer"]);
-  const isAccountant = hasAnyRole(["accountant"]);\n  const isEmployee = hasAnyRole(["employee"]) && !isAdmin && !isHR && !isAccountant;
+  const isAccountant = hasAnyRole(["accountant"]);
+  const isEmployee = hasAnyRole(["employee"]) && !isAdmin && !isHR && !isAccountant;
 
   return (
     <>
@@ -93,7 +94,8 @@ function DashboardPage() {
           {isAdmin && <AdminPanels />}
           {isSales && !isAdmin && <SalesPanels />}
           {isProduction && !isAdmin && <ProductionPanels />}
-          {isHR && !isAdmin && <HRPanels />}\n          {isAccountant && !isAdmin && <AccountsPanels />}
+          {isHR && !isAdmin && <HRPanels />}
+          {isAccountant && !isAdmin && <AccountsPanels />}
           {isCustomer && !isAdmin && <CustomerPanels />}
           {isEmployee && <EmployeePanels />}
         </section>
