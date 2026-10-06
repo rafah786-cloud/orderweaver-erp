@@ -118,7 +118,7 @@ export const dispatchTestEvent = createServerFn({ method: "POST" })
         event_key: z.string().min(1).max(120),
         phone: z.string().max(32).optional(),
         email: z.string().email().max(320).optional(),
-        user_ids: z.array(z.string().uuid()).max(50).optional(),
+        user_ids: z.array(z.string().uuid()).max(1).optional(),
         variables: z.record(z.string(), z.any()).optional(),
       })
       .parse(d),
@@ -141,9 +141,42 @@ export const dispatchTestEvent = createServerFn({ method: "POST" })
     if (eventError || !eventRow) throw new Error("Notification event is not active");
 
     const recipientCount =
-      Number(Boolean(data.phone)) + Number(Boolean(data.email)) + Number((data.user_ids ?? []).length > 0);
+      Number(Boolean(data.phone)) +
+      Number(Boolean(data.email)) +
+      Number((data.user_ids ?? []).length > 0);
     if (recipientCount !== 1) throw new Error("Select exactly one test recipient");
-    if ((data.user_ids ?? []).length > 1) throw new Error("A test event may target only one user");
+
+    const { data: profile, error: profileError } = await context.supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (profileError || !profile?.email) throw new Error("Unable to verify the test recipient");
+
+    if (data.phone) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: provider } = await supabaseAdmin
+        .from("notification_providers")
+        .select("config")
+        .eq("channel", "whatsapp")
+        .eq("name", "interakt")
+        .maybeSingle();
+      const cfg = (provider?.config as Record<string, unknown> | null) ?? {};
+      const configured = String(cfg.business_number ?? "").replace(/[\s\-()]/g, "");
+      const requested = data.phone.replace(/[\s\-()]/g, "");
+      if (!configured || requested !== configured) {
+        throw new Error("WhatsApp test messages are restricted to the configured business number");
+      }
+    } else if (data.email) {
+      if (data.email.toLowerCase() !== profile.email.toLowerCase()) {
+        throw new Error("Email test messages are restricted to your signed-in admin email");
+      }
+    } else {
+      const requested = data.user_ids?.[0];
+      if (requested !== context.userId) {
+        throw new Error("In-app test messages are restricted to your signed-in admin account");
+      }
+    }
 
     const { dispatchNotificationEvent } = await import("@/lib/notifications/engine.server");
     return dispatchNotificationEvent({
