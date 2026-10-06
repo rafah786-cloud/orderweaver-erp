@@ -70,7 +70,7 @@ function DashboardPage() {
   const isProduction = hasAnyRole(["production"]);
   const isHR = hasAnyRole(["hr"]);
   const isCustomer = hasAnyRole(["customer"]);
-  const isEmployee = hasAnyRole(["employee"]) && !isAdmin && !isHR;
+  const isAccountant = hasAnyRole(["accountant"]);\n  const isEmployee = hasAnyRole(["employee"]) && !isAdmin && !isHR && !isAccountant;
 
   return (
     <>
@@ -93,7 +93,7 @@ function DashboardPage() {
           {isAdmin && <AdminPanels />}
           {isSales && !isAdmin && <SalesPanels />}
           {isProduction && !isAdmin && <ProductionPanels />}
-          {isHR && !isAdmin && <HRPanels />}
+          {isHR && !isAdmin && <HRPanels />}\n          {isAccountant && !isAdmin && <AccountsPanels />}
           {isCustomer && !isAdmin && <CustomerPanels />}
           {isEmployee && <EmployeePanels />}
         </section>
@@ -259,6 +259,31 @@ function WhySection() {
         ))}
       </div>
     </section>
+  );
+}
+
+function AccountsPanels() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        { to: "/accounting/trial-balance", title: "Trial Balance", text: "Review ledger balances and posting integrity.", icon: IndianRupee },
+        { to: "/accounting/profit-loss", title: "Profit & Loss", text: "Review income, costs and period performance.", icon: TrendingUp },
+        { to: "/accounting/balance-sheet", title: "Balance Sheet", text: "Review assets, liabilities and equity.", icon: Wallet },
+        { to: "/gst", title: "GST & Tax", text: "Returns, HSN/SAC and e-invoice controls.", icon: FileText },
+      ].map(({ to, title, text, icon: Icon }) => (
+        <Link key={to} to={to} className="group rounded-lg border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
+              <Icon className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="font-semibold text-sm text-foreground">{title}</div>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{text}</p>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
   );
 }
 
