@@ -41,7 +41,8 @@ function normalizePhone(raw: string): string | null {
 }
 
 function WhatsAppSettings() {
-  const { user, profile } = useAuth();
+  const { user, profile, hasAnyRole } = useAuth();
+  const isInternalUser = hasAnyRole(["admin", "accountant", "sales", "production", "hr", "employee"]);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -71,6 +72,9 @@ function WhatsAppSettings() {
   }, [data]);
 
   const save = async () => {
+    if (!isInternalUser && department) {
+      setDepartment("");
+    }
     if (!user?.id) return;
     const normalized = normalizePhone(whatsapp);
     if (normalized === null) {
@@ -136,6 +140,7 @@ function WhatsAppSettings() {
                 </p>
               </div>
 
+              {isInternalUser && (
               <div className="space-y-2">
                 <Label htmlFor="dept">Department</Label>
                 <Select value={department} onValueChange={setDepartment} disabled={isLoading}>
@@ -155,6 +160,7 @@ function WhatsAppSettings() {
                   this matches.
                 </p>
               </div>
+              )}
 
               <div className="flex items-start justify-between gap-4 rounded-md border p-4">
                 <div className="space-y-1">
