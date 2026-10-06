@@ -14,6 +14,7 @@
   - [x] Replace manual voucher and number-series client writes with the authenticated atomic posting path
   - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation against existing live records
   - [x] Phase 2 canonical bill-wise receivable/payable repository model and isolated tests
+  - [x] Canonical sales/purchase subledger → atomic GL → bill → settlement → reversal chain validated in a disposable PostgreSQL database; taxed invoices fail closed until verified component tax data exists
   - [x] Phase 3 stock ledger hardening: immutable movements, weighted-average issues, valued transfers and reversal safety prepared
   - [x] Phase 3 production integration functions prepared for BOM consumption, finished-goods receipt and dispatch using mapped stock items
   - [ ] Phase 3 opening stock valuation: obtain source valuation/rate from Tally before assigning any value; zero-rate opening stock remains quantity-only
