@@ -131,6 +131,11 @@ function ApprovalsPage() {
     try {
       const ids = companyDrafts[userId] ?? fallback;
       await setCompanyAccessFn({ data: { user_id: userId, company_ids: ids } });
+      setCompanyDrafts((d) => {
+        const next = { ...d };
+        delete next[userId];
+        return next;
+      });
       toast.success("Company access updated");
       qc.invalidateQueries({ queryKey: ["all-profiles"] });
     } catch (e) {
@@ -166,7 +171,7 @@ function ApprovalsPage() {
                   </TableRow>
                 ) : users?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No users yet.
                     </TableCell>
                   </TableRow>
@@ -225,6 +230,7 @@ function ApprovalsPage() {
                                     <label key={company.id} className="flex items-start gap-2 rounded-md p-2 hover:bg-muted cursor-pointer">
                                       <Checkbox
                                         checked={selected.includes(company.id)}
+                                        disabled={company.code === "ABOOD"}
                                         onCheckedChange={() => toggleCompany(u.id, company.id, selected)}
                                       />
                                       <span className="leading-tight">
