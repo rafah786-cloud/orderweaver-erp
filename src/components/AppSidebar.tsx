@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ROUTE_ROLES } from "@/lib/permissions";
 import { useState, useEffect } from "react";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
+import { AccountMenu } from "@/components/AccountMenu";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard": LayoutDashboard,
@@ -336,7 +337,7 @@ export function MobileTopBar() {
         </SheetContent>
       </Sheet>
       <CompanySwitcher />
-      <div className="w-9" aria-hidden />
+      <AccountMenu mobile />
     </header>
   );
 }
