@@ -92,7 +92,6 @@ function PartiesPage() {
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
   const [promoOpen, setPromoOpen] = useState(false);
-  const [promoMsg, setPromoMsg] = useState("");
   const [editing, setEditing] = useState<PartyRow | null>(null);
   const [form, setForm] = useState<Omit<PartyRow, "id">>(empty);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -107,19 +106,11 @@ function PartiesPage() {
   const sendStatement = async (p: PartyRow) => {
     setSendingId(p.id);
     try {
-      const out = Number(outstandingMap.get(p.id)?.outstanding ?? 0);
-      const body =
-        `Zizz Mattress — Statement of Account\n` +
-        `Account: ${p.name}\n` +
-        `Closing balance: ₹${out.toFixed(2)}\n` +
-        `Login to the portal to download your full ledger statement.`;
       const r = await notifyCustomer({
         data: {
           party_id: p.id,
           event: "ledger.statement_ready",
-          ref_table: "parties",
           ref_id: p.id,
-          message: body,
         },
       });
       if (r?.ok) toast.success("Statement sent on WhatsApp");
@@ -229,7 +220,7 @@ function PartiesPage() {
     }
     try {
       await quickAdd({ data: { name: quickForm.name.trim(), phone: quickForm.phone.trim() } });
-      toast.success("Customer added — welcome message queued");
+      toast.success("Customer added");
       setQuickOpen(false);
       setQuickForm({ name: "", phone: "" });
       qc.invalidateQueries({ queryKey: ["parties"] });
@@ -250,15 +241,10 @@ function PartiesPage() {
   };
 
   const doBroadcast = async () => {
-    if (!promoMsg.trim()) {
-      toast.error("Enter a message");
-      return;
-    }
     try {
-      const r = await broadcast({ data: { audience: "parties", message: promoMsg.trim() } });
+      const r = await broadcast({ data: { audience: "parties" } });
       toast.success(`Promo sent to ${r.sent}/${r.total} customers`);
       setPromoOpen(false);
-      setPromoMsg("");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Broadcast failed");
     }
@@ -550,15 +536,13 @@ function PartiesPage() {
                 placeholder="10-digit mobile or +91…"
               />
             </Field>
-            <p className="text-xs text-muted-foreground">
-              A WhatsApp welcome greeting will be sent automatically.
-            </p>
+            <p className="text-xs text-muted-foreground">No message is sent automatically.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setQuickOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={doQuickAdd}>Add & Greet</Button>
+            <Button onClick={doQuickAdd}>Add Customer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -569,16 +553,8 @@ function PartiesPage() {
             <DialogTitle>Send Marketing Promo</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2">
-            <Field label="Message">
-              <Textarea
-                rows={4}
-                value={promoMsg}
-                onChange={(e) => setPromoMsg(e.target.value)}
-                placeholder="Your promotional message…"
-              />
-            </Field>
             <p className="text-xs text-muted-foreground">
-              Sent to all customers with WhatsApp opt-in enabled.
+              Sends the active approved promotional template to opted-in customers.
             </p>
           </div>
           <DialogFooter>

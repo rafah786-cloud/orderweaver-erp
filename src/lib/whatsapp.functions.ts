@@ -45,6 +45,95 @@ async function resolveTemplate(eventKey: string) {
   return data;
 }
 
+async function resolveCustomerEventReference(
+  db: any,
+  event: string,
+  refId: string,
+  partyId: string,
+): Promise<{ table: string; vars: Record<string, string | number> }> {
+  if (event === "sales_order.created") {
+    const { data } = await db
+      .from("sales_orders")
+      .select("id, party_id, order_number, total_amount")
+      .eq("id", refId)
+      .eq("party_id", partyId)
+      .maybeSingle();
+    if (!data) throw new Error("Sales order does not belong to this customer");
+    return {
+      table: "sales_orders",
+      vars: { order_no: data.order_number, order_value: Number(data.total_amount).toFixed(2) },
+    };
+  }
+  if (event === "production_order.ready" || event === "dispatch.update") {
+    const { data } = await db
+      .from("production_orders")
+      .select("id, production_number, tracking_number, transporter_name, sales_orders!inner(order_number, party_id)")
+      .eq("id", refId)
+      .eq("sales_orders.party_id", partyId)
+      .maybeSingle();
+    if (!data) throw new Error("Production order does not belong to this customer");
+    const order = Array.isArray(data.sales_orders) ? data.sales_orders[0] : data.sales_orders;
+    return {
+      table: "production_orders",
+      vars: {
+        order_no: order?.order_number ?? data.production_number,
+        tracking_no: data.tracking_number ?? "",
+        transporter_name: data.transporter_name ?? "",
+      },
+    };
+  }
+  if (event === "invoice.issued" || event === "invoice.paid") {
+    const { data } = await db
+      .from("invoices")
+      .select("id, party_id, invoice_number, total_amount, paid_amount, due_date")
+      .eq("id", refId)
+      .eq("party_id", partyId)
+      .maybeSingle();
+    if (!data) throw new Error("Invoice does not belong to this customer");
+    return {
+      table: "invoices",
+      vars: {
+        invoice_no: data.invoice_number,
+        invoice_amount: Number(data.total_amount).toFixed(2),
+        payment_amount: Number(data.paid_amount).toFixed(2),
+        due_date: data.due_date ?? "",
+        invoice_url: `${APP_ORIGIN}/print/invoice/${data.id}`,
+      },
+    };
+  }
+  if (event === "payment.received") {
+    const { data } = await db
+      .from("vouchers")
+      .select("id, voucher_number, voucher_entries!inner(credit, ledger_accounts!inner(mapped_party_id))")
+      .eq("id", refId)
+      .eq("voucher_entries.ledger_accounts.mapped_party_id", partyId)
+      .maybeSingle();
+    if (!data) throw new Error("Receipt does not belong to this customer");
+    const entries = (data.voucher_entries ?? []) as Array<{ credit: number }>;
+    return {
+      table: "vouchers",
+      vars: {
+        receipt_no: data.voucher_number,
+        payment_amount: entries.reduce((sum, row) => sum + Number(row.credit ?? 0), 0).toFixed(2),
+      },
+    };
+  }
+  if (event === "ledger.statement_ready") {
+    const { data } = await db
+      .from("parties")
+      .select("id, current_balance")
+      .eq("id", refId)
+      .eq("id", partyId)
+      .maybeSingle();
+    if (!data) throw new Error("Statement does not belong to this customer");
+    return {
+      table: "parties",
+      vars: { closing_balance: Number(data.current_balance ?? 0).toFixed(2) },
+    };
+  }
+  throw new Error("Unsupported customer notification");
+}
+
 async function sendForEvent(opts: {
   to: string;
   eventKey: string;

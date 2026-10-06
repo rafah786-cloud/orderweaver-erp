@@ -189,7 +189,6 @@ function SuppliersTab({
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
   const [promoOpen, setPromoOpen] = useState(false);
-  const [promoMsg, setPromoMsg] = useState("");
   const [msgFor, setMsgFor] = useState<Supplier | null>(null);
   const quickAdd = useServerFn(quickAddSupplier);
   const removeSupplier = useServerFn(deleteSupplier);
@@ -203,7 +202,7 @@ function SuppliersTab({
     }
     try {
       await quickAdd({ data: { name: quickForm.name.trim(), phone: quickForm.phone.trim() } });
-      toast.success("Supplier added — welcome message queued");
+      toast.success("Supplier added");
       setQuickOpen(false);
       setQuickForm({ name: "", phone: "" });
       qc.invalidateQueries({ queryKey: ["suppliers"] });
@@ -222,15 +221,10 @@ function SuppliersTab({
     }
   };
   const doBroadcast = async () => {
-    if (!promoMsg.trim()) {
-      toast.error("Enter a message");
-      return;
-    }
     try {
-      const r = await broadcast({ data: { audience: "suppliers", message: promoMsg.trim() } });
+      const r = await broadcast({ data: { audience: "suppliers" } });
       toast.success(`Promo sent to ${r.sent}/${r.total} suppliers`);
       setPromoOpen(false);
-      setPromoMsg("");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Broadcast failed");
     }
@@ -492,15 +486,13 @@ function SuppliersTab({
                 placeholder="10-digit mobile or +91…"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              A WhatsApp welcome greeting will be sent automatically.
-            </p>
+            <p className="text-xs text-muted-foreground">No message is sent automatically.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setQuickOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={doQuickAdd}>Add & Greet</Button>
+            <Button onClick={doQuickAdd}>Add Supplier</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -511,15 +503,8 @@ function SuppliersTab({
             <DialogTitle>Send Marketing Promo</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2">
-            <Label className="text-xs text-muted-foreground">Message</Label>
-            <Textarea
-              rows={4}
-              value={promoMsg}
-              onChange={(e) => setPromoMsg(e.target.value)}
-              placeholder="Your promotional message…"
-            />
             <p className="text-xs text-muted-foreground">
-              Sent to all suppliers with WhatsApp opt-in enabled.
+              Sends the active approved promotional template to opted-in suppliers.
             </p>
           </div>
           <DialogFooter>
