@@ -77,9 +77,13 @@ type InvoiceRow = {
   party_id: string;
 };
 
-type Item = { description: string; quantity: number; unit_price: number };
-
-const TAX_RATE = 0.18;
+type Item = {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  hsn_code: string;
+  tax_rate: number;
+};
 const CREDIT_LIMIT_HARD = 150000;
 const OVERDUE_THRESHOLD = 50000;
 const OVERDUE_DAYS = 90;
@@ -94,14 +98,16 @@ function InvoicesPage() {
   const [dueDate, setDueDate] = useState("");
   const [supply, setSupply] = useState<"" | "intra" | "inter">("");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<Item[]>([{ description: "", quantity: 1, unit_price: 0 }]);
+  const [items, setItems] = useState<Item[]>([
+    { description: "", quantity: 1, unit_price: 0, hsn_code: "", tax_rate: 18 },
+  ]);
   const [blockMsg, setBlockMsg] = useState<{ title: string; reason: string } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const today = new Date();
   const [exportYear, setExportYear] = useState(today.getFullYear());
   const [exportMonth, setExportMonth] = useState(today.getMonth() + 1);
   const [supplierGstin, setSupplierGstin] = useState("");
-  const [supplierState, setSupplierState] = useState("29");
+  const [supplierState, setSupplierState] = useState("32");
   const [exporting, setExporting] = useState(false);
   const [payInv, setPayInv] = useState<InvoiceRow | null>(null);
   const [payAmount, setPayAmount] = useState("");
@@ -171,7 +177,10 @@ function InvoicesPage() {
     (s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0),
     0,
   );
-  const tax = subtotal * TAX_RATE;
+  const tax = items.reduce((s, i) => {
+    const lineBase = (Number(i.quantity) || 0) * (Number(i.unit_price) || 0);
+    return s + (lineBase * (Number(i.tax_rate) || 0)) / 100;
+  }, 0);
   const cgst = supply === "intra" ? tax / 2 : 0;
   const sgst = supply === "intra" ? tax - cgst : 0;
   const igst = supply === "inter" ? tax : 0;
@@ -182,7 +191,7 @@ function InvoicesPage() {
     setInvoiceDate(new Date().toISOString().slice(0, 10));
     setDueDate("");
     setNotes("");
-    setItems([{ description: "", quantity: 1, unit_price: 0 }]);
+    setItems([{ description: "", quantity: 1, unit_price: 0, hsn_code: "", tax_rate: 18 }]);
   };
 
   const checkBlock = async (pid: string, newTotal: number) => {
@@ -617,7 +626,7 @@ function InvoicesPage() {
           <DialogHeader>
             <DialogTitle>New Invoice</DialogTitle>
             <DialogDescription>
-              GST 18% is applied automatically. Credit checks run on save.
+              Set HSN/SAC and the applicable GST rate for each line. Credit checks run on save.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
@@ -669,49 +678,62 @@ function InvoicesPage() {
                 {items.map((it, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-start">
                     <Input
-                      className="col-span-6"
-                      placeholder="Description (e.g. King Mattress 6x6.5)"
+                      className="col-span-12 sm:col-span-5"
+                      placeholder="Description"
                       value={it.description}
                       onChange={(e) =>
-                        setItems(
-                          items.map((x, i) =>
-                            i === idx ? { ...x, description: e.target.value } : x,
-                          ),
-                        )
+                        setItems(items.map((x, i) => (i === idx ? { ...x, description: e.target.value } : x)))
                       }
                     />
                     <Input
-                      className="col-span-2"
+                      className="col-span-6 sm:col-span-2"
+                      placeholder="HSN/SAC"
+                      inputMode="numeric"
+                      value={it.hsn_code}
+                      onChange={(e) =>
+                        setItems(items.map((x, i) => (i === idx ? { ...x, hsn_code: e.target.value.replace(/\D/g, "") } : x)))
+                      }
+                    />
+                    <Input
+                      className="col-span-3 sm:col-span-1"
                       type="number"
                       min="0"
+                      step="0.01"
                       placeholder="Qty"
                       value={it.quantity}
                       onChange={(e) =>
-                        setItems(
-                          items.map((x, i) =>
-                            i === idx ? { ...x, quantity: Number(e.target.value) } : x,
-                          ),
-                        )
+                        setItems(items.map((x, i) => (i === idx ? { ...x, quantity: Number(e.target.value) } : x)))
                       }
                     />
                     <Input
-                      className="col-span-3"
+                      className="col-span-6 sm:col-span-2"
                       type="number"
                       min="0"
+                      step="0.01"
                       placeholder="Unit ₹"
                       value={it.unit_price}
                       onChange={(e) =>
-                        setItems(
-                          items.map((x, i) =>
-                            i === idx ? { ...x, unit_price: Number(e.target.value) } : x,
-                          ),
-                        )
+                        setItems(items.map((x, i) => (i === idx ? { ...x, unit_price: Number(e.target.value) } : x)))
+                      }
+                    />
+                    <Input
+                      className="col-span-3 sm:col-span-1"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="GST %"
+                      value={it.tax_rate}
+                      onChange={(e) =>
+                        setItems(items.map((x, i) => (i === idx ? { ...x, tax_rate: Number(e.target.value) } : x)))
                       }
                     />
                     <Button
-                      className="col-span-1"
+                      className="col-span-3 sm:col-span-1"
                       size="icon"
                       variant="ghost"
+                      title="Remove line"
+                      aria-label={"Remove line " + (idx + 1)}
                       onClick={() =>
                         setItems(items.length > 1 ? items.filter((_, i) => i !== idx) : items)
                       }
@@ -730,7 +752,7 @@ function InvoicesPage() {
 
             <div className="rounded-md border bg-muted/40 p-3 space-y-1 text-sm">
               <Row label="Subtotal" value={inr(subtotal)} />
-              <Row label={`GST (${(TAX_RATE * 100).toFixed(0)}%)`} value={inr(tax)} />
+              <Row label="GST" value={inr(tax)} />
               <Label className="text-xs text-muted-foreground">Tax split</Label>
               <Select
                 value={supply || "unset"}
