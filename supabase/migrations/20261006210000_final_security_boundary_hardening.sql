@@ -764,20 +764,70 @@ BEGIN
 END;
 $$;
 
--- 6) Provider/test functions can remain executable only through their existing
--- authenticated server routes; direct snapshot execution is explicitly removed.
-GRANT EXECUTE ON FUNCTION public.get_ledger_balances_period(date,date) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_consolidated_trial_balance(date) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.reverse_bill_settlement(uuid,date,text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_tally_migration_run(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.reconcile_tally_migration_run(uuid,date) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.approve_tally_migration_run(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.create_company(text,text,text,text,text,text,text,text,text,text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.initialize_company_books(uuid) TO authenticated;
+-- 6) Company-access mutation is an ordinary invoker function. The authenticated
+-- admin server route calls it with the user's session, so RLS remains in force.
+CREATE OR REPLACE FUNCTION public.set_user_company_access(
+  p_user_id uuid,
+  p_company_ids uuid[]
+)
+RETURNS TABLE(company_id uuid, can_view boolean, can_create boolean, can_edit boolean, can_delete boolean)
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path=public
+AS $$
+DECLARE
+  abood uuid;
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.has_role(auth.uid(),'admin') THEN
+    RAISE EXCEPTION 'Admin only';
+  END IF;
 
--- This mutation is reached only through the authenticated admin server function,
--- which performs its own authorization check. Do not expose the SECURITY DEFINER
--- RPC directly through the REST API.
-REVOKE ALL ON FUNCTION public.set_user_company_access(uuid,uuid[]) FROM PUBLIC, anon, authenticated;
+  SELECT id INTO abood
+  FROM public.companies
+  WHERE code='ABOOD' AND is_active=true;
+
+  IF abood IS NULL THEN
+    RAISE EXCEPTION 'Default ABOOD company is not available';
+  END IF;
+
+  p_company_ids:=ARRAY(
+    SELECT DISTINCT x
+    FROM unnest(
+      COALESCE(p_company_ids,ARRAY[]::uuid[])||ARRAY[abood]
+    ) x
+  );
+
+  DELETE FROM public.user_company_access u
+  WHERE u.user_id=p_user_id
+    AND NOT (u.company_id=ANY(p_company_ids));
+
+  INSERT INTO public.user_company_access(
+    user_id,company_id,is_default,can_view,can_create,can_edit,can_delete
+  )
+  SELECT
+    p_user_id,c.id,(c.id=abood),true,true,true,false
+  FROM public.companies c
+  WHERE c.id=ANY(p_company_ids)
+    AND c.is_active=true
+    AND c.code IN ('ABOOD','ABRAZ','ABOOD_MGMT','ABRAZ_MGMT')
+  ON CONFLICT(user_id,company_id) DO UPDATE SET
+    is_default=EXCLUDED.is_default,
+    can_view=true,
+    can_create=EXCLUDED.can_create,
+    can_edit=EXCLUDED.can_edit;
+
+  UPDATE public.user_company_access
+  SET is_default=(company_id=abood)
+  WHERE user_id=p_user_id;
+
+  RETURN QUERY
+  SELECT u.company_id,u.can_view,u.can_create,u.can_edit,u.can_delete
+  FROM public.user_company_access u
+  WHERE u.user_id=p_user_id
+  ORDER BY u.is_default DESC,u.company_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.set_user_company_access(uuid,uuid[]) TO authenticated;
 
 COMMIT;
