@@ -177,16 +177,28 @@ function CorporateHome() {
             aria-label="Primary navigation"
             className="hidden items-center gap-7 text-sm font-medium text-[#566576] lg:flex"
           >
-            <a href="#about" className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]">
+            <a
+              href="#about"
+              className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]"
+            >
               About
             </a>
-            <a href="#capabilities" className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]">
+            <a
+              href="#capabilities"
+              className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]"
+            >
               Capabilities
             </a>
-            <a href="#brands" className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]">
+            <a
+              href="#brands"
+              className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]"
+            >
               Our Brands
             </a>
-            <a href="#contact" className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]">
+            <a
+              href="#contact"
+              className="rounded-sm transition hover:text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]"
+            >
               Contact
             </a>
           </nav>
@@ -213,13 +225,20 @@ function CorporateHome() {
               aria-expanded={mobileOpen}
               aria-controls="mobile-navigation"
             >
-              {mobileOpen ? <X aria-hidden className="h-5 w-5" /> : <Menu aria-hidden className="h-5 w-5" />}
+              {mobileOpen ? (
+                <X aria-hidden className="h-5 w-5" />
+              ) : (
+                <Menu aria-hidden className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
 
         {mobileOpen && (
-          <div id="mobile-navigation" className="border-t border-[#dfe5e8] bg-[#13283d] px-5 py-4 lg:hidden">
+          <div
+            id="mobile-navigation"
+            className="border-t border-[#dfe5e8] bg-[#13283d] px-5 py-4 lg:hidden"
+          >
             <nav aria-label="Mobile navigation" className="space-y-1">
               {[
                 ["about", "About"],
@@ -302,7 +321,9 @@ function CorporateHome() {
                         key={label}
                         className={index === 0 ? "pr-4" : "border-l border-[#d6dde1] px-4"}
                       >
-                        <div className="text-xl font-semibold tracking-[-0.03em] text-[#17324d]">{value}</div>
+                        <div className="text-xl font-semibold tracking-[-0.03em] text-[#17324d]">
+                          {value}
+                        </div>
                         <div className="mt-1 text-[11px] leading-5 text-[#6e7b88]">{label}</div>
                       </div>
                     ))}
@@ -319,7 +340,9 @@ function CorporateHome() {
         <section id="about" className="border-b border-[#e1e6e9] bg-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:py-20">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">About us</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">
+                About us
+              </div>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#17324d] sm:text-4xl">
                 One manufacturing house. Multiple sleep propositions.
               </h2>
@@ -329,26 +352,22 @@ function CorporateHome() {
                 {
                   icon: Factory,
                   title: "End-to-end manufacturing",
-                  text:
-                    "Bonnell spring, pocketed spring, medicated and latex mattress production supported by in-house manufacturing capability.",
+                  text: "Bonnell spring, pocketed spring, medicated and latex mattress production supported by in-house manufacturing capability.",
                 },
                 {
                   icon: PackageCheck,
                   title: "Built for different markets",
-                  text:
-                    "Distinct brands and product propositions serving premium, orthopedic, natural-fibre and everyday bedding needs.",
+                  text: "Distinct brands and product propositions serving premium, orthopedic, natural-fibre and everyday bedding needs.",
                 },
                 {
                   icon: Truck,
                   title: "Wholesale & projects",
-                  text:
-                    "Structured supply for retailers, wholesalers and project requirements with production and packing workflows behind the order.",
+                  text: "Structured supply for retailers, wholesalers and project requirements with production and packing workflows behind the order.",
                 },
                 {
                   icon: ShieldCheck,
                   title: "Operational discipline",
-                  text:
-                    "A growing business platform built around controlled sales, production, inventory, finance and customer workflows.",
+                  text: "A growing business platform built around controlled sales, production, inventory, finance and customer workflows.",
                 },
               ].map(({ icon: Icon, title, text }) => (
                 <div key={title} className="rounded-xl border border-[#dfe5e9] bg-[#fafbf9] p-6">
@@ -366,12 +385,15 @@ function CorporateHome() {
         <section id="capabilities" className="border-b border-[#e1e6e9] bg-[#f7f8f7]">
           <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:py-20">
             <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">Capabilities</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">
+                Capabilities
+              </div>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#17324d] sm:text-4xl">
                 From raw material to finished mattress.
               </h2>
               <p className="mt-4 text-base leading-7 text-[#6d7b88]">
-                Manufacturing breadth that supports both established product lines and custom business requirements.
+                Manufacturing breadth that supports both established product lines and custom
+                business requirements.
               </p>
             </div>
 
@@ -414,13 +436,16 @@ function CorporateHome() {
           <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:py-20">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">Our brands</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8793a0]">
+                  Our brands
+                </div>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#17324d] sm:text-4xl">
                   One house. Distinct sleep solutions.
                 </h2>
               </div>
               <div className="max-w-sm text-sm leading-6 text-[#768492]">
-                Zizz leads the portfolio, with specialised brands covering different comfort and product needs.
+                Zizz leads the portfolio, with specialised brands covering different comfort and
+                product needs.
               </div>
             </div>
 
@@ -430,7 +455,11 @@ function CorporateHome() {
                   Flagship
                 </span>
                 <div className="flex min-h-[190px] items-center justify-center rounded-lg border border-[#e1e5e8] bg-white p-8">
-                  <img src={zizz.url} alt="Zizz flagship brand" className="max-h-36 w-full object-contain" />
+                  <img
+                    src={zizz.url}
+                    alt="Zizz flagship brand"
+                    className="max-h-36 w-full object-contain"
+                  />
                 </div>
                 <h3 className="mt-5 text-2xl font-semibold text-[#17324d]">Zizz</h3>
                 <p className="mt-1 text-sm leading-6 text-[#70808e]">
@@ -463,12 +492,15 @@ function CorporateHome() {
           <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:py-16">
             <div className="rounded-2xl border border-[#d7dee3] bg-[#17324d] px-6 py-8 text-white sm:px-10 lg:flex lg:items-center lg:justify-between lg:gap-12">
               <div className="max-w-2xl">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">For business</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
+                  For business
+                </div>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
                   Need a manufacturing, wholesale or project partner?
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-white/70">
-                  Talk to House of Abood Tradings about products, supply requirements and business enquiries.
+                  Talk to House of Abood Tradings about products, supply requirements and business
+                  enquiries.
                 </p>
               </div>
               <a
@@ -484,15 +516,20 @@ function CorporateHome() {
         <section id="contact" className="bg-[#17324d] text-white">
           <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.15fr_.85fr] lg:py-20">
             <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">Contact</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
+                Contact
+              </div>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
                 Let’s build better sleep together.
               </h2>
               <p className="mt-4 text-sm leading-6 text-white/70">
-                For retail, wholesale, project and manufacturing enquiries, connect with House of Abood Tradings.
+                For retail, wholesale, project and manufacturing enquiries, connect with House of
+                Abood Tradings.
               </p>
               <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-5">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Business email</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  Business email
+                </div>
                 <a
                   href="mailto:gm@zizzmattress.com"
                   className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-white underline decoration-white/25 underline-offset-4 hover:decoration-white"
@@ -504,9 +541,12 @@ function CorporateHome() {
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Portal access</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                Portal access
+              </div>
               <p className="mt-3 text-sm leading-6 text-white/65">
-                Existing customers, staff, suppliers and management can use the Login menu in the top-right corner.
+                Existing customers, staff, suppliers and management can use the Login menu in the
+                top-right corner.
               </p>
               <div className="mt-6">
                 <LoginMenu mobile />
