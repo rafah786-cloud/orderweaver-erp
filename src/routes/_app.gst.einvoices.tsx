@@ -62,54 +62,14 @@ function EInvoicesPage() {
     },
   });
 
-  const generate = useMutation({
-    mutationFn: async () => {
-      // Lookup invoice by number
-      const { data: inv, error: invErr } = await sb
-        .from("invoices")
-        .select("id,invoice_number,total_amount")
-        .eq("invoice_number", invoiceNumber.trim())
-        .maybeSingle();
-      if (invErr) throw invErr;
-      if (!inv) throw new Error(`Invoice ${invoiceNumber} not found`);
-      // Generate a stub IRN (64-char hash-like). Real IRP integration goes here.
-      const irn = stubIrn(inv.id);
-      const ackNo = `ACK${Date.now().toString().slice(-12)}`;
-      const qr = JSON.stringify({ irn, ackNo, value: inv.total_amount });
-      const { error } = await sb.from("e_invoices").insert({
-        invoice_id: inv.id,
-        irn,
-        ack_no: ackNo,
-        ack_date: new Date().toISOString(),
-        signed_qr: qr,
-        status: "generated",
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("IRN generated (stub — wire IRP for live)");
-      qc.invalidateQueries({ queryKey: ["einvoices"] });
-      setOpen(false);
-      setInvoiceNumber("");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // Real IRP registration is not connected in this deployment. Never synthesize
+  // an IRN locally: a value shown as generated must come from the GST Invoice
+  // Registration Portal (IRP), with the corresponding signed QR payload.
+  const irpConfigured = false;
 
   const cancel = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await sb
-        .from("e_invoices")
-        .update({
-          status: "cancelled",
-          cancelled_at: new Date().toISOString(),
-          cancel_reason: "Manual cancel",
-        })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Cancelled");
-      qc.invalidateQueries({ queryKey: ["einvoices"] });
+    mutationFn: async () => {
+      throw new Error("E-invoice cancellation requires a live IRP integration.");
     },
   });
 
@@ -117,7 +77,7 @@ function EInvoicesPage() {
     <>
       <PageHeader
         title="E-Invoices"
-        description="IRN registry. Generate IRN for B2B invoices ≥ ₹5 cr turnover thresholds."
+        description="IRN registry for invoices successfully registered through a live GST IRP integration."
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -159,6 +119,16 @@ function EInvoicesPage() {
         }
       />
       <PageBody>
+        <Card className="mb-4 border-amber-200 bg-amber-50">
+          <CardContent className="p-4 text-sm text-amber-950">
+            <div className="font-semibold">Live IRP integration required</div>
+            <p className="mt-1 leading-6">
+              This ERP does not currently have a live GST Invoice Registration Portal connection.
+              IRNs, acknowledgement numbers and signed QR payloads must never be fabricated locally.
+              Generate e-invoices only after the official IRP integration is connected and tested.
+            </p>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -212,7 +182,7 @@ function EInvoicesPage() {
                         </Button>
                       </Link>
                       {e.status === "generated" && (
-                        <Button variant="ghost" size="sm" onClick={() => cancel.mutate(e.id)}>
+                        <Button variant="ghost" size="sm" disabled title="Cancellation requires live IRP integration">
                           ×
                         </Button>
                       )}
@@ -236,10 +206,3 @@ function EInvoicesPage() {
   );
 }
 
-function stubIrn(id: string): string {
-  // Deterministic 64-char hex-ish stub based on id + timestamp.
-  const base = (id + Date.now().toString(36)).replace(/-/g, "");
-  let s = base;
-  while (s.length < 64) s += Math.random().toString(36).slice(2);
-  return s.slice(0, 64);
-}
