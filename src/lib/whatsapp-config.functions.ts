@@ -119,12 +119,42 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: provider, error: providerError } = await supabaseAdmin
+      .from("notification_providers")
+      .select("config, is_active")
+      .eq("channel", CHANNEL)
+      .eq("name", PROVIDER_NAME)
+      .maybeSingle();
+    if (providerError) throw new Error("Unable to load WhatsApp configuration");
+    const cfg = (provider?.config as Record<string, unknown> | null) ?? {};
+    const configuredBusinessNumber = String(cfg.business_number ?? "").replace(/[\\s\\-()]/g, "");
+    const requestedNumber = data.mobileNumber.replace(/[\\s\\-()]/g, "");
+    if (!configuredBusinessNumber) {
+      throw new Error("Configure the WhatsApp business number before testing");
+    }
+    if (requestedNumber !== configuredBusinessNumber) {
+      throw new Error("Test WhatsApp messages are restricted to the configured business number");
+    }
+    if (!provider?.is_active) {
+      throw new Error("WhatsApp provider is not active");
+    }
+
+    const { data: template } = await supabaseAdmin
+      .from("whatsapp_templates")
+      .select("template_name, is_active")
+      .eq("template_name", data.templateName)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!template) {
+      throw new Error("Only active WhatsApp templates may be tested");
+    }
+
     const { sendWhatsAppMessage } = await import("./whatsapp/send.server");
-    const result = await sendWhatsAppMessage(data.mobileNumber, data.templateName, data.variables, {
+    const result = await sendWhatsAppMessage(configuredBusinessNumber, template.template_name, data.variables, {
       party_kind: "admin",
       event_type: "test.send",
     });
-    // Strip non-serializable fields for the RPC boundary
     return {
       ok: result.ok,
       messageId: result.messageId,
