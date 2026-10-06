@@ -217,7 +217,7 @@ function CorporateHome() {
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
-            <LoginMenu mobile />
+            <LoginMenu mobile compact />
             <button
               type="button"
               className="shrink-0 rounded-md border border-[#d5dfe5] bg-white p-2 text-[#17324d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6c55c]"
