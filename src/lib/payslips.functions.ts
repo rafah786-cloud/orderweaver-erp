@@ -27,7 +27,7 @@ export const generatePayslips = createServerFn({ method: "POST" })
     const { data: shift } = await supabaseAdmin
       .from("shift_settings")
       .select("*")
-      .limit(1)
+      .eq("company_id", companyId)
       .maybeSingle();
     const workingDays = shift?.working_days_per_month ?? 26;
     const halfPct = Number(shift?.half_day_deduction_pct ?? 50);
