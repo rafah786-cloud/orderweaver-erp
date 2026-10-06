@@ -37,7 +37,7 @@ async function resolveTemplate(eventKey: string) {
 
 async function sendWa(opts: {
   to: string;
-  eventKey: string;
+  template: NonNullable<Awaited<ReturnType<typeof resolveTemplate>>>;
   vars: Record<string, string | number | null | undefined>;
 }) {
   const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
@@ -51,7 +51,7 @@ async function sendWa(opts: {
       messageId: "",
     };
   }
-  const tpl = await resolveTemplate(opts.eventKey);
+  const tpl = opts.template;
   if (tpl?.template_name) {
     const varNames = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
     const bodyValues = varNames.map((n) => String(opts.vars[n] ?? ""));
@@ -71,14 +71,7 @@ async function sendWa(opts: {
           messageId: "",
         };
   }
-  const body = Object.entries(opts.vars)
-    .filter(([, v]) => v !== null && v !== undefined && String(v).length > 0)
-    .map(([, v]) => String(v))
-    .join(" ");
-  const r = await provider.sendFreeform({ to: opts.to, body });
-  return r.ok
-    ? { ok: true as const, messageId: r.messageId, template_name: null }
-    : { ok: false as const, status: r.status, error: r.error, template_name: null, messageId: "" };
+  throw new Error("No approved promotional template is active");
 }
 
 const AddPartySchema = z.object({
@@ -191,7 +184,7 @@ export const broadcastPromo = createServerFn({ method: "POST" })
       }
       const res = await sendWa({
         to,
-        eventKey,
+        template,
         vars: { [nameVar]: r.name },
       });
       await logWhatsAppNotification({

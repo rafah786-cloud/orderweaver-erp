@@ -200,8 +200,8 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.userId, ["admin", "sales", "production"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: bill, error } = await supabaseAdmin
+    // Resolve the bill and joined supplier as the caller; existing RLS is authoritative.
+    const { data: bill, error } = await context.supabase
       .from("purchase_bills")
       .select(
         "id, bill_number, bill_date, total_amount, supplier_id, suppliers(id, name, phone, whatsapp_number, whatsapp_opt_in)",
@@ -299,19 +299,18 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const reference = await resolveCustomerEventReference(
-      supabaseAdmin,
+      context.supabase,
       data.event,
       data.ref_id,
       data.party_id,
     );
-    const { data: party } = await supabaseAdmin
+    const { data: party, error: partyError } = await context.supabase
       .from("parties")
       .select("id, name, phone, whatsapp_number, whatsapp_opt_in")
       .eq("id", data.party_id)
       .maybeSingle();
-    if (!party) throw new Error("Party not found");
+    if (partyError || !party) throw new Error("Party not found");
     if ((party as any).whatsapp_opt_in === false) {
       await logWhatsAppNotification({
         party_kind: "customer",

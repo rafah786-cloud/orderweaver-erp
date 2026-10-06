@@ -65,6 +65,17 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Any staff member writing business events may fan out
     await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant", "hr"]);
+    // Check supplier access before any fan-out, even when a vendor name was supplied.
+    let supplierName: string | undefined;
+    if (data.supplier_id) {
+      const { data: supplier, error } = await context.supabase
+        .from("suppliers")
+        .select("name")
+        .eq("id", data.supplier_id)
+        .maybeSingle();
+      if (error || !supplier) throw new Error("Supplier not found");
+      supplierName = supplier.name;
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
@@ -98,14 +109,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
         .maybeSingle();
       if (party?.name) enrichedVars.customer_name = party.name;
     }
-    if (data.supplier_id && enrichedVars.vendor_name === undefined) {
-      const { data: sup } = await supabaseAdmin
-        .from("suppliers")
-        .select("name")
-        .eq("id", data.supplier_id)
-        .maybeSingle();
-      if (sup?.name) enrichedVars.vendor_name = sup.name;
-    }
+    if (supplierName !== undefined) enrichedVars.vendor_name = supplierName;
 
     // 3. Resolve template
     const { data: tpl } = await supabaseAdmin

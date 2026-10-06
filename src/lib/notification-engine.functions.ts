@@ -33,6 +33,13 @@ export const setEventChannel = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const { data: admin, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !admin) throw new Error("Forbidden");
     const { error } = await supabase.from("notification_event_channels").upsert(
       {
         event_key: data.event_key,
@@ -54,6 +61,13 @@ export const toggleEventActive = createServerFn({ method: "POST" })
     z.object({ event_key: z.string(), is_active: z.boolean() }).parse(d),
   )
   .handler(async ({ context, data }) => {
+    const { data: admin, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !admin) throw new Error("Forbidden");
     const { error } = await context.supabase
       .from("notification_events")
       .update({ is_active: data.is_active })

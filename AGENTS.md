@@ -4,3 +4,6 @@
 - Keep accounting imports separate from the legacy Tally master importer; it cannot atomically retain every voucher leg or bill allocation, so uploaded accounting data must fail closed rather than appear imported.
 - Run Tally source integrity checks as pure read-only parsing before any accounting import; unresolved source identifiers and imbalances must be reported, not repaired or guessed.
 - Expose ERP agent tools through OAuth with the caller's verified token and RLS, and check approved account roles for business reads, so external assistants never inherit privileged access.
+- Notification event activation and delivery configuration require a server-verified admin role through the caller's authenticated client; the communications settings are admin-only.
+- Customer alerts, purchase notices and supplier-name enrichment in staff alerts must read targeted business records through the caller's authenticated client and existing RLS; privileged delivery must not widen record visibility.
+- Promotional broadcasts use a single resolved active template and saved recipient variables, never caller-written content or freeform fallback; template changes must not reopen arbitrary-message delivery.
