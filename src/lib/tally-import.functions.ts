@@ -688,24 +688,28 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+    const { data: roles, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    if (roleError || !(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+    const { data: companyId, error: companyError } = await supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
 
     let recomputedParties = 0;
     let recomputedSuppliers = 0;
 
     for (const id of data.partyIds) {
+      const { data: p } = await supabase
+        .from("parties")
+        .select("opening_balance")
+        .eq("id", id)
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (!p) throw new Error("Party is not in the active company");
       const { data: sums } = await supabase
         .from("party_ledger_entries")
         .select("debit, credit")
         .eq("party_id", id);
       const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
       const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
-      const { data: p } = await supabase
-        .from("parties")
-        .select("opening_balance")
-        .eq("id", id)
-        .single();
       const opening = Number(p?.opening_balance ?? 0);
       // @ts-expect-error RPC is unavailable until its migration is applied.
       await supabase.rpc("record_tally_balance", {
@@ -717,18 +721,20 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
       recomputedParties++;
     }
     for (const id of data.supplierIds) {
+      const { data: supplier } = await supabase
+        .from("suppliers")
+        .select("opening_balance")
+        .eq("id", id)
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (!supplier) throw new Error("Supplier is not in the active company");
       const { data: sums } = await supabase
         .from("supplier_ledger_entries")
         .select("debit, credit")
         .eq("supplier_id", id);
       const totalDr = (sums ?? []).reduce((a, r) => a + Number(r.debit ?? 0), 0);
       const totalCr = (sums ?? []).reduce((a, r) => a + Number(r.credit ?? 0), 0);
-      const { data: s } = await supabase
-        .from("suppliers")
-        .select("opening_balance")
-        .eq("id", id)
-        .single();
-      const opening = Number(s?.opening_balance ?? 0);
+      const opening = Number(supplier?.opening_balance ?? 0);
       // @ts-expect-error RPC is unavailable until its migration is applied.
       await supabase.rpc("record_tally_balance", {
         p_entity_type: "supplier",
