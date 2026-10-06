@@ -2,16 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function adminDb(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function assertAdmin(db: SupabaseClient, userId: string) {
+  const { data, error } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  if (!data) throw new Error("Admin only");
-  return supabaseAdmin;
+  if (error || !data) throw new Error("Admin only");
+  return true;
 }
 
 // These read-only checks include optional tables absent from the generated schema until migrations run.
@@ -53,8 +52,11 @@ async function sumColumn(db: SupabaseClient, table: string, column: string) {
 export const accountingPreflight = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = await adminDb(context.userId);
-    const vouchers = await db.from("vouchers").select("id, voucher_number, voucher_type");
+    const db = context.supabase;
+    await assertAdmin(db, context.userId);
+    const { data: companyId, error: companyError } = await db.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const vouchers = await db.from("vouchers").select("id, voucher_number, voucher_type").eq("company_id", companyId);
     const entries = await db.from("voucher_entries").select("voucher_id, debit, credit");
     const byVoucher = new Map<string, { debit: number; credit: number }>();
     let debit = 0;
@@ -82,10 +84,12 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       .map(([key, count]) => ({ key, count }));
     const series = await db
       .from("voucher_number_series")
-      .select("voucher_type, prefix, next_number");
+      .select("voucher_type, prefix, next_number")
+      .eq("company_id", companyId);
     const years = await db
       .from("financial_years")
       .select("name, start_date, end_date, is_current, is_locked")
+      .eq("company_id", companyId)
       .order("start_date");
     const yearRows = years.data ?? [];
     const overlaps = yearRows.filter((year, index) =>
@@ -133,6 +137,7 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       financialYears: yearRows,
       financialYearOverlaps: overlaps,
       financialYearError: years.error?.message ?? null,
+      companyId,
       directWriteGrants: "not readable from the application role",
     };
   });
