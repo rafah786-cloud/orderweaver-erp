@@ -76,18 +76,20 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
 
-    // 1. Which departments are subscribed to this event?
-    const { data: subs } = await supabaseAdmin
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+
+    // 1. Which departments are subscribed to this event in the active company?
+    const { data: subs, error: subsError } = await supabaseAdmin
       .from("employee_notification_subscriptions")
       .select("department")
+      .eq("company_id", companyId)
       .eq("event_key", data.event)
       .eq("is_active", true);
+    if (subsError) throw new Error("Could not load notification subscriptions");
 
     const depts = Array.from(new Set((subs ?? []).map((s) => s.department)));
     if (depts.length === 0) return { ok: true, sent: 0, recipients: 0 };
-
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
-    if (companyError || !companyId) throw new Error("No active company selected");
 
     const { data: emps } = await supabaseAdmin
       .from("employees")
@@ -260,10 +262,13 @@ export const listSubscriptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("employee_notification_subscriptions")
-      .select("id, department, event_key, is_active")
+      .select("id, company_id, department, event_key, is_active")
+      .eq("company_id", companyId)
       .order("department");
     if (error) throw error;
     return data ?? [];
@@ -283,12 +288,19 @@ export const setSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("employee_notification_subscriptions")
       .upsert(
-        { department: data.department, event_key: data.event_key, is_active: data.is_active },
-        { onConflict: "department,event_key" },
+        {
+          company_id: companyId,
+          department: data.department,
+          event_key: data.event_key,
+          is_active: data.is_active,
+        },
+        { onConflict: "company_id,department,event_key" },
       );
     if (error) throw error;
     return { ok: true };
