@@ -250,13 +250,15 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
     const started = Date.now();
     const { businessSnapshot } = await import("@/lib/ai/erp-data.server");
     const { logAiUsage } = await import("@/lib/ai/audit.server");
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
 
     if (!data.refresh) {
       const { data: cached } = await context.supabase
         .from("ai_insights")
         .select("payload, generated_at, expires_at, model")
         .eq("kind", "business_brief")
-        .eq("company_id", companyId)
+.eq("company_id", companyId)
         .maybeSingle();
       if (cached?.payload && cached.expires_at && new Date(cached.expires_at) > new Date()) {
         return {
@@ -307,7 +309,7 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
         expires_at: new Date(Date.now() + BRIEF_TTL_MS).toISOString(),
         created_by: context.userId,
       },
-      { onConflict: "kind,scope_key" },
+      { onConflict: "kind,scope_key,company_id" },
     );
 
     await logAiUsage({
