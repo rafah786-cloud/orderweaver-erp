@@ -82,12 +82,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       const list = (data ?? []) as Company[];
-      const active = list.find((c) => c.id === profile?.active_company_id) ?? list[0] ?? null;
+      const active = list.find((c) => c.id === profileRow?.active_company_id) ?? list[0] ?? null;
       setCompanies(list);
       setActiveCompany(active);
 
       const fallback = list[0];
-      if (fallback && fallback.id !== profile?.active_company_id) {
+      if (fallback && fallback.id !== profileRow?.active_company_id) {
         await db.rpc("set_active_company", { _company_id: fallback.id });
       }
     } catch (error) {
