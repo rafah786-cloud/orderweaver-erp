@@ -123,12 +123,16 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
 
-    const { data: log } = await supabaseAdmin
+    // Resolve the log through the caller's RLS-scoped client first. Never use
+    // service-role access to probe a caller-selected notification before authorization.
+    const { data: log, error: logError } = await context.supabase
       .from("notification_log")
       .select("*")
       .eq("id", data.id)
       .maybeSingle();
-    if (!log) throw new Error("Log not found");
+    if (logError) throw new Error("Unable to load the notification");
+
+    if (!log) throw new Error("Notification not found");
     if (log.channel !== "whatsapp") throw new Error("Only WhatsApp messages can be retried here");
     if (log.party_kind === "customer" || log.party_kind === "vendor") {
       if (!log.party_id) throw new Error("Notification has no party owner");
@@ -161,7 +165,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
             ? "suppliers"
             : null;
       if (tbl) {
-        const { data: pr } = await supabaseAdmin
+        const { data: pr } = await context.supabase
           .from(tbl)
           .select("phone, whatsapp_number")
           .eq("id", log.party_id)
