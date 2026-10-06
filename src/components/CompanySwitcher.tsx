@@ -24,7 +24,7 @@ export function CompanySwitcher() {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-9 min-w-[220px] justify-between gap-3 border border-border/60 bg-background/70 px-3"
+          className="h-9 w-full min-w-0 max-w-[220px] justify-between gap-2 border border-border/60 bg-background/70 px-3 md:min-w-[220px] md:w-auto"
           aria-label="Select active company"
         >
           <span className="flex min-w-0 items-center gap-2">
@@ -46,7 +46,7 @@ export function CompanySwitcher() {
           <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[340px] p-0">
+      <PopoverContent align="end" className="w-[min(340px,calc(100vw-24px))] p-0">
         <Command>
           <CommandInput placeholder="Search company…" />
           <CommandList>
