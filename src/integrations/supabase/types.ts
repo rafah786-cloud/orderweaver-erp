@@ -3336,6 +3336,7 @@ export type Database = {
       };
       stock_journals: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           id: string;
@@ -3346,6 +3347,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -3356,6 +3358,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -4629,6 +4632,14 @@ export type Database = {
       };
     };
     Functions: {
+      create_stock_journal: {
+        Args: {
+          p_date: string;
+          p_lines: Json;
+          p_narration: string | null;
+        };
+        Returns: string;
+      };
       _apply_raw_delta: {
         Args: { p_item: string; p_qty: number };
         Returns: undefined;
