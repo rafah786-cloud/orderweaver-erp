@@ -56,9 +56,13 @@ export class TallyClient {
   ) {}
 
   async ping(): Promise<void> {
-    await this.request("List of Ledgers", collectionRequest("List of Ledgers", { company: "" }), {
-      company: "",
+    const response = await fetch(this.baseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/xml;charset=UTF-8", "Cache-Control": "no-cache" },
+      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Ledgers</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
+      signal: AbortSignal.timeout(this.defaultTimeoutMs),
     });
+    if (!response.ok) throw new Error("Tally HTTP " + response.status);
   }
 
   async request(requestName: string, xml: string, options: TallyRequestOptions): Promise<TallyResponse> {
