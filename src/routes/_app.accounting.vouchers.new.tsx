@@ -169,7 +169,9 @@ function NewVoucherPage() {
                 },
               }).catch(() => {});
               // Fan out to staff (Accounts / Management)
-              notifyStaff({ data: { event: "staff.payment.received", ref_id: voucher.id } }).catch(() => {});
+              notifyStaff({ data: { event: "staff.payment.received", ref_id: voucher.id } }).catch(
+                () => {},
+              );
             }
           }
         } catch {

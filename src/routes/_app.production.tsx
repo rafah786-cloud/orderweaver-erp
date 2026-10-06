@@ -151,7 +151,9 @@ function ProductionPage() {
           /* non-fatal */
         }
         if (res.next === "ready")
-          notifyStaff({ data: { event: "staff.dispatch.ready", ref_id: res.order.id } }).catch(() => {});
+          notifyStaff({ data: { event: "staff.dispatch.ready", ref_id: res.order.id } }).catch(
+            () => {},
+          );
       }
     },
     onError: (e: Error) => toast.error(e.message),
