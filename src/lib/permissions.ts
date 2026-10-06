@@ -7,7 +7,10 @@ export type AppRole = Database["public"]["Enums"]["app_role"];
  * Mutation-level checks and Supabase RLS remain the enforcement backstop.
  */
 export const ROUTE_ROLES: { prefix: string; roles: AppRole[] }[] = [
-  { prefix: "/dashboard", roles: ["admin", "accountant", "sales", "production", "hr", "customer", "employee"] },
+  {
+    prefix: "/dashboard",
+    roles: ["admin", "accountant", "sales", "production", "hr", "customer", "employee"],
+  },
   { prefix: "/parties", roles: ["admin", "sales"] },
   { prefix: "/invoices", roles: ["admin", "sales", "accountant", "customer"] },
   { prefix: "/sales-orders", roles: ["admin", "sales", "customer"] },
