@@ -68,6 +68,7 @@
 - The only remaining Tally migration gate is the real source export and accountant-approved reconciliation/cutover. This cannot be completed truthfully without the company's actual Tally data and operational dress rehearsals.
 
 ## 2026-10-06 four-company access workflow
+
 - [x] Four company books provisioned: ABOOD TRADINGS, ABRAZ SLEEPING SOLUTIONS, ABOOD TRADINGS - MANAGEMENT BOOKS, ABRAZ SLEEPING SOLUTIONS - MANAGEMENT BOOKS.
 - [x] Self-registration has no company selector; new profiles default to ABOOD TRADINGS.
 - [x] Existing users have been reset to ABOOD TRADINGS as their default/initial company access.

@@ -149,7 +149,8 @@ export const broadcastPromo = createServerFn({ method: "POST" })
     const nameVar = data.audience === "parties" ? "customer_name" : "vendor_name";
     const template = await resolveTemplate(eventKey);
     if (!template?.template_name) throw new Error("No approved promotional template is active");
-    const { data: activeCompanyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: activeCompanyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !activeCompanyId) throw new Error("No active company selected");
     const { data: rows } = await supabaseAdmin
       .from(table)

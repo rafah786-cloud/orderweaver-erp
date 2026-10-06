@@ -30,7 +30,11 @@ type RpcClient = {
 };
 const rpc = (value: unknown) => value as RpcClient;
 
-async function assertAccountingRole(db: any, userId: string, allowed: string[] = ["admin", "accountant"]) {
+async function assertAccountingRole(
+  db: any,
+  userId: string,
+  allowed: string[] = ["admin", "accountant"],
+) {
   const { data, error } = await db
     .from("user_roles")
     .select("role")

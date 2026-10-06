@@ -108,7 +108,8 @@ function AppFrame({
           >
             <span className="font-medium">Internal management book</span>
             <span>
-              For management analysis only. Statutory GST, tax and compliance records belong in the official company books.
+              For management analysis only. Statutory GST, tax and compliance records belong in the
+              official company books.
             </span>
           </div>
         )}
@@ -134,7 +135,8 @@ function AccessDenied() {
         <div>
           <h1 className="text-xl font-semibold">Access restricted</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            You do not have permission to open this area. Please use the workspace available to your account.
+            You do not have permission to open this area. Please use the workspace available to your
+            account.
           </p>
         </div>
         <Button asChild className="btn-3d w-full sm:w-auto">

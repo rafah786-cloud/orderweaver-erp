@@ -42,7 +42,14 @@ function normalizePhone(raw: string): string | null {
 
 function WhatsAppSettings() {
   const { user, profile, hasAnyRole } = useAuth();
-  const isInternalUser = hasAnyRole(["admin", "accountant", "sales", "production", "hr", "employee"]);
+  const isInternalUser = hasAnyRole([
+    "admin",
+    "accountant",
+    "sales",
+    "production",
+    "hr",
+    "employee",
+  ]);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -141,25 +148,25 @@ function WhatsAppSettings() {
               </div>
 
               {isInternalUser && (
-              <div className="space-y-2">
-                <Label htmlFor="dept">Department</Label>
-                <Select value={department} onValueChange={setDepartment} disabled={isLoading}>
-                  <SelectTrigger id="dept">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEPARTMENTS.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Department-wide broadcasts (e.g. new sales order → Production) will reach you when
-                  this matches.
-                </p>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dept">Department</Label>
+                  <Select value={department} onValueChange={setDepartment} disabled={isLoading}>
+                    <SelectTrigger id="dept">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTMENTS.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Department-wide broadcasts (e.g. new sales order → Production) will reach you
+                    when this matches.
+                  </p>
+                </div>
               )}
 
               <div className="flex items-start justify-between gap-4 rounded-md border p-4">

@@ -47,7 +47,9 @@ export const createDevice = createServerFn({ method: "POST" })
     const companyId = await activeCompanyId(context.supabase);
     const apiKey = randomBytes(24).toString("hex");
     const api_key_hash = await bcrypt.hash(apiKey, 10);
-    const { error } = await supabaseAdmin.from("device_settings").insert({ ...data, company_id: companyId, api_key_hash });
+    const { error } = await supabaseAdmin
+      .from("device_settings")
+      .insert({ ...data, company_id: companyId, api_key_hash });
     if (error) fail("createDevice", error, "Failed to create device. Please try again.");
     return { apiKey };
   });
@@ -75,7 +77,11 @@ export const deleteDevice = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const companyId = await activeCompanyId(context.supabase);
-    const { error } = await supabaseAdmin.from("device_settings").delete().eq("id", data.id).eq("company_id", companyId);
+    const { error } = await supabaseAdmin
+      .from("device_settings")
+      .delete()
+      .eq("id", data.id)
+      .eq("company_id", companyId);
     if (error) fail("deleteDevice", error, "Failed to delete device. Please try again.");
     return { ok: true };
   });

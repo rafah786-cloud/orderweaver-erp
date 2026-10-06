@@ -131,14 +131,15 @@ export const removeUserRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 export const setUserCompanyAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      user_id: z.string().uuid(),
-      company_ids: z.array(z.string().uuid()).max(20),
-    }).parse(d),
+    z
+      .object({
+        user_id: z.string().uuid(),
+        company_ids: z.array(z.string().uuid()).max(20),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);

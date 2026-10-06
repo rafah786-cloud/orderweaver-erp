@@ -13,7 +13,9 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>): { redirect?: string; mode?: "customer" | "staff" | "supplier" | "admin" } => {
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { redirect?: string; mode?: "customer" | "staff" | "supplier" | "admin" } => {
     const mode = ["customer", "staff", "supplier", "admin"].includes(String(s.mode))
       ? (String(s.mode) as "customer" | "staff" | "supplier" | "admin")
       : undefined;
@@ -25,9 +27,15 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in | Mattress Maestro ERP" },
-      { name: "description", content: "Secure access to the House of Abood Tradings business workspace." },
+      {
+        name: "description",
+        content: "Secure access to the House of Abood Tradings business workspace.",
+      },
       { property: "og:title", content: "Sign in | Mattress Maestro ERP" },
-      { property: "og:description", content: "Secure access to the House of Abood Tradings business workspace." },
+      {
+        property: "og:description",
+        content: "Secure access to the House of Abood Tradings business workspace.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -59,10 +67,15 @@ function LoginPage() {
   const finishAuthenticatedSession = async (userId: string, userEmail?: string | null) => {
     setCheckingSession(true);
     try {
-      const [{ data: profile, error: profileError }, { data: roleRows, error: roleError }] = await Promise.all([
-        supabase.from("profiles").select("full_name, email, status").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
-      ]);
+      const [{ data: profile, error: profileError }, { data: roleRows, error: roleError }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("full_name, email, status")
+            .eq("id", userId)
+            .maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", userId),
+        ]);
 
       if (profileError) throw profileError;
       if (roleError) throw roleError;
@@ -118,7 +131,10 @@ function LoginPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
     if (error || !data.user) {
       setLoading(false);
       toast.error(error?.message ?? "Sign in failed");
@@ -145,12 +161,18 @@ function LoginPage() {
     <div className="min-h-screen bg-[#f5f7fa] text-[#172033]">
       <header className="border-b border-[#dce3ea] bg-white">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-3" aria-label="Back to Zizz corporate website">
+          <Link
+            to="/"
+            className="flex items-center gap-3"
+            aria-label="Back to Zizz corporate website"
+          >
             <div className="flex h-9 w-14 items-center justify-center rounded-md border border-[#dce3ea] bg-white px-1.5">
               <img src={zizz.url} alt="Zizz" className="max-h-7 w-full object-contain" />
             </div>
             <div className="hidden min-[420px]:block leading-tight">
-              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8490a0]">House of</div>
+              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8490a0]">
+                House of
+              </div>
               <div className="text-sm font-bold text-[#20374e]">Abood Tradings</div>
             </div>
           </Link>
@@ -174,22 +196,35 @@ function LoginPage() {
               The business behind better sleep.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-[#657486]">
-              Mattress Maestro brings sales, production, inventory, finance, people and business intelligence into one controlled workspace.
+              Mattress Maestro brings sales, production, inventory, finance, people and business
+              intelligence into one controlled workspace.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 text-xs text-[#5f6f80]">
-              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">Multi-company controls</span>
-              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">Accounting & GST</span>
-              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">AI business intelligence</span>
+              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">
+                Multi-company controls
+              </span>
+              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">
+                Accounting & GST
+              </span>
+              <span className="rounded-full border border-[#d7e0e7] bg-white px-3 py-2">
+                AI business intelligence
+              </span>
             </div>
           </div>
         </section>
 
-        <section aria-labelledby="login-heading" className="rounded-xl border border-[#dce3ea] bg-white p-6 shadow-[0_18px_50px_-28px_rgba(16,34,53,.35)] sm:p-8">
+        <section
+          aria-labelledby="login-heading"
+          className="rounded-xl border border-[#dce3ea] bg-white p-6 shadow-[0_18px_50px_-28px_rgba(16,34,53,.35)] sm:p-8"
+        >
           <div className="mb-6 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-[#dce3ea] bg-[#f7f9fb]">
               <ShieldCheck className="h-5 w-5 text-[#17324d]" aria-hidden="true" />
             </div>
-            <h2 id="login-heading" className="mt-4 text-2xl font-semibold tracking-tight text-[#17324d]">
+            <h2
+              id="login-heading"
+              className="mt-4 text-2xl font-semibold tracking-tight text-[#17324d]"
+            >
               {heading}
             </h2>
             <p className="mt-2 text-sm text-[#6b7788]">
@@ -206,7 +241,14 @@ function LoginPage() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
@@ -218,7 +260,14 @@ function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
 
             <div className="flex items-start gap-2">
@@ -233,7 +282,8 @@ function LoginPage() {
                   Keep me signed in
                 </Label>
                 <p className="mt-1 text-[11px] leading-5 text-[#758394]">
-                  This trusts the current device. Untrusted devices sign out after the configured inactivity period.
+                  This trusts the current device. Untrusted devices sign out after the configured
+                  inactivity period.
                 </p>
               </div>
             </div>
@@ -254,4 +304,3 @@ function LoginPage() {
     </div>
   );
 }
-

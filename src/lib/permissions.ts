@@ -46,7 +46,16 @@ const DEFAULT_ROUTE_BY_ROLE: Partial<Record<AppRole, string>> = {
 };
 
 export function defaultRouteForRoles(roles: AppRole[]): string {
-  for (const role of ["admin", "accountant", "sales", "production", "hr", "employee", "customer", "vendor"] as AppRole[]) {
+  for (const role of [
+    "admin",
+    "accountant",
+    "sales",
+    "production",
+    "hr",
+    "employee",
+    "customer",
+    "vendor",
+  ] as AppRole[]) {
     if (roles.includes(role)) return DEFAULT_ROUTE_BY_ROLE[role] ?? "/dashboard";
   }
   return "/pending";

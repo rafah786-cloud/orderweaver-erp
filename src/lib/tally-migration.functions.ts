@@ -133,7 +133,8 @@ export const listTallyMigrationRuns = createServerFn({ method: "GET" })
     );
     if (companyIds.length === 0) return [];
 
-    const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+    const { data: activeCompanyId, error: activeCompanyError } =
+      await supabase.rpc("current_company_id");
     if (activeCompanyError || !activeCompanyId) throw new Error("No active company selected");
 
     const { data, error } = await supabase
@@ -160,7 +161,8 @@ export const validateTallyMigration = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!role) throw new Error("Admin only");
     const run = await assertMigrationRunAccess(supabase, userId, data.runId);
-    const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+    const { data: activeCompanyId, error: activeCompanyError } =
+      await supabase.rpc("current_company_id");
     if (activeCompanyError || !activeCompanyId || run.company_id !== activeCompanyId) {
       throw new Error("Migration run is outside the active company");
     }
@@ -188,7 +190,8 @@ export const reconcileTallyMigration = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!role) throw new Error("Admin only");
     const run = await assertMigrationRunAccess(supabase, userId, data.runId);
-    const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+    const { data: activeCompanyId, error: activeCompanyError } =
+      await supabase.rpc("current_company_id");
     if (activeCompanyError || !activeCompanyId || run.company_id !== activeCompanyId) {
       throw new Error("Migration run is outside the active company");
     }

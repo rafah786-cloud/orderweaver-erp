@@ -131,15 +131,23 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
     const [{ data: customerRows }, { data: vendorRows }, { data: memberRows }] = await Promise.all([
       supabaseAdmin.from("parties").select("id").eq("company_id", companyId),
       supabaseAdmin.from("suppliers").select("id").eq("company_id", companyId),
-      supabaseAdmin.from("user_company_access").select("user_id").eq("company_id", companyId).eq("can_view", true),
+      supabaseAdmin
+        .from("user_company_access")
+        .select("user_id")
+        .eq("company_id", companyId)
+        .eq("can_view", true),
     ]);
     const customerIds = (customerRows ?? []).map((r) => r.id);
     const vendorIds = (vendorRows ?? []).map((r) => r.id);
     const memberIds = (memberRows ?? []).map((r) => r.user_id);
     const scopeClauses = [
-      customerIds.length ? `and(party_kind.eq.customer,party_id.in.(${customerIds.join(",")}))` : null,
+      customerIds.length
+        ? `and(party_kind.eq.customer,party_id.in.(${customerIds.join(",")}))`
+        : null,
       vendorIds.length ? `and(party_kind.eq.vendor,party_id.in.(${vendorIds.join(",")}))` : null,
-      memberIds.length ? `and(party_kind.in.(staff,admin),party_id.in.(${memberIds.join(",")}))` : null,
+      memberIds.length
+        ? `and(party_kind.in.(staff,admin),party_id.in.(${memberIds.join(",")}))`
+        : null,
     ].filter(Boolean);
     if (scopeClauses.length === 0) throw new Error("No company-scoped notification recipients");
     const scopedOr = scopeClauses.join(",");

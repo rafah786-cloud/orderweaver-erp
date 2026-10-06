@@ -89,7 +89,11 @@ export const recalcAttendance = createServerFn({ method: "POST" })
     await assertHrOrAdmin(context.supabase, context.userId);
     const companyId = await getActiveCompanyId(context.supabase);
     const { data: emp } = await supabaseAdmin
-      .from("employees").select("id").eq("id", data.employee_id).eq("company_id", companyId).maybeSingle();
+      .from("employees")
+      .select("id")
+      .eq("id", data.employee_id)
+      .eq("company_id", companyId)
+      .maybeSingle();
     if (!emp) throw new Error("Employee not found in the active company");
     const { error } = await supabaseAdmin.rpc("recalc_attendance_day", {
       _employee_id: data.employee_id,
@@ -106,7 +110,11 @@ export const recalcAttendanceForDay = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertHrOrAdmin(context.supabase, context.userId);
     const companyId = await getActiveCompanyId(context.supabase);
-    const { data: emps } = await supabaseAdmin.from("employees").select("id").eq("company_id", companyId).eq("is_active", true);
+    const { data: emps } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("is_active", true);
     for (const e of emps ?? []) {
       await supabaseAdmin.rpc("recalc_attendance_day", { _employee_id: e.id, _date: data.date });
     }

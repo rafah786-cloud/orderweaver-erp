@@ -153,7 +153,11 @@ export async function fetchPartiesMap(ids: string[]): Promise<Map<string, Party>
 }
 
 // HSN/SAC summary aggregator — for GSTR-1 Table 12.
-export function buildHsnSummary(invoices: InvoiceFull[], parties: Map<string, Party>, supplierStateCode: string): HsnRow[] {
+export function buildHsnSummary(
+  invoices: InvoiceFull[],
+  parties: Map<string, Party>,
+  supplierStateCode: string,
+): HsnRow[] {
   const map = new Map<string, HsnRow>();
   const supplierState = supplierStateCode.padStart(2, "0");
   for (const inv of invoices) {
@@ -325,7 +329,9 @@ export async function generateReturn(opts: {
 }): Promise<{ id: string }> {
   const gstin = opts.gstin?.trim().toUpperCase();
   if (!gstin || !/^\d{2}[A-Z0-9]{13}$/.test(gstin)) {
-    throw new Error("Configure a valid 15-character GSTIN for the active company before generating a return");
+    throw new Error(
+      "Configure a valid 15-character GSTIN for the active company before generating a return",
+    );
   }
   const supplierState = opts.supplierStateCode.trim();
   if (!/^\d{2}$/.test(supplierState)) {

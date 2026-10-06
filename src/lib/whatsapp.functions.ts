@@ -55,7 +55,9 @@ async function resolveCustomerEventReference(
   if (event === "production_order.ready" || event === "dispatch.update") {
     const { data } = await db
       .from("production_orders")
-      .select("id, production_number, tracking_number, transporter_name, sales_orders!inner(order_number, party_id)")
+      .select(
+        "id, production_number, tracking_number, transporter_name, sales_orders!inner(order_number, party_id)",
+      )
       .eq("id", refId)
       .eq("sales_orders.party_id", partyId)
       .maybeSingle();
@@ -92,7 +94,9 @@ async function resolveCustomerEventReference(
   if (event === "payment.received") {
     const { data } = await db
       .from("vouchers")
-      .select("id, voucher_number, voucher_entries!inner(credit, ledger_accounts!inner(mapped_party_id))")
+      .select(
+        "id, voucher_number, voucher_entries!inner(credit, ledger_accounts!inner(mapped_party_id))",
+      )
       .eq("id", refId)
       .eq("voucher_entries.ledger_accounts.mapped_party_id", partyId)
       .maybeSingle();
@@ -280,7 +284,12 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertHasAnyRole(context.supabase, context.userId, ["admin", "sales", "production", "accountant"]);
+    await assertHasAnyRole(context.supabase, context.userId, [
+      "admin",
+      "sales",
+      "production",
+      "accountant",
+    ]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const reference = await resolveCustomerEventReference(
       context.supabase,
@@ -375,7 +384,8 @@ export const notifyAdminPurchaseAck = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const vendorName = (bill as any).suppliers?.name ?? "Vendor";
     const eventKey = `purchase_order.${data.status}`;
-    const { data: activeCompanyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: activeCompanyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !activeCompanyId) throw new Error("No active company selected");
     const { data: memberRows } = await supabaseAdmin
       .from("user_company_access")

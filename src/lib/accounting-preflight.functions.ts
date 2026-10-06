@@ -56,7 +56,10 @@ export const accountingPreflight = createServerFn({ method: "GET" })
     await assertAdmin(db, context.userId);
     const { data: companyId, error: companyError } = await db.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
-    const vouchers = await db.from("vouchers").select("id, voucher_number, voucher_type").eq("company_id", companyId);
+    const vouchers = await db
+      .from("vouchers")
+      .select("id, voucher_number, voucher_type")
+      .eq("company_id", companyId);
     const entries = await db.from("voucher_entries").select("voucher_id, debit, credit");
     const byVoucher = new Map<string, { debit: number; credit: number }>();
     let debit = 0;

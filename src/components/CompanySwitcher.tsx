@@ -75,7 +75,9 @@ export function CompanySwitcher() {
                         {company.code} · {company.base_currency}
                       </span>
                     </span>
-                    {company.id === activeCompany.id && <Check className="h-4 w-4" aria-label="Active" />}
+                    {company.id === activeCompany.id && (
+                      <Check className="h-4 w-4" aria-label="Active" />
+                    )}
                   </CommandItem>
                 );
               })}
@@ -86,11 +88,14 @@ export function CompanySwitcher() {
           <div className="mb-1 flex items-center gap-2">
             <Badge variant="secondary">Active company</Badge>
             {isManagementBook && (
-              <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100">Internal management book</Badge>
+              <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100">
+                Internal management book
+              </Badge>
             )}
           </div>
           <p>
-            Data is isolated by company. Management books are for internal analysis only and must not be used to omit taxable or statutory transactions from the official books.
+            Data is isolated by company. Management books are for internal analysis only and must
+            not be used to omit taxable or statutory transactions from the official books.
           </p>
         </div>
       </PopoverContent>

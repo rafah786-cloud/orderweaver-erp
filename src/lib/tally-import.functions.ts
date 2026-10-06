@@ -688,7 +688,10 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: roles, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: roles, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     if (roleError || !(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
     const { data: companyId, error: companyError } = await supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");

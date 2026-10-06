@@ -27,7 +27,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { setUserStatus, assignUserRole, removeUserRole, setUserCompanyAccess } from "@/lib/approvals.functions";
+import {
+  setUserStatus,
+  assignUserRole,
+  removeUserRole,
+  setUserCompanyAccess,
+} from "@/lib/approvals.functions";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 type UserStatus = Database["public"]["Enums"]["user_status"];
@@ -70,14 +75,25 @@ function ApprovalsPage() {
         .select("id, full_name, email, status, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      const [{ data: rolesData }, { data: memberships }, { data: companiesData }] = await Promise.all([
-        supabase.from("user_roles").select("user_id, role"),
-        supabase.from("user_company_access").select("user_id, company_id, can_view"),
-        supabase.from("companies").select("id, code, display_name").eq("is_active", true).order("display_name"),
-      ]);
+      const [{ data: rolesData }, { data: memberships }, { data: companiesData }] =
+        await Promise.all([
+          supabase.from("user_roles").select("user_id, role"),
+          supabase.from("user_company_access").select("user_id, company_id, can_view"),
+          supabase
+            .from("companies")
+            .select("id, code, display_name")
+            .eq("is_active", true)
+            .order("display_name"),
+        ]);
       const rolesByUser: Record<string, AppRole[]> = {};
-      (rolesData ?? []).forEach((r) => { (rolesByUser[r.user_id] ??= []).push(r.role as AppRole); });
-      const companies = (companiesData ?? []) as { id: string; code: string; display_name: string }[];
+      (rolesData ?? []).forEach((r) => {
+        (rolesByUser[r.user_id] ??= []).push(r.role as AppRole);
+      });
+      const companies = (companiesData ?? []) as {
+        id: string;
+        code: string;
+        display_name: string;
+      }[];
       const companiesByUser: Record<string, string[]> = {};
       (memberships ?? []).forEach((m) => {
         if (m.can_view) (companiesByUser[m.user_id] ??= []).push(m.company_id);
@@ -219,28 +235,53 @@ function ApprovalsPage() {
                           return (
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-8 min-w-40 justify-between text-xs">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 min-w-40 justify-between text-xs"
+                                >
                                   Companies ({selected.length}/4)
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent align="start" className="w-72">
                                 <div className="space-y-2">
                                   <div className="text-xs font-medium">Grant access</div>
-                                  {u.companies.map((company: { id: string; code: string; display_name: string }) => (
-                                    <label key={company.id} className="flex items-start gap-2 rounded-md p-2 hover:bg-muted cursor-pointer">
-                                      <Checkbox
-                                        checked={selected.includes(company.id)}
-                                        disabled={company.code === "ABOOD"}
-                                        onCheckedChange={() => toggleCompany(u.id, company.id, selected)}
-                                      />
-                                      <span className="leading-tight">
-                                        <span className="block text-sm">{company.display_name}</span>
-                                        <span className="text-[10px] text-muted-foreground">{company.code}</span>
-                                      </span>
-                                    </label>
-                                  ))}
-                                  <p className="text-[10px] text-muted-foreground pt-1">ABOOD TRADINGS is always retained as the default company.</p>
-                                  <Button size="sm" className="w-full" onClick={() => void saveCompanyAccess(u.id, u.company_ids)}>
+                                  {u.companies.map(
+                                    (company: {
+                                      id: string;
+                                      code: string;
+                                      display_name: string;
+                                    }) => (
+                                      <label
+                                        key={company.id}
+                                        className="flex items-start gap-2 rounded-md p-2 hover:bg-muted cursor-pointer"
+                                      >
+                                        <Checkbox
+                                          checked={selected.includes(company.id)}
+                                          disabled={company.code === "ABOOD"}
+                                          onCheckedChange={() =>
+                                            toggleCompany(u.id, company.id, selected)
+                                          }
+                                        />
+                                        <span className="leading-tight">
+                                          <span className="block text-sm">
+                                            {company.display_name}
+                                          </span>
+                                          <span className="text-[10px] text-muted-foreground">
+                                            {company.code}
+                                          </span>
+                                        </span>
+                                      </label>
+                                    ),
+                                  )}
+                                  <p className="text-[10px] text-muted-foreground pt-1">
+                                    ABOOD TRADINGS is always retained as the default company.
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => void saveCompanyAccess(u.id, u.company_ids)}
+                                  >
                                     Save access
                                   </Button>
                                 </div>
@@ -267,7 +308,11 @@ function ApprovalsPage() {
                             <Button
                               size="sm"
                               disabled={u.roles.length === 0}
-                              title={u.roles.length === 0 ? "Assign at least one role before approval" : "Approve user"}
+                              title={
+                                u.roles.length === 0
+                                  ? "Assign at least one role before approval"
+                                  : "Approve user"
+                              }
                               onClick={async () => {
                                 if (u.roles.length === 0) {
                                   toast.error("Assign at least one role before approval");

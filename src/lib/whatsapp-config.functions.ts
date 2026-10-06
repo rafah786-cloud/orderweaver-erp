@@ -156,10 +156,15 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
     }
 
     const { sendWhatsAppMessage } = await import("./whatsapp/send.server");
-    const result = await sendWhatsAppMessage(configuredBusinessNumber, template.template_name, data.variables, {
-      party_kind: "admin",
-      event_type: "test.send",
-    });
+    const result = await sendWhatsAppMessage(
+      configuredBusinessNumber,
+      template.template_name,
+      data.variables,
+      {
+        party_kind: "admin",
+        event_type: "test.send",
+      },
+    );
     return {
       ok: result.ok,
       messageId: result.messageId,

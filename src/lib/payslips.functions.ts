@@ -13,7 +13,8 @@ export const generatePayslips = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => GenSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
     // role check
@@ -36,7 +37,11 @@ export const generatePayslips = createServerFn({ method: "POST" })
     const start = new Date(Date.UTC(data.year, data.month - 1, 1)).toISOString().slice(0, 10);
     const end = new Date(Date.UTC(data.year, data.month, 1)).toISOString().slice(0, 10);
 
-    let empQ = supabaseAdmin.from("employees").select("*").eq("is_active", true).eq("company_id", companyId);
+    let empQ = supabaseAdmin
+      .from("employees")
+      .select("*")
+      .eq("is_active", true)
+      .eq("company_id", companyId);
     if (data.employee_id) empQ = empQ.eq("id", data.employee_id);
     const { data: employees, error: eErr } = await empQ;
     if (eErr) {

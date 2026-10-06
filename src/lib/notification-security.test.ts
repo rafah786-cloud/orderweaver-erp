@@ -9,8 +9,8 @@ vi.mock("@tanstack/react-start", () => ({
         validate = fn;
         return builder;
       },
-      handler: (fn: (args: any) => unknown) =>
-        (args: any) => fn({ ...args, data: validate(args.data) }),
+      handler: (fn: (args: any) => unknown) => (args: any) =>
+        fn({ ...args, data: validate(args.data) }),
     };
     return builder;
   },
@@ -65,7 +65,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.sendTemplate.mockResolvedValue({ ok: true, messageId: "test" });
   mocks.sendFreeform.mockResolvedValue({ ok: true, messageId: "test" });
-  mocks.adminFrom.mockImplementation((table: string) => query(table === "employee_notification_subscriptions" ? [{ department: "Purchase" }] : null));
+  mocks.adminFrom.mockImplementation((table: string) =>
+    query(table === "employee_notification_subscriptions" ? [{ department: "Purchase" }] : null),
+  );
 });
 
 describe("admin-only notification settings", () => {
@@ -91,7 +93,9 @@ describe("caller-scoped notification actions", () => {
     const from = vi.fn((table: string) =>
       table === "user_roles" ? query([{ role: "admin" }]) : query(null),
     );
-    await expect(call(notifyVendorPurchaseBill, { bill_id: otherId }, from)).rejects.toThrow("Bill not found");
+    await expect(call(notifyVendorPurchaseBill, { bill_id: otherId }, from)).rejects.toThrow(
+      "Bill not found",
+    );
     expect(mocks.sendTemplate).not.toHaveBeenCalled();
   });
 
@@ -100,10 +104,14 @@ describe("caller-scoped notification actions", () => {
       table === "user_roles" ? query([{ role: "sales" }]) : query(null),
     );
     await expect(
-      call(notifyStaffEvent, {
-        event: "staff.payment.received",
-        ref_id: otherId,
-      }, from),
+      call(
+        notifyStaffEvent,
+        {
+          event: "staff.payment.received",
+          ref_id: otherId,
+        },
+        from,
+      ),
     ).rejects.toThrow("Forbidden");
     expect(mocks.sendTemplate).not.toHaveBeenCalled();
   });
@@ -113,11 +121,15 @@ describe("caller-scoped notification actions", () => {
       table === "user_roles" ? query([{ role: "admin" }]) : query(null),
     );
     await expect(
-      call(notifyCustomerEvent, {
-        party_id: id,
-        event: "invoice.issued",
-        ref_id: otherId,
-      }, from),
+      call(
+        notifyCustomerEvent,
+        {
+          party_id: id,
+          event: "invoice.issued",
+          ref_id: otherId,
+        },
+        from,
+      ),
     ).rejects.toThrow("Invoice does not belong");
     expect(mocks.sendTemplate).not.toHaveBeenCalled();
   });
@@ -126,23 +138,45 @@ describe("caller-scoped notification actions", () => {
     const from = vi.fn((table: string) => {
       if (table === "user_roles") return query([{ role: "admin" }]);
       if (table === "invoices") {
-        return query({ id: otherId, invoice_number: "INV-1", total_amount: 1000, paid_amount: 0, due_date: null, party_id: id });
+        return query({
+          id: otherId,
+          invoice_number: "INV-1",
+          total_amount: 1000,
+          paid_amount: 0,
+          due_date: null,
+          party_id: id,
+        });
       }
       if (table === "parties") {
-        return query({ id, name: "Customer", phone: "+919876543210", whatsapp_number: null, whatsapp_opt_in: true });
+        return query({
+          id,
+          name: "Customer",
+          phone: "+919876543210",
+          whatsapp_number: null,
+          whatsapp_opt_in: true,
+        });
       }
       if (table === "whatsapp_templates") {
-        return query({ template_name: "issued", language_code: "en", variables: ["invoice_no"], is_active: true });
+        return query({
+          template_name: "issued",
+          language_code: "en",
+          variables: ["invoice_no"],
+          is_active: true,
+        });
       }
       return query(null);
     });
 
     await expect(
-      call(notifyCustomerEvent, {
-        party_id: id,
-        event: "invoice.issued",
-        ref_id: otherId,
-      }, from),
+      call(
+        notifyCustomerEvent,
+        {
+          party_id: id,
+          event: "invoice.issued",
+          ref_id: otherId,
+        },
+        from,
+      ),
     ).resolves.toEqual({ ok: true });
 
     expect(mocks.sendTemplate).toHaveBeenCalledWith(
@@ -154,8 +188,23 @@ describe("caller-scoped notification actions", () => {
   it("fails closed when no approved WhatsApp template exists", async () => {
     const from = vi.fn((table: string) => {
       if (table === "user_roles") return query([{ role: "admin" }]);
-      if (table === "invoices") return query({ id: otherId, invoice_number: "INV-1", total_amount: 1000, paid_amount: 0, due_date: null, party_id: id });
-      if (table === "parties") return query({ id, name: "Customer", phone: "+919876543210", whatsapp_number: null, whatsapp_opt_in: true });
+      if (table === "invoices")
+        return query({
+          id: otherId,
+          invoice_number: "INV-1",
+          total_amount: 1000,
+          paid_amount: 0,
+          due_date: null,
+          party_id: id,
+        });
+      if (table === "parties")
+        return query({
+          id,
+          name: "Customer",
+          phone: "+919876543210",
+          whatsapp_number: null,
+          whatsapp_opt_in: true,
+        });
       if (table === "whatsapp_templates") return query(null);
       return query(null);
     });
@@ -173,7 +222,9 @@ describe("approved promotional broadcasts", () => {
     mocks.adminFrom.mockImplementation((table: string) =>
       table === "whatsapp_templates" ? query(null) : query(null),
     );
-    await expect(call(broadcastPromo, { audience: "parties" }, vi.fn())).rejects.toThrow("No approved");
+    await expect(call(broadcastPromo, { audience: "parties" }, vi.fn())).rejects.toThrow(
+      "No approved",
+    );
     expect(mocks.sendFreeform).not.toHaveBeenCalled();
   });
 });

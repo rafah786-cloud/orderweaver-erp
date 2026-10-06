@@ -35,9 +35,13 @@ function GstLayout() {
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-amber-950">GST compliance is disabled for this book</h1>
+                <h1 className="text-xl font-semibold text-amber-950">
+                  GST compliance is disabled for this book
+                </h1>
                 <p className="mt-2 text-sm leading-6 text-amber-900">
-                  You are viewing an internal management book. Use the official company book for statutory GST returns, HSN/SAC reporting and e-invoices. Management books must not be used to omit, replace or reclassify taxable statutory transactions.
+                  You are viewing an internal management book. Use the official company book for
+                  statutory GST returns, HSN/SAC reporting and e-invoices. Management books must not
+                  be used to omit, replace or reclassify taxable statutory transactions.
                 </p>
               </div>
             </div>
@@ -67,7 +71,10 @@ function GstLayout() {
                   <div>
                     <div className="flex items-center gap-2 text-base font-semibold">
                       {label}
-                      <ListChecks className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-50" aria-hidden="true" />
+                      <ListChecks
+                        className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-50"
+                        aria-hidden="true"
+                      />
                     </div>
                     <div className="mt-0.5 text-sm text-muted-foreground">{desc}</div>
                   </div>

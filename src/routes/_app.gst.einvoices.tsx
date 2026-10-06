@@ -55,10 +55,7 @@ function EInvoicesPage() {
   if (managementBook) {
     return (
       <>
-        <PageHeader
-          title="E-Invoices"
-          description="Official GST e-invoice registry."
-        />
+        <PageHeader title="E-Invoices" description="Official GST e-invoice registry." />
         <PageBody className="flex min-h-[65vh] items-center justify-center">
           <Card className="w-full max-w-2xl border-amber-200 bg-amber-50">
             <CardContent className="p-6 sm:p-8">
@@ -67,9 +64,12 @@ function EInvoicesPage() {
                   <ShieldAlert className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-semibold text-amber-950">Not available in the internal management book</h1>
+                  <h1 className="text-xl font-semibold text-amber-950">
+                    Not available in the internal management book
+                  </h1>
                   <p className="mt-2 text-sm leading-6 text-amber-900">
-                    Switch to the corresponding official company book for GST e-invoice work. Internal management books are for analysis only.
+                    Switch to the corresponding official company book for GST e-invoice work.
+                    Internal management books are for analysis only.
                   </p>
                 </div>
               </div>

@@ -150,9 +150,12 @@ function TallyImportPage() {
             <div className="flex gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-800" />
               <div>
-                <h2 className="font-semibold text-amber-950">Tally migration is blocked for management books</h2>
+                <h2 className="font-semibold text-amber-950">
+                  Tally migration is blocked for management books
+                </h2>
                 <p className="mt-1 text-sm leading-6 text-amber-900">
-                  Switch to the official company book before staging or importing Tally data. Management books are for internal analysis only.
+                  Switch to the official company book before staging or importing Tally data.
+                  Management books are for internal analysis only.
                 </p>
               </div>
             </div>
@@ -216,7 +219,9 @@ function TallyImportPage() {
   const stageMigrationRun = async () => {
     if (!migrationParsed || !targetCompany) return;
     if (targetCompany.id !== activeCompany?.id) {
-      toast.error("Switch the active company to the selected target before posting live masters. Staging itself remains safe.");
+      toast.error(
+        "Switch the active company to the selected target before posting live masters. Staging itself remains safe.",
+      );
       return;
     }
     setStaging(true);

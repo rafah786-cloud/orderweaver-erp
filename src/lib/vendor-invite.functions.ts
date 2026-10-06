@@ -30,7 +30,8 @@ export const createVendorInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
     // Supplier selection is resolved through the caller's RLS so an admin

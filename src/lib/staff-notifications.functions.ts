@@ -76,7 +76,8 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
 
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
     // 1. Which departments are subscribed to this event in the active company?
@@ -114,56 +115,82 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     }
     if (data.event === "staff.sales_order.created") {
       if (!data.ref_id) throw new Error("Sales-order notification requires a reference");
-      const { data: order, error } = await context.supabase.from("sales_orders")
-        .select("id, order_number, total_amount, party_id").eq("id", data.ref_id).maybeSingle();
+      const { data: order, error } = await context.supabase
+        .from("sales_orders")
+        .select("id, order_number, total_amount, party_id")
+        .eq("id", data.ref_id)
+        .maybeSingle();
       if (error || !order) throw new Error("Sales order not found");
       if (data.customer_party_id && data.customer_party_id !== order.party_id)
         throw new Error("Customer reference does not match the sales order");
       enrichedVars.order_no = order.order_number;
       enrichedVars.order_value = Number(order.total_amount ?? 0).toFixed(2);
       if (order.party_id) {
-        const { data: party } = await context.supabase.from("parties")
-          .select("name").eq("id", order.party_id).maybeSingle();
+        const { data: party } = await context.supabase
+          .from("parties")
+          .select("name")
+          .eq("id", order.party_id)
+          .maybeSingle();
         if (!party) throw new Error("Customer not found");
         enrichedVars.customer_name = party.name;
       }
     } else if (data.event === "staff.purchase_request.created") {
       if (!data.ref_id) throw new Error("Purchase notification requires a reference");
-      const { data: bill, error } = await context.supabase.from("purchase_bills")
-        .select("id, bill_number, total_amount, supplier_id").eq("id", data.ref_id).maybeSingle();
+      const { data: bill, error } = await context.supabase
+        .from("purchase_bills")
+        .select("id, bill_number, total_amount, supplier_id")
+        .eq("id", data.ref_id)
+        .maybeSingle();
       if (error || !bill) throw new Error("Purchase bill not found");
       if (data.supplier_id && data.supplier_id !== bill.supplier_id)
         throw new Error("Supplier reference does not match the purchase bill");
       enrichedVars.po_number = bill.bill_number;
       enrichedVars.po_value = Number(bill.total_amount ?? 0).toFixed(2);
       if (bill.supplier_id) {
-        const { data: supplier } = await context.supabase.from("suppliers")
-          .select("name").eq("id", bill.supplier_id).maybeSingle();
+        const { data: supplier } = await context.supabase
+          .from("suppliers")
+          .select("name")
+          .eq("id", bill.supplier_id)
+          .maybeSingle();
         if (!supplier) throw new Error("Supplier not found");
         enrichedVars.vendor_name = supplier.name;
       }
     } else if (data.event === "staff.payment.received") {
       if (!data.ref_id) throw new Error("Payment notification requires a reference");
-      const { data: voucher, error } = await context.supabase.from("vouchers")
-        .select("id, voucher_number, voucher_entries!inner(credit, ledger_accounts!inner(mapped_party_id))")
-        .eq("id", data.ref_id).maybeSingle();
+      const { data: voucher, error } = await context.supabase
+        .from("vouchers")
+        .select(
+          "id, voucher_number, voucher_entries!inner(credit, ledger_accounts!inner(mapped_party_id))",
+        )
+        .eq("id", data.ref_id)
+        .maybeSingle();
       if (error || !voucher) throw new Error("Payment voucher not found");
       const entries = (voucher.voucher_entries ?? []) as Array<any>;
       enrichedVars.receipt_no = voucher.voucher_number;
-      enrichedVars.payment_amount = entries.reduce((sum, row) => sum + Number(row.credit ?? 0), 0).toFixed(2);
-      const mappedPartyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)?.ledger_accounts?.mapped_party_id;
+      enrichedVars.payment_amount = entries
+        .reduce((sum, row) => sum + Number(row.credit ?? 0), 0)
+        .toFixed(2);
+      const mappedPartyId = entries.find((row) => row.ledger_accounts?.mapped_party_id)
+        ?.ledger_accounts?.mapped_party_id;
       const partyId = data.customer_party_id ?? mappedPartyId;
       if (partyId) {
-        const { data: party } = await context.supabase.from("parties")
-          .select("name").eq("id", partyId).maybeSingle();
+        const { data: party } = await context.supabase
+          .from("parties")
+          .select("name")
+          .eq("id", partyId)
+          .maybeSingle();
         if (!party) throw new Error("Customer not found");
         enrichedVars.customer_name = party.name;
       }
     } else if (data.event === "staff.dispatch.ready") {
       if (!data.ref_id) throw new Error("Dispatch notification requires a reference");
-      const { data: order, error } = await context.supabase.from("production_orders")
-        .select("id, production_number, tracking_number, transporter_name, sales_orders!inner(order_number, party_id)")
-        .eq("id", data.ref_id).maybeSingle();
+      const { data: order, error } = await context.supabase
+        .from("production_orders")
+        .select(
+          "id, production_number, tracking_number, transporter_name, sales_orders!inner(order_number, party_id)",
+        )
+        .eq("id", data.ref_id)
+        .maybeSingle();
       if (error || !order) throw new Error("Production order not found");
       const so = Array.isArray(order.sales_orders) ? order.sales_orders[0] : order.sales_orders;
       enrichedVars.order_no = so?.order_number ?? order.production_number;
@@ -173,8 +200,11 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       if (partyId) {
         if (so?.party_id && so.party_id !== partyId)
           throw new Error("Customer reference does not match the production order");
-        const { data: party } = await context.supabase.from("parties")
-          .select("name").eq("id", partyId).maybeSingle();
+        const { data: party } = await context.supabase
+          .from("parties")
+          .select("name")
+          .eq("id", partyId)
+          .maybeSingle();
         if (!party) throw new Error("Customer not found");
         enrichedVars.customer_name = party.name;
       }
@@ -262,7 +292,8 @@ export const listSubscriptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
@@ -288,20 +319,19 @@ export const setSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("employee_notification_subscriptions")
-      .upsert(
-        {
-          company_id: companyId,
-          department: data.department,
-          event_key: data.event_key,
-          is_active: data.is_active,
-        },
-        { onConflict: "company_id,department,event_key" },
-      );
+    const { error } = await supabaseAdmin.from("employee_notification_subscriptions").upsert(
+      {
+        company_id: companyId,
+        department: data.department,
+        event_key: data.event_key,
+        is_active: data.is_active,
+      },
+      { onConflict: "company_id,department,event_key" },
+    );
     if (error) throw error;
     return { ok: true };
   });
@@ -311,7 +341,8 @@ export const departmentEmployeeCounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertHasAnyRole(context.supabase, context.userId, ["admin", "hr"]);
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin

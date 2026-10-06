@@ -18,7 +18,11 @@ async function assertVisibleParty(db: any, kind: "customer" | "vendor", id: stri
   if (error || !data) throw new Error("Record is not visible in the active company");
 }
 
-async function assertVisibleNotificationSource(db: any, refTable: string | null, refId: string | null) {
+async function assertVisibleNotificationSource(
+  db: any,
+  refTable: string | null,
+  refId: string | null,
+) {
   if (!refTable || !refId) return;
   const allowed = new Set([
     "parties",
@@ -130,7 +134,8 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
       if (!log.party_id) throw new Error("Notification has no party owner");
       await assertVisibleParty(context.supabase, log.party_kind, log.party_id);
     } else if (log.party_id) {
-      const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+      const { data: companyId, error: companyError } =
+        await context.supabase.rpc("current_company_id");
       if (companyError || !companyId) throw new Error("No active company selected");
       const { data: membership, error: membershipError } = await context.supabase
         .from("user_company_access")
@@ -139,7 +144,8 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
         .eq("company_id", companyId)
         .eq("can_view", true)
         .maybeSingle();
-      if (membershipError || !membership) throw new Error("Notification recipient is not visible in the active company");
+      if (membershipError || !membership)
+        throw new Error("Notification recipient is not visible in the active company");
     } else {
       throw new Error("Notification has no visible recipient");
     }

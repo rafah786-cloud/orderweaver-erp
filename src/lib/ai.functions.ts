@@ -191,7 +191,8 @@ export const getAiConversation = createServerFn({ method: "POST" })
       .eq("id", data.conversationId)
       .eq("user_id", context.userId)
       .maybeSingle();
-    if (ownershipError || !ownedConversation) throw new Error("Conversation is not available to this account");
+    if (ownershipError || !ownedConversation)
+      throw new Error("Conversation is not available to this account");
     const { data: messages } = await context.supabase
       .from("ai_messages")
       .select("id, role, content, created_at")
@@ -273,7 +274,8 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
     const started = Date.now();
     const { businessSnapshot } = await import("@/lib/ai/erp-data.server");
     const { logAiUsage } = await import("@/lib/ai/audit.server");
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
     if (!data.refresh) {
@@ -281,7 +283,7 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
         .from("ai_insights")
         .select("payload, generated_at, expires_at, model")
         .eq("kind", "business_brief")
-.eq("company_id", companyId)
+        .eq("company_id", companyId)
         .maybeSingle();
       if (cached?.payload && cached.expires_at && new Date(cached.expires_at) > new Date()) {
         return {
@@ -513,7 +515,8 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       await import("@/lib/ai/documents.server");
     const { logAiUsage } = await import("@/lib/ai/audit.server");
 
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
     const { data: created, error: insertError } = await context.supabase
@@ -759,7 +762,8 @@ export const createAiProposal = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
     if (data.sourceDocumentId) {

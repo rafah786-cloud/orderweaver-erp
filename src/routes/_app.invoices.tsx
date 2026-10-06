@@ -696,7 +696,11 @@ function InvoicesPage() {
                       placeholder="Description"
                       value={it.description}
                       onChange={(e) =>
-                        setItems(items.map((x, i) => (i === idx ? { ...x, description: e.target.value } : x)))
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, description: e.target.value } : x,
+                          ),
+                        )
                       }
                     />
                     <Input
@@ -705,7 +709,11 @@ function InvoicesPage() {
                       inputMode="numeric"
                       value={it.hsn_code}
                       onChange={(e) =>
-                        setItems(items.map((x, i) => (i === idx ? { ...x, hsn_code: e.target.value.replace(/\D/g, "") } : x)))
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, hsn_code: e.target.value.replace(/\D/g, "") } : x,
+                          ),
+                        )
                       }
                     />
                     <Input
@@ -716,7 +724,11 @@ function InvoicesPage() {
                       placeholder="Qty"
                       value={it.quantity}
                       onChange={(e) =>
-                        setItems(items.map((x, i) => (i === idx ? { ...x, quantity: Number(e.target.value) } : x)))
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, quantity: Number(e.target.value) } : x,
+                          ),
+                        )
                       }
                     />
                     <Input
@@ -727,7 +739,11 @@ function InvoicesPage() {
                       placeholder="Unit ₹"
                       value={it.unit_price}
                       onChange={(e) =>
-                        setItems(items.map((x, i) => (i === idx ? { ...x, unit_price: Number(e.target.value) } : x)))
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, unit_price: Number(e.target.value) } : x,
+                          ),
+                        )
                       }
                     />
                     <Input
@@ -739,7 +755,11 @@ function InvoicesPage() {
                       placeholder="GST %"
                       value={it.tax_rate}
                       onChange={(e) =>
-                        setItems(items.map((x, i) => (i === idx ? { ...x, tax_rate: Number(e.target.value) } : x)))
+                        setItems(
+                          items.map((x, i) =>
+                            i === idx ? { ...x, tax_rate: Number(e.target.value) } : x,
+                          ),
+                        )
                       }
                     />
                     <Button
