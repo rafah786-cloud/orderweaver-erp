@@ -28,8 +28,7 @@ type CompanyContextValue = {
 
 const CompanyContext = createContext<CompanyContextValue | null>(null);
 
-// The generated Supabase types are refreshed separately from this migration.
-// Keep this boundary typed locally so the UI remains buildable before regeneration.
+// Generated Supabase types are refreshed separately from database migrations.
 const db = supabase as any;
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
@@ -40,13 +39,27 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const refresh = async () => {
     setLoading(true);
     try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      const userId = authData.user?.id;
+      if (!userId) {
+        setCompanies([]);
+        setActiveCompany(null);
+        return;
+      }
+
       const [
         { data: profile, error: profileError },
         { data: memberships, error: membershipError },
       ] = await Promise.all([
-        db.from("profiles").select("active_company_id").maybeSingle(),
-        db.from("user_company_access").select("company_id").eq("can_view", true),
+        db.from("profiles").select("active_company_id").eq("id", userId).maybeSingle(),
+        db
+          .from("user_company_access")
+          .select("company_id")
+          .eq("user_id", userId)
+          .eq("can_view", true),
       ]);
+
       if (profileError) throw profileError;
       if (membershipError) throw membershipError;
 
@@ -65,19 +78,21 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .in("id", ids)
         .eq("is_active", true)
         .order("display_name");
+
       if (error) throw error;
 
       const list = (data ?? []) as Company[];
+      const active = list.find((c) => c.id === profile?.active_company_id) ?? list[0] ?? null;
       setCompanies(list);
-      setActiveCompany(list.find((c) => c.id === profile?.active_company_id) ?? list[0] ?? null);
+      setActiveCompany(active);
 
-      // Self-heal older users whose profile predates multi-company support.
-      const fallback = list.find((c) => c.id === profile?.active_company_id) ?? list[0];
+      const fallback = list[0];
       if (fallback && fallback.id !== profile?.active_company_id) {
         await db.rpc("set_active_company", { _company_id: fallback.id });
       }
     } catch (error) {
       console.error("Company context load failed", error);
+      toast.error("Could not load your company access. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -88,16 +103,17 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const switchCompany = async (companyId: string) => {
-    const target = companies.find((c) => c.id === companyId);
-    if (!target) return;
+    const target = companies.find((company) => company.id === companyId);
+    if (!target || target.id === activeCompany?.id) return;
+
     const { error } = await db.rpc("set_active_company", { _company_id: companyId });
     if (error) {
       toast.error(error.message || "Could not switch company");
       return;
     }
+
     setActiveCompany(target);
-    // Company is a data boundary. Invalidate by reloading so every cached query
-    // is guaranteed to run under the new active-company context.
+    toast.success("Switched to " + target.display_name);
     window.location.reload();
   };
 
@@ -105,6 +121,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     () => ({ companies, activeCompany, loading, switchCompany, refresh }),
     [companies, activeCompany, loading],
   );
+
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;
 }
 
