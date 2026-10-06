@@ -49,7 +49,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       }
 
       const [
-        { data: profile, error: profileError },
+        { data: profileRow, error: profileError },
         { data: memberships, error: membershipError },
       ] = await Promise.all([
         db.from("profiles").select("active_company_id").eq("id", userId).maybeSingle(),
