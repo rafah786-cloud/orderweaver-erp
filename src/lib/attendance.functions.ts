@@ -3,13 +3,19 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-async function assertHrOrAdmin(userId: string) {
-  const { data } = await supabaseAdmin
+async function assertHrOrAdmin(db: any, userId: string) {
+  const { data, error } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .in("role", ["admin", "hr"]);
-  if (!data || data.length === 0) throw new Error("Admin or HR only");
+  if (error || !data || data.length === 0) throw new Error("Admin or HR only");
+}
+
+async function getActiveCompanyId(db: any): Promise<string> {
+  const { data, error } = await db.rpc("current_company_id");
+  if (error || !data) throw new Error("No active company selected");
+  return data;
 }
 
 function fail(tag: string, err: unknown, userMsg: string): never {
@@ -28,11 +34,13 @@ export const addManualPunch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => PunchSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertHrOrAdmin(context.userId);
+    await assertHrOrAdmin(context.supabase, context.userId);
+    const companyId = await getActiveCompanyId(context.supabase);
     const { data: emp, error: empErr } = await supabaseAdmin
       .from("employees")
-      .select("employee_code")
+      .select("employee_code, company_id")
       .eq("id", data.employee_id)
+      .eq("company_id", companyId)
       .maybeSingle();
     if (empErr || !emp) throw new Error("Employee not found");
 
@@ -52,11 +60,13 @@ export const deletePunchEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertHrOrAdmin(context.userId);
+    await assertHrOrAdmin(context.supabase, context.userId);
+    const companyId = await getActiveCompanyId(context.supabase);
     const { data: row } = await supabaseAdmin
       .from("punch_events")
-      .select("employee_id, punch_time")
+      .select("employee_id, punch_time, employees!inner(company_id)")
       .eq("id", data.id)
+      .eq("employees.company_id", companyId)
       .maybeSingle();
     const { error } = await supabaseAdmin.from("punch_events").delete().eq("id", data.id);
     if (error) fail("deletePunchEvent", error, "Failed to delete punch. Please try again.");
@@ -71,7 +81,11 @@ export const recalcAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ employee_id: z.string().uuid(), date: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertHrOrAdmin(context.userId);
+    await assertHrOrAdmin(context.supabase, context.userId);
+    const companyId = await getActiveCompanyId(context.supabase);
+    const { data: emp } = await supabaseAdmin
+      .from("employees").select("id").eq("id", data.employee_id).eq("company_id", companyId).maybeSingle();
+    if (!emp) throw new Error("Employee not found in the active company");
     const { error } = await supabaseAdmin.rpc("recalc_attendance_day", {
       _employee_id: data.employee_id,
       _date: data.date,
@@ -85,8 +99,9 @@ export const recalcAttendanceForDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ date: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertHrOrAdmin(context.userId);
-    const { data: emps } = await supabaseAdmin.from("employees").select("id").eq("is_active", true);
+    await assertHrOrAdmin(context.supabase, context.userId);
+    const companyId = await getActiveCompanyId(context.supabase);
+    const { data: emps } = await supabaseAdmin.from("employees").select("id").eq("company_id", companyId).eq("is_active", true);
     for (const e of emps ?? []) {
       await supabaseAdmin.rpc("recalc_attendance_day", { _employee_id: e.id, _date: data.date });
     }
