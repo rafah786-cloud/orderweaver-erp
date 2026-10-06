@@ -44,7 +44,7 @@ function ForgotPasswordPage() {
       const r = await findEmail({ data: { fullName, phone } });
       setLookupResult(
         r.message ??
-          "For your security, registered emails cannot be looked up here. Please contact your administrator.",
+          "For your security, registered emails are not revealed here. Please contact your administrator to recover your account.",
       );
     } catch {
       toast.error("Something went wrong. Please try again later.");
@@ -61,13 +61,13 @@ function ForgotPasswordPage() {
             <KeyRound className="h-6 w-6" />
           </div>
           <CardTitle className="text-2xl">Account recovery</CardTitle>
-          <CardDescription>Reset your password or find your registered email</CardDescription>
+          <CardDescription>Reset your password or get help recovering your account</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="reset" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="reset">Forgot password</TabsTrigger>
-              <TabsTrigger value="email">Forgot email</TabsTrigger>
+              <TabsTrigger value="email">Need account help</TabsTrigger>
             </TabsList>
 
             <TabsContent value="reset" className="pt-4">
@@ -109,7 +109,7 @@ function ForgotPasswordPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={lookupLoading}>
-                  {lookupLoading ? "Searching…" : "Find my email"}
+                  {lookupLoading ? "Checking…" : "Get recovery help"}
                 </Button>
                 {lookupResult && (
                   <p className="text-sm text-center text-muted-foreground">{lookupResult}</p>
