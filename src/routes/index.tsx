@@ -71,7 +71,7 @@ function LoginMenu({ mobile = false }: { mobile?: boolean }) {
         className={
           mobile
             ? "flex w-full items-center justify-between rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white"
-            : "flex items-center gap-1.5 rounded-md border border-[#cfd8df] bg-white px-4 py-2.5 text-sm font650 text-[#19324b] shadow-sm transition hover:border-[#b7c5d2] hover:bg-[#f7f9fb]"
+            : "flex items-center gap-1.5 rounded-md border border-[#cfd8df] bg-white px-4 py-2.5 text-sm font-semibold text-[#19324b] shadow-sm transition hover:border-[#b7c5d2] hover:bg-[#f7f9fb]"
         }
       >
         <span>Login</span>
@@ -150,15 +150,18 @@ function CorporateHome() {
             <LoginMenu />
           </div>
 
-          <button
-            type="button"
-            className="rounded-md border border-[#d5dfe5] bg-white p-2 lg:hidden"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Open menu"
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2 lg:hidden">
+            <LoginMenu />
+            <button
+              type="button"
+              className="rounded-md border border-[#d5dfe5] bg-white p-2"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         {mobileOpen && (
@@ -183,9 +186,6 @@ function CorporateHome() {
                   Open ERP
                 </Link>
               )}
-              <div className="pt-2">
-                <LoginMenu mobile />
-              </div>
             </nav>
           </div>
         )}
@@ -324,16 +324,20 @@ function CorporateHome() {
               <div className="text-sm text-[#768492]">Zizz leads the premium portfolio.</div>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="group rounded-lg border border-[#d8dfe4] bg-[#f8f8f5] p-5 lg:col-span-2">
-                <div className="flex min-h-[180px] items-center justify-center rounded-md border border-[#e1e5e8] bg-white p-5">
-                  <img src={zizz.url} alt="Zizz" className="max-h-24 w-full object-contain" />
-                </div>
-                <div className="mt-4">
-                  <div className="text-lg font-semibold text-[#17324d]">Zizz</div>
+            <div className="mt-10 rounded-lg border border-[#d8dfe4] bg-[#f8f8f5] p-5 sm:p-6">
+              <div className="flex min-h-[190px] items-center justify-center rounded-md border border-[#e1e5e8] bg-white p-6">
+                <img src={zizz.url} alt="Zizz flagship brand" className="max-h-28 w-full object-contain" />
+              </div>
+              <div className="mt-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="text-2xl font-semibold tracking-[-0.03em] text-[#17324d]">Zizz</div>
                   <p className="mt-1 text-sm text-[#71808e]">Flagship premium mattresses and sleep solutions.</p>
                 </div>
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a95a0]">Flagship</span>
               </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {brands.map((brand) => (
                 <div key={brand.name} className="rounded-lg border border-[#dfe5e9] bg-white p-4">
                   <div className="flex min-h-[145px] items-center justify-center rounded-md bg-[#fafafa] p-3">
