@@ -162,7 +162,7 @@ function TallyImportPage() {
     );
   }
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) =>
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setFileName(f.name);
