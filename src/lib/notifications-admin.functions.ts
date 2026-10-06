@@ -256,7 +256,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
       status: result.ok ? "sent" : result.status,
       whatsapp_message_id: result.ok ? result.messageId : null,
       failure_reason: result.ok ? null : result.error,
-      payload: { retry_of: log.id, variables, message },
+      payload: { retry_of: log.id, variables },
     });
 
     return result.ok
