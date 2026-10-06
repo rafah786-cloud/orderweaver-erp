@@ -732,15 +732,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
         }
       }
       // Fan out to staff (Purchase / Management) for new PO
-      notifyStaff({
-        data: {
-          event: "staff.purchase_request.created",
-          ref_table: "purchase_bills",
-          ref_id: billId,
-          supplier_id: supplierId || undefined,
-          vars: { po_number: billNumber, po_value: total.toFixed(2) },
-        },
-      }).catch(() => {});
+      notifyStaff({ data: { event: "staff.purchase_request.created", ref_id: billId } }).catch(() => {});
     },
     onError: (e: Error) => toast.error(e.message),
   });
