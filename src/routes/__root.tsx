@@ -64,7 +64,8 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
           </div>
           <h1 className="mt-3 text-2xl font-semibold">Something went wrong</h1>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#6b7788]">
-            An unexpected error occurred. Your saved business data has not been intentionally changed by this screen.
+            An unexpected error occurred. Your saved business data has not been intentionally
+            changed by this screen.
           </p>
           <button
             onClick={() => {
