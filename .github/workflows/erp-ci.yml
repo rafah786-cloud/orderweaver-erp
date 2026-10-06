@@ -2,8 +2,12 @@ name: ERP CI
 
 on:
   push:
-    branches: ["main", "feat/**"]
+    branches: ["main"]
   pull_request:
+
+concurrency:
+  group: erp-ci-\${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   app:
