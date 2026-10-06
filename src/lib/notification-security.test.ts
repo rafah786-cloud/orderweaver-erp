@@ -101,7 +101,7 @@ describe("caller-scoped notification actions", () => {
 
   it("rejects staff notification events not allowed to the caller role", async () => {
     const from = vi.fn((table: string) =>
-      table === "user_roles" ? query([{ role: "sales" }]) : query(null),
+      table === "user_roles" ? query([]) : query(null),
     );
     await expect(
       call(
@@ -220,7 +220,7 @@ describe("caller-scoped notification actions", () => {
 describe("approved promotional broadcasts", () => {
   it("rejects missing templates before reading recipients or sending", async () => {
     mocks.adminFrom.mockImplementation((table: string) =>
-      table === "whatsapp_templates" ? query(null) : query(null),
+      table === "user_roles" ? query({ role: "admin" }) : query(null),
     );
     await expect(call(broadcastPromo, { audience: "parties" }, vi.fn())).rejects.toThrow(
       "No approved",
