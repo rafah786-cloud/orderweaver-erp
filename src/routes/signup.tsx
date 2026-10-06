@@ -187,6 +187,7 @@ function SignupPage() {
           </form>
         </CardContent>
       </Card>
+        </main>
     </div>
   );
 }
