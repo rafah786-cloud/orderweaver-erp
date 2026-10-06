@@ -72,6 +72,17 @@ export const askMaestroFn = createServerFn({ method: "POST" })
     const { logAiUsage } = await import("@/lib/ai/audit.server");
 
     let conversationId = data.conversationId ?? null;
+    if (conversationId) {
+      const { data: ownedConversation, error: ownershipError } = await context.supabase
+        .from("ai_conversations")
+        .select("id")
+        .eq("id", conversationId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (ownershipError || !ownedConversation) {
+        throw new Error("Conversation is not available to this account");
+      }
+    }
     if (!conversationId) {
       const { data: conv } = await context.supabase
         .from("ai_conversations")
@@ -86,6 +97,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
           .from("ai_messages")
           .select("role, content")
           .eq("conversation_id", conversationId)
+          .eq("user_id", context.userId)
           .order("created_at")
           .limit(8)
       : { data: [] };
@@ -158,9 +170,11 @@ export const askMaestroFn = createServerFn({ method: "POST" })
 export const listAiConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertRole(context.supabase);
     const { data } = await context.supabase
       .from("ai_conversations")
       .select("id, title, updated_at")
+      .eq("user_id", context.userId)
       .order("updated_at", { ascending: false })
       .limit(25);
     return data ?? [];
@@ -170,10 +184,19 @@ export const getAiConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await assertRole(context.supabase);
+    const { data: ownedConversation, error: ownershipError } = await context.supabase
+      .from("ai_conversations")
+      .select("id")
+      .eq("id", data.conversationId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (ownershipError || !ownedConversation) throw new Error("Conversation is not available to this account");
     const { data: messages } = await context.supabase
       .from("ai_messages")
       .select("id, role, content, created_at")
       .eq("conversation_id", data.conversationId)
+      .eq("user_id", context.userId)
       .order("created_at");
     return messages ?? [];
   });
@@ -779,6 +802,7 @@ export const createAiProposal = createServerFn({ method: "POST" })
 export const listAiProposals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertRole(context.supabase);
     const { data, error } = await context.supabase
       .from("ai_proposals")
       .select(
