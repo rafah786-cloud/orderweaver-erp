@@ -29,11 +29,7 @@ function MovementsPage() {
   const movQ = useQuery({
     queryKey: ["stock_movements", item ?? "all"],
     queryFn: async () => {
-      let qb = sb
-        .from("stock_movements")
-        .select("*")
-        .order("movement_date", { ascending: false })
-        .limit(500);
+      let qb = sb.from("stock_movements").select("*").order("movement_date", { ascending: false }).limit(500);
       if (item) qb = qb.eq("stock_item_id", item);
       const { data, error } = await qb;
       if (error) throw error;
@@ -49,10 +45,7 @@ function MovementsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Stock Movements"
-        description={item ? `Filtered to selected item` : "Last 500 movements"}
-      />
+      <PageHeader title="Stock Movements" description={item ? `Filtered to selected item` : "Last 500 movements"} />
       <PageBody>
         <Card>
           <CardContent className="p-0">
@@ -76,35 +69,23 @@ function MovementsPage() {
                       <td className="px-4 py-2 tabular-nums">{m.movement_date}</td>
                       <td className="px-4 py-2 text-xs">{MOVEMENT_LABEL[m.movement_type]}</td>
                       <td className="px-4 py-2">{info?.name ?? m.stock_item_id}</td>
-                      <td
-                        className={`px-4 py-2 text-right tabular-nums ${m.quantity < 0 ? "text-destructive" : "text-emerald-600"}`}
-                      >
+                      <td className={`px-4 py-2 text-right tabular-nums ${m.quantity < 0 ? "text-destructive" : "text-emerald-600"}`}>
                         {m.quantity} {info?.unit ?? ""}
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums">{inr(m.rate || 0)}</td>
                       <td className="px-4 py-2 text-right tabular-nums">{inr(m.amount || 0)}</td>
                       <td className="px-4 py-2 text-xs text-muted-foreground">
                         {m.voucher_id ? (
-                          <Link
-                            to="/accounting/voucher/$id"
-                            params={{ id: m.voucher_id }}
-                            className="text-primary hover:underline"
-                          >
+                          <Link to="/accounting/voucher/$id" params={{ id: m.voucher_id }} className="text-primary hover:underline">
                             Voucher
                           </Link>
-                        ) : (
-                          (m.narration ?? m.source_table ?? "—")
-                        )}
+                        ) : m.narration ?? (m.source_table ?? "—")}
                       </td>
                     </tr>
                   );
                 })}
                 {(movQ.data ?? []).length === 0 && !movQ.isLoading && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No movements.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">No movements.</td></tr>
                 )}
               </tbody>
             </table>

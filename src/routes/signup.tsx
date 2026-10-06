@@ -14,19 +14,14 @@ import { safeLocalRedirect } from "@/lib/safe-local-redirect";
 export const Route = createFileRoute("/signup")({
   validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
     safeLocalRedirect(s.redirect) ? { redirect: safeLocalRedirect(s.redirect) } : {},
-  head: () => ({
-    meta: [
-      { title: "Request access | Mattress Maestro ERP" },
-      { name: "description", content: "Request an account for the House of Abood Tradings ERP." },
-      { property: "og:title", content: "Request access | Mattress Maestro ERP" },
-      {
-        property: "og:description",
-        content: "Request an account for the House of Abood Tradings ERP.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Request access | Mattress Maestro ERP" },
+    { name: "description", content: "Request an account for the House of Abood Tradings ERP." },
+    { property: "og:title", content: "Request access | Mattress Maestro ERP" },
+    { property: "og:description", content: "Request an account for the House of Abood Tradings ERP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SignupPage,
 });
 
@@ -78,12 +73,7 @@ function SignupPage() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full name</Label>
-              <Input
-                id="fullName"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
+              <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
@@ -91,24 +81,11 @@ function SignupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                minLength={8}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Input id="password" type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <div className="flex items-start gap-2">
               <Checkbox
@@ -122,8 +99,7 @@ function SignupPage() {
                   Keep me signed in on this device
                 </Label>
                 <p className="text-[11px] text-muted-foreground">
-                  This device will be marked as trusted after your first sign-in. Untrusted devices
-                  are signed out after 2 minutes of inactivity.
+                  This device will be marked as trusted after your first sign-in. Untrusted devices are signed out after 2 minutes of inactivity.
                 </p>
               </div>
             </div>
@@ -132,13 +108,7 @@ function SignupPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link
-                to="/login"
-                search={redirect ? { redirect } : {}}
-                className="font-medium text-primary hover:underline"
-              >
-                Sign in
-              </Link>
+              <Link to="/login" search={redirect ? { redirect } : {}} className="font-medium text-primary hover:underline">Sign in</Link>
             </p>
           </form>
         </CardContent>

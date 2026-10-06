@@ -17,15 +17,8 @@ export default defineTool({
       db.from("user_roles").select("role").eq("user_id", userId),
     ]);
     if (profile.error || roles.error) throw new ToolError("Could not read your ERP account");
-    if (profile.data?.status !== "approved")
-      throw new ToolError("Your ERP account is not approved");
-    const account = {
-      name: profile.data.full_name,
-      roles: (roles.data ?? []).map(({ role }) => role),
-    };
-    return {
-      content: [{ type: "text", text: JSON.stringify(account) }],
-      structuredContent: { account },
-    };
+    if (profile.data?.status !== "approved") throw new ToolError("Your ERP account is not approved");
+    const account = { name: profile.data.full_name, roles: (roles.data ?? []).map(({ role }) => role) };
+    return { content: [{ type: "text", text: JSON.stringify(account) }], structuredContent: { account } };
   },
 });

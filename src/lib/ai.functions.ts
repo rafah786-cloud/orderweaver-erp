@@ -16,6 +16,7 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 
 const ANALYST_ROLES: AppRole[] = ["admin", "accountant", "sales", "production"];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function rolesOf(supabase: any): Promise<AppRole[]> {
   const { data } = await supabase.rpc("current_user_roles");
   return ((data ?? []) as { role?: AppRole }[] | AppRole[]).map((r) =>
@@ -23,6 +24,7 @@ async function rolesOf(supabase: any): Promise<AppRole[]> {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertRole(supabase: any, allowed: AppRole[] = ANALYST_ROLES): Promise<AppRole[]> {
   const roles = await rolesOf(supabase);
   if (!roles.some((r) => allowed.includes(r))) {
@@ -94,20 +96,12 @@ export const askMaestroFn = createServerFn({ method: "POST" })
       const result = await askMaestro(
         context.supabase,
         data.question,
-        (prior ?? []).map((m) => ({
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.content,
-        })),
+        (prior ?? []).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
       );
 
       if (conversationId) {
         await context.supabase.from("ai_messages").insert([
-          {
-            conversation_id: conversationId,
-            user_id: context.userId,
-            role: "user",
-            content: data.question,
-          },
+          { conversation_id: conversationId, user_id: context.userId, role: "user", content: data.question },
           {
             conversation_id: conversationId,
             user_id: context.userId,
@@ -127,13 +121,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
         meta: { retrievers: result.usedRetrievers },
       });
 
-      return {
-        ok: true as const,
-        conversationId,
-        ...result,
-        evidence: result.evidence as Json,
-        error: null as string | null,
-      };
+      return { ok: true as const, conversationId, ...result, evidence: result.evidence as Json, error: null as string | null };
     } catch (e) {
       await logAiUsage({
         userId: context.userId,
@@ -212,10 +200,7 @@ export const getErpMetrics = createServerFn({ method: "POST" })
       case "profitability":
         return { topic: data.topic, data: await m.productProfitability(db, m.defaultPeriod(days)) };
       case "customers":
-        return {
-          topic: data.topic,
-          data: await m.customerProfitability(db, m.defaultPeriod(days)),
-        };
+        return { topic: data.topic, data: await m.customerProfitability(db, m.defaultPeriod(days)) };
       case "inventory":
         return { topic: data.topic, data: await m.inventoryIntelligence(db, days) };
       case "production":
@@ -242,9 +227,7 @@ const BRIEF_TTL_MS = 6 * 60 * 60 * 1000;
 
 export const getBusinessBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ refresh: z.boolean().optional() }).parse(input ?? {}),
-  )
+  .inputValidator((input: unknown) => z.object({ refresh: z.boolean().optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
     const started = Date.now();
@@ -259,11 +242,7 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
         .eq("scope_key", "global")
         .maybeSingle();
       if (cached?.payload && cached.expires_at && new Date(cached.expires_at) > new Date()) {
-        return {
-          ...(cached.payload as Record<string, unknown>),
-          cached: true,
-          generatedAt: cached.generated_at,
-        };
+        return { ...(cached.payload as Record<string, unknown>), cached: true, generatedAt: cached.generated_at };
       }
     }
 
@@ -330,14 +309,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        topic: z.enum([
-          "sales",
-          "profitability",
-          "inventory",
-          "production",
-          "receivables",
-          "suppliers",
-        ]),
+        topic: z.enum(["sales", "profitability", "inventory", "production", "receivables", "suppliers"]),
         focus: z.string().max(300).optional(),
       })
       .parse(input),
@@ -356,12 +328,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
         promptSummary: data.focus ?? data.topic,
         durationMs: Date.now() - started,
       });
-      return {
-        ok: true as const,
-        answer: result.answer,
-        evidence: result.evidence as Json,
-        error: null as string | null,
-      };
+      return { ok: true as const, answer: result.answer, evidence: result.evidence as Json, error: null as string | null };
     } catch (e) {
       await logAiUsage({
         userId: context.userId,
@@ -380,9 +347,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
 
 export const naturalLanguageSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ question: z.string().min(2).max(500) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ question: z.string().min(2).max(500) }).parse(input))
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
     const started = Date.now();
@@ -402,10 +367,7 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
               'Reply as {"entity":"...","filters":[{"column":"...","op":"...","value":...}],"orderBy":"...","ascending":false,"limit":50,"explanation":"one sentence"}. ' +
               "Amounts are in rupees; 1 lakh = 100000, 1 crore = 10000000.",
           },
-          {
-            role: "user",
-            content: `Today is ${new Date().toISOString().slice(0, 10)}. Request: ${data.question}`,
-          },
+          { role: "user", content: `Today is ${new Date().toISOString().slice(0, 10)}. Request: ${data.question}` },
         ],
         { model: AI_MODELS.fast, maxTokens: 400, temperature: 0 },
       );
@@ -419,13 +381,7 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
         durationMs: Date.now() - started,
         meta: { entity: result.entity, rows: result.rowCount },
       });
-      return {
-        ok: true as const,
-        ...result,
-        spec: result.spec as unknown as Json,
-        rows: result.rows as Json[],
-        error: null as string | null,
-      };
+      return { ok: true as const, ...result, spec: result.spec as unknown as Json, rows: result.rows as Json[], error: null as string | null };
     } catch (e) {
       await logAiUsage({
         userId: context.userId,
@@ -483,8 +439,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
     const started = Date.now();
-    const { extractDocument, matchExtraction, indexDocument } =
-      await import("@/lib/ai/documents.server");
+    const { extractDocument, matchExtraction, indexDocument } = await import("@/lib/ai/documents.server");
     const { logAiUsage } = await import("@/lib/ai/audit.server");
 
     const { data: created, error: insertError } = await context.supabase
@@ -501,8 +456,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (insertError || !created)
-      throw new Error(insertError?.message ?? "Could not save the document.");
+    if (insertError || !created) throw new Error(insertError?.message ?? "Could not save the document.");
 
     try {
       const extraction = await extractDocument({
@@ -512,10 +466,8 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       });
       const matches = await matchExtraction(context.supabase, extraction);
 
-      const supplierId =
-        matches.supplier[0] && matches.supplier[0].score >= 0.7 ? matches.supplier[0].id : null;
-      const partyId =
-        matches.customer[0] && matches.customer[0].score >= 0.7 ? matches.customer[0].id : null;
+      const supplierId = matches.supplier[0] && matches.supplier[0].score >= 0.7 ? matches.supplier[0].id : null;
+      const partyId = matches.customer[0] && matches.customer[0].score >= 0.7 ? matches.customer[0].id : null;
 
       await context.supabase
         .from("ai_documents")
@@ -525,10 +477,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
           extraction_error: null,
           supplier_id: supplierId,
           party_id: partyId,
-          doc_kind:
-            extraction.doc_kind && DOC_KINDS.includes(extraction.doc_kind as never)
-              ? extraction.doc_kind
-              : data.docKind,
+          doc_kind: extraction.doc_kind && DOC_KINDS.includes(extraction.doc_kind as never) ? extraction.doc_kind : data.docKind,
         })
         .eq("id", created.id);
 
@@ -608,9 +557,7 @@ export const getAiDocument = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: doc, error } = await context.supabase
       .from("ai_documents")
-      .select(
-        "id, title, doc_kind, file_name, content_text, extraction, extraction_status, extraction_error, created_at",
-      )
+      .select("id, title, doc_kind, file_name, content_text, extraction, extraction_status, extraction_error, created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -630,12 +577,7 @@ export const deleteAiDocument = createServerFn({ method: "POST" })
 export const searchDocuments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({
-        query: z.string().min(2).max(300),
-        supplierId: z.string().uuid().nullable().optional(),
-      })
-      .parse(input),
+    z.object({ query: z.string().min(2).max(300), supplierId: z.string().uuid().nullable().optional() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
@@ -677,7 +619,7 @@ export const compareQuotationDocuments = createServerFn({ method: "POST" })
         const supplierRef = d.suppliers as { name?: string } | null;
         return {
           supplier: supplierRef?.name ?? extraction.supplier_name ?? d.title,
-
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           extraction: extraction as any,
         };
       })
@@ -699,11 +641,7 @@ export const compareQuotationDocuments = createServerFn({ method: "POST" })
         durationMs: Date.now() - started,
         meta: { documents: quotes.length },
       });
-      return {
-        ok: true as const,
-        comparison: comparison as unknown as Json,
-        error: null as string | null,
-      };
+      return { ok: true as const, comparison: comparison as unknown as Json, error: null as string | null };
     } catch (e) {
       return { ok: false as const, comparison: null as Json | null, error: errorMessage(e) };
     }
@@ -756,9 +694,7 @@ export const listAiProposals = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("ai_proposals")
-      .select(
-        "id, kind, summary, payload, status, created_at, reviewed_at, review_note, source_document_id",
-      )
+      .select("id, kind, summary, payload, status, created_at, reviewed_at, review_note, source_document_id")
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw new Error(error.message);

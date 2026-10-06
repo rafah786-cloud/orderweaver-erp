@@ -11,17 +11,11 @@ import process from "node:process";
  * format can later be pointed at another provider by changing BASE_URL.
  */
 
-const BASE_URL = (process.env["NVIDIA_BASE_URL"] || "https://integrate.api.nvidia.com/v1").replace(
-  /\/+$/,
-  "",
-);
+const BASE_URL = (process.env["NVIDIA_BASE_URL"] || "https://integrate.api.nvidia.com/v1").replace(/\/+$/, "");
 
 /** Secrets pasted with surrounding quotes/whitespace are a common mistake — normalise defensively. */
 function cleanSecret(v: string | undefined): string {
-  return (v ?? "")
-    .trim()
-    .replace(/^["']+|["']+$/g, "")
-    .trim();
+  return (v ?? "").trim().replace(/^["']+|["']+$/g, "").trim();
 }
 
 export const AI_MODELS = {
@@ -57,12 +51,7 @@ function apiKey(): string {
 
 export type ChatMessage =
   | { role: "system" | "user" | "assistant"; content: string }
-  | {
-      role: "user";
-      content: Array<
-        { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }
-      >;
-    };
+  | { role: "user"; content: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> };
 
 export interface ChatOptions {
   model?: string;
@@ -103,9 +92,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     } catch (e) {
       lastError = e;
       if (e instanceof AiUnavailableError) throw e;
-      const retriable =
-        e instanceof Error &&
-        /\b(429|5\d\d|timeout|aborted|network|fetch failed)\b/i.test(e.message);
+      const retriable = e instanceof Error && /\b(429|5\d\d|timeout|aborted|network|fetch failed)\b/i.test(e.message);
       if (!retriable || attempt === MAX_ATTEMPTS) break;
       await new Promise((r) => setTimeout(r, 400 * 2 ** (attempt - 1)));
     }
@@ -120,10 +107,7 @@ export interface ChatResult {
 }
 
 /** Single-shot chat completion. */
-export async function aiChat(
-  messages: ChatMessage[],
-  options: ChatOptions = {},
-): Promise<ChatResult> {
+export async function aiChat(messages: ChatMessage[], options: ChatOptions = {}): Promise<ChatResult> {
   const model = options.model ?? AI_MODELS.chat;
   return withRetry(async () => {
     const res = await post(
@@ -156,10 +140,7 @@ export async function aiChat(
 }
 
 /** Chat completion whose answer is parsed as JSON. Tolerates fenced output. */
-export async function aiChatJson<T>(
-  messages: ChatMessage[],
-  options: ChatOptions = {},
-): Promise<T> {
+export async function aiChatJson<T>(messages: ChatMessage[], options: ChatOptions = {}): Promise<T> {
   const { text } = await aiChat(messages, { ...options, json: true });
   return parseJsonLoose<T>(text);
 }

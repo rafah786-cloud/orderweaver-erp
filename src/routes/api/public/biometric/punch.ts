@@ -33,8 +33,7 @@ export const Route = createFileRoute("/api/public/biometric/punch")({
           .eq("device_id", device_id)
           .maybeSingle();
 
-        if (!device || !device.is_active)
-          return new Response("Device not registered", { status: 401 });
+        if (!device || !device.is_active) return new Response("Device not registered", { status: 401 });
         const ok = await bcrypt.compare(apiKey, device.api_key_hash);
         if (!ok) return new Response("Invalid key", { status: 401 });
 

@@ -2,16 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  BookOpen,
-  ListTree,
-  FileEdit,
-  CalendarDays,
-  Scale,
-  TrendingUp,
-  ClipboardList,
-  Lock,
-  ShieldCheck,
-  Network,
+  BookOpen, ListTree, FileEdit, CalendarDays, Scale,
+  TrendingUp, ClipboardList, Lock, ShieldCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/accounting")({
@@ -19,55 +11,14 @@ export const Route = createFileRoute("/_app/accounting")({
 });
 
 const TILES = [
-  {
-    to: "/accounting/ledgers",
-    label: "Chart of Accounts",
-    desc: "Ledger groups & accounts",
-    Icon: ListTree,
-  },
-  {
-    to: "/accounting/day-book",
-    label: "Day Book",
-    desc: "All vouchers, chronological",
-    Icon: CalendarDays,
-  },
-  {
-    to: "/accounting/vouchers/new",
-    label: "New Voucher",
-    desc: "Journal, receipt, payment, contra",
-    Icon: FileEdit,
-  },
-  {
-    to: "/accounting/trial-balance",
-    label: "Trial Balance",
-    desc: "All ledger balances",
-    Icon: Scale,
-  },
-  {
-    to: "/accounting/profit-loss",
-    label: "Profit & Loss",
-    desc: "Income vs expenses",
-    Icon: TrendingUp,
-  },
-  {
-    to: "/accounting/balance-sheet",
-    label: "Balance Sheet",
-    desc: "Assets vs liabilities",
-    Icon: ClipboardList,
-  },
+  { to: "/accounting/ledgers", label: "Chart of Accounts", desc: "Ledger groups & accounts", Icon: ListTree },
+  { to: "/accounting/day-book", label: "Day Book", desc: "All vouchers, chronological", Icon: CalendarDays },
+  { to: "/accounting/vouchers/new", label: "New Voucher", desc: "Journal, receipt, payment, contra", Icon: FileEdit },
+  { to: "/accounting/trial-balance", label: "Trial Balance", desc: "All ledger balances", Icon: Scale },
+  { to: "/accounting/profit-loss", label: "Profit & Loss", desc: "Income vs expenses", Icon: TrendingUp },
+  { to: "/accounting/balance-sheet", label: "Balance Sheet", desc: "Assets vs liabilities", Icon: ClipboardList },
   { to: "/accounting/periods", label: "Financial Years", desc: "Lock/unlock periods", Icon: Lock },
-  {
-    to: "/accounting/audit-log",
-    label: "Audit Trail",
-    desc: "All voucher changes",
-    Icon: ShieldCheck,
-  },
-  {
-    to: "/accounting/consolidated",
-    label: "Consolidated View",
-    desc: "Read-only group reporting across companies",
-    Icon: Network,
-  },
+  { to: "/accounting/audit-log", label: "Audit Trail", desc: "All voucher changes", Icon: ShieldCheck },
 ] as const;
 
 function AccountingHome() {

@@ -5,22 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -31,15 +18,7 @@ export function CompanySwitcher() {
   const { companies, activeCompany, loading, switchCompany, refresh } = useCompany();
   const { hasRole } = useAuth();
   const [openCreate, setOpenCreate] = useState(false);
-  const [form, setForm] = useState({
-    code: "",
-    legal_name: "",
-    display_name: "",
-    gstin: "",
-    pan: "",
-    state: "",
-    address: "",
-  });
+  const [form, setForm] = useState({ code: "", legal_name: "", display_name: "", gstin: "", pan: "", state: "", address: "" });
 
   if (loading || !activeCompany) return null;
 
@@ -66,15 +45,7 @@ export function CompanySwitcher() {
     }
     toast.success("Company created with a separate chart, fiscal year and voucher series");
     setOpenCreate(false);
-    setForm({
-      code: "",
-      legal_name: "",
-      display_name: "",
-      gstin: "",
-      pan: "",
-      state: "",
-      address: "",
-    });
+    setForm({ code: "", legal_name: "", display_name: "", gstin: "", pan: "", state: "", address: "" });
     await refresh();
     if (companyId) await switchCompany(companyId);
   };
@@ -83,19 +54,12 @@ export function CompanySwitcher() {
     <>
       <Popover>
         <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            className="h-9 min-w-[220px] justify-between gap-3 border border-border/60 bg-background/70 px-3"
-          >
+          <Button variant="ghost" className="h-9 min-w-[220px] justify-between gap-3 border border-border/60 bg-background/70 px-3">
             <span className="flex min-w-0 items-center gap-2">
               <Building2 className="h-4 w-4 shrink-0 text-primary" />
               <span className="min-w-0 text-left">
-                <span className="block truncate text-sm font-medium">
-                  {activeCompany.display_name}
-                </span>
-                <span className="block text-[10px] text-muted-foreground">
-                  {activeCompany.code} · {activeCompany.base_currency}
-                </span>
+                <span className="block truncate text-sm font-medium">{activeCompany.display_name}</span>
+                <span className="block text-[10px] text-muted-foreground">{activeCompany.code} · {activeCompany.base_currency}</span>
               </span>
             </span>
             <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -117,9 +81,7 @@ export function CompanySwitcher() {
                     <Building2 className="mr-2 h-4 w-4" />
                     <span className="flex-1">
                       <span className="block font-medium">{company.display_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {company.code} · {company.base_currency}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{company.code} · {company.base_currency}</span>
                     </span>
                     {company.id === activeCompany.id && <Check className="h-4 w-4" />}
                   </CommandItem>
@@ -129,20 +91,13 @@ export function CompanySwitcher() {
           </Command>
           {hasRole("admin") && (
             <div className="border-t p-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => setOpenCreate(true)}
-              >
+              <Button variant="outline" size="sm" className="w-full" onClick={() => setOpenCreate(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Create New Company
               </Button>
             </div>
           )}
           <div className="border-t p-2 text-[11px] text-muted-foreground">
-            <Badge variant="secondary" className="mr-1">
-              Active company
-            </Badge>
+            <Badge variant="secondary" className="mr-1">Active company</Badge>
             Accounting, inventory and transaction data are isolated by company.
           </div>
         </PopoverContent>
@@ -150,63 +105,18 @@ export function CompanySwitcher() {
 
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Create Company</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Create Company</DialogTitle></DialogHeader>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label>Company Code *</Label>
-              <Input
-                placeholder="NEWCO"
-                value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Legal Name *</Label>
-              <Input
-                value={form.legal_name}
-                onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Display Name *</Label>
-              <Input
-                value={form.display_name}
-                onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>GSTIN</Label>
-              <Input
-                value={form.gstin}
-                onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>PAN</Label>
-              <Input value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} />
-            </div>
-            <div>
-              <Label>State</Label>
-              <Input
-                placeholder="Kerala"
-                value={form.state}
-                onChange={(e) => setForm({ ...form, state: e.target.value })}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Label>Address</Label>
-              <Input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-              />
-            </div>
+            <div><Label>Company Code *</Label><Input placeholder="NEWCO" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
+            <div><Label>Legal Name *</Label><Input value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} /></div>
+            <div><Label>Display Name *</Label><Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} /></div>
+            <div><Label>GSTIN</Label><Input value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} /></div>
+            <div><Label>PAN</Label><Input value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} /></div>
+            <div><Label>State</Label><Input placeholder="Kerala" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
+            <div className="md:col-span-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpenCreate(false)}>
-              Cancel
-            </Button>
+            <Button variant="ghost" onClick={() => setOpenCreate(false)}>Cancel</Button>
             <Button onClick={() => void createCompany()}>Create Company</Button>
           </DialogFooter>
         </DialogContent>

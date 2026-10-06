@@ -4,14 +4,8 @@ export { sb };
 
 export type ValuationMethod = "fifo" | "lifo" | "weighted_avg" | "standard_cost";
 export type StockMovementType =
-  | "purchase"
-  | "sale"
-  | "production_in"
-  | "production_out"
-  | "transfer_in"
-  | "transfer_out"
-  | "adjustment"
-  | "opening";
+  | "purchase" | "sale" | "production_in" | "production_out"
+  | "transfer_in" | "transfer_out" | "adjustment" | "opening";
 
 export type Godown = {
   id: string;
@@ -104,11 +98,7 @@ export const VALUATION_LABEL: Record<ValuationMethod, string> = {
 };
 
 export async function nextStockJournalNumber(): Promise<string> {
-  const { data } = await sb
-    .from("stock_journals")
-    .select("journal_number")
-    .order("created_at", { ascending: false })
-    .limit(1);
+  const { data } = await sb.from("stock_journals").select("journal_number").order("created_at", { ascending: false }).limit(1);
   const last = data?.[0]?.journal_number as string | undefined;
   let next = 1;
   if (last) {
@@ -118,41 +108,17 @@ export async function nextStockJournalNumber(): Promise<string> {
   return `SJ/${String(next).padStart(4, "0")}`;
 }
 
-export async function postStockReceipt(
-  itemId: string,
-  godownId: string,
-  qty: number,
-  rate: number,
-  date: string,
-  idempotencyKey: string,
-) {
+export async function postStockReceipt(itemId: string, godownId: string, qty: number, rate: number, date: string, idempotencyKey: string) {
   const { data, error } = await sb.rpc("post_stock_receipt", {
-    p_item: itemId,
-    p_godown: godownId,
-    p_qty: qty,
-    p_rate: rate,
-    p_date: date,
-    p_idempotency: idempotencyKey,
+    p_item: itemId, p_godown: godownId, p_qty: qty, p_rate: rate, p_date: date, p_idempotency: idempotencyKey,
   });
   if (error) throw error;
   return data as string;
 }
 
-export async function postStockIssue(
-  itemId: string,
-  godownId: string,
-  qty: number,
-  date: string,
-  idempotencyKey: string,
-  movementType = "sale",
-) {
+export async function postStockIssue(itemId: string, godownId: string, qty: number, date: string, idempotencyKey: string, movementType = "sale") {
   const { data, error } = await sb.rpc("post_stock_issue", {
-    p_item: itemId,
-    p_godown: godownId,
-    p_qty: qty,
-    p_date: date,
-    p_idempotency: idempotencyKey,
-    p_movement_type: movementType,
+    p_item: itemId, p_godown: godownId, p_qty: qty, p_date: date, p_idempotency: idempotencyKey, p_movement_type: movementType,
   });
   if (error) throw error;
   return data as string;

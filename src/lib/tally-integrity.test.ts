@@ -3,12 +3,9 @@ import { parseTallyMasters } from "./tally-import";
 import { inspectTallyAccounting } from "./tally-integrity";
 
 const opts = { rawGroups: [], finishedGroups: [] };
-const xml = (vouchers: string) =>
-  `<ENVELOPE><BODY><DATA><TALLYMESSAGE>${vouchers}</TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
-const line = (name: string, positive: string, amount: number) =>
-  `<ALLLEDGERENTRIES.LIST><LEDGERNAME>${name}</LEDGERNAME><ISDEEMEDPOSITIVE>${positive}</ISDEEMEDPOSITIVE><AMOUNT>${amount}</AMOUNT></ALLLEDGERENTRIES.LIST>`;
-const voucher = (guid: string, credit: number) =>
-  `<VOUCHER VCHTYPE="Journal"><DATE>20261001</DATE><GUID>${guid}</GUID><VOUCHERNUMBER>1</VOUCHERNUMBER>${line("Cash", "Yes", -100)}${line("Revenue", "No", credit)}</VOUCHER>`;
+const xml = (vouchers: string) => `<ENVELOPE><BODY><DATA><TALLYMESSAGE>${vouchers}</TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
+const line = (name: string, positive: string, amount: number) => `<ALLLEDGERENTRIES.LIST><LEDGERNAME>${name}</LEDGERNAME><ISDEEMEDPOSITIVE>${positive}</ISDEEMEDPOSITIVE><AMOUNT>${amount}</AMOUNT></ALLLEDGERENTRIES.LIST>`;
+const voucher = (guid: string, credit: number) => `<VOUCHER VCHTYPE="Journal"><DATE>20261001</DATE><GUID>${guid}</GUID><VOUCHERNUMBER>1</VOUCHERNUMBER>${line("Cash", "Yes", -100)}${line("Revenue", "No", credit)}</VOUCHER>`;
 
 describe("Tally accounting preflight", () => {
   it("keeps every source voucher leg and reconciles debit and credit", () => {

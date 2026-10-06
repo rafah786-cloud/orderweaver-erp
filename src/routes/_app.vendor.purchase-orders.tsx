@@ -4,20 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye } from "lucide-react";
 
 export const Route = createFileRoute("/_app/vendor/purchase-orders")({ component: VendorPOList });
 
-const inr = (n: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(n);
+const inr = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(n);
 const fmt = (d: string) => new Date(d).toLocaleDateString("en-IN");
 
 const STATUS_TONE: Record<string, string> = {
@@ -33,9 +25,7 @@ function VendorPOList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("purchase_bills")
-        .select(
-          "id, bill_number, bill_date, total_amount, vendor_ack_status, expected_dispatch_date",
-        )
+        .select("id, bill_number, bill_date, total_amount, vendor_ack_status, expected_dispatch_date")
         .order("bill_date", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -63,17 +53,9 @@ function VendorPOList() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    Loading…
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
               ) : bills.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    No purchase orders yet.
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No purchase orders yet.</TableCell></TableRow>
               ) : (
                 bills.map((b) => (
                   <TableRow key={b.id}>
@@ -85,9 +67,7 @@ function VendorPOList() {
                         {b.vendor_ack_status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {b.expected_dispatch_date ? fmt(b.expected_dispatch_date) : "—"}
-                    </TableCell>
+                    <TableCell>{b.expected_dispatch_date ? fmt(b.expected_dispatch_date) : "—"}</TableCell>
                     <TableCell>
                       <Button asChild size="icon" variant="ghost">
                         <Link to="/vendor/purchase-orders/$id" params={{ id: b.id }}>

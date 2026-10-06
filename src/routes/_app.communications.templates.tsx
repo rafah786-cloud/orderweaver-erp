@@ -16,36 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/communications/templates")({
   component: TemplatesPage,
 });
+
 
 type TemplateRow = {
   id: string;
@@ -64,6 +45,7 @@ function renderPreview(body: string, vars: Record<string, string>): string {
     return v && v.length > 0 ? v : `{{${k}}}`;
   });
 }
+
 
 function TemplatesPage() {
   const qc = useQueryClient();
@@ -110,18 +92,8 @@ function TemplatesPage() {
             <CardTitle className="text-base">Provider status</CardTitle>
             <CardDescription>
               Provider: <span className="font-medium">{status?.provider ?? "—"}</span>
-              {" · "}API key:{" "}
-              {status?.configured ? (
-                <Badge variant="default">configured</Badge>
-              ) : (
-                <Badge variant="secondary">not set</Badge>
-              )}
-              {" · "}Webhook secret:{" "}
-              {status?.webhook_configured ? (
-                <Badge variant="default">configured</Badge>
-              ) : (
-                <Badge variant="secondary">not set</Badge>
-              )}
+              {" · "}API key: {status?.configured ? <Badge variant="default">configured</Badge> : <Badge variant="secondary">not set</Badge>}
+              {" · "}Webhook secret: {status?.webhook_configured ? <Badge variant="default">configured</Badge> : <Badge variant="secondary">not set</Badge>}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -130,17 +102,9 @@ function TemplatesPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Templates</CardTitle>
-              <CardDescription>
-                One template per event key. Inactive entries fall back to plain text.
-              </CardDescription>
+              <CardDescription>One template per event key. Inactive entries fall back to plain text.</CardDescription>
             </div>
-            <Dialog
-              open={open}
-              onOpenChange={(o) => {
-                setOpen(o);
-                if (!o) setEditing(null);
-              }}
-            >
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
               <DialogTrigger asChild>
                 <Button onClick={() => setEditing(null)}>
                   <Plus className="h-4 w-4 mr-1" /> New template
@@ -173,17 +137,9 @@ function TemplatesPage() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                        Loading…
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
                   ) : (data?.templates ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                        No templates yet. Add one to start using Interakt.
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">No templates yet. Add one to start using Interakt.</TableCell></TableRow>
                   ) : (
                     (data!.templates as any[]).map((t) => (
                       <TableRow key={t.id}>
@@ -191,35 +147,14 @@ function TemplatesPage() {
                         <TableCell className="font-medium">{t.template_name}</TableCell>
                         <TableCell>{t.language_code}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {Array.isArray(t.variables) && t.variables.length > 0
-                            ? (t.variables as string[]).join(", ")
-                            : "—"}
+                          {Array.isArray(t.variables) && t.variables.length > 0 ? (t.variables as string[]).join(", ") : "—"}
                         </TableCell>
-                        <TableCell>
-                          {t.is_active ? (
-                            <Badge>Active</Badge>
-                          ) : (
-                            <Badge variant="secondary">Off</Badge>
-                          )}
-                        </TableCell>
+                        <TableCell>{t.is_active ? <Badge>Active</Badge> : <Badge variant="secondary">Off</Badge>}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditing({ ...t, variables: t.variables ?? [] });
-                              setOpen(true);
-                            }}
-                          >
+                          <Button size="icon" variant="ghost" onClick={() => { setEditing({ ...t, variables: t.variables ?? [] }); setOpen(true); }}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              if (confirm(`Delete ${t.template_name}?`)) deleteMut.mutate(t.id);
-                            }}
-                          >
+                          <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Delete ${t.template_name}?`)) deleteMut.mutate(t.id); }}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -243,15 +178,7 @@ function TemplateForm({
 }: {
   initial: TemplateRow | null;
   saving: boolean;
-  onSubmit: (values: {
-    template_name: string;
-    event_key: string;
-    description: string | null;
-    language_code: string;
-    variables: string[];
-    is_active: boolean;
-    body_template: string | null;
-  }) => void;
+  onSubmit: (values: { template_name: string; event_key: string; description: string | null; language_code: string; variables: string[]; is_active: boolean; body_template: string | null }) => void;
 }) {
   const [templateName, setTemplateName] = useState(initial?.template_name ?? "");
   const [eventKey, setEventKey] = useState(initial?.event_key ?? KNOWN_EVENT_KEYS[0]);
@@ -263,11 +190,7 @@ function TemplateForm({
   const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
 
   const variables = useMemo(
-    () =>
-      vars
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+    () => vars.split(",").map((s) => s.trim()).filter(Boolean),
     [vars],
   );
 
@@ -278,25 +201,15 @@ function TemplateForm({
       <div className="space-y-2">
         <Label>Event</Label>
         <Select value={eventKey} onValueChange={setEventKey}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
+          <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            {KNOWN_EVENT_KEYS.map((k) => (
-              <SelectItem key={k} value={k}>
-                {k}
-              </SelectItem>
-            ))}
+            {KNOWN_EVENT_KEYS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-2">
         <Label>Interakt template name</Label>
-        <Input
-          value={templateName}
-          onChange={(e) => setTemplateName(e.target.value)}
-          placeholder="e.g. order_created_v1"
-        />
+        <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="e.g. order_created_v1" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
@@ -310,14 +223,8 @@ function TemplateForm({
       </div>
       <div className="space-y-2">
         <Label>Variables (comma separated, in body order)</Label>
-        <Input
-          value={vars}
-          onChange={(e) => setVars(e.target.value)}
-          placeholder="customer_name, po_number, amount"
-        />
-        <p className="text-xs text-muted-foreground">
-          Resolved at send time from event payload. Order must match the template body.
-        </p>
+        <Input value={vars} onChange={(e) => setVars(e.target.value)} placeholder="customer_name, po_number, amount" />
+        <p className="text-xs text-muted-foreground">Resolved at send time from event payload. Order must match the template body.</p>
       </div>
       <div className="space-y-2">
         <Label>Message body (fallback / preview)</Label>
@@ -328,16 +235,13 @@ function TemplateForm({
           placeholder="Hello {{customer_name}}, your order {{order_no}} is confirmed."
         />
         <p className="text-xs text-muted-foreground">
-          Used when the Interakt template can't be sent (freeform fallback) and to render live
-          previews below.
+          Used when the Interakt template can't be sent (freeform fallback) and to render live previews below.
         </p>
       </div>
 
       {variables.length > 0 && (
         <div className="space-y-2 rounded-md border p-3 bg-muted/30">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-            Preview values
-          </Label>
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Preview values</Label>
           <div className="grid grid-cols-2 gap-2">
             {variables.map((v) => (
               <div key={v} className="space-y-1">
@@ -356,11 +260,7 @@ function TemplateForm({
       <div className="space-y-2">
         <Label>Live preview</Label>
         <div className="rounded-md border bg-background p-3 text-sm whitespace-pre-wrap min-h-[80px]">
-          {preview || (
-            <span className="text-muted-foreground">
-              Type a message body above to see a preview.
-            </span>
-          )}
+          {preview || <span className="text-muted-foreground">Type a message body above to see a preview.</span>}
         </div>
       </div>
 
@@ -371,17 +271,15 @@ function TemplateForm({
       <DialogFooter>
         <Button
           disabled={saving || !templateName}
-          onClick={() =>
-            onSubmit({
-              template_name: templateName,
-              event_key: eventKey,
-              description: description || null,
-              language_code: language,
-              variables,
-              is_active: active,
-              body_template: body.trim() ? body : null,
-            })
-          }
+          onClick={() => onSubmit({
+            template_name: templateName,
+            event_key: eventKey,
+            description: description || null,
+            language_code: language,
+            variables,
+            is_active: active,
+            body_template: body.trim() ? body : null,
+          })}
         >
           {saving ? "Saving…" : "Save"}
         </Button>
@@ -389,3 +287,4 @@ function TemplateForm({
     </div>
   );
 }
+

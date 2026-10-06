@@ -20,19 +20,14 @@ export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
     safeLocalRedirect(s.redirect) ? { redirect: safeLocalRedirect(s.redirect) } : {},
 
-  head: () => ({
-    meta: [
-      { title: "Sign in | Mattress Maestro ERP" },
-      { name: "description", content: "Sign in securely to the House of Abood Tradings ERP." },
-      { property: "og:title", content: "Sign in | Mattress Maestro ERP" },
-      {
-        property: "og:description",
-        content: "Sign in securely to the House of Abood Tradings ERP.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Sign in | Mattress Maestro ERP" },
+    { name: "description", content: "Sign in securely to the House of Abood Tradings ERP." },
+    { property: "og:title", content: "Sign in | Mattress Maestro ERP" },
+    { property: "og:description", content: "Sign in securely to the House of Abood Tradings ERP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 
   component: LoginPage,
 });
@@ -93,39 +88,19 @@ function LoginPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div
-        aria-hidden
-        className="ambient-blob h-[520px] w-[520px] -top-40 -left-40"
-        style={{ background: "oklch(0.55 0.18 280 / 0.55)" }}
-      />
-      <div
-        aria-hidden
-        className="ambient-blob h-[420px] w-[420px] top-1/3 -right-32"
-        style={{ background: "oklch(0.70 0.14 85 / 0.35)" }}
-      />
-      <div
-        aria-hidden
-        className="ambient-blob h-[360px] w-[360px] bottom-[-120px] left-1/3"
-        style={{ background: "oklch(0.50 0.16 250 / 0.45)" }}
-      />
+      <div aria-hidden className="ambient-blob h-[520px] w-[520px] -top-40 -left-40" style={{ background: "oklch(0.55 0.18 280 / 0.55)" }} />
+      <div aria-hidden className="ambient-blob h-[420px] w-[420px] top-1/3 -right-32" style={{ background: "oklch(0.70 0.14 85 / 0.35)" }} />
+      <div aria-hidden className="ambient-blob h-[360px] w-[360px] bottom-[-120px] left-1/3" style={{ background: "oklch(0.50 0.16 250 / 0.45)" }} />
 
       <main className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-start gap-6 px-4 py-6 sm:justify-center sm:gap-10 sm:py-12 lg:flex-row lg:gap-16">
         {/* Brand showcase */}
         <section aria-labelledby="brand-heading" className="w-full max-w-xl space-y-5 sm:space-y-8">
           <div className="text-center lg:text-left">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              Est. Premium Sleep & Comfort
-            </p>
-            <h1
-              id="brand-heading"
-              className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">Est. Premium Sleep & Comfort</p>
+            <h1 id="brand-heading" className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
               House of <span className="gold-text">Abood Tradings</span>
             </h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
-              Premium Sleep & Comfort Solutions
-            </p>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">Premium Sleep & Comfort Solutions</p>
           </div>
 
           {/* Zizz hero */}
@@ -152,20 +127,11 @@ function LoginPage() {
                     title={b.name}
                   >
                     <div className="bg-white/95 aspect-square flex items-center justify-center">
-                      <img
-                        src={b.src}
-                        alt={b.name}
-                        className="w-full h-full object-contain p-1 sm:p-1.5"
-                        loading="lazy"
-                      />
+                      <img src={b.src} alt={b.name} className="w-full h-full object-contain p-1 sm:p-1.5" loading="lazy" />
                     </div>
                     <div className="px-1.5 py-1.5 text-center">
-                      <div className="text-[11px] sm:text-xs font-semibold leading-tight truncate">
-                        {b.name}
-                      </div>
-                      <div className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight truncate">
-                        {b.desc}
-                      </div>
+                      <div className="text-[11px] sm:text-xs font-semibold leading-tight truncate">{b.name}</div>
+                      <div className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight truncate">{b.desc}</div>
                     </div>
                   </div>
                 </li>
@@ -175,51 +141,27 @@ function LoginPage() {
         </section>
 
         {/* Login card */}
-        <section
-          aria-labelledby="login-heading"
-          className="glass w-full max-w-md rounded-2xl p-6 sm:p-8"
-        >
+        <section aria-labelledby="login-heading" className="glass w-full max-w-md rounded-2xl p-6 sm:p-8">
           <div className="text-center space-y-2 mb-5 sm:mb-6">
             <div className="mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl btn-gold flex items-center justify-center overflow-hidden bg-white">
               <img src={zizz.url} alt="Zizz" className="w-full h-full object-contain" />
             </div>
-            <h2
-              id="login-heading"
-              className="text-xl sm:text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Abood Tradings ERP
-            </h2>
+            <h2 id="login-heading" className="text-xl sm:text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Abood Tradings ERP</h2>
             <p className="text-sm text-muted-foreground">Sign in to your account</p>
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md"
-                >
+                <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md">
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <div className="flex items-start gap-2">
               <Checkbox
@@ -233,8 +175,7 @@ function LoginPage() {
                   Keep me signed in
                 </Label>
                 <p className="text-[11px] text-muted-foreground">
-                  Marks this device as trusted. Untrusted devices are signed out after 2 minutes of
-                  inactivity.
+                  Marks this device as trusted. Untrusted devices are signed out after 2 minutes of inactivity.
                 </p>
               </div>
             </div>
@@ -243,11 +184,7 @@ function LoginPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               No account?{" "}
-              <Link
-                to="/signup"
-                search={redirect ? { redirect } : {}}
-                className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md"
-              >
+              <Link to="/signup" search={redirect ? { redirect } : {}} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-md">
                 Request access
               </Link>
             </p>

@@ -6,20 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  sb,
-  nextStockJournalNumber,
-  type StockItem,
-  type Godown,
-  type StockMovementType,
-} from "@/lib/inventory";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { sb, nextStockJournalNumber, type StockItem, type Godown, type StockMovementType } from "@/lib/inventory";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -60,44 +48,21 @@ function JournalsPage() {
     setLines((arr) => arr.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   };
 
-  const addLine = () =>
-    setLines((a) => [
-      ...a,
-      { stock_item_id: "", godown_id: "", movement_type: "adjustment", quantity: 0, rate: 0 },
-    ]);
+  const addLine = () => setLines((a) => [...a, { stock_item_id: "", godown_id: "", movement_type: "adjustment", quantity: 0, rate: 0 }]);
   const removeLine = (i: number) => setLines((a) => a.filter((_, idx) => idx !== i));
 
   const save = async () => {
     const valid = lines.filter((l) => l.stock_item_id && l.quantity !== 0);
-    if (valid.length === 0) {
-      toast.error("Add at least one line");
-      return;
-    }
+    if (valid.length === 0) { toast.error("Add at least one line"); return; }
     const num = await nextStockJournalNumber();
-    const { data: j, error: jErr } = await sb
-      .from("stock_journals")
-      .insert({
-        journal_number: num,
-        journal_date: date,
-        narration: narration || null,
-        journal_type: "adjustment",
-      })
-      .select("id")
-      .single();
-    if (jErr) {
-      toast.error(jErr.message);
-      return;
-    }
+    const { data: j, error: jErr } = await sb.from("stock_journals")
+      .insert({ journal_number: num, journal_date: date, narration: narration || null, journal_type: "adjustment" })
+      .select("id").single();
+    if (jErr) { toast.error(jErr.message); return; }
     const entries = valid.map((l, idx) => ({
-      journal_id: j.id,
-      stock_item_id: l.stock_item_id,
-      from_godown_id: null,
-      to_godown_id: l.godown_id || null,
-      direction: l.quantity >= 0 ? "in" : "out",
-      quantity: l.quantity,
-      rate: l.rate,
-      amount: l.quantity * l.rate,
-      line_order: idx,
+      journal_id: j.id, stock_item_id: l.stock_item_id, from_godown_id: null,
+      to_godown_id: l.godown_id || null, direction: l.quantity >= 0 ? "in" : "out",
+      quantity: l.quantity, rate: l.rate, amount: l.quantity * l.rate, line_order: idx,
     }));
     await sb.from("stock_journal_entries").insert(entries);
     for (const [idx, l] of valid.entries()) {
@@ -106,28 +71,9 @@ function JournalsPage() {
       const key = `journal:${j.id}:${idx}`;
       const qty = Math.abs(Number(l.quantity));
       const fn = Number(l.quantity) >= 0 ? "post_stock_receipt" : "post_stock_issue";
-      const args =
-        Number(l.quantity) >= 0
-          ? {
-              p_item: l.stock_item_id,
-              p_godown: godown,
-              p_qty: qty,
-              p_rate: Number(l.rate),
-              p_date: date,
-              p_idempotency: key,
-              p_source_table: "stock_journals",
-              p_source_id: j.id,
-            }
-          : {
-              p_item: l.stock_item_id,
-              p_godown: godown,
-              p_qty: qty,
-              p_date: date,
-              p_idempotency: key,
-              p_source_table: "stock_journals",
-              p_source_id: j.id,
-              p_movement_type: l.movement_type,
-            };
+      const args = Number(l.quantity) >= 0
+        ? { p_item: l.stock_item_id, p_godown: godown, p_qty: qty, p_rate: Number(l.rate), p_date: date, p_idempotency: key, p_source_table: "stock_journals", p_source_id: j.id }
+        : { p_item: l.stock_item_id, p_godown: godown, p_qty: qty, p_date: date, p_idempotency: key, p_source_table: "stock_journals", p_source_id: j.id, p_movement_type: l.movement_type };
       const { error: postErr } = await sb.rpc(fn, args);
       if (postErr) throw postErr;
     }
@@ -137,26 +83,13 @@ function JournalsPage() {
 
   return (
     <>
-      <PageHeader
-        title="New Stock Journal"
-        description="Adjust, transfer or consume stock manually"
-      />
+      <PageHeader title="New Stock Journal" description="Adjust, transfer or consume stock manually" />
       <PageBody>
         <Card>
           <CardContent className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Date</Label>
-                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-              </div>
-              <div>
-                <Label>Narration</Label>
-                <Input
-                  value={narration}
-                  onChange={(e) => setNarration(e.target.value)}
-                  placeholder="Optional"
-                />
-              </div>
+              <div><Label>Date</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+              <div><Label>Narration</Label><Input value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="Optional" /></div>
             </div>
             <div className="space-y-2">
               <div className="text-sm font-semibold">Lines</div>
@@ -164,46 +97,26 @@ function JournalsPage() {
                 <div key={i} className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-4">
                     <Label className="text-xs">Item</Label>
-                    <Select
-                      value={l.stock_item_id}
-                      onValueChange={(v) => setLine(i, { stock_item_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
-                      </SelectTrigger>
+                    <Select value={l.stock_item_id} onValueChange={(v) => setLine(i, { stock_item_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select item" /></SelectTrigger>
                       <SelectContent>
-                        {itemsQ.data?.map((it) => (
-                          <SelectItem key={it.id} value={it.id}>
-                            {it.name}
-                          </SelectItem>
-                        ))}
+                        {itemsQ.data?.map((it) => <SelectItem key={it.id} value={it.id}>{it.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="col-span-3">
                     <Label className="text-xs">Godown</Label>
                     <Select value={l.godown_id} onValueChange={(v) => setLine(i, { godown_id: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Godown" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Godown" /></SelectTrigger>
                       <SelectContent>
-                        {godownsQ.data?.map((g) => (
-                          <SelectItem key={g.id} value={g.id}>
-                            {g.name}
-                          </SelectItem>
-                        ))}
+                        {godownsQ.data?.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="col-span-2">
                     <Label className="text-xs">Type</Label>
-                    <Select
-                      value={l.movement_type}
-                      onValueChange={(v) => setLine(i, { movement_type: v as StockMovementType })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={l.movement_type} onValueChange={(v) => setLine(i, { movement_type: v as StockMovementType })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="adjustment">Adjustment</SelectItem>
                         <SelectItem value="transfer_in">Transfer In</SelectItem>
@@ -215,35 +128,20 @@ function JournalsPage() {
                   </div>
                   <div className="col-span-1">
                     <Label className="text-xs">Qty</Label>
-                    <Input
-                      type="number"
-                      value={l.quantity}
-                      onChange={(e) => setLine(i, { quantity: Number(e.target.value) })}
-                    />
+                    <Input type="number" value={l.quantity} onChange={(e) => setLine(i, { quantity: Number(e.target.value) })} />
                   </div>
                   <div className="col-span-1">
                     <Label className="text-xs">Rate</Label>
-                    <Input
-                      type="number"
-                      value={l.rate}
-                      onChange={(e) => setLine(i, { rate: Number(e.target.value) })}
-                    />
+                    <Input type="number" value={l.rate} onChange={(e) => setLine(i, { rate: Number(e.target.value) })} />
                   </div>
                   <div className="col-span-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeLine(i)}
-                      disabled={lines.length === 1}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => removeLine(i)} disabled={lines.length === 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={addLine}>
-                <Plus className="h-4 w-4 mr-1" /> Add line
-              </Button>
+              <Button variant="outline" size="sm" onClick={addLine}><Plus className="h-4 w-4 mr-1" /> Add line</Button>
             </div>
             <div className="flex justify-end">
               <Button onClick={save}>Save Journal</Button>

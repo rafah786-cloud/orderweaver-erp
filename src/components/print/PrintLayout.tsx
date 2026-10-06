@@ -20,20 +20,14 @@ interface PrintLayoutProps {
   variant?: PrintVariant;
 }
 
+
 /**
  * Shared printable shell. Print button opens the OS print dialog where the
  * user can pick any installed printer or "Save as PDF" / "Microsoft Print to
  * PDF". Browsers do not expose printer enumeration to web apps — the native
  * dialog is the supported path.
  */
-export function PrintLayout({
-  title,
-  docLabel,
-  meta = [],
-  children,
-  footerNotes,
-  variant = "classic",
-}: PrintLayoutProps) {
+export function PrintLayout({ title, docLabel, meta = [], children, footerNotes, variant = "classic" }: PrintLayoutProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -76,8 +70,7 @@ export function PrintLayout({
             <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Button>
           <div className="text-sm text-muted-foreground">
-            Template: <span className="font-medium capitalize">{variant}</span> — pick another via{" "}
-            <code className="text-xs">?template=classic|modern|minimal</code>
+            Template: <span className="font-medium capitalize">{variant}</span> — pick another via <code className="text-xs">?template=classic|modern|minimal</code>
           </div>
           <Button size="sm" onClick={() => window.print()}>
             <Printer className="mr-1 h-4 w-4" /> Print / Save as PDF
@@ -97,27 +90,21 @@ export function PrintLayout({
                 {COMPANY.address.map((l) => (
                   <div key={l}>{l}</div>
                 ))}
-                <div>
-                  GSTIN: {COMPANY.gstin} &nbsp;·&nbsp; State: {COMPANY.state} ({COMPANY.stateCode})
-                </div>
+                <div>GSTIN: {COMPANY.gstin} &nbsp;·&nbsp; State: {COMPANY.state} ({COMPANY.stateCode})</div>
                 <div>{[COMPANY.phone, COMPANY.email].filter(Boolean).join(" · ")}</div>
               </div>
             </div>
             <div className="text-right">
-              <div className={docLabelClass}>{docLabel}</div>
+              <div className={docLabelClass}>
+                {docLabel}
+              </div>
               {meta.length > 0 && (
                 <table className="mt-3 ml-auto text-xs">
                   <tbody>
                     {meta.map(([k, v]) => (
                       <tr key={k}>
-                        <td
-                          className={`pr-3 text-right ${isModern ? "text-white/85" : "text-gray-600"}`}
-                        >
-                          {k}
-                        </td>
-                        <td className={`text-left font-medium ${isModern ? "text-white" : ""}`}>
-                          {v}
-                        </td>
+                        <td className={`pr-3 text-right ${isModern ? "text-white/85" : "text-gray-600"}`}>{k}</td>
+                        <td className={`text-left font-medium ${isModern ? "text-white" : ""}`}>{v}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -128,6 +115,7 @@ export function PrintLayout({
 
           {isMinimal && <div className="mt-2 h-px bg-gray-300" />}
 
+
           {/* Body */}
           <main className="mt-5 text-sm">{children}</main>
 
@@ -136,22 +124,16 @@ export function PrintLayout({
             {footerNotes}
             <div className={`mt-4 grid gap-6 ${COMPANY.bank.name ? "grid-cols-2" : "grid-cols-1"}`}>
               {COMPANY.bank.name && (
-                <div>
-                  <div className="mb-1 font-semibold">Bank Details</div>
-                  <div>
-                    {COMPANY.bank.name} — {COMPANY.bank.branch}
-                  </div>
-                  <div>A/c Name: {COMPANY.bank.accountName}</div>
-                  <div>
-                    A/c No: {COMPANY.bank.accountNumber} &nbsp;·&nbsp; IFSC: {COMPANY.bank.ifsc}
-                  </div>
-                </div>
+              <div>
+                <div className="mb-1 font-semibold">Bank Details</div>
+                <div>{COMPANY.bank.name} — {COMPANY.bank.branch}</div>
+                <div>A/c Name: {COMPANY.bank.accountName}</div>
+                <div>A/c No: {COMPANY.bank.accountNumber} &nbsp;·&nbsp; IFSC: {COMPANY.bank.ifsc}</div>
+              </div>
               )}
               <div className="text-right">
                 <div className="mb-10">For {COMPANY.name}</div>
-                <div className="border-t border-gray-400 pt-1 text-gray-600">
-                  Authorised Signatory
-                </div>
+                <div className="border-t border-gray-400 pt-1 text-gray-600">Authorised Signatory</div>
               </div>
             </div>
             <div className="mt-4 text-center text-[10px] text-gray-500">

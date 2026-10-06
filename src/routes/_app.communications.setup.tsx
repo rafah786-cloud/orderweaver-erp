@@ -27,16 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
-  AlertCircle,
-  KeyRound,
-  Settings2,
-  FileText,
-  Users,
-  Send,
-  ArrowRight,
-  ArrowLeft,
-  PartyPopper,
+  CheckCircle2, AlertCircle, KeyRound, Settings2, FileText,
+  Users, Send, ArrowRight, ArrowLeft, PartyPopper,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/communications/setup")({
@@ -47,25 +39,10 @@ type StepStatus = "ok" | "warn" | "todo";
 
 function StatusPill({ status, label }: { status: StepStatus; label: string }) {
   if (status === "ok")
-    return (
-      <Badge className="gap-1">
-        <CheckCircle2 className="h-3 w-3" />
-        {label}
-      </Badge>
-    );
+    return <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" />{label}</Badge>;
   if (status === "warn")
-    return (
-      <Badge variant="secondary" className="gap-1">
-        <AlertCircle className="h-3 w-3" />
-        {label}
-      </Badge>
-    );
-  return (
-    <Badge variant="destructive" className="gap-1">
-      <AlertCircle className="h-3 w-3" />
-      {label}
-    </Badge>
-  );
+    return <Badge variant="secondary" className="gap-1"><AlertCircle className="h-3 w-3" />{label}</Badge>;
+  return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" />{label}</Badge>;
 }
 
 function SetupWizard() {
@@ -105,11 +82,8 @@ function SetupWizard() {
 
   // Form state for step 2 (provider config)
   const [form, setForm] = useState<{
-    workspace_id: string;
-    business_number: string;
-    sender_name: string;
-    base_url: string;
-    default_language: string;
+    workspace_id: string; business_number: string; sender_name: string;
+    base_url: string; default_language: string;
   } | null>(null);
   const cfgForm = form ?? {
     workspace_id: cfgQ.data?.workspace_id ?? "",
@@ -121,17 +95,12 @@ function SetupWizard() {
   const [savingCfg, setSavingCfg] = useState(false);
 
   // Step 5 test state
-  const [test, setTest] = useState({
-    mobileNumber: "",
-    templateName: "ORDER_CONFIRMED",
-    variables: "{}",
-  });
+  const [test, setTest] = useState({ mobileNumber: "", templateName: "ORDER_CONFIRMED", variables: "{}" });
   const [testBusy, setTestBusy] = useState(false);
   const [testResult, setTestResult] = useState<null | { ok: boolean; msg: string }>(null);
 
   const apiKeyOk = !!cfgQ.data?.api_key_configured;
-  const cfgOk =
-    apiKeyOk && !!cfgQ.data?.workspace_id && !!cfgQ.data?.business_number && !!cfgQ.data?.is_active;
+  const cfgOk = apiKeyOk && !!cfgQ.data?.workspace_id && !!cfgQ.data?.business_number && !!cfgQ.data?.is_active;
 
   const templatesByEvent = useMemo(() => {
     const m = new Map<string, { name: string; approved: boolean | null }>();
@@ -164,20 +133,10 @@ function SetupWizard() {
 
   const steps: Array<{ key: string; title: string; icon: any; status: StepStatus }> = [
     { key: "key", title: "API Credentials", icon: KeyRound, status: apiKeyOk ? "ok" : "todo" },
-    {
-      key: "cfg",
-      title: "Provider Configuration",
-      icon: Settings2,
-      status: cfgOk ? "ok" : apiKeyOk ? "warn" : "todo",
-    },
+    { key: "cfg", title: "Provider Configuration", icon: Settings2, status: cfgOk ? "ok" : apiKeyOk ? "warn" : "todo" },
     { key: "tpl", title: "Message Templates", icon: FileText, status: templatesStatus },
     { key: "sub", title: "Staff Subscriptions", icon: Users, status: subsOk ? "ok" : "warn" },
-    {
-      key: "test",
-      title: "Verify with a Test",
-      icon: Send,
-      status: testResult?.ok ? "ok" : "todo",
-    },
+    { key: "test", title: "Verify with a Test", icon: Send, status: testResult?.ok ? "ok" : "todo" },
   ];
 
   async function saveConfigStep() {
@@ -196,33 +155,19 @@ function SetupWizard() {
   }
 
   async function runTest() {
-    setTestBusy(true);
-    setTestResult(null);
+    setTestBusy(true); setTestResult(null);
     try {
       let vars: Record<string, string> = {};
       if (test.variables.trim()) {
-        try {
-          vars = JSON.parse(test.variables);
-        } catch {
-          toast.error('Variables must be JSON, e.g. {"customer_name":"Alex"}');
-          setTestBusy(false);
-          return;
-        }
+        try { vars = JSON.parse(test.variables); }
+        catch { toast.error('Variables must be JSON, e.g. {"customer_name":"Alex"}'); setTestBusy(false); return; }
       }
-      const r = await testFn({
-        data: { mobileNumber: test.mobileNumber, templateName: test.templateName, variables: vars },
-      });
+      const r = await testFn({ data: { mobileNumber: test.mobileNumber, templateName: test.templateName, variables: vars } });
       if (r.ok) {
-        setTestResult({
-          ok: true,
-          msg: `Sent successfully · id ${r.messageId || "(none)"} · ${r.attempts} attempt(s)`,
-        });
+        setTestResult({ ok: true, msg: `Sent successfully · id ${r.messageId || "(none)"} · ${r.attempts} attempt(s)` });
         toast.success("Test message sent");
       } else {
-        setTestResult({
-          ok: false,
-          msg: `${r.status}: ${r.error ?? "send failed"} (${r.attempts} attempt(s))`,
-        });
+        setTestResult({ ok: false, msg: `${r.status}: ${r.error ?? "send failed"} (${r.attempts} attempt(s))` });
       }
     } catch (e) {
       setTestResult({ ok: false, msg: e instanceof Error ? e.message : "Test failed" });
@@ -270,32 +215,22 @@ function SetupWizard() {
         {step === 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5" />
-                Step 1 · API Credentials
-              </CardTitle>
-              <CardDescription>
-                Store the Interakt secret key so the backend can send messages.
-              </CardDescription>
+              <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" />Step 1 · API Credentials</CardTitle>
+              <CardDescription>Store the Interakt secret key so the backend can send messages.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-md border p-4 flex items-start justify-between gap-4">
                 <div className="space-y-1 text-sm">
                   <div className="font-medium">INTERAKT_API_KEY</div>
                   <div className="text-muted-foreground">
-                    Found in Interakt → Settings → Developer Setting → Secret Key. Values are stored
-                    encrypted and never sent to the browser.
+                    Found in Interakt → Settings → Developer Setting → Secret Key. Values are stored encrypted and never sent to the browser.
                   </div>
                 </div>
-                <StatusPill
-                  status={apiKeyOk ? "ok" : "todo"}
-                  label={apiKeyOk ? "Configured" : "Missing"}
-                />
+                <StatusPill status={apiKeyOk ? "ok" : "todo"} label={apiKeyOk ? "Configured" : "Missing"} />
               </div>
               {!apiKeyOk && (
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
-                  Paste your Interakt secret key in the chat and I'll save it for you, or add it in
-                  Project Settings → Secrets as <code>INTERAKT_API_KEY</code>.
+                  Paste your Interakt secret key in the chat and I'll save it for you, or add it in Project Settings → Secrets as <code>INTERAKT_API_KEY</code>.
                 </div>
               )}
             </CardContent>
@@ -305,52 +240,30 @@ function SetupWizard() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="h-5 w-5" />
-                Step 2 · Provider Configuration
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2"><Settings2 className="h-5 w-5" />Step 2 · Provider Configuration</CardTitle>
               <CardDescription>Identify your Interakt workspace and the sender.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label>Workspace ID</Label>
-                  <Input
-                    value={cfgForm.workspace_id}
-                    onChange={(e) => setForm({ ...cfgForm, workspace_id: e.target.value })}
-                    placeholder="ws_xxxxxxxx"
-                  />
+                  <Input value={cfgForm.workspace_id} onChange={(e) => setForm({ ...cfgForm, workspace_id: e.target.value })} placeholder="ws_xxxxxxxx" />
                 </div>
                 <div>
                   <Label>Business Number</Label>
-                  <Input
-                    value={cfgForm.business_number}
-                    onChange={(e) => setForm({ ...cfgForm, business_number: e.target.value })}
-                    placeholder="+91XXXXXXXXXX"
-                  />
+                  <Input value={cfgForm.business_number} onChange={(e) => setForm({ ...cfgForm, business_number: e.target.value })} placeholder="+91XXXXXXXXXX" />
                 </div>
                 <div>
                   <Label>Sender Name</Label>
-                  <Input
-                    value={cfgForm.sender_name}
-                    onChange={(e) => setForm({ ...cfgForm, sender_name: e.target.value })}
-                    placeholder="Zizz Mattress"
-                  />
+                  <Input value={cfgForm.sender_name} onChange={(e) => setForm({ ...cfgForm, sender_name: e.target.value })} placeholder="Zizz Mattress" />
                 </div>
                 <div>
                   <Label>Default Language</Label>
-                  <Input
-                    value={cfgForm.default_language}
-                    onChange={(e) => setForm({ ...cfgForm, default_language: e.target.value })}
-                    placeholder="en"
-                  />
+                  <Input value={cfgForm.default_language} onChange={(e) => setForm({ ...cfgForm, default_language: e.target.value })} placeholder="en" />
                 </div>
                 <div className="md:col-span-2">
                   <Label>API Base URL</Label>
-                  <Input
-                    value={cfgForm.base_url}
-                    onChange={(e) => setForm({ ...cfgForm, base_url: e.target.value })}
-                  />
+                  <Input value={cfgForm.base_url} onChange={(e) => setForm({ ...cfgForm, base_url: e.target.value })} />
                 </div>
               </div>
               <div className="flex justify-end">
@@ -367,14 +280,8 @@ function SetupWizard() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Step 3 · Message Templates
-                </CardTitle>
-                <CardDescription>
-                  Every ERP event needs an Interakt-approved template with a matching variable
-                  count.
-                </CardDescription>
+                <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" />Step 3 · Message Templates</CardTitle>
+                <CardDescription>Every ERP event needs an Interakt-approved template with a matching variable count.</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -393,11 +300,7 @@ function SetupWizard() {
                 >
                   {valQ.isFetching ? "Validating…" : "Re-validate"}
                 </Button>
-                <Link to="/communications/templates">
-                  <Button size="sm" variant="outline">
-                    Manage
-                  </Button>
-                </Link>
+                <Link to="/communications/templates"><Button size="sm" variant="outline">Manage</Button></Link>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -424,25 +327,13 @@ function SetupWizard() {
                   let status: StepStatus = "todo";
                   let label = "Missing";
                   if (v) {
-                    if (v.ok) {
-                      status = "ok";
-                      label = "Approved · vars match";
-                    } else if (!v.local_name) {
-                      status = "todo";
-                      label = "Not mapped";
-                    } else if (!v.interakt_found) {
-                      status = "todo";
-                      label = "Not on Interakt";
-                    } else if (!v.is_approved) {
-                      status = "warn";
-                      label = v.interakt_status ?? "Not approved";
-                    } else if (!v.vars_match) {
-                      status = "warn";
-                      label = `Vars ${v.local_var_count} ≠ ${v.interakt_var_count}`;
-                    }
+                    if (v.ok) { status = "ok"; label = "Approved · vars match"; }
+                    else if (!v.local_name) { status = "todo"; label = "Not mapped"; }
+                    else if (!v.interakt_found) { status = "todo"; label = "Not on Interakt"; }
+                    else if (!v.is_approved) { status = "warn"; label = v.interakt_status ?? "Not approved"; }
+                    else if (!v.vars_match) { status = "warn"; label = `Vars ${v.local_var_count} ≠ ${v.interakt_var_count}`; }
                   } else if (t) {
-                    status = "warn";
-                    label = "Unvalidated";
+                    status = "warn"; label = "Unvalidated";
                   }
                   return (
                     <div key={k} className="flex items-center justify-between px-3 py-2 text-sm">
@@ -461,16 +352,9 @@ function SetupWizard() {
 
               {importMut.data?.unmapped_remote?.length ? (
                 <div className="rounded-md border p-3 text-xs">
-                  <div className="font-medium mb-1">
-                    Interakt templates we couldn't auto-map ({importMut.data.unmapped_remote.length}
-                    )
-                  </div>
+                  <div className="font-medium mb-1">Interakt templates we couldn't auto-map ({importMut.data.unmapped_remote.length})</div>
                   <div className="text-muted-foreground">
-                    Map these manually in the templates page:{" "}
-                    {importMut.data.unmapped_remote
-                      .slice(0, 8)
-                      .map((t) => t.name)
-                      .join(", ")}
+                    Map these manually in the templates page: {importMut.data.unmapped_remote.slice(0, 8).map((t) => t.name).join(", ")}
                     {importMut.data.unmapped_remote.length > 8 && "…"}
                   </div>
                 </div>
@@ -478,31 +362,22 @@ function SetupWizard() {
 
               {!templatesValidated && apiKeyOk && (
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
-                  Fix the issues above (or click <b>Import from Interakt</b>) before moving to the
-                  test step.
+                  Fix the issues above (or click <b>Import from Interakt</b>) before moving to the test step.
                 </div>
               )}
             </CardContent>
           </Card>
         )}
 
+
         {step === 3 && (
           <Card>
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Step 4 · Staff Subscriptions
-                </CardTitle>
-                <CardDescription>
-                  Which departments receive which alerts, and whether they have numbers to reach.
-                </CardDescription>
+                <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Step 4 · Staff Subscriptions</CardTitle>
+                <CardDescription>Which departments receive which alerts, and whether they have numbers to reach.</CardDescription>
               </div>
-              <Link to="/communications/employee-subscriptions">
-                <Button size="sm" variant="outline">
-                  Manage subscriptions
-                </Button>
-              </Link>
+              <Link to="/communications/employee-subscriptions"><Button size="sm" variant="outline">Manage subscriptions</Button></Link>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -511,9 +386,7 @@ function SetupWizard() {
                   return (
                     <div key={d} className="rounded-md border p-3">
                       <div className="text-xs text-muted-foreground">{d}</div>
-                      <div className="text-lg font-semibold">
-                        {c.with_phone}/{c.total}
-                      </div>
+                      <div className="text-lg font-semibold">{c.with_phone}/{c.total}</div>
                       <div className="text-xs text-muted-foreground">with WhatsApp</div>
                     </div>
                   );
@@ -524,14 +397,10 @@ function SetupWizard() {
                   <div>
                     <div className="font-medium">Active event subscriptions</div>
                     <div className="text-muted-foreground text-xs">
-                      {activeSubs.length} of {DEPARTMENTS.length * STAFF_EVENTS.length} possible
-                      (department × event) rows are on.
+                      {activeSubs.length} of {DEPARTMENTS.length * STAFF_EVENTS.length} possible (department × event) rows are on.
                     </div>
                   </div>
-                  <StatusPill
-                    status={subsOk ? "ok" : "warn"}
-                    label={subsOk ? "Configured" : "No subscriptions"}
-                  />
+                  <StatusPill status={subsOk ? "ok" : "warn"} label={subsOk ? "Configured" : "No subscriptions"} />
                 </div>
               </div>
             </CardContent>
@@ -541,60 +410,34 @@ function SetupWizard() {
         {step === 4 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5" />
-                Step 5 · Verify with a Test
-              </CardTitle>
-              <CardDescription>
-                Send a real message with an approved template. Check WhatsApp on the receiving
-                number.
-              </CardDescription>
+              <CardTitle className="flex items-center gap-2"><Send className="h-5 w-5" />Step 5 · Verify with a Test</CardTitle>
+              <CardDescription>Send a real message with an approved template. Check WhatsApp on the receiving number.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <Label>Recipient (E.164)</Label>
-                  <Input
-                    value={test.mobileNumber}
-                    onChange={(e) => setTest({ ...test, mobileNumber: e.target.value })}
-                    placeholder="+919876543210"
-                  />
+                  <Input value={test.mobileNumber} onChange={(e) => setTest({ ...test, mobileNumber: e.target.value })} placeholder="+919876543210" />
                 </div>
                 <div>
                   <Label>Template Name</Label>
-                  <Input
-                    value={test.templateName}
-                    onChange={(e) => setTest({ ...test, templateName: e.target.value })}
-                  />
+                  <Input value={test.templateName} onChange={(e) => setTest({ ...test, templateName: e.target.value })} />
                 </div>
                 <div>
                   <Label>Variables (JSON)</Label>
-                  <Input
-                    value={test.variables}
-                    onChange={(e) => setTest({ ...test, variables: e.target.value })}
-                    placeholder='{"customer_name":"Alex"}'
-                  />
+                  <Input value={test.variables} onChange={(e) => setTest({ ...test, variables: e.target.value })} placeholder='{"customer_name":"Alex"}' />
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <div className="text-xs text-muted-foreground">
-                  Failures are logged in{" "}
-                  <Link to="/communications/whatsapp-logs" className="underline">
-                    Activity Log
-                  </Link>{" "}
-                  with the exact Interakt error.
+                  Failures are logged in <Link to="/communications/whatsapp-logs" className="underline">Activity Log</Link> with the exact Interakt error.
                 </div>
-                <Button
-                  onClick={runTest}
-                  disabled={testBusy || !apiKeyOk || !test.mobileNumber || !test.templateName}
-                >
+                <Button onClick={runTest} disabled={testBusy || !apiKeyOk || !test.mobileNumber || !test.templateName}>
                   {testBusy ? "Sending…" : "Send test message"}
                 </Button>
               </div>
               {testResult && (
-                <div
-                  className={`rounded-md border p-3 text-sm ${testResult.ok ? "border-green-500/40 bg-green-500/5" : "border-red-500/40 bg-red-500/5"}`}
-                >
+                <div className={`rounded-md border p-3 text-sm ${testResult.ok ? "border-green-500/40 bg-green-500/5" : "border-red-500/40 bg-red-500/5"}`}>
                   {testResult.msg}
                 </div>
               )}
@@ -602,8 +445,7 @@ function SetupWizard() {
                 <div className="rounded-md border border-primary/40 bg-primary/5 p-4 flex items-center gap-3">
                   <PartyPopper className="h-5 w-5 text-primary" />
                   <div className="text-sm">
-                    All set. WhatsApp notifications are live across the ERP. You can revisit this
-                    wizard anytime from Communications → Setup.
+                    All set. WhatsApp notifications are live across the ERP. You can revisit this wizard anytime from Communications → Setup.
                   </div>
                 </div>
               )}
@@ -613,22 +455,14 @@ function SetupWizard() {
 
         {/* Nav */}
         <div className="mt-4 flex justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-            disabled={step === 0}
-          >
+          <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <Button
             variant="ghost"
             onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
             disabled={step === steps.length - 1 || (step === 2 && !templatesValidated)}
-            title={
-              step === 2 && !templatesValidated
-                ? "Resolve template issues before continuing"
-                : undefined
-            }
+            title={step === 2 && !templatesValidated ? "Resolve template issues before continuing" : undefined}
           >
             Next <ArrowRight className="h-4 w-4 ml-1" />
           </Button>

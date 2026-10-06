@@ -37,9 +37,7 @@ function LedgersPage() {
     const all = balancesQ.data ?? [];
     if (!search.trim()) return all;
     const s = search.toLowerCase();
-    return all.filter(
-      (l) => l.name.toLowerCase().includes(s) || l.group_name.toLowerCase().includes(s),
-    );
+    return all.filter((l) => l.name.toLowerCase().includes(s) || l.group_name.toLowerCase().includes(s));
   }, [balancesQ.data, search]);
 
   const byGroup = useMemo(() => {
@@ -60,11 +58,7 @@ function LedgersPage() {
       />
       <PageBody>
         <div className="mb-4 max-w-md">
-          <Input
-            placeholder="Search ledger or group..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <Input placeholder="Search ledger or group..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="space-y-4">
           {byGroup.map(([groupName, ledgers]) => (
@@ -89,8 +83,7 @@ function LedgersPage() {
                           <span className="text-sm">{l.name}</span>
                         </div>
                         <div className="text-sm tabular-nums">
-                          {inr(bal)}{" "}
-                          <span className="text-xs text-muted-foreground ml-1">{drCr}</span>
+                          {inr(bal)} <span className="text-xs text-muted-foreground ml-1">{drCr}</span>
                         </div>
                       </Link>
                     );

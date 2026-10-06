@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { RefreshCw, Truck } from "lucide-react";
-import {
-  listVelocityWarehouses,
-  syncVelocityWarehouses,
-  testVelocityAuth,
-} from "@/lib/velocity.functions";
+import { listVelocityWarehouses, syncVelocityWarehouses, testVelocityAuth } from "@/lib/velocity.functions";
 
 export function VelocityShippingCard() {
   const qc = useQueryClient();
@@ -29,9 +25,7 @@ export function VelocityShippingCard() {
     try {
       const res = await syncFn();
       if (res.ok) {
-        toast.success(
-          `Pulled ${res.synced} warehouse${res.synced === 1 ? "" : "s"} from Velocity.`,
-        );
+        toast.success(`Pulled ${res.synced} warehouse${res.synced === 1 ? "" : "s"} from Velocity.`);
         await qc.invalidateQueries({ queryKey: ["velocity-warehouses"] });
       } else {
         toast.error(res.error ?? "Velocity warehouse sync failed.");
@@ -88,9 +82,7 @@ export function VelocityShippingCard() {
                   </Badge>
                 </div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  {[w.address_line1, w.address_line2, w.city, w.state, w.pincode]
-                    .filter(Boolean)
-                    .join(", ") || "—"}
+                  {[w.address_line1, w.address_line2, w.city, w.state, w.pincode].filter(Boolean).join(", ") || "—"}
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {[w.contact_person, w.phone].filter(Boolean).join(" · ")}

@@ -25,18 +25,12 @@ function PrintPartyLedger() {
     queryFn: async () => {
       const { data: party, error: e1 } = await supabase
         .from("parties")
-        .select(
-          "name, address, gstin, phone, email, state_code, contact_person, opening_balance, current_balance",
-        )
-        .eq("id", id)
-        .single();
+        .select("name, address, gstin, phone, email, state_code, contact_person, opening_balance, current_balance")
+        .eq("id", id).single();
       if (e1) throw e1;
 
-      let q = supabase
-        .from("party_ledger_entries")
-        .select("*")
-        .eq("party_id", id)
-        .order("entry_date", { ascending: true });
+      let q = supabase.from("party_ledger_entries")
+        .select("*").eq("party_id", id).order("entry_date", { ascending: true });
       if (from) q = q.gte("entry_date", from);
       if (to) q = q.lte("entry_date", to);
       const { data: entries, error: e2 } = await q;
@@ -46,8 +40,7 @@ function PrintPartyLedger() {
   });
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
-  if (error || !data)
-    return <div className="p-10 text-center text-destructive">Ledger not found.</div>;
+  if (error || !data) return <div className="p-10 text-center text-destructive">Ledger not found.</div>;
 
   const { party, entries } = data;
   const opening = Number(party.opening_balance ?? 0);
@@ -65,10 +58,7 @@ function PrintPartyLedger() {
       docLabel="Statement of Account"
       meta={[
         ["Party", party.name],
-        [
-          "Period",
-          `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(new Date().toISOString().slice(0, 10))}`,
-        ],
+        ["Period", `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(new Date().toISOString().slice(0, 10))}`],
         ["Closing Balance", inr(party.current_balance ?? running)],
       ]}
     >
@@ -82,25 +72,11 @@ function PrintPartyLedger() {
           contact={[party.contact_person, party.phone, party.email].filter(Boolean).join(" · ")}
         />
         <div className="rounded border border-gray-300 p-3 text-xs">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-            Summary
-          </div>
-          <div className="flex justify-between">
-            <span>Opening Balance</span>
-            <span className="font-medium">{inr(opening)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Total Debits</span>
-            <span className="font-medium">{inr(totalDr)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Total Credits</span>
-            <span className="font-medium">{inr(totalCr)}</span>
-          </div>
-          <div className="mt-1 flex justify-between border-t pt-1 font-semibold">
-            <span>Closing Balance</span>
-            <span>{inr(running)}</span>
-          </div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Summary</div>
+          <div className="flex justify-between"><span>Opening Balance</span><span className="font-medium">{inr(opening)}</span></div>
+          <div className="flex justify-between"><span>Total Debits</span><span className="font-medium">{inr(totalDr)}</span></div>
+          <div className="flex justify-between"><span>Total Credits</span><span className="font-medium">{inr(totalCr)}</span></div>
+          <div className="mt-1 flex justify-between border-t pt-1 font-semibold"><span>Closing Balance</span><span>{inr(running)}</span></div>
         </div>
       </div>
 
@@ -135,9 +111,7 @@ function PrintPartyLedger() {
             </tr>
           ))}
           {rows.length === 0 && (
-            <tr>
-              <Td className="text-center text-gray-500">No entries in this period.</Td>
-            </tr>
+            <tr><Td className="text-center text-gray-500" >No entries in this period.</Td></tr>
           )}
           <tr className="bg-gray-100 font-semibold">
             <Td />

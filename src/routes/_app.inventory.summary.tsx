@@ -32,18 +32,10 @@ function StockSummaryPage() {
 
   return (
     <>
-      <PageHeader
-        title="Stock Summary"
-        description={`${rows.length} items · Stored value ${inr(totalValue)}. Opening movement value is not assigned.`}
-        actions={<AiInsightButton topic="inventory" label="Analyze stock" />}
-      />
+      <PageHeader title="Stock Summary" description={`${rows.length} items · Stored value ${inr(totalValue)}. Opening movement value is not assigned.`} actions={<AiInsightButton topic="inventory" label="Analyze stock" />} />
       <PageBody>
         <div className="mb-4 max-w-md">
-          <Input
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Card>
           <CardContent className="p-0">
@@ -63,31 +55,15 @@ function StockSummaryPage() {
                 {rows.map((r) => {
                   const low = r.current_qty <= r.reorder_level && r.reorder_level > 0;
                   return (
-                    <tr
-                      key={r.stock_item_id}
-                      className={`hover:bg-muted/40 ${low ? "bg-destructive/5" : ""}`}
-                    >
-                      <td className="px-4 py-2">
-                        {r.name}{" "}
-                        {r.code && (
-                          <span className="text-xs text-muted-foreground ml-1">[{r.code}]</span>
-                        )}
-                      </td>
+                    <tr key={r.stock_item_id} className={`hover:bg-muted/40 ${low ? "bg-destructive/5" : ""}`}>
+                      <td className="px-4 py-2">{r.name} {r.code && <span className="text-xs text-muted-foreground ml-1">[{r.code}]</span>}</td>
                       <td className="px-4 py-2">{r.unit}</td>
                       <td className="px-4 py-2 text-right tabular-nums">{r.current_qty}</td>
                       <td className="px-4 py-2 text-right tabular-nums">{inr(r.avg_rate || 0)}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">
-                        {inr(r.stock_value || 0)}
-                      </td>
-                      <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-                        {r.reorder_level}
-                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">{inr(r.stock_value || 0)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{r.reorder_level}</td>
                       <td className="px-4 py-2 text-right">
-                        <Link
-                          to="/inventory/movements"
-                          search={{ item: r.stock_item_id }}
-                          className="text-xs text-primary hover:underline"
-                        >
+                        <Link to="/inventory/movements" search={{ item: r.stock_item_id }} className="text-xs text-primary hover:underline">
                           View →
                         </Link>
                       </td>
@@ -95,11 +71,7 @@ function StockSummaryPage() {
                   );
                 })}
                 {rows.length === 0 && !q.isLoading && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No items.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">No items.</td></tr>
                 )}
               </tbody>
             </table>

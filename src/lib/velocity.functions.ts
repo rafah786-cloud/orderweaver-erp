@@ -36,12 +36,7 @@ export const syncVelocityWarehouses = createServerFn({ method: "POST" })
     const mod = await import("@/lib/velocity/warehouse.server");
     try {
       const { synced } = await mod.syncVelocityWarehouses();
-      return {
-        ok: true as const,
-        synced,
-        error: null as string | null,
-        code: null as string | null,
-      };
+      return { ok: true as const, synced, error: null as string | null, code: null as string | null };
     } catch (e) {
       const err = e as { message?: string; code?: string | null };
       return {

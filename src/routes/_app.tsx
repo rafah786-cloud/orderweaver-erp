@@ -16,11 +16,7 @@ function AppLayout() {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Loading…
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) {
     return <Navigate to="/login" search={{ redirect: location.href }} replace />;
@@ -33,13 +29,9 @@ function AppLayout() {
   return (
     <CompanyProvider>
       <div className="app-shell relative flex h-dvh overflow-hidden">
-        <div className="app-shell-sidebar">
-          <AppSidebar />
-        </div>
+        <div className="app-shell-sidebar"><AppSidebar /></div>
         <div className="app-shell-content relative flex min-w-0 flex-1 flex-col">
-          <div className="app-shell-mobile-bar">
-            <MobileTopBar />
-          </div>
+          <div className="app-shell-mobile-bar"><MobileTopBar /></div>
           <header className="app-shell-topbar corporate-topbar hidden md:flex">
             <div className="corporate-wordmark">
               <span>House of</span>
@@ -49,20 +41,9 @@ function AppLayout() {
               <CompanySwitcher />
             </div>
             <nav aria-label="Workspace tools">
-              {hasAnyRole(["admin", "accountant", "sales", "production"]) && (
-                <Link to="/ai/search" aria-label="Search ERP">
-                  <Search />
-                </Link>
-              )}
-              {hasAnyRole(["admin"]) && (
-                <Link to="/communications/inbox" aria-label="Notifications">
-                  <Bell />
-                </Link>
-              )}
-              <div className="profile-chip">
-                <UserRound />
-                <span>{profile?.full_name ?? "Account"}</span>
-              </div>
+              {hasAnyRole(["admin", "accountant", "sales", "production"]) && <Link to="/ai/search" aria-label="Search ERP"><Search /></Link>}
+              {hasAnyRole(["admin"]) && <Link to="/communications/inbox" aria-label="Notifications"><Bell /></Link>}
+              <div className="profile-chip"><UserRound /><span>{profile?.full_name ?? "Account"}</span></div>
             </nav>
           </header>
           <main className="app-shell-main relative flex-1 overflow-y-auto overflow-x-auto">
@@ -81,14 +62,10 @@ function AccessDenied({ allowed, have }: { allowed: string[]; have: string[] }) 
         <div className="mx-auto h-14 w-14 rounded-xl btn-gold flex items-center justify-center">
           <ShieldAlert className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
-          Access denied
-        </h1>
+        <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Access denied</h1>
         <p className="text-sm text-muted-foreground">
-          This screen is restricted to:{" "}
-          <span className="font-medium text-foreground">{allowed.join(", ")}</span>. Your role
-          {have.length > 1 ? "s are" : " is"}:{" "}
-          <span className="font-medium text-foreground">{have.join(", ") || "none"}</span>.
+          This screen is restricted to: <span className="font-medium text-foreground">{allowed.join(", ")}</span>.
+          Your role{have.length > 1 ? "s are" : " is"}: <span className="font-medium text-foreground">{have.join(", ") || "none"}</span>.
         </p>
         <Button asChild className="btn-3d">
           <Link to="/dashboard">Back to dashboard</Link>

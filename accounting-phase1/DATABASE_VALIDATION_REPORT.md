@@ -48,31 +48,31 @@
 
 ## Final test matrix
 
-| Test                          | Exact operation                                                                                          | Database result                                                                           | Status |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------ |
-| Voucher types                 | Posted balanced sales, purchase, receipt, payment, contra, journal, debit note, and credit note vouchers | All returned `posted`                                                                     | PASS   |
-| Concurrent number allocation  | 40 concurrent journal postings                                                                           | 40 committed, 40 unique numbers, series advanced exactly 40                               | PASS   |
-| Concurrent posting            | Same 40-session workload                                                                                 | 40 complete vouchers stored; no partial vouchers                                          | PASS   |
-| Debit/credit enforcement      | Posted two lines with Dr 10 and Cr 9                                                                     | Rejected as unbalanced; no voucher stored                                                 | PASS   |
-| Partial-failure rollback      | Allow number allocation and line inserts to begin, then fail balance validation                          | Voucher count 0; number-series value unchanged after rollback                             | PASS   |
-| Concurrent idempotent retry   | 20 concurrent retries with one idempotency key                                                           | 20 successful responses, one returned ID, one voucher, series advanced once               | PASS   |
-| Reversal                      | Reverse a posted credit note                                                                             | Original `reversed`; linked reversal created; combined ledger effect zero                 | PASS   |
-| Cancellation                  | Cancel one draft and one posted debit note                                                               | Draft finalized without GL impact; posted voucher received a linked compensating reversal | PASS   |
-| Final-entry immutability      | Raw update/delete of final voucher and raw update of its entries                                         | All rejected with `Final accounting records are immutable`                                | PASS   |
-| Same-transaction immutability | Controlled reversal followed by raw voucher update before commit                                         | Raw update rejected; transaction aborted                                                  | PASS   |
-| Sequential duplicate source   | Submit same source/event ID twice                                                                        | Same voucher returned; one stored row                                                     | PASS   |
-| Concurrent duplicate source   | Submit same source/event ID from 10 sessions                                                             | 10 successes, one returned ID, one stored row, zero errors                                | PASS   |
-| Backdated open-period entry   | Post on first day of earlier open FY                                                                     | Posted and assigned to correct FY                                                         | PASS   |
-| Closed-period rejection       | Close FY, then post into it                                                                              | Rejected with `Financial year is closed`; no voucher stored                               | PASS   |
-| Concurrent close calls        | Eight concurrent closes on one FY                                                                        | All calls completed idempotently; one close audit event                                   | PASS   |
-| Concurrent reopen calls       | Eight concurrent reopens on one FY                                                                       | All calls completed idempotently; one reopen audit event                                  | PASS   |
-| Close/post race, post first   | Hold FY shared lock during posting while close begins                                                    | Post completes first; close waits and then closes                                         | PASS   |
-| Close/post race, close first  | Hold FY update lock while post begins                                                                    | Close completes; post is rejected; zero late vouchers                                     | PASS   |
-| Sales atomic posting          | Insert fixture invoice: subtotal 1,000, tax 180, total 1,180                                             | Four GL lines; Dr 1,180 = Cr 1,180                                                        | PASS   |
-| Purchase atomic posting       | Insert fixture purchase bill for 590                                                                     | Two GL lines; Dr 590 = Cr 590                                                             | PASS   |
-| Sales trigger rollback        | Insert invoice with subtotal 1,000, tax 180, total 1,179                                                 | Balance validation fails; source invoice and GL voucher both roll back                    | PASS   |
-| Control totals                | Reconcile all final vouchers                                                                             | Zero unbalanced vouchers; global Dr 4,025 = Cr 4,025                                      | PASS   |
-| FY-aware balance              | Query cash for 2026-04-01 through 2027-03-31                                                             | Opening 1,005; Dr 1,970; Cr 280; closing 2,695                                            | PASS   |
+| Test | Exact operation | Database result | Status |
+|---|---|---|---|
+| Voucher types | Posted balanced sales, purchase, receipt, payment, contra, journal, debit note, and credit note vouchers | All returned `posted` | PASS |
+| Concurrent number allocation | 40 concurrent journal postings | 40 committed, 40 unique numbers, series advanced exactly 40 | PASS |
+| Concurrent posting | Same 40-session workload | 40 complete vouchers stored; no partial vouchers | PASS |
+| Debit/credit enforcement | Posted two lines with Dr 10 and Cr 9 | Rejected as unbalanced; no voucher stored | PASS |
+| Partial-failure rollback | Allow number allocation and line inserts to begin, then fail balance validation | Voucher count 0; number-series value unchanged after rollback | PASS |
+| Concurrent idempotent retry | 20 concurrent retries with one idempotency key | 20 successful responses, one returned ID, one voucher, series advanced once | PASS |
+| Reversal | Reverse a posted credit note | Original `reversed`; linked reversal created; combined ledger effect zero | PASS |
+| Cancellation | Cancel one draft and one posted debit note | Draft finalized without GL impact; posted voucher received a linked compensating reversal | PASS |
+| Final-entry immutability | Raw update/delete of final voucher and raw update of its entries | All rejected with `Final accounting records are immutable` | PASS |
+| Same-transaction immutability | Controlled reversal followed by raw voucher update before commit | Raw update rejected; transaction aborted | PASS |
+| Sequential duplicate source | Submit same source/event ID twice | Same voucher returned; one stored row | PASS |
+| Concurrent duplicate source | Submit same source/event ID from 10 sessions | 10 successes, one returned ID, one stored row, zero errors | PASS |
+| Backdated open-period entry | Post on first day of earlier open FY | Posted and assigned to correct FY | PASS |
+| Closed-period rejection | Close FY, then post into it | Rejected with `Financial year is closed`; no voucher stored | PASS |
+| Concurrent close calls | Eight concurrent closes on one FY | All calls completed idempotently; one close audit event | PASS |
+| Concurrent reopen calls | Eight concurrent reopens on one FY | All calls completed idempotently; one reopen audit event | PASS |
+| Close/post race, post first | Hold FY shared lock during posting while close begins | Post completes first; close waits and then closes | PASS |
+| Close/post race, close first | Hold FY update lock while post begins | Close completes; post is rejected; zero late vouchers | PASS |
+| Sales atomic posting | Insert fixture invoice: subtotal 1,000, tax 180, total 1,180 | Four GL lines; Dr 1,180 = Cr 1,180 | PASS |
+| Purchase atomic posting | Insert fixture purchase bill for 590 | Two GL lines; Dr 590 = Cr 590 | PASS |
+| Sales trigger rollback | Insert invoice with subtotal 1,000, tax 180, total 1,179 | Balance validation fails; source invoice and GL voucher both roll back | PASS |
+| Control totals | Reconcile all final vouchers | Zero unbalanced vouchers; global Dr 4,025 = Cr 4,025 | PASS |
+| FY-aware balance | Query cash for 2026-04-01 through 2027-03-31 | Opening 1,005; Dr 1,970; Cr 280; closing 2,695 | PASS |
 
 ## Changed schema/functions
 

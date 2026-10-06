@@ -53,6 +53,7 @@ with tempfile.TemporaryDirectory(prefix="accounting-chain-") as location:
         sql(file=ROOT / "accounting-phase1/001_accounting_foundation.sql")
         sql(file=ROOT / "accounting-phase2/001_billwise_accounting.sql")
         sql("CREATE TRIGGER fixture_invoice_post AFTER INSERT ON public.invoices FOR EACH ROW EXECUTE FUNCTION public.post_invoice_to_voucher();")
+        sql("CREATE TRIGGER fixture_purchase_post AFTER INSERT ON public.purchase_bills FOR EACH ROW EXECUTE FUNCTION public.post_purchase_to_voucher();")
         print("TARGET: disposable local PostgreSQL socket; synthetic fixtures only")
 
         def check(name, ok):

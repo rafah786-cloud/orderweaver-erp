@@ -8,12 +8,7 @@ export const Route = createFileRoute("/_app/gst")({
 });
 
 const TILES = [
-  {
-    to: "/gst/returns",
-    label: "GST Returns",
-    desc: "GSTR-1, GSTR-3B, GSTR-9",
-    Icon: FileSpreadsheet,
-  },
+  { to: "/gst/returns", label: "GST Returns", desc: "GSTR-1, GSTR-3B, GSTR-9", Icon: FileSpreadsheet },
   { to: "/gst/hsn", label: "HSN / SAC Codes", desc: "Code master with default rates", Icon: Hash },
   { to: "/gst/einvoices", label: "E-Invoices", desc: "IRN registry & QR codes", Icon: QrCode },
 ] as const;
@@ -24,10 +19,7 @@ function GstLayout() {
   if (!isIndex) return <Outlet />;
   return (
     <>
-      <PageHeader
-        title="GST Compliance"
-        description="File returns, manage HSN codes, generate e-invoices."
-      />
+      <PageHeader title="GST Compliance" description="File returns, manage HSN codes, generate e-invoices." />
       <PageBody>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {TILES.map(({ to, label, desc, Icon }) => (

@@ -58,10 +58,7 @@ function sum(values: number[]): number {
 }
 
 /** Ordinary least squares over an evenly spaced series. */
-export function linearForecast(
-  series: number[],
-  periodsAhead: number,
-): { forecast: number[]; slope: number; r2: number } {
+export function linearForecast(series: number[], periodsAhead: number): { forecast: number[]; slope: number; r2: number } {
   const n = series.length;
   if (n < 3) return { forecast: [], slope: 0, r2: 0 };
   const xs = series.map((_, i) => i);
@@ -87,11 +84,7 @@ export function zScore(series: number[]): { z: number; mean: number; stdev: numb
   const variance = sum(history.map((v) => (v - mean) ** 2)) / history.length;
   const stdev = Math.sqrt(variance);
   const last = series[series.length - 1]!;
-  return {
-    z: stdev === 0 ? 0 : round((last - mean) / stdev, 2),
-    mean: round(mean),
-    stdev: round(stdev),
-  };
+  return { z: stdev === 0 ? 0 : round((last - mean) / stdev, 2), mean: round(mean), stdev: round(stdev) };
 }
 
 /* ------------------------------------------------------------------ */
@@ -103,9 +96,7 @@ export async function salesSummary(db: Db, period: Period) {
   const [{ data: current }, { data: previousRows }] = await Promise.all([
     db
       .from("invoices")
-      .select(
-        "id, invoice_number, invoice_date, party_id, subtotal, tax_amount, total_amount, paid_amount, status",
-      )
+      .select("id, invoice_number, invoice_date, party_id, subtotal, tax_amount, total_amount, paid_amount, status")
       .gte("invoice_date", period.from)
       .lte("invoice_date", period.to)
       .neq("status", "cancelled")
@@ -191,8 +182,7 @@ async function materialCostMap(db: Db): Promise<Map<string, number>> {
   }[]) {
     const date = row.purchase_bills?.bill_date ?? "";
     const prior = latest.get(row.raw_material_id);
-    if (!prior || date > prior.date)
-      latest.set(row.raw_material_id, { rate: Number(row.unit_price ?? 0), date });
+    if (!prior || date > prior.date) latest.set(row.raw_material_id, { rate: Number(row.unit_price ?? 0), date });
   }
   return new Map([...latest.entries()].map(([k, v]) => [k, v.rate]));
 }
@@ -215,9 +205,7 @@ export async function productProfitability(db: Db, period: Period) {
   const [{ data: items }, modelCosts, { data: models }] = await Promise.all([
     db
       .from("sales_order_items")
-      .select(
-        "product_name, size, quantity, unit_price, amount, model_id, sales_orders!inner(order_date)",
-      )
+      .select("product_name, size, quantity, unit_price, amount, model_id, sales_orders!inner(order_date)")
       .gte("sales_orders.order_date", period.from)
       .lte("sales_orders.order_date", period.to),
     modelCostMap(db),
@@ -225,14 +213,7 @@ export async function productProfitability(db: Db, period: Period) {
   ]);
 
   const modelMeta = new Map((models ?? []).map((m) => [m.id, m]));
-  type Agg = {
-    name: string;
-    qty: number;
-    revenue: number;
-    materialCost: number;
-    hasCost: boolean;
-    listPrice: number | null;
-  };
+  type Agg = { name: string; qty: number; revenue: number; materialCost: number; hasCost: boolean; listPrice: number | null };
   const agg = new Map<string, Agg>();
 
   for (const row of (items ?? []) as unknown as {
@@ -273,7 +254,8 @@ export async function productProfitability(db: Db, period: Period) {
         revenue: round(p.revenue),
         averageSellingPrice: p.qty ? round(p.revenue / p.qty) : 0,
         listPrice: p.listPrice,
-        discountVsListPct: p.listPrice && p.qty ? pct(p.revenue / p.qty, p.listPrice) : null,
+        discountVsListPct:
+          p.listPrice && p.qty ? pct(p.revenue / p.qty, p.listPrice) : null,
         materialCost: p.hasCost ? round(p.materialCost) : null,
         grossMargin: margin == null ? null : round(margin),
         grossMarginPct: margin == null || !p.revenue ? null : round((margin / p.revenue) * 100, 1),
@@ -296,9 +278,7 @@ export async function productProfitability(db: Db, period: Period) {
 export async function customerProfitability(db: Db, period: Period) {
   const { data: orders } = await db
     .from("sales_orders")
-    .select(
-      "id, party_id, order_date, total_amount, sales_order_items(quantity, amount, unit_price, model_id)",
-    )
+    .select("id, party_id, order_date, total_amount, sales_order_items(quantity, amount, unit_price, model_id)")
     .gte("order_date", period.from)
     .lte("order_date", period.to);
 
@@ -307,19 +287,13 @@ export async function customerProfitability(db: Db, period: Period) {
   for (const o of (orders ?? []) as unknown as {
     party_id: string;
     total_amount: number;
-    sales_order_items: {
-      quantity: number;
-      amount: number | null;
-      unit_price: number;
-      model_id: string | null;
-    }[];
+    sales_order_items: { quantity: number; amount: number | null; unit_price: number; model_id: string | null }[];
   }[]) {
     const entry = byParty.get(o.party_id) ?? { revenue: 0, cost: 0, orders: 0 };
     entry.orders += 1;
     for (const it of o.sales_order_items ?? []) {
       entry.revenue += Number(it.amount ?? Number(it.quantity) * Number(it.unit_price));
-      entry.cost +=
-        (it.model_id ? (modelCosts.get(it.model_id) ?? 0) : 0) * Number(it.quantity ?? 0);
+      entry.cost += (it.model_id ? modelCosts.get(it.model_id) ?? 0 : 0) * Number(it.quantity ?? 0);
     }
     byParty.set(o.party_id, entry);
   }
@@ -348,9 +322,7 @@ export async function receivables(db: Db) {
   const today = iso(new Date());
   const { data } = await db
     .from("invoices")
-    .select(
-      "id, invoice_number, invoice_date, due_date, party_id, total_amount, paid_amount, status",
-    )
+    .select("id, invoice_number, invoice_date, due_date, party_id, total_amount, paid_amount, status")
     .in("status", ["unpaid", "partial"])
     .order("due_date", { nullsFirst: false });
 
@@ -387,10 +359,7 @@ export async function receivables(db: Db) {
       "61-90": round(buckets.d61_90),
       "90+": round(buckets.d90plus),
     },
-    overdue: detail
-      .filter((d) => d.daysOverdue > 0)
-      .sort((a, b) => b.outstanding - a.outstanding)
-      .slice(0, 25),
+    overdue: detail.filter((d) => d.daysOverdue > 0).sort((a, b) => b.outstanding - a.outstanding).slice(0, 25),
   };
 }
 
@@ -413,17 +382,12 @@ export async function inventoryIntelligence(db: Db, days = 90) {
       .not("model_id", "is", null),
   ]);
 
-  const { data: boq } = await db
-    .from("model_boq")
-    .select("model_id, raw_material_id, quantity_per_unit");
+  const { data: boq } = await db.from("model_boq").select("model_id, raw_material_id, quantity_per_unit");
   const consumption = new Map<string, number>();
   const boqByModel = new Map<string, { raw_material_id: string; quantity_per_unit: number }[]>();
   for (const l of boq ?? []) {
     const arr = boqByModel.get(l.model_id) ?? [];
-    arr.push({
-      raw_material_id: l.raw_material_id,
-      quantity_per_unit: Number(l.quantity_per_unit ?? 0),
-    });
+    arr.push({ raw_material_id: l.raw_material_id, quantity_per_unit: Number(l.quantity_per_unit ?? 0) });
     boqByModel.set(l.model_id, arr);
   }
   for (const row of (boqUsage ?? []) as unknown as { quantity: number; model_id: string }[]) {
@@ -441,14 +405,10 @@ export async function inventoryIntelligence(db: Db, days = 90) {
     quantity: number;
     unit_price: number;
   }[]) {
-    purchasedQty.set(
-      row.raw_material_id,
-      (purchasedQty.get(row.raw_material_id) ?? 0) + Number(row.quantity ?? 0),
-    );
+    purchasedQty.set(row.raw_material_id, (purchasedQty.get(row.raw_material_id) ?? 0) + Number(row.quantity ?? 0));
     purchasedValue.set(
       row.raw_material_id,
-      (purchasedValue.get(row.raw_material_id) ?? 0) +
-        Number(row.quantity ?? 0) * Number(row.unit_price ?? 0),
+      (purchasedValue.get(row.raw_material_id) ?? 0) + Number(row.quantity ?? 0) * Number(row.unit_price ?? 0),
     );
   }
 
@@ -458,13 +418,7 @@ export async function inventoryIntelligence(db: Db, days = 90) {
     const stock = Number(m.current_stock ?? 0);
     const daysOfCover = perDay > 0 ? round(stock / perDay, 1) : null;
     const velocity: "fast" | "steady" | "slow" | "dormant" =
-      perDay <= 0
-        ? "dormant"
-        : daysOfCover != null && daysOfCover < 20
-          ? "fast"
-          : daysOfCover != null && daysOfCover < 90
-            ? "steady"
-            : "slow";
+      perDay <= 0 ? "dormant" : daysOfCover != null && daysOfCover < 20 ? "fast" : daysOfCover != null && daysOfCover < 90 ? "steady" : "slow";
     return {
       material: m.name,
       code: m.code,
@@ -508,9 +462,7 @@ export async function productionIntelligence(db: Db, days = 90) {
   const [{ data: orders }, { data: movements }] = await Promise.all([
     db
       .from("production_orders")
-      .select(
-        "id, production_number, status, created_at, started_at, qc_at, ready_at, dispatched_at, sales_order_id",
-      )
+      .select("id, production_number, status, created_at, started_at, qc_at, ready_at, dispatched_at, sales_order_id")
       .gte("created_at", `${from}T00:00:00Z`),
     db
       .from("stock_movements")
@@ -528,19 +480,13 @@ export async function productionIntelligence(db: Db, days = 90) {
     .map((o) => (new Date(o.ready_at!).getTime() - new Date(o.started_at!).getTime()) / 3_600_000);
 
   const consumedQty = sum(
-    (movements ?? [])
-      .filter((m) => m.movement_type === "production_out")
-      .map((m) => Math.abs(Number(m.quantity ?? 0))),
+    (movements ?? []).filter((m) => m.movement_type === "production_out").map((m) => Math.abs(Number(m.quantity ?? 0))),
   );
   const producedQty = sum(
-    (movements ?? [])
-      .filter((m) => m.movement_type === "production_in")
-      .map((m) => Number(m.quantity ?? 0)),
+    (movements ?? []).filter((m) => m.movement_type === "production_in").map((m) => Number(m.quantity ?? 0)),
   );
   const adjustments = (movements ?? []).filter((m) => m.movement_type === "adjustment");
-  const scrapQty = sum(
-    adjustments.filter((m) => Number(m.quantity) < 0).map((m) => Math.abs(Number(m.quantity))),
-  );
+  const scrapQty = sum(adjustments.filter((m) => Number(m.quantity) < 0).map((m) => Math.abs(Number(m.quantity))));
 
   // Expected consumption from the BOQ of models produced in the window.
   const { data: soldItems } = await db
@@ -550,20 +496,14 @@ export async function productionIntelligence(db: Db, days = 90) {
     .not("model_id", "is", null);
   const { data: boq } = await db.from("model_boq").select("model_id, quantity_per_unit");
   const boqPerModel = new Map<string, number>();
-  for (const l of boq ?? [])
-    boqPerModel.set(
-      l.model_id,
-      (boqPerModel.get(l.model_id) ?? 0) + Number(l.quantity_per_unit ?? 0),
-    );
+  for (const l of boq ?? []) boqPerModel.set(l.model_id, (boqPerModel.get(l.model_id) ?? 0) + Number(l.quantity_per_unit ?? 0));
   const expectedConsumption = sum(
     ((soldItems ?? []) as unknown as { quantity: number; model_id: string }[]).map(
       (i) => (boqPerModel.get(i.model_id) ?? 0) * Number(i.quantity ?? 0),
     ),
   );
 
-  const variancePct = expectedConsumption
-    ? round(((consumedQty - expectedConsumption) / expectedConsumption) * 100, 1)
-    : null;
+  const variancePct = expectedConsumption ? round(((consumedQty - expectedConsumption) / expectedConsumption) * 100, 1) : null;
 
   return {
     windowDays: days,
@@ -606,14 +546,7 @@ export async function supplierPricing(db: Db, days = 365) {
   };
   const rows = (data ?? []) as unknown as Row[];
 
-  const byMaterial = new Map<
-    string,
-    {
-      name: string;
-      unit: string;
-      points: { date: string; rate: number; supplier: string | null }[];
-    }
-  >();
+  const byMaterial = new Map<string, { name: string; unit: string; points: { date: string; rate: number; supplier: string | null }[] }>();
   const bySupplier = new Map<string, { spend: number; lines: number }>();
 
   for (const r of rows) {
@@ -624,11 +557,7 @@ export async function supplierPricing(db: Db, days = 365) {
       unit: r.raw_materials?.unit ?? "",
       points: [],
     };
-    entry.points.push({
-      date,
-      rate: Number(r.unit_price ?? 0),
-      supplier: r.purchase_bills?.supplier_id ?? null,
-    });
+    entry.points.push({ date, rate: Number(r.unit_price ?? 0), supplier: r.purchase_bills?.supplier_id ?? null });
     byMaterial.set(r.raw_material_id, entry);
 
     const sid = r.purchase_bills?.supplier_id;
@@ -667,16 +596,9 @@ export async function supplierPricing(db: Db, days = 365) {
   return {
     windowDays: days,
     increases: priceChanges.filter((p) => (p.changePct ?? 0) > 0).slice(0, 20),
-    decreases: priceChanges
-      .filter((p) => (p.changePct ?? 0) < 0)
-      .slice(-20)
-      .reverse(),
+    decreases: priceChanges.filter((p) => (p.changePct ?? 0) < 0).slice(-20).reverse(),
     topSuppliersBySpend: [...bySupplier.entries()]
-      .map(([id, v]) => ({
-        supplier: names.get(id) ?? "Unknown",
-        spend: round(v.spend),
-        lines: v.lines,
-      }))
+      .map(([id, v]) => ({ supplier: names.get(id) ?? "Unknown", spend: round(v.spend), lines: v.lines }))
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 15),
   };
@@ -689,11 +611,7 @@ export async function supplierPricing(db: Db, days = 365) {
 export async function monthlySeries(db: Db, months = 12) {
   const from = daysAgo(months * 31);
   const [{ data: invoices }, { data: bills }] = await Promise.all([
-    db
-      .from("invoices")
-      .select("invoice_date, subtotal, total_amount, tax_amount")
-      .gte("invoice_date", from)
-      .neq("status", "cancelled"),
+    db.from("invoices").select("invoice_date, subtotal, total_amount, tax_amount").gte("invoice_date", from).neq("status", "cancelled"),
     db.from("purchase_bills").select("bill_date, subtotal, total_amount").gte("bill_date", from),
   ]);
 
@@ -710,17 +628,19 @@ export async function monthlySeries(db: Db, months = 12) {
     keys.add(k);
     cost.set(k, (cost.get(k) ?? 0) + Number(b.subtotal ?? 0));
   }
-  return [...keys].sort().map((month) => {
-    const revenue = round(rev.get(month) ?? 0);
-    const purchases = round(cost.get(month) ?? 0);
-    return {
-      month,
-      revenue,
-      purchaseCost: purchases,
-      grossProfit: round(revenue - purchases),
-      grossMarginPct: revenue ? round(((revenue - purchases) / revenue) * 100, 1) : null,
-    };
-  });
+  return [...keys]
+    .sort()
+    .map((month) => {
+      const revenue = round(rev.get(month) ?? 0);
+      const purchases = round(cost.get(month) ?? 0);
+      return {
+        month,
+        revenue,
+        purchaseCost: purchases,
+        grossProfit: round(revenue - purchases),
+        grossMarginPct: revenue ? round(((revenue - purchases) / revenue) * 100, 1) : null,
+      };
+    });
 }
 
 export async function forecasts(db: Db, monthsAhead = 3) {
@@ -744,10 +664,7 @@ export async function forecasts(db: Db, monthsAhead = 3) {
   const profitFc = linearForecast(profit, monthsAhead);
 
   return {
-    basis: {
-      monthsOfHistory: usable.length,
-      method: "ordinary least squares trend on monthly totals",
-    },
+    basis: { monthsOfHistory: usable.length, method: "ordinary least squares trend on monthly totals" },
     sufficientData: usable.length >= 4,
     history: usable,
     revenueForecast: revFc.forecast,
@@ -767,9 +684,7 @@ export interface Anomaly {
   metric?: Record<string, number | string | null>;
 }
 
-export async function detectAnomalies(
-  db: Db,
-): Promise<{ anomalies: Anomaly[]; evaluatedAt: string; dataSufficient: boolean }> {
+export async function detectAnomalies(db: Db): Promise<{ anomalies: Anomaly[]; evaluatedAt: string; dataSufficient: boolean }> {
   const out: Anomaly[] = [];
   const series = await monthlySeries(db, 13);
   const closed = series.slice(0, -1);
@@ -797,12 +712,7 @@ export async function detectAnomalies(
         severity: marginZ.z <= -2.5 ? "high" : "medium",
         title: `Gross margin dropped in ${last.month}`,
         detail: `Margin of ${lastMargin}% versus an average of ${marginZ.mean}% over prior months.`,
-        metric: {
-          month: last.month,
-          marginPct: lastMargin,
-          averagePct: marginZ.mean,
-          zScore: marginZ.z,
-        },
+        metric: { month: last.month, marginPct: lastMargin, averagePct: marginZ.mean, zScore: marginZ.z },
       });
     }
   }
@@ -830,11 +740,7 @@ export async function detectAnomalies(
         m.daysOfCover != null
           ? `${m.currentStock} ${m.unit} left, about ${m.daysOfCover} days of cover at recent consumption.`
           : `${m.currentStock} ${m.unit} is below the reorder level of ${m.reorderLevel}.`,
-      metric: {
-        currentStock: m.currentStock,
-        reorderLevel: m.reorderLevel,
-        daysOfCover: m.daysOfCover,
-      },
+      metric: { currentStock: m.currentStock, reorderLevel: m.reorderLevel, daysOfCover: m.daysOfCover },
     });
   }
   if (inv.totals.overstock > 0) {
@@ -888,37 +794,24 @@ export async function detectAnomalies(
 
 export async function businessSnapshot(db: Db) {
   const period = defaultPeriod(30);
-  const [sales, profitability, inventory, production, ar, suppliers, anomalies, fc] =
-    await Promise.all([
-      salesSummary(db, period),
-      productProfitability(db, period),
-      inventoryIntelligence(db, 90),
-      productionIntelligence(db, 90),
-      receivables(db),
-      supplierPricing(db, 365),
-      detectAnomalies(db),
-      forecasts(db, 3),
-    ]);
+  const [sales, profitability, inventory, production, ar, suppliers, anomalies, fc] = await Promise.all([
+    salesSummary(db, period),
+    productProfitability(db, period),
+    inventoryIntelligence(db, 90),
+    productionIntelligence(db, 90),
+    receivables(db),
+    supplierPricing(db, 365),
+    detectAnomalies(db),
+    forecasts(db, 3),
+  ]);
   return {
     generatedAt: new Date().toISOString(),
     sales,
     profitability: { ...profitability, products: profitability.products.slice(0, 10) },
-    inventory: {
-      totals: inventory.totals,
-      atRisk: inventory.atRisk.slice(0, 8),
-      slowMoving: inventory.slowMoving.slice(0, 8),
-    },
+    inventory: { totals: inventory.totals, atRisk: inventory.atRisk.slice(0, 8), slowMoving: inventory.slowMoving.slice(0, 8) },
     production,
-    receivables: {
-      asOf: ar.asOf,
-      totalOutstanding: ar.totalOutstanding,
-      ageing: ar.ageing,
-      overdue: ar.overdue.slice(0, 8),
-    },
-    suppliers: {
-      increases: suppliers.increases.slice(0, 8),
-      topSuppliersBySpend: suppliers.topSuppliersBySpend.slice(0, 8),
-    },
+    receivables: { asOf: ar.asOf, totalOutstanding: ar.totalOutstanding, ageing: ar.ageing, overdue: ar.overdue.slice(0, 8) },
+    suppliers: { increases: suppliers.increases.slice(0, 8), topSuppliersBySpend: suppliers.topSuppliersBySpend.slice(0, 8) },
     anomalies: anomalies.anomalies,
     forecast: {
       sufficientData: fc.sufficientData,

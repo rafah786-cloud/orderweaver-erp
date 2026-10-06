@@ -24,9 +24,7 @@ function VendorSignupPage() {
   const lookup = useServerFn(lookupVendorInvite);
   const claim = useServerFn(claimVendorInvite);
 
-  const [invite, setInvite] = useState<{ email: string; supplier_name: string | null } | null>(
-    null,
-  );
+  const [invite, setInvite] = useState<{ email: string; supplier_name: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -69,10 +67,7 @@ function VendorSignupPage() {
     }
     // If email confirmation is required, no session is set; sign in directly
     if (!data.session) {
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: invite.email,
-        password,
-      });
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
       if (signInErr) {
         setSubmitting(false);
         toast.error("Account created — please log in to continue.");
@@ -108,9 +103,7 @@ function VendorSignupPage() {
           </div>
           <CardTitle className="text-2xl">Vendor Portal Signup</CardTitle>
           <CardDescription>
-            {invite?.supplier_name
-              ? `Setting up access for ${invite.supplier_name}`
-              : "Set up your vendor account"}
+            {invite?.supplier_name ? `Setting up access for ${invite.supplier_name}` : "Set up your vendor account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -118,9 +111,7 @@ function VendorSignupPage() {
             <div className="text-sm text-destructive text-center py-6">
               {error}
               <div className="mt-4">
-                <Link to="/login" className="text-primary underline">
-                  Back to login
-                </Link>
+                <Link to="/login" className="text-primary underline">Back to login</Link>
               </div>
             </div>
           ) : (
@@ -131,12 +122,7 @@ function VendorSignupPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fullName">Contact name</Label>
-                <Input
-                  id="fullName"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
+                <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
@@ -144,14 +130,7 @@ function VendorSignupPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? "Creating account…" : "Create vendor account"}

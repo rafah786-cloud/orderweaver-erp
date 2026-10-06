@@ -23,8 +23,7 @@ export const Route = createFileRoute("/_app/ai")({
       { property: "og:title", content: "AI Intelligence | Mattress Maestro ERP" },
       {
         property: "og:description",
-        content:
-          "Business intelligence and document automation on top of your live Mattress Maestro ERP data.",
+        content: "Business intelligence and document automation on top of your live Mattress Maestro ERP data.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

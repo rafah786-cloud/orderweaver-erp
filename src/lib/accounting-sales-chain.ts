@@ -92,17 +92,10 @@ export class IsolatedSalesAccountingChain {
     });
     if (!prepared.ok) throw new Error(prepared.reason);
 
-    const voucher = await this.gl.post(
-      "sales",
-      prepared.call.date,
-      prepared.call.entries,
-      prepared.key,
-    );
+    const voucher = await this.gl.post("sales", prepared.call.date, prepared.call.entries, prepared.key);
     this.vouchers.push(voucher);
 
-    const partyEntry = voucher.lines.find(
-      (line) => line.ledger_account_id === invoice.partyLedgerId && line.debit > 0,
-    );
+    const partyEntry = voucher.lines.find((line) => line.ledger_account_id === invoice.partyLedgerId && line.debit > 0);
     if (!partyEntry) throw new Error("sales voucher has no customer receivable entry");
 
     const bill: Bill = {
@@ -130,16 +123,10 @@ export class IsolatedSalesAccountingChain {
     return roundMoney(bill.originalAmount - allocated);
   }
 
-  async recordReceipt(
-    invoiceId: string,
-    amount: number,
-    idempotencyKey: string,
-    date = "2026-04-02",
-  ) {
+  async recordReceipt(invoiceId: string, amount: number, idempotencyKey: string, date = "2026-04-02") {
     const invoice = this.requireInvoice(invoiceId);
     if (invoice.status === "cancelled") throw new Error("invoice cancelled");
-    if (!invoice.sourceVoucherId || !invoice.billId)
-      throw new Error("invoice must be posted before receipt");
+    if (!invoice.sourceVoucherId || !invoice.billId) throw new Error("invoice must be posted before receipt");
     if (amount <= 0) throw new Error("receipt amount must be positive");
     if (idempotencyKey.trim().length < 8) throw new Error("idempotency key required");
 
@@ -172,13 +159,7 @@ export class IsolatedSalesAccountingChain {
       idempotencyKey,
     });
 
-    const receipt: Receipt = {
-      id: idempotencyKey,
-      invoiceId,
-      amount,
-      voucherId: voucher.id,
-      reversalVoucherId: null,
-    };
+    const receipt: Receipt = { id: idempotencyKey, invoiceId, amount, voucherId: voucher.id, reversalVoucherId: null };
     this.receipts.set(idempotencyKey, receipt);
     this.refreshInvoiceStatus(invoice);
     return { receipt, outstanding: this.outstanding(invoiceId) };
@@ -213,8 +194,7 @@ export class IsolatedSalesAccountingChain {
   async reverseInvoice(invoiceId: string, date = "2026-04-04") {
     const invoice = this.requireInvoice(invoiceId);
     if (invoice.status === "cancelled") throw new Error("invoice already cancelled");
-    if (!invoice.sourceVoucherId || !invoice.billId)
-      throw new Error("invoice has no source voucher");
+    if (!invoice.sourceVoucherId || !invoice.billId) throw new Error("invoice has no source voucher");
     if (Math.abs(this.outstanding(invoiceId) - invoice.totalAmount) > 0.01) {
       throw new Error("reverse receipts before invoice");
     }
@@ -232,14 +212,7 @@ export class IsolatedSalesAccountingChain {
   ledgerBalance(ledgerId: string, normalBalance: "debit" | "credit" = "debit") {
     const signedBalance = this.vouchers.reduce((sum, voucher) => {
       if (voucher.status !== "posted" && voucher.status !== "reversed") return sum;
-      return (
-        sum +
-        voucher.lines.reduce(
-          (lineSum, line) =>
-            lineSum + (line.ledger_account_id === ledgerId ? line.debit - line.credit : 0),
-          0,
-        )
-      );
+      return sum + voucher.lines.reduce((lineSum, line) => lineSum + (line.ledger_account_id === ledgerId ? line.debit - line.credit : 0), 0);
     }, 0);
     return roundMoney(normalBalance === "debit" ? signedBalance : -signedBalance);
   }

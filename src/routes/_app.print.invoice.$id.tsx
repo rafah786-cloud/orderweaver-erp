@@ -34,8 +34,7 @@ function PrintInvoice() {
   });
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
-  if (error || !data)
-    return <div className="p-10 text-center text-destructive">Invoice not found.</div>;
+  if (error || !data) return <div className="p-10 text-center text-destructive">Invoice not found.</div>;
 
   return <ReferenceInvoice invoice={data.inv} items={data.items} party={data.party} />;
 }

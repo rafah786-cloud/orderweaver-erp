@@ -15,9 +15,7 @@ export type VoucherFixture = {
 
 export function validateGlLines(lines: GlLineInput[]) {
   if (lines.length < 2) return { valid: false, difference: 0 };
-  if (
-    lines.some((line) => line.debit < 0 || line.credit < 0 || line.debit > 0 === line.credit > 0)
-  ) {
+  if (lines.some((line) => line.debit < 0 || line.credit < 0 || (line.debit > 0) === (line.credit > 0))) {
     return { valid: false, difference: 0 };
   }
   const debit = lines.reduce((sum, line) => sum + line.debit, 0);
@@ -37,9 +35,7 @@ export function calculatePeriodBalance(
   to: string,
 ) {
   const posted = movements.filter((row) => row.status === "posted" || row.status === "reversed");
-  const broughtForward = posted
-    .filter((row) => row.date < from)
-    .reduce((sum, row) => sum + row.debit - row.credit, opening);
+  const broughtForward = posted.filter((row) => row.date < from).reduce((sum, row) => sum + row.debit - row.credit, opening);
   const period = posted.filter((row) => row.date >= from && row.date <= to);
   const debit = period.reduce((sum, row) => sum + row.debit, 0);
   const credit = period.reduce((sum, row) => sum + row.credit, 0);
@@ -55,9 +51,7 @@ export class IsolatedAccountingFixture {
   async post(type: VoucherType, date: string, lines: GlLineInput[], idempotencyKey: string) {
     let release: () => void = () => undefined;
     const prior = this.queue;
-    this.queue = new Promise<void>((resolve) => {
-      release = resolve;
-    });
+    this.queue = new Promise<void>((resolve) => { release = resolve; });
     await prior;
     try {
       const existing = this.byKey.get(idempotencyKey);
@@ -65,33 +59,17 @@ export class IsolatedAccountingFixture {
       if (!validateGlLines(lines).valid) throw new Error("Unbalanced voucher");
       const number = this.next.get(type) ?? 1;
       this.next.set(type, number + 1);
-      const voucher: VoucherFixture = {
-        id: `${type}-${number}`,
-        type,
-        date,
-        status: "posted",
-        number,
-        idempotencyKey,
-        lines,
-      };
+      const voucher: VoucherFixture = { id: `${type}-${number}`, type, date, status: "posted", number, idempotencyKey, lines };
       this.rows.set(voucher.id, voucher);
       this.byKey.set(idempotencyKey, voucher);
       return voucher;
-    } finally {
-      release();
-    }
+    } finally { release(); }
   }
 
   async reverse(id: string, date: string) {
     const original = this.rows.get(id);
-    if (!original || original.status !== "posted")
-      throw new Error("Only posted vouchers can be reversed");
-    const reversal = await this.post(
-      original.type,
-      date,
-      reverseGlLines(original.lines),
-      `reversal:${id}`,
-    );
+    if (!original || original.status !== "posted") throw new Error("Only posted vouchers can be reversed");
+    const reversal = await this.post(original.type, date, reverseGlLines(original.lines), `reversal:${id}`);
     original.status = "reversed";
     reversal.reversalOf = id;
     return reversal;
@@ -111,73 +89,46 @@ export function prepareInvoiceVoucher(input: {
   const key = `invoice:${input.invoiceId}`;
   if (!input.partyLedgerId) return { ok: false as const, reason: "missing customer ledger", key };
   if (!input.salesLedgerId) return { ok: false as const, reason: "missing Sales ledger", key };
-  if (input.taxAmount > 0 && !input.taxComponents?.length)
-    return { ok: false as const, reason: "aggregate tax has no stored split", key };
+  if (input.taxAmount > 0 && !input.taxComponents?.length) return { ok: false as const, reason: "aggregate tax has no stored split", key };
   const taxLines = input.taxComponents ?? [];
   const entries = [
     { ledger_account_id: input.partyLedgerId, debit: input.subtotal + input.taxAmount, credit: 0 },
     { ledger_account_id: input.salesLedgerId, debit: 0, credit: input.subtotal },
-    ...taxLines.map((line) => ({
-      ledger_account_id: line.ledgerAccountId,
-      debit: 0,
-      credit: line.amount,
-    })),
+    ...taxLines.map((line) => ({ ledger_account_id: line.ledgerAccountId, debit: 0, credit: line.amount })),
   ];
-  if (!validateGlLines(entries).valid)
-    return { ok: false as const, reason: "unbalanced voucher", key };
+  if (!validateGlLines(entries).valid) return { ok: false as const, reason: "unbalanced voucher", key };
   return {
     ok: true as const,
     key,
-    call: {
-      type: "sales",
-      date: input.invoiceDate,
-      entries,
-      narration: `Invoice ${input.invoiceNumber}`,
-      reference: input.invoiceNumber,
-      idempotencyKey: key,
-    },
+    call: { type: "sales", date: input.invoiceDate, entries, narration: `Invoice ${input.invoiceNumber}`, reference: input.invoiceNumber, idempotencyKey: key },
   };
 }
-export class IsolatedVoucherPoster {
+  export class IsolatedVoucherPoster {
   private next = 8;
   private consumed = 0;
-  private rows = new Map<
-    string,
-    { id: string; number: string; key: string | null; lines: GlLineInput[] }
-  >();
+  private rows = new Map<string, { id: string; number: string; key: string | null; lines: GlLineInput[] }>();
   private queue = Promise.resolve();
-  readonly historical = Array.from({ length: 7 }, (_, index) => ({
-    id: `existing-${index + 1}`,
-    number: `SAL/${index + 1}`,
-    key: null,
-  }));
+  readonly historical = Array.from({ length: 7 }, (_, index) => ({ id: `existing-${index + 1}`, number: `SAL/${index + 1}`, key: null }));
 
-  constructor(
-    private readonly ledgers: Record<string, { active: boolean }>,
-    private readonly yearOpen = true,
-  ) {
+  constructor(private readonly ledgers: Record<string, { active: boolean }>, private readonly yearOpen = true) {
     this.historical.forEach((row) => this.rows.set(row.id, { ...row, lines: [] }));
   }
 
   async post(lines: GlLineInput[], key: string, date = "2026-04-01") {
     let release: () => void = () => undefined;
     const prior = this.queue;
-    this.queue = new Promise<void>((resolve) => {
-      release = resolve;
-    });
+    this.queue = new Promise<void>((resolve) => { release = resolve; });
     await prior;
     try {
       const duplicate = [...this.rows.values()].find((row) => row.key === key);
       if (duplicate) return { id: duplicate.id, voucherNumber: duplicate.number, created: false };
-      if (!this.yearOpen || date < "2025-04-01" || date > "2027-03-31")
-        throw new Error("closed or missing financial year");
+      if (!this.yearOpen || date < "2025-04-01" || date > "2027-03-31") throw new Error("closed or missing financial year");
       if (lines.length < 2) throw new Error("at least two entries required");
       for (const line of lines) {
         const ledger = this.ledgers[line.ledger_account_id];
         if (!ledger) throw new Error("invalid ledger");
         if (!ledger.active) throw new Error("inactive ledger");
-        if (line.debit < 0 || line.credit < 0 || line.debit > 0 === line.credit > 0)
-          throw new Error("entry must have one side");
+        if (line.debit < 0 || line.credit < 0 || (line.debit > 0) === (line.credit > 0)) throw new Error("entry must have one side");
       }
       if (!validateGlLines(lines).valid) throw new Error("unbalanced voucher");
       const number = `SAL/${this.next}`;
@@ -186,27 +137,18 @@ export class IsolatedVoucherPoster {
       const id = `new-${this.consumed}`;
       this.rows.set(id, { id, number, key, lines });
       return { id, voucherNumber: number, created: true };
-    } finally {
-      release();
-    }
+    } finally { release(); }
   }
 
-  series() {
-    return this.next;
-  }
-  historicalUntouched() {
-    return this.historical.every((row) => this.rows.get(row.id)?.key === null);
-  }
+  series() { return this.next; }
+  historicalUntouched() { return this.historical.every((row) => this.rows.get(row.id)?.key === null); }
 }
 
 export class IsolatedFinancialYearFixture {
   status: "open" | "closed" = "open";
   events: Array<{ action: "closed" | "reopened"; reason?: string }> = [];
 
-  constructor(
-    readonly start: string,
-    readonly end: string,
-  ) {}
+  constructor(readonly start: string, readonly end: string) {}
 
   accepts(date: string) {
     return this.status === "open" && date >= this.start && date <= this.end;

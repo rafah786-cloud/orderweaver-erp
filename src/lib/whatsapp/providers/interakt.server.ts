@@ -50,12 +50,7 @@ async function sleep(ms: number) {
 async function postJson(path: string, body: unknown): Promise<WhatsAppSendResult> {
   const auth = authHeader();
   if (!auth) {
-    return {
-      ok: false,
-      status: "skipped",
-      error: "INTERAKT_API_KEY not configured",
-      request: body,
-    };
+    return { ok: false, status: "skipped", error: "INTERAKT_API_KEY not configured", request: body };
   }
   const url = `${getBaseUrl()}${path}`;
   let lastError = "send failed";
@@ -85,14 +80,7 @@ async function postJson(path: string, body: unknown): Promise<WhatsAppSendResult
     }
     if (attempt < MAX_ATTEMPTS) await sleep(RETRY_DELAYS_MS[attempt - 1] ?? 1000);
   }
-  return {
-    ok: false,
-    status: "failed",
-    error: lastError,
-    attempts: MAX_ATTEMPTS,
-    request: body,
-    raw: lastRaw,
-  };
+  return { ok: false, status: "failed", error: lastError, attempts: MAX_ATTEMPTS, request: body, raw: lastRaw };
 }
 
 export const interaktProvider: WhatsAppProvider = {

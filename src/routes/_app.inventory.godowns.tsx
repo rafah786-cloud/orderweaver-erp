@@ -6,13 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { sb, type Godown } from "@/lib/inventory";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -34,71 +28,32 @@ function GodownsPage() {
   });
 
   const save = async () => {
-    if (!form.name.trim()) {
-      toast.error("Name required");
-      return;
-    }
+    if (!form.name.trim()) { toast.error("Name required"); return; }
     const { error } = await sb.from("godowns").insert({
-      name: form.name,
-      code: form.code || null,
-      address: form.address || null,
+      name: form.name, code: form.code || null, address: form.address || null,
     });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); return; }
     toast.success("Godown created");
-    setOpen(false);
-    setForm({ name: "", code: "", address: "" });
+    setOpen(false); setForm({ name: "", code: "", address: "" });
     qc.invalidateQueries({ queryKey: ["godowns"] });
   };
 
   return (
     <>
-      <PageHeader
-        title="Godowns"
-        description={`${q.data?.length ?? 0} godowns`}
-        actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" /> New Godown
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>New Godown</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label>Name</Label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Code</Label>
-                  <Input
-                    value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Address</Label>
-                  <Input
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  />
-                </div>
-                <Button className="w-full" onClick={save}>
-                  Create
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        }
-      />
+      <PageHeader title="Godowns" description={`${q.data?.length ?? 0} godowns`} actions={
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Godown</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>New Godown</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div><Label>Code</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
+              <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+              <Button className="w-full" onClick={save}>Create</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      } />
       <PageBody>
         <Card>
           <CardContent className="p-0">

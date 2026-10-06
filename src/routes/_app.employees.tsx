@@ -9,26 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Search } from "lucide-react";
@@ -96,7 +83,7 @@ function EmployeesPage() {
       let q = supabase
         .from("employees")
         .select(
-          "id, employee_code, full_name, email, phone, department, designation, date_of_joining, pay_type, basic_salary, da, hra, other_allowances, daily_wage, ot_rate_per_hour, pf_deduction, esi_deduction, is_active",
+          "id, employee_code, full_name, email, phone, department, designation, date_of_joining, pay_type, basic_salary, da, hra, other_allowances, daily_wage, ot_rate_per_hour, pf_deduction, esi_deduction, is_active"
         )
         .order("employee_code");
       if (!showInactive) q = q.eq("is_active", true);
@@ -117,12 +104,7 @@ function EmployeesPage() {
     );
   });
 
-  const grossMonthly = (
-    e: Pick<
-      EmployeeRow,
-      "pay_type" | "basic_salary" | "da" | "hra" | "other_allowances" | "daily_wage"
-    >,
-  ) => {
+  const grossMonthly = (e: Pick<EmployeeRow, "pay_type" | "basic_salary" | "da" | "hra" | "other_allowances" | "daily_wage">) => {
     if (e.pay_type === "daily") return Number(e.daily_wage) * 26;
     return Number(e.basic_salary) + Number(e.da) + Number(e.hra) + Number(e.other_allowances);
   };
@@ -168,11 +150,7 @@ function EmployeesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(empty);
-    setOpen(true);
-  };
+  const openCreate = () => { setEditing(null); setForm(empty); setOpen(true); };
   const openEdit = (e: EmployeeRow) => {
     setEditing(e);
     setForm({
@@ -254,9 +232,7 @@ function EmployeesPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
-                        Loading…
-                      </TableCell>
+                      <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">Loading…</TableCell>
                     </TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow>
@@ -269,23 +245,13 @@ function EmployeesPage() {
                       <TableRow key={e.id}>
                         <TableCell className="font-mono text-sm">{e.employee_code}</TableCell>
                         <TableCell className="font-medium">{e.full_name}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {e.department ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {e.designation ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(e.date_of_joining)}
-                        </TableCell>
+                        <TableCell className="text-muted-foreground">{e.department ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{e.designation ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(e.date_of_joining)}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="capitalize">
-                            {e.pay_type}
-                          </Badge>
+                          <Badge variant="secondary" className="capitalize">{e.pay_type}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {inr(grossMonthly(e))}
-                        </TableCell>
+                        <TableCell className="text-right font-medium">{inr(grossMonthly(e))}</TableCell>
                         <TableCell>
                           {e.is_active ? (
                             <Badge variant="secondary">Active</Badge>
@@ -334,29 +300,16 @@ function EmployeesPage() {
                   />
                 </Field>
                 <Field label="Email">
-                  <Input
-                    type="email"
-                    value={form.email ?? ""}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
+                  <Input type="email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 </Field>
                 <Field label="Phone">
-                  <Input
-                    value={form.phone ?? ""}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
+                  <Input value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </Field>
                 <Field label="Department">
-                  <Input
-                    value={form.department ?? ""}
-                    onChange={(e) => setForm({ ...form, department: e.target.value })}
-                  />
+                  <Input value={form.department ?? ""} onChange={(e) => setForm({ ...form, department: e.target.value })} />
                 </Field>
                 <Field label="Designation">
-                  <Input
-                    value={form.designation ?? ""}
-                    onChange={(e) => setForm({ ...form, designation: e.target.value })}
-                  />
+                  <Input value={form.designation ?? ""} onChange={(e) => setForm({ ...form, designation: e.target.value })} />
                 </Field>
                 <Field label="Date of Joining">
                   <Input
@@ -370,9 +323,7 @@ function EmployeesPage() {
                     value={form.is_active ? "active" : "inactive"}
                     onValueChange={(v) => setForm({ ...form, is_active: v === "active" })}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
@@ -385,13 +336,8 @@ function EmployeesPage() {
             <section className="grid gap-3">
               <h3 className="text-sm font-semibold text-muted-foreground">Pay Structure</h3>
               <Field label="Pay Type">
-                <Select
-                  value={form.pay_type}
-                  onValueChange={(v) => setForm({ ...form, pay_type: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={form.pay_type} onValueChange={(v) => setForm({ ...form, pay_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Monthly (Basic + DA + HRA + Others)</SelectItem>
                     <SelectItem value="daily">Daily Wage</SelectItem>
@@ -402,67 +348,33 @@ function EmployeesPage() {
               {form.pay_type === "monthly" ? (
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Basic Salary (₹)">
-                    <Input
-                      type="number"
-                      value={form.basic_salary}
-                      onChange={(e) => setForm({ ...form, basic_salary: Number(e.target.value) })}
-                    />
+                    <Input type="number" value={form.basic_salary} onChange={(e) => setForm({ ...form, basic_salary: Number(e.target.value) })} />
                   </Field>
                   <Field label="DA (₹)">
-                    <Input
-                      type="number"
-                      value={form.da}
-                      onChange={(e) => setForm({ ...form, da: Number(e.target.value) })}
-                    />
+                    <Input type="number" value={form.da} onChange={(e) => setForm({ ...form, da: Number(e.target.value) })} />
                   </Field>
                   <Field label="HRA (₹)">
-                    <Input
-                      type="number"
-                      value={form.hra}
-                      onChange={(e) => setForm({ ...form, hra: Number(e.target.value) })}
-                    />
+                    <Input type="number" value={form.hra} onChange={(e) => setForm({ ...form, hra: Number(e.target.value) })} />
                   </Field>
                   <Field label="Other Allowances (₹)">
-                    <Input
-                      type="number"
-                      value={form.other_allowances}
-                      onChange={(e) =>
-                        setForm({ ...form, other_allowances: Number(e.target.value) })
-                      }
-                    />
+                    <Input type="number" value={form.other_allowances} onChange={(e) => setForm({ ...form, other_allowances: Number(e.target.value) })} />
                   </Field>
                 </div>
               ) : (
                 <Field label="Daily Wage (₹)">
-                  <Input
-                    type="number"
-                    value={form.daily_wage}
-                    onChange={(e) => setForm({ ...form, daily_wage: Number(e.target.value) })}
-                  />
+                  <Input type="number" value={form.daily_wage} onChange={(e) => setForm({ ...form, daily_wage: Number(e.target.value) })} />
                 </Field>
               )}
 
               <div className="grid grid-cols-3 gap-3">
                 <Field label="OT Rate / Hour (₹)">
-                  <Input
-                    type="number"
-                    value={form.ot_rate_per_hour}
-                    onChange={(e) => setForm({ ...form, ot_rate_per_hour: Number(e.target.value) })}
-                  />
+                  <Input type="number" value={form.ot_rate_per_hour} onChange={(e) => setForm({ ...form, ot_rate_per_hour: Number(e.target.value) })} />
                 </Field>
                 <Field label="PF Deduction (₹)">
-                  <Input
-                    type="number"
-                    value={form.pf_deduction}
-                    onChange={(e) => setForm({ ...form, pf_deduction: Number(e.target.value) })}
-                  />
+                  <Input type="number" value={form.pf_deduction} onChange={(e) => setForm({ ...form, pf_deduction: Number(e.target.value) })} />
                 </Field>
                 <Field label="ESI Deduction (₹)">
-                  <Input
-                    type="number"
-                    value={form.esi_deduction}
-                    onChange={(e) => setForm({ ...form, esi_deduction: Number(e.target.value) })}
-                  />
+                  <Input type="number" value={form.esi_deduction} onChange={(e) => setForm({ ...form, esi_deduction: Number(e.target.value) })} />
                 </Field>
               </div>
 
@@ -474,9 +386,7 @@ function EmployeesPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={() => save.mutate()} disabled={save.isPending}>
               {save.isPending ? "Saving…" : "Save"}
             </Button>

@@ -24,10 +24,7 @@ function normalizeWa(raw: string | null | undefined): string | null {
 }
 
 /** Render "{{var}}" placeholders. Shared with client preview via render-body.ts. */
-export function renderBody(
-  body: string,
-  vars: Record<string, string | number | null | undefined>,
-): string {
+export function renderBody(body: string, vars: Record<string, string | number | null | undefined>): string {
   return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, k) => {
     const v = vars[k];
     return v === null || v === undefined ? "" : String(v);
@@ -38,46 +35,38 @@ export function renderBody(
 export const setPromoOptIn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z
-      .object({
-        party_kind: z.enum(["customer", "vendor"]),
-        party_id: z.string().uuid(),
-        promo_opt_in: z.boolean(),
-      })
-      .parse(d),
+    z.object({
+      party_kind: z.enum(["customer", "vendor"]),
+      party_id: z.string().uuid(),
+      promo_opt_in: z.boolean(),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const table = data.party_kind === "customer" ? "parties" : "suppliers";
-    const { error } = await supabaseAdmin
-      .from(table)
-      .update({ promo_opt_in: data.promo_opt_in })
-      .eq("id", data.party_id);
+    const { error } = await supabaseAdmin.from(table).update({ promo_opt_in: data.promo_opt_in }).eq("id", data.party_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /** List all notification_log rows for a specific party/supplier, newest first. */
 export const listPartyMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z
-      .object({
-        party_kind: z.enum(["customer", "vendor"]),
-        party_id: z.string().uuid(),
-        limit: z.number().int().min(1).max(500).default(100),
-      })
-      .parse(d),
+    z.object({
+      party_kind: z.enum(["customer", "vendor"]),
+      party_id: z.string().uuid(),
+      limit: z.number().int().min(1).max(500).default(100),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("notification_log")
-      .select(
-        "id, sent_at, channel, event_type, template_name, status, whatsapp_message_id, read_status, read_at, failure_reason, recipient_phone, payload",
-      )
+      .select("id, sent_at, channel, event_type, template_name, status, whatsapp_message_id, read_status, read_at, failure_reason, recipient_phone, payload")
       .eq("party_kind", data.party_kind)
       .eq("party_id", data.party_id)
       .order("sent_at", { ascending: false })
@@ -107,18 +96,9 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
     // Try to recover recipient phone if missing (from the party/supplier record)
     let to = normalizeWa(log.recipient_phone ?? null);
     if (!to && log.party_id) {
-      const tbl =
-        log.party_kind === "customer"
-          ? "parties"
-          : log.party_kind === "vendor"
-            ? "suppliers"
-            : null;
+      const tbl = log.party_kind === "customer" ? "parties" : log.party_kind === "vendor" ? "suppliers" : null;
       if (tbl) {
-        const { data: pr } = await supabaseAdmin
-          .from(tbl)
-          .select("phone, whatsapp_number")
-          .eq("id", log.party_id)
-          .maybeSingle();
+        const { data: pr } = await supabaseAdmin.from(tbl).select("phone, whatsapp_number").eq("id", log.party_id).maybeSingle();
         to = normalizeWa((pr as any)?.whatsapp_number ?? (pr as any)?.phone ?? null);
       }
     }
@@ -160,9 +140,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
     }
 
     // Prefer the same template row; fall back to freeform with body_template.
-    let result:
-      | { ok: true; messageId: string }
-      | { ok: false; status: "failed" | "skipped"; error: string };
+    let result: { ok: true; messageId: string } | { ok: false; status: "failed" | "skipped"; error: string };
     let usedTemplate: string | null = log.template_name;
 
     if (log.template_name) {
@@ -181,28 +159,15 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
           bodyVariables: bodyValues,
         });
       } else if (tpl?.body_template) {
-        result = await provider.sendFreeform({
-          to,
-          body: renderBody(tpl.body_template, variables as any),
-        });
+        result = await provider.sendFreeform({ to, body: renderBody(tpl.body_template, variables as any) });
         usedTemplate = null;
       } else {
-        const body =
-          message ??
-          Object.values(variables as any)
-            .map((v) => String(v ?? ""))
-            .join(" ")
-            .trim();
+        const body = message ?? Object.values(variables as any).map((v) => String(v ?? "")).join(" ").trim();
         result = await provider.sendFreeform({ to, body: body || "(no content)" });
         usedTemplate = null;
       }
     } else {
-      const body =
-        message ??
-        Object.values(variables as any)
-          .map((v) => String(v ?? ""))
-          .join(" ")
-          .trim();
+      const body = message ?? Object.values(variables as any).map((v) => String(v ?? "")).join(" ").trim();
       result = await provider.sendFreeform({ to, body: body || "(no content)" });
     }
 
@@ -239,11 +204,7 @@ export const listNotificationProviders = createServerFn({ method: "GET" })
 const ProviderSchema = z.object({
   id: z.string().uuid().optional(),
   channel: z.enum(["whatsapp", "sms", "email", "push", "in_app"]),
-  name: z
-    .string()
-    .min(1)
-    .max(80)
-    .regex(/^[a-z0-9_]+$/i, "Letters, digits, underscores only"),
+  name: z.string().min(1).max(80).regex(/^[a-z0-9_]+$/i, "Letters, digits, underscores only"),
   display_name: z.string().min(1).max(200),
   is_active: z.boolean().default(false),
   is_default: z.boolean().default(false),
@@ -271,24 +232,14 @@ export const upsertNotificationProvider = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
     };
     if (data.is_default) {
-      await supabaseAdmin
-        .from("notification_providers")
-        .update({ is_default: false })
-        .eq("channel", data.channel);
+      await supabaseAdmin.from("notification_providers").update({ is_default: false }).eq("channel", data.channel);
     }
     if (data.id) {
-      const { error } = await supabaseAdmin
-        .from("notification_providers")
-        .update(row)
-        .eq("id", data.id);
+      const { error } = await supabaseAdmin.from("notification_providers").update(row).eq("id", data.id);
       if (error) throw new Error(error.message);
       return { ok: true, id: data.id };
     }
-    const { data: ins, error } = await supabaseAdmin
-      .from("notification_providers")
-      .insert(row)
-      .select("id")
-      .single();
+    const { data: ins, error } = await supabaseAdmin.from("notification_providers").insert(row).select("id").single();
     if (error) throw new Error(error.message);
     return { ok: true, id: ins.id };
   });
@@ -299,10 +250,7 @@ export const toggleNotificationProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("notification_providers")
-      .update({ is_active: data.is_active })
-      .eq("id", data.id);
+    const { error } = await supabaseAdmin.from("notification_providers").update({ is_active: data.is_active }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

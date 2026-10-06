@@ -58,10 +58,7 @@ function AuditLogPage() {
 
   return (
     <>
-      <PageHeader
-        title="Audit Trail"
-        description="Every voucher and entry change is recorded here."
-      />
+      <PageHeader title="Audit Trail" description="Every voucher and entry change is recorded here." />
       <PageBody>
         <Card>
           <CardContent className="p-4">
@@ -93,30 +90,17 @@ function AuditLogPage() {
                     const vnum = (data as { voucher_number?: string }).voucher_number;
                     return (
                       <tr key={r.id} className="border-t">
-                        <td className="p-3 whitespace-nowrap">
-                          {format(new Date(r.changed_at), "dd MMM yyyy HH:mm:ss")}
-                        </td>
+                        <td className="p-3 whitespace-nowrap">{format(new Date(r.changed_at), "dd MMM yyyy HH:mm:ss")}</td>
                         <td className="p-3">{r.table_name}</td>
                         <td className="p-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs ${actionColor[r.action] ?? "bg-muted"}`}
-                          >
-                            {r.action}
-                          </span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${actionColor[r.action] ?? "bg-muted"}`}>{r.action}</span>
                         </td>
                         <td className="p-3">
                           {r.voucher_id ? (
-                            <Link
-                              to="/accounting/voucher/$id"
-                              params={{ id: r.voucher_id }}
-                              className="text-primary inline-flex items-center gap-1 hover:underline"
-                            >
-                              {vnum ?? r.voucher_id.slice(0, 8)}{" "}
-                              <ExternalLink className="h-3 w-3" />
+                            <Link to="/accounting/voucher/$id" params={{ id: r.voucher_id }} className="text-primary inline-flex items-center gap-1 hover:underline">
+                              {vnum ?? r.voucher_id.slice(0, 8)} <ExternalLink className="h-3 w-3" />
                             </Link>
-                          ) : (
-                            "—"
-                          )}
+                          ) : "—"}
                         </td>
                         <td className="p-3 text-muted-foreground max-w-md truncate">
                           {r.action === "UPDATE" && r.old_data && r.new_data
@@ -127,11 +111,7 @@ function AuditLogPage() {
                     );
                   })}
                   {filtered.length === 0 && (
-                    <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={5}>
-                        No audit entries.
-                      </td>
-                    </tr>
+                    <tr><td className="p-6 text-center text-muted-foreground" colSpan={5}>No audit entries.</td></tr>
                   )}
                 </tbody>
               </table>

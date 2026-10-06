@@ -56,11 +56,7 @@ Reply with JSON only, matching this shape:
  "notes":null,"confidence":0.0}`;
 
 /** Read a document supplied either as extracted text or as an image data URL. */
-export async function extractDocument(input: {
-  text?: string;
-  imageDataUrl?: string;
-  hint?: string;
-}): Promise<ExtractedDocument> {
+export async function extractDocument(input: { text?: string; imageDataUrl?: string; hint?: string }): Promise<ExtractedDocument> {
   const hint = input.hint ? `The user says this is a: ${input.hint}.` : "";
   if (input.imageDataUrl) {
     return aiChatJson<ExtractedDocument>(
@@ -129,34 +125,21 @@ export interface DocumentMatches {
   lines: LineMatch[];
 }
 
-export async function matchExtraction(
-  db: Db,
-  extracted: ExtractedDocument,
-): Promise<DocumentMatches> {
-  const [{ data: suppliers }, { data: parties }, { data: materials }, { data: items }] =
-    await Promise.all([
-      db.from("suppliers").select("id, name, gstin").limit(2000),
-      db.from("parties").select("id, name, gstin").limit(2000),
-      db.from("raw_materials").select("id, name, code, unit").limit(2000),
-      db.from("stock_items").select("id, name, code, unit, hsn_code").limit(2000),
-    ]);
+export async function matchExtraction(db: Db, extracted: ExtractedDocument): Promise<DocumentMatches> {
+  const [{ data: suppliers }, { data: parties }, { data: materials }, { data: items }] = await Promise.all([
+    db.from("suppliers").select("id, name, gstin").limit(2000),
+    db.from("parties").select("id, name, gstin").limit(2000),
+    db.from("raw_materials").select("id, name, code, unit").limit(2000),
+    db.from("stock_items").select("id, name, code, unit, hsn_code").limit(2000),
+  ]);
 
-  const rank = (
-    needle: string | null | undefined,
-    rows: { id: string; name: string; gstin?: string | null }[],
-  ) => {
+  const rank = (needle: string | null | undefined, rows: { id: string; name: string; gstin?: string | null }[]) => {
     if (!needle) return [];
     return rows
       .map((r) => ({
         id: r.id,
         label: r.name,
-        score:
-          Math.round(
-            Math.max(
-              similarity(needle, r.name),
-              r.gstin && extracted.gstin && r.gstin === extracted.gstin ? 1 : 0,
-            ) * 100,
-          ) / 100,
+        score: Math.round(Math.max(similarity(needle, r.name), r.gstin && extracted.gstin && r.gstin === extracted.gstin ? 1 : 0) * 100) / 100,
         extra: { gstin: r.gstin ?? null },
       }))
       .filter((c) => c.score > 0.25)
@@ -165,20 +148,8 @@ export async function matchExtraction(
   };
 
   const catalogue = [
-    ...(materials ?? []).map((m) => ({
-      id: m.id,
-      label: m.name,
-      kind: "raw_material" as const,
-      code: m.code,
-      unit: m.unit,
-    })),
-    ...(items ?? []).map((s) => ({
-      id: s.id,
-      label: s.name,
-      kind: "stock_item" as const,
-      code: s.code,
-      unit: s.unit,
-    })),
+    ...(materials ?? []).map((m) => ({ id: m.id, label: m.name, kind: "raw_material" as const, code: m.code, unit: m.unit })),
+    ...(items ?? []).map((s) => ({ id: s.id, label: s.name, kind: "stock_item" as const, code: s.code, unit: s.unit })),
   ];
 
   const lines: LineMatch[] = (extracted.lines ?? []).map((line) => {
@@ -186,13 +157,7 @@ export async function matchExtraction(
       .map((c) => ({
         id: c.id,
         label: `${c.label}${c.code ? ` (${c.code})` : ""}`,
-        score:
-          Math.round(
-            Math.max(
-              similarity(line.description ?? "", c.label),
-              c.code && line.description?.toLowerCase().includes(c.code.toLowerCase()) ? 0.95 : 0,
-            ) * 100,
-          ) / 100,
+        score: Math.round(Math.max(similarity(line.description ?? "", c.label), c.code && line.description?.toLowerCase().includes(c.code.toLowerCase()) ? 0.95 : 0) * 100) / 100,
         extra: { kind: c.kind, unit: c.unit },
       }))
       .filter((c) => c.score > 0.3)
@@ -207,14 +172,8 @@ export async function matchExtraction(
   });
 
   return {
-    supplier: rank(
-      extracted.supplier_name,
-      (suppliers ?? []) as { id: string; name: string; gstin: string | null }[],
-    ),
-    customer: rank(
-      extracted.customer_name,
-      (parties ?? []) as { id: string; name: string; gstin: string | null }[],
-    ),
+    supplier: rank(extracted.supplier_name, (suppliers ?? []) as { id: string; name: string; gstin: string | null }[]),
+    customer: rank(extracted.customer_name, (parties ?? []) as { id: string; name: string; gstin: string | null }[]),
     lines,
   };
 }
@@ -224,10 +183,7 @@ export async function matchExtraction(
 /* ------------------------------------------------------------------ */
 
 export function chunkText(text: string, size = 1200, overlap = 150): string[] {
-  const clean = text
-    .replace(/\s+\n/g, "\n")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim();
+  const clean = text.replace(/\s+\n/g, "\n").replace(/[ \t]{2,}/g, " ").trim();
   if (!clean) return [];
   const chunks: string[] = [];
   let start = 0;
@@ -271,12 +227,7 @@ export interface SemanticHit {
   similarity: number | null;
 }
 
-export async function semanticSearch(
-  db: Db,
-  query: string,
-  limit = 8,
-  supplierId?: string | null,
-): Promise<SemanticHit[]> {
+export async function semanticSearch(db: Db, query: string, limit = 8, supplierId?: string | null): Promise<SemanticHit[]> {
   const q = query.trim();
   if (!q) return [];
 
@@ -284,21 +235,14 @@ export async function semanticSearch(
     try {
       const [vector] = await aiEmbed([q], "query");
       if (vector) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (db as any).rpc("match_ai_document_chunks", {
           _embedding: JSON.stringify(vector),
           _match_count: limit,
           _supplier_id: supplierId ?? null,
         });
         if (!error && Array.isArray(data)) {
-          return (
-            data as {
-              document_id: string;
-              title: string;
-              doc_kind: string;
-              content: string;
-              similarity: number;
-            }[]
-          ).map((r) => ({
+          return (data as { document_id: string; title: string; doc_kind: string; content: string; similarity: number }[]).map((r) => ({
             documentId: r.document_id,
             title: r.title,
             docKind: r.doc_kind,
@@ -317,13 +261,11 @@ export async function semanticSearch(
     .select("document_id, content, ai_documents(title, doc_kind)")
     .ilike("content", `%${q.slice(0, 80)}%`)
     .limit(limit);
-  return (
-    (data ?? []) as unknown as {
-      document_id: string;
-      content: string;
-      ai_documents: { title: string; doc_kind: string } | null;
-    }[]
-  ).map((r) => ({
+  return ((data ?? []) as unknown as {
+    document_id: string;
+    content: string;
+    ai_documents: { title: string; doc_kind: string } | null;
+  }[]).map((r) => ({
     documentId: r.document_id,
     title: r.ai_documents?.title ?? "Document",
     docKind: r.ai_documents?.doc_kind ?? "other",
@@ -339,26 +281,14 @@ export async function semanticSearch(
 export interface QuotationComparison {
   materials: {
     material: string;
-    offers: {
-      supplier: string;
-      rate: number | null;
-      unit: string | null;
-      taxRate: number | null;
-      amount: number | null;
-    }[];
+    offers: { supplier: string; rate: number | null; unit: string | null; taxRate: number | null; amount: number | null }[];
     bestSupplier: string | null;
     bestRate: number | null;
     spreadPct: number | null;
     lastPurchasedRate: number | null;
     vsLastPurchasePct: number | null;
   }[];
-  terms: {
-    supplier: string;
-    paymentTerms: string | null;
-    deliveryTerms: string | null;
-    validity: string | null;
-    grandTotal: number | null;
-  }[];
+  terms: { supplier: string; paymentTerms: string | null; deliveryTerms: string | null; validity: string | null; grandTotal: number | null }[];
   analysis: string;
 }
 
@@ -409,29 +339,25 @@ export async function compareQuotations(
   }[]) {
     const date = row.purchase_bills?.bill_date ?? "";
     const prior = lastRate.get(row.raw_material_id);
-    if (!prior || date > prior.date)
-      lastRate.set(row.raw_material_id, { rate: Number(row.unit_price ?? 0), date });
+    if (!prior || date > prior.date) lastRate.set(row.raw_material_id, { rate: Number(row.unit_price ?? 0), date });
   }
 
   const list = [...byMaterial.values()].map((m) => {
-    const rates = m.offers
-      .map((o) => o.rate)
-      .filter((r): r is number => typeof r === "number" && r > 0);
+    const rates = m.offers.map((o) => o.rate).filter((r): r is number => typeof r === "number" && r > 0);
     const best = rates.length ? Math.min(...rates) : null;
     const worst = rates.length ? Math.max(...rates) : null;
     const bestOffer = best != null ? m.offers.find((o) => o.rate === best) : undefined;
     const match = (materials ?? [])
       .map((mm) => ({ id: mm.id, score: similarity(m.material, mm.name) }))
       .sort((a, b) => b.score - a.score)[0];
-    const previous = match && match.score > 0.4 ? (lastRate.get(match.id)?.rate ?? null) : null;
+    const previous = match && match.score > 0.4 ? lastRate.get(match.id)?.rate ?? null : null;
     return {
       ...m,
       bestSupplier: bestOffer?.supplier ?? null,
       bestRate: best,
       spreadPct: best && worst && best > 0 ? Math.round(((worst - best) / best) * 1000) / 10 : null,
       lastPurchasedRate: previous,
-      vsLastPurchasePct:
-        previous && best ? Math.round(((best - previous) / previous) * 1000) / 10 : null,
+      vsLastPurchasePct: previous && best ? Math.round(((best - previous) / previous) * 1000) / 10 : null,
     };
   });
 

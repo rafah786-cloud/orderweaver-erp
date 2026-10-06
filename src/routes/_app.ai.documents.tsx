@@ -16,21 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageBody, PageHeader } from "@/components/PageHeader";
-import {
-  analyzeDocument,
-  deleteAiDocument,
-  listAiDocuments,
-  searchDocuments,
-} from "@/lib/ai.functions";
+import { analyzeDocument, deleteAiDocument, listAiDocuments, searchDocuments } from "@/lib/ai.functions";
 import { readDocumentFile } from "@/lib/ai/read-file";
 import { formatDate } from "@/lib/format";
 
@@ -136,25 +124,17 @@ function DocumentsPage() {
                 <div className="space-y-1.5">
                   <Label>Document type</Label>
                   <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {KINDS.map((k) => (
-                        <SelectItem key={k.value} value={k.value}>
-                          {k.label}
-                        </SelectItem>
+                        <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Comparison group (optional)</Label>
-                  <Input
-                    value={group}
-                    onChange={(e) => setGroup(e.target.value)}
-                    placeholder="e.g. Foam Feb 2026"
-                  />
+                  <Input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="e.g. Foam Feb 2026" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Files</Label>
@@ -173,8 +153,7 @@ function DocumentsPage() {
                 </p>
               )}
               <p className="mt-3 text-xs text-muted-foreground">
-                PDFs and text files are read in your browser; photos and scans are sent as images.
-                Nothing is created in the ERP automatically.
+                PDFs and text files are read in your browser; photos and scans are sent as images. Nothing is created in the ERP automatically.
               </p>
             </CardContent>
           </Card>
@@ -193,20 +172,14 @@ function DocumentsPage() {
                   if (query.trim()) semantic.mutate(query.trim());
                 }}
               >
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="e.g. previous quotations for bonnell springs"
-                />
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. previous quotations for bonnell springs" />
                 <Button type="submit" disabled={semantic.isPending || !query.trim()}>
                   {semantic.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
                 </Button>
               </form>
-              {semantic.data && !semantic.data.ok && (
-                <p className="text-sm text-destructive">{semantic.data.error}</p>
-              )}
-              {semantic.data?.ok &&
-                (semantic.data.hits.length === 0 ? (
+              {semantic.data && !semantic.data.ok && <p className="text-sm text-destructive">{semantic.data.error}</p>}
+              {semantic.data?.ok && (
+                semantic.data.hits.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No related documents found.</p>
                 ) : (
                   <div className="space-y-2">
@@ -215,17 +188,14 @@ function DocumentsPage() {
                         <div className="flex items-center gap-2">
                           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-sm font-medium">{h.title}</span>
-                          <Badge variant="outline" className="text-[10px] capitalize">
-                            {String(h.docKind).replace(/_/g, " ")}
-                          </Badge>
+                          <Badge variant="outline" className="text-[10px] capitalize">{String(h.docKind).replace(/_/g, " ")}</Badge>
                         </div>
-                        <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                          {h.excerpt}
-                        </p>
+                        <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{h.excerpt}</p>
                       </div>
                     ))}
                   </div>
-                ))}
+                )
+              )}
             </CardContent>
           </Card>
 
@@ -260,19 +230,13 @@ function DocumentsPage() {
                       {rows.map((d) => (
                         <TableRow key={d.id}>
                           <TableCell className="max-w-[240px] truncate">{d.title}</TableCell>
-                          <TableCell className="capitalize">
-                            {d.doc_kind.replace(/_/g, " ")}
-                          </TableCell>
+                          <TableCell className="capitalize">{d.doc_kind.replace(/_/g, " ")}</TableCell>
                           <TableCell>{d.suppliers?.name ?? d.parties?.name ?? "—"}</TableCell>
                           <TableCell>{d.quotation_group ?? "—"}</TableCell>
                           <TableCell>
                             <Badge
                               variant={
-                                d.extraction_status === "ready"
-                                  ? "secondary"
-                                  : d.extraction_status === "failed"
-                                    ? "destructive"
-                                    : "outline"
+                                d.extraction_status === "ready" ? "secondary" : d.extraction_status === "failed" ? "destructive" : "outline"
                               }
                               title={d.extraction_error ?? undefined}
                             >
@@ -281,12 +245,7 @@ function DocumentsPage() {
                           </TableCell>
                           <TableCell>{formatDate(d.created_at)}</TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => del.mutate(d.id)}
-                              disabled={del.isPending}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => del.mutate(d.id)} disabled={del.isPending}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>

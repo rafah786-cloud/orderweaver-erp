@@ -20,10 +20,7 @@ function ReorderPage() {
 
   return (
     <>
-      <PageHeader
-        title="Reorder Status"
-        description={`${low.length} items at or below reorder level`}
-      />
+      <PageHeader title="Reorder Status" description={`${low.length} items at or below reorder level`} />
       <PageBody>
         <Card>
           <CardContent className="p-0">
@@ -41,35 +38,20 @@ function ReorderPage() {
               <tbody className="divide-y">
                 {low.map((r) => (
                   <tr key={r.stock_item_id} className="hover:bg-muted/40 bg-destructive/5">
-                    <td className="px-4 py-2">
-                      {r.name}{" "}
-                      {r.code && (
-                        <span className="text-xs text-muted-foreground ml-1">[{r.code}]</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-2">{r.name} {r.code && <span className="text-xs text-muted-foreground ml-1">[{r.code}]</span>}</td>
                     <td className="px-4 py-2">{r.unit}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{r.current_qty}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{r.reorder_level}</td>
-                    <td className="px-4 py-2 text-right tabular-nums text-destructive">
-                      {r.reorder_level - r.current_qty}
-                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums text-destructive">{r.reorder_level - r.current_qty}</td>
                     <td className="px-4 py-2 text-right">
-                      <Link
-                        to="/inventory/movements"
-                        search={{ item: r.stock_item_id }}
-                        className="text-xs text-primary hover:underline"
-                      >
+                      <Link to="/inventory/movements" search={{ item: r.stock_item_id }} className="text-xs text-primary hover:underline">
                         View →
                       </Link>
                     </td>
                   </tr>
                 ))}
                 {low.length === 0 && !q.isLoading && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-muted-foreground">
-                      All items above reorder level.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">All items above reorder level.</td></tr>
                 )}
               </tbody>
             </table>

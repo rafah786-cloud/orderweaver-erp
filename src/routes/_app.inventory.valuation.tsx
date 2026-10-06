@@ -4,13 +4,7 @@ import { useMemo, useState } from "react";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sb, VALUATION_LABEL, type ValuationMethod } from "@/lib/inventory";
 import { inr } from "@/lib/format";
 
@@ -41,12 +35,8 @@ type Lot = { qty: number; rate: number; date: string };
 type ValueCell = { qty: number; value: number; rate: number };
 
 function valueLots(lots: Lot[]): { qty: number; value: number } {
-  let qty = 0,
-    value = 0;
-  for (const l of lots) {
-    qty += l.qty;
-    value += l.qty * l.rate;
-  }
+  let qty = 0, value = 0;
+  for (const l of lots) { qty += l.qty; value += l.qty * l.rate; }
   return { qty, value };
 }
 
@@ -65,8 +55,7 @@ function computeItemGodown(
   for (const [g, list] of Object.entries(byG)) {
     list.sort((a, b) => a.movement_date.localeCompare(b.movement_date));
     if (method === "weighted_avg") {
-      let qty = 0,
-        value = 0;
+      let qty = 0, value = 0;
       for (const m of list) {
         if (m.quantity > 0) {
           qty += m.quantity;
@@ -75,10 +64,7 @@ function computeItemGodown(
           const avg = qty > 0 ? value / qty : 0;
           value += m.quantity * avg;
           qty += m.quantity;
-          if (qty <= 0) {
-            qty = 0;
-            value = 0;
-          }
+          if (qty <= 0) { qty = 0; value = 0; }
         }
       }
       out[g] = { qty, value, rate: qty > 0 ? value / qty : 0 };
@@ -118,11 +104,8 @@ function ValuationPage() {
   const itemsQ = useQuery({
     queryKey: ["inv_val_items"],
     queryFn: async () => {
-      const { data, error } = await sb
-        .from("stock_items")
-        .select("id,name,code,unit,valuation_method,standard_cost")
-        .eq("is_active", true)
-        .order("name");
+      const { data, error } = await sb.from("stock_items")
+        .select("id,name,code,unit,valuation_method,standard_cost").eq("is_active", true).order("name");
       if (error) throw error;
       return data as ItemRow[];
     },
@@ -131,11 +114,7 @@ function ValuationPage() {
   const godownsQ = useQuery({
     queryKey: ["inv_val_godowns"],
     queryFn: async () => {
-      const { data, error } = await sb
-        .from("godowns")
-        .select("id,name")
-        .eq("is_active", true)
-        .order("name");
+      const { data, error } = await sb.from("godowns").select("id,name").eq("is_active", true).order("name");
       if (error) throw error;
       return data as GodownRow[];
     },
@@ -144,8 +123,7 @@ function ValuationPage() {
   const movsQ = useQuery({
     queryKey: ["inv_val_movs"],
     queryFn: async () => {
-      const { data, error } = await sb
-        .from("stock_movements")
+      const { data, error } = await sb.from("stock_movements")
         .select("stock_item_id,godown_id,movement_date,quantity,rate,amount");
       if (error) throw error;
       return data as MovementRow[];
@@ -160,19 +138,15 @@ function ValuationPage() {
     for (const m of movs) (byItem[m.stock_item_id] ||= []).push(m);
 
     const s = search.trim().toLowerCase();
-    const filtered = items.filter(
-      (it) => !s || it.name.toLowerCase().includes(s) || it.code?.toLowerCase().includes(s),
+    const filtered = items.filter((it) =>
+      !s || it.name.toLowerCase().includes(s) || it.code?.toLowerCase().includes(s)
     );
 
     const rows = filtered.map((it) => {
       const method = methodOverride === "per_item" ? it.valuation_method : methodOverride;
       const cells = computeItemGodown(byItem[it.id] ?? [], method, it.standard_cost || 0);
-      let totalQty = 0,
-        totalValue = 0;
-      for (const c of Object.values(cells)) {
-        totalQty += c.qty;
-        totalValue += c.value;
-      }
+      let totalQty = 0, totalValue = 0;
+      for (const c of Object.values(cells)) { totalQty += c.qty; totalValue += c.value; }
       return { item: it, method, cells, totalQty, totalValue };
     });
 
@@ -200,13 +174,8 @@ function ValuationPage() {
       <PageBody>
         <div className="mb-4 flex flex-wrap gap-3 items-center">
           <div className="w-64">
-            <Select
-              value={methodOverride}
-              onValueChange={(v) => setMethodOverride(v as typeof methodOverride)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={methodOverride} onValueChange={(v) => setMethodOverride(v as typeof methodOverride)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="per_item">Per item (as configured)</SelectItem>
                 <SelectItem value="weighted_avg">{VALUATION_LABEL.weighted_avg}</SelectItem>
@@ -217,11 +186,7 @@ function ValuationPage() {
             </Select>
           </div>
           <div className="w-64">
-            <Input
-              placeholder="Search item..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <Input placeholder="Search item..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
 
@@ -233,9 +198,7 @@ function ValuationPage() {
                   <th className="px-4 py-2.5">Item</th>
                   <th className="px-4 py-2.5">Method</th>
                   {godowns.map((g) => (
-                    <th key={g.id} className="px-4 py-2.5 text-right whitespace-nowrap">
-                      {g.name}
-                    </th>
+                    <th key={g.id} className="px-4 py-2.5 text-right whitespace-nowrap">{g.name}</th>
                   ))}
                   <th className="px-4 py-2.5 text-right">Total Qty</th>
                   <th className="px-4 py-2.5 text-right">Total Value</th>
@@ -246,13 +209,9 @@ function ValuationPage() {
                   <tr key={r.item.id} className="hover:bg-muted/40">
                     <td className="px-4 py-2">
                       {r.item.name}
-                      {r.item.code && (
-                        <span className="text-xs text-muted-foreground ml-1">[{r.item.code}]</span>
-                      )}
+                      {r.item.code && <span className="text-xs text-muted-foreground ml-1">[{r.item.code}]</span>}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
-                      {VALUATION_LABEL[r.method]}
-                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">{VALUATION_LABEL[r.method]}</td>
                     {godowns.map((g) => {
                       const c = r.cells[g.id];
                       return (
@@ -260,45 +219,26 @@ function ValuationPage() {
                           {c && c.qty !== 0 ? (
                             <>
                               <div>{inr(c.value)}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {c.qty} {r.item.unit}
-                              </div>
+                              <div className="text-xs text-muted-foreground">{c.qty} {r.item.unit}</div>
                             </>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
                     })}
-                    <td className="px-4 py-2 text-right tabular-nums">
-                      {r.totalQty} {r.item.unit}
-                    </td>
-                    <td className="px-4 py-2 text-right tabular-nums font-medium">
-                      {inr(r.totalValue)}
-                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums">{r.totalQty} {r.item.unit}</td>
+                    <td className="px-4 py-2 text-right tabular-nums font-medium">{inr(r.totalValue)}</td>
                   </tr>
                 ))}
                 {rows.length === 0 && !loading && (
-                  <tr>
-                    <td
-                      colSpan={3 + godowns.length}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No items.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={3 + godowns.length} className="text-center py-8 text-muted-foreground">No items.</td></tr>
                 )}
               </tbody>
               {rows.length > 0 && (
                 <tfoot className="bg-muted/30 border-t font-medium">
                   <tr>
-                    <td className="px-4 py-2.5" colSpan={2}>
-                      Godown totals
-                    </td>
+                    <td className="px-4 py-2.5" colSpan={2}>Godown totals</td>
                     {godowns.map((g) => (
-                      <td key={g.id} className="px-4 py-2.5 text-right tabular-nums">
-                        {inr(godownTotals[g.id] ?? 0)}
-                      </td>
+                      <td key={g.id} className="px-4 py-2.5 text-right tabular-nums">{inr(godownTotals[g.id] ?? 0)}</td>
                     ))}
                     <td className="px-4 py-2.5"></td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{inr(grandTotal)}</td>

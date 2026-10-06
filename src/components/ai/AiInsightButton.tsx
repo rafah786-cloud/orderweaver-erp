@@ -3,23 +3,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Markdown } from "./Markdown";
 import { getContextualInsight } from "@/lib/ai.functions";
 
-export type AiTopic =
-  | "sales"
-  | "profitability"
-  | "inventory"
-  | "production"
-  | "receivables"
-  | "suppliers";
+export type AiTopic = "sales" | "profitability" | "inventory" | "production" | "receivables" | "suppliers";
 
 const TITLES: Record<AiTopic, string> = {
   sales: "Explain this sales trend",
@@ -89,7 +77,9 @@ export function AiInsightButton({
               </div>
             )}
             {mutation.isError && (
-              <p className="py-6 text-sm text-destructive">{(mutation.error as Error).message}</p>
+              <p className="py-6 text-sm text-destructive">
+                {(mutation.error as Error).message}
+              </p>
             )}
             {mutation.data && !mutation.data.ok && (
               <p className="py-6 text-sm text-destructive">{mutation.data.error}</p>
@@ -98,12 +88,7 @@ export function AiInsightButton({
           </div>
 
           <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending}
-            >
+            <Button variant="ghost" size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
               Regenerate
             </Button>
           </div>

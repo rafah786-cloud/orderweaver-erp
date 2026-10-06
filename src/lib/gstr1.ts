@@ -78,20 +78,7 @@ export function buildGstr1Json(opts: {
   const partyMap = new Map(parties.map((p) => [p.id, p]));
 
   const b2b: Record<string, { ctin: string; inv: unknown[] }> = {};
-  const b2cs: Record<
-    string,
-    {
-      sply_ty: string;
-      rt: number;
-      typ: string;
-      pos: string;
-      txval: number;
-      iamt: number;
-      camt: number;
-      samt: number;
-      csamt: number;
-    }
-  > = {};
+  const b2cs: Record<string, { sply_ty: string; rt: number; typ: string; pos: string; txval: number; iamt: number; camt: number; samt: number; csamt: number }> = {};
 
   for (const inv of invoices) {
     const party = partyMap.get(inv.party_id);

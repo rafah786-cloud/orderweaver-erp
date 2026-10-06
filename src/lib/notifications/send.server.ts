@@ -1,4 +1,9 @@
-import type { FreeformMessage, NotificationChannel, SendResult, TemplateMessage } from "./types";
+import type {
+  FreeformMessage,
+  NotificationChannel,
+  SendResult,
+  TemplateMessage,
+} from "./types";
 import { resolveProvider } from "./registry.server";
 
 export type SendContext = {

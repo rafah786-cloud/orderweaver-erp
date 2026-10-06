@@ -30,10 +30,7 @@ function PeriodsPage() {
   const q = useQuery({
     queryKey: ["financial_years"],
     queryFn: async () => {
-      const { data, error } = await sb
-        .from("financial_years")
-        .select("*")
-        .order("start_date", { ascending: false });
+      const { data, error } = await sb.from("financial_years").select("*").order("start_date", { ascending: false });
       if (error) throw error;
       return data as FY[];
     },
@@ -66,42 +63,24 @@ function PeriodsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Financial Years"
-        description="Define periods and lock them after returns are filed."
-      />
+      <PageHeader title="Financial Years" description="Define periods and lock them after returns are filed." />
       <PageBody>
         <Card>
           <CardContent className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
               <div>
                 <Label>Name</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="FY 2025-26"
-                />
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="FY 2025-26" />
               </div>
               <div>
                 <Label>Start</Label>
-                <Input
-                  type="date"
-                  value={form.start_date}
-                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                />
+                <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
               </div>
               <div>
                 <Label>End</Label>
-                <Input
-                  type="date"
-                  value={form.end_date}
-                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                />
+                <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
               </div>
-              <Button
-                onClick={() => create.mutate()}
-                disabled={!form.name || !form.start_date || !form.end_date}
-              >
+              <Button onClick={() => create.mutate()} disabled={!form.name || !form.start_date || !form.end_date}>
                 Add Period
               </Button>
             </div>
@@ -113,18 +92,11 @@ function PeriodsPage() {
             <Card key={fy.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">
-                    {fy.name}{" "}
-                    {fy.is_current && <span className="text-xs ml-2 text-primary">(Current)</span>}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {fy.start_date} → {fy.end_date}
-                  </div>
+                  <div className="font-semibold">{fy.name} {fy.is_current && <span className="text-xs ml-2 text-primary">(Current)</span>}</div>
+                  <div className="text-sm text-muted-foreground">{fy.start_date} → {fy.end_date}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`text-sm px-2 py-1 rounded ${fy.is_locked ? "bg-destructive/10 text-destructive" : "bg-muted"}`}
-                  >
+                  <span className={`text-sm px-2 py-1 rounded ${fy.is_locked ? "bg-destructive/10 text-destructive" : "bg-muted"}`}>
                     {fy.is_locked ? "Locked" : "Open"}
                   </span>
                   <Button
@@ -132,23 +104,13 @@ function PeriodsPage() {
                     variant={fy.is_locked ? "outline" : "destructive"}
                     onClick={() => toggleLock.mutate({ id: fy.id, is_locked: !fy.is_locked })}
                   >
-                    {fy.is_locked ? (
-                      <>
-                        <Unlock className="h-4 w-4 mr-1" /> Unlock
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4 mr-1" /> Lock
-                      </>
-                    )}
+                    {fy.is_locked ? <><Unlock className="h-4 w-4 mr-1" /> Unlock</> : <><Lock className="h-4 w-4 mr-1" /> Lock</>}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
-          {q.data?.length === 0 && (
-            <p className="text-sm text-muted-foreground p-4">No financial years yet.</p>
-          )}
+          {q.data?.length === 0 && <p className="text-sm text-muted-foreground p-4">No financial years yet.</p>}
         </div>
       </PageBody>
     </>

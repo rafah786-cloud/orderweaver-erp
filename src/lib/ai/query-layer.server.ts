@@ -38,8 +38,7 @@ export const ENTITIES: Record<string, EntityDef> = {
       party_id: "uuid",
     },
     defaultOrder: { column: "invoice_date", ascending: false },
-    description:
-      "Customer invoices with amounts, due dates and payment status (draft/unpaid/partial/paid/cancelled).",
+    description: "Customer invoices with amounts, due dates and payment status (draft/unpaid/partial/paid/cancelled).",
   },
   sales_orders: {
     table: "sales_orders",
@@ -92,8 +91,7 @@ export const ENTITIES: Record<string, EntityDef> = {
   suppliers: {
     table: "suppliers",
     label: "Suppliers",
-    select:
-      "id, name, contact_person, phone, email, gstin, current_balance, state_code, vendor_code, created_at",
+    select: "id, name, contact_person, phone, email, gstin, current_balance, state_code, vendor_code, created_at",
     columns: {
       name: "text",
       phone: "text",
@@ -113,7 +111,7 @@ export const ENTITIES: Record<string, EntityDef> = {
       code: "text",
       name: "text",
       unit: "text",
-      reorder_level: "number",
+            reorder_level: "number",
     },
     defaultOrder: { column: "name", ascending: true },
     description: "Raw material stock levels and reorder thresholds.",
@@ -121,8 +119,7 @@ export const ENTITIES: Record<string, EntityDef> = {
   stock_items: {
     table: "stock_items",
     label: "Stock items",
-    select:
-      "id, code, name, unit, hsn_code, gst_rate, reorder_level, min_stock, standard_cost, standard_price, is_active",
+    select: "id, code, name, unit, hsn_code, gst_rate, reorder_level, min_stock, standard_cost, standard_price, is_active",
     columns: {
       code: "text",
       name: "text",
@@ -167,8 +164,7 @@ export const ENTITIES: Record<string, EntityDef> = {
   stock_movements: {
     table: "stock_movements",
     label: "Stock movements",
-    select:
-      "id, movement_date, movement_type, quantity, rate, amount, narration, stock_items(name, unit)",
+    select: "id, movement_date, movement_type, quantity, rate, amount, narration, stock_items(name, unit)",
     columns: {
       movement_date: "date",
       movement_type: "text",
@@ -181,18 +177,7 @@ export const ENTITIES: Record<string, EntityDef> = {
   },
 };
 
-const OPERATORS = [
-  "eq",
-  "neq",
-  "gt",
-  "gte",
-  "lt",
-  "lte",
-  "ilike",
-  "in",
-  "is_null",
-  "not_null",
-] as const;
+const OPERATORS = ["eq", "neq", "gt", "gte", "lt", "lte", "ilike", "in", "is_null", "not_null"] as const;
 
 export const querySpecSchema = z.object({
   entity: z.string(),
@@ -201,9 +186,7 @@ export const querySpecSchema = z.object({
       z.object({
         column: z.string(),
         op: z.enum(OPERATORS),
-        value: z
-          .union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))])
-          .optional(),
+        value: z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))]).optional(),
       }),
     )
     .max(8)
@@ -218,10 +201,7 @@ export type QuerySpec = z.infer<typeof querySpecSchema>;
 
 export function describeEntities(): string {
   return Object.entries(ENTITIES)
-    .map(
-      ([key, e]) =>
-        `- ${key}: ${e.description} Filterable columns: ${Object.keys(e.columns).join(", ")}.`,
-    )
+    .map(([key, e]) => `- ${key}: ${e.description} Filterable columns: ${Object.keys(e.columns).join(", ")}.`)
     .join("\n");
 }
 
@@ -238,13 +218,11 @@ export async function runControlledQuery(db: Db, rawSpec: unknown): Promise<Quer
   const spec = querySpecSchema.parse(rawSpec);
   const entity = ENTITIES[spec.entity];
   if (!entity) {
-    throw new Error(
-      `Unsupported search target "${spec.entity}". Available: ${Object.keys(ENTITIES).join(", ")}.`,
-    );
+    throw new Error(`Unsupported search target "${spec.entity}". Available: ${Object.keys(ENTITIES).join(", ")}.`);
   }
 
   const limit = spec.limit ?? 50;
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = db.from(entity.table as never).select(entity.select);
 
   for (const f of spec.filters) {
@@ -273,8 +251,7 @@ export async function runControlledQuery(db: Db, rawSpec: unknown): Promise<Quer
     }
   }
 
-  const orderColumn =
-    spec.orderBy && entity.columns[spec.orderBy] ? spec.orderBy : entity.defaultOrder.column;
+  const orderColumn = spec.orderBy && entity.columns[spec.orderBy] ? spec.orderBy : entity.defaultOrder.column;
   const ascending = spec.ascending ?? entity.defaultOrder.ascending;
   query = query.order(orderColumn, { ascending, nullsFirst: false }).limit(limit + 1);
 

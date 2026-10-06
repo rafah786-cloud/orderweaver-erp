@@ -107,6 +107,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
       if (sup?.name) enrichedVars.vendor_name = sup.name;
     }
 
+
     // 3. Resolve template
     const { data: tpl } = await supabaseAdmin
       .from("whatsapp_templates")
@@ -130,20 +131,11 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
         payload: { employee_id: emp.id, department: emp.department, vars: data.vars },
       };
       if (!to) {
-        await logWhatsAppNotification({
-          ...baseLog,
-          status: "skipped",
-          failure_reason: "no phone",
-        });
+        await logWhatsAppNotification({ ...baseLog, status: "skipped", failure_reason: "no phone" });
         continue;
       }
       if (!providerReady) {
-        await logWhatsAppNotification({
-          ...baseLog,
-          recipient_phone: to,
-          status: "skipped",
-          failure_reason: "provider not configured",
-        });
+        await logWhatsAppNotification({ ...baseLog, recipient_phone: to, status: "skipped", failure_reason: "provider not configured" });
         continue;
       }
       const allVars: Record<string, string | number | null | undefined> = {
@@ -161,10 +153,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
           bodyVariables: bodyValues,
         });
       } else {
-        const body = [
-          `Notification: ${data.event}`,
-          ...Object.entries(allVars).map(([k, v]) => `${k}: ${v}`),
-        ].join("\n");
+        const body = [`Notification: ${data.event}`, ...Object.entries(allVars).map(([k, v]) => `${k}: ${v}`)].join("\n");
         result = await provider.sendFreeform({ to, body });
       }
       await logWhatsAppNotification({

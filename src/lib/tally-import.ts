@@ -22,7 +22,6 @@ export type TallyStockItem = {
   opening_qty: number;
   opening_rate: number;
   group: string;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 export type TallyLedgerEntry = {
@@ -44,7 +43,6 @@ export type TallyGroup = {
   parent: string | null;
   nature: "assets" | "liabilities" | "income" | "expenses";
   affects_gross_profit: boolean;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 /** Any Tally ledger master, regardless of group. */
@@ -56,20 +54,10 @@ export type TallyLedgerMaster = {
   /** "dr" when the opening balance is a debit. */
   opening_type: "dr" | "cr";
   notes: string | null;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
-export type TallyGodown = {
-  name: string;
-  parent: string | null;
-  address: string | null;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
-};
-export type TallyCostCentre = {
-  name: string;
-  parent: string | null;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
-};
+export type TallyGodown = { name: string; parent: string | null; address: string | null };
+export type TallyCostCentre = { name: string; parent: string | null };
 
 /** Bill-wise outstanding reference carried on a ledger master or voucher. */
 export type TallyBill = {
@@ -81,7 +69,6 @@ export type TallyBill = {
   reference_type: "opening" | "new_ref" | "against_ref" | "on_account" | "advance" | "cleared";
   voucher_guid: string | null;
   external_ref: string;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 /** Complete source voucher for pre-import reconciliation; never inferred from party balances. */
@@ -92,7 +79,6 @@ export type TallyVoucher = {
   voucher_number: string | null;
   voucher_date: string;
   entries: Array<{ ledger_name: string; debit: number; credit: number }>;
-  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
 export type TallyParsed = {
@@ -110,6 +96,7 @@ export type TallyParsed = {
   bills: TallyBill[];
   vouchers: TallyVoucher[];
 };
+
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -189,22 +176,21 @@ export class TallyXmlError extends Error {
 
 export function parseTallyMasters(
   xml: string,
-  opts: { rawGroups: string[]; finishedGroups: string[]; preserveLifecycle?: boolean },
+  opts: { rawGroups: string[]; finishedGroups: string[] }
 ): TallyParsed {
   if (!xml || !xml.trim()) {
     throw new TallyXmlError(
       "The uploaded file is empty.",
-      "Re-export from Tally (Alt + E → XML) and try again.",
+      "Re-export from Tally (Alt + E → XML) and try again."
     );
   }
   // Strip UTF-8/UTF-16 BOM and leading whitespace before sniffing.
-  const stripped = xml
-    .replace(/^\uFEFF/, "")
-    .replace(/^\uFFFE/, "")
-    .trimStart();
+  const stripped = xml.replace(/^\uFEFF/, "").replace(/^\uFFFE/, "").trimStart();
   const head = stripped.slice(0, 500).toLowerCase();
   const looksLikeXml =
-    head.startsWith("<?xml") || head.startsWith("<!doctype") || /^<[a-z_][\w:.-]*[\s>/]/.test(head);
+    head.startsWith("<?xml") ||
+    head.startsWith("<!doctype") ||
+    /^<[a-z_][\w:.-]*[\s>/]/.test(head);
   if (!looksLikeXml) {
     throw new TallyXmlError(
       "This file does not look like an XML document.",
@@ -219,7 +205,7 @@ export function parseTallyMasters(
   } catch (e) {
     throw new TallyXmlError(
       "The XML file is malformed and could not be parsed.",
-      `Re-export from Tally without modifying the file. (${(e as Error).message})`,
+      `Re-export from Tally without modifying the file. (${(e as Error).message})`
     );
   }
 
@@ -227,38 +213,38 @@ export function parseTallyMasters(
   if (!envelope) {
     throw new TallyXmlError(
       "This XML is missing the required <ENVELOPE> root element used by Tally exports.",
-      "In Tally: Display More Reports → List of Accounts (or Day Book) → Alt + E → Export as XML.",
+      "In Tally: Display More Reports → List of Accounts (or Day Book) → Alt + E → Export as XML."
     );
   }
   const body = (envelope as { BODY?: Record<string, unknown> }).BODY;
   if (!body) {
     throw new TallyXmlError(
       "This Tally XML is missing the <BODY> section.",
-      "Re-export the report from Tally — the file may be incomplete or truncated.",
+      "Re-export the report from Tally — the file may be incomplete or truncated."
     );
   }
 
   const rawMessages =
-    (body as { DATA?: { TALLYMESSAGE?: unknown } }).DATA?.TALLYMESSAGE ??
-    (body as { IMPORTDATA?: { REQUESTDATA?: { TALLYMESSAGE?: unknown } } }).IMPORTDATA?.REQUESTDATA
-      ?.TALLYMESSAGE;
+    ((body as { DATA?: { TALLYMESSAGE?: unknown } }).DATA?.TALLYMESSAGE) ??
+    ((body as { IMPORTDATA?: { REQUESTDATA?: { TALLYMESSAGE?: unknown } } }).IMPORTDATA?.REQUESTDATA?.TALLYMESSAGE);
 
   if (rawMessages == null) {
     throw new TallyXmlError(
       "No <TALLYMESSAGE> records found in this XML.",
-      "Export Masters (List of Accounts) or a Day Book / Ledger report from Tally — other report formats are not supported.",
+      "Export Masters (List of Accounts) or a Day Book / Ledger report from Tally — other report formats are not supported."
     );
   }
 
   const messages = arr<Record<string, unknown>>(
-    rawMessages as Record<string, unknown> | Record<string, unknown>[],
+    rawMessages as Record<string, unknown> | Record<string, unknown>[]
   );
   if (messages.length === 0) {
     throw new TallyXmlError(
       "The XML contains no master or voucher records.",
-      "Check the date range and filters in Tally before exporting, then try again.",
+      "Check the date range and filters in Tally before exporting, then try again."
     );
   }
+
 
   const customers: TallyParty[] = [];
   const vendors: TallyParty[] = [];
@@ -270,7 +256,6 @@ export function parseTallyMasters(
   const godowns: TallyGodown[] = [];
   const costCentres: TallyCostCentre[] = [];
   const bills: TallyBill[] = [];
-  const preserveLifecycle = opts.preserveLifecycle === true;
   const vouchersOut: TallyVoucher[] = [];
 
   // Build a map of ledger-name → party type to classify vouchers
@@ -294,95 +279,49 @@ export function parseTallyMasters(
 
   const isYes = (v: unknown) => text(v).toLowerCase() === "yes";
 
-  const lifecycleState = (
-    node: Record<string, unknown>,
-  ): "posted" | "cancelled" | "optional" | "deleted" =>
-    isYes(node.ISDELETED)
-      ? "deleted"
-      : isYes(node.ISCANCELLED) || isYes(node.CANCELLED)
-        ? "cancelled"
-        : isYes(node.ISOPTIONAL)
-          ? "optional"
-          : "posted";
-
   /** Infer the accounting nature of a Tally group from its own / parent name. */
   const natureOf = (name: string, parent: string): TallyGroup["nature"] => {
     const known = groupNature.get(parent.toLowerCase());
     if (known) return known;
     const s = `${parent} ${name}`.toLowerCase();
     if (/(sales|income|revenue|direct incomes|indirect incomes)/.test(s)) return "income";
-    if (/(purchase|expense|expenses|direct expenses|indirect expenses|cost)/.test(s))
-      return "expenses";
-    if (/(liabilit|capital|loan|creditor|payable|provision|duties|reserve|suspense)/.test(s))
-      return "liabilities";
+    if (/(purchase|expense|expenses|direct expenses|indirect expenses|cost)/.test(s)) return "expenses";
+    if (/(liabilit|capital|loan|creditor|payable|provision|duties|reserve|suspense)/.test(s)) return "liabilities";
     return "assets";
   };
 
   /** Bill-wise allocations on a ledger master (opening outstanding) or voucher line. */
-  const collectBills = (
-    partyName: string,
-    node: Record<string, unknown>,
-    voucherGuid: string | null = null,
-  ) => {
-    const lists: Array<{
-      values: Record<string, unknown>[];
-      fallback: TallyBill["reference_type"];
-    }> = [
-      {
-        values: arr<Record<string, unknown>>(node["OPENINGBILLALLOCATIONS.LIST"] as never),
-        fallback: "opening",
-      },
-      {
-        values: arr<Record<string, unknown>>(node["BILLALLOCATIONS.LIST"] as never),
-        fallback: "new_ref",
-      },
-      {
-        values: arr<Record<string, unknown>>(node["BILLSCLEARED.LIST"] as never),
-        fallback: "cleared",
-      },
+  const collectBills = (partyName: string, node: Record<string, unknown>, voucherGuid: string | null = null) => {
+    const lists: Array<{ values: Record<string, unknown>[]; fallback: TallyBill["reference_type"] }> = [
+      { values: arr<Record<string, unknown>>(node["OPENINGBILLALLOCATIONS.LIST"] as never), fallback: "opening" },
+      { values: arr<Record<string, unknown>>(node["BILLALLOCATIONS.LIST"] as never), fallback: "new_ref" },
+      { values: arr<Record<string, unknown>>(node["BILLSCLEARED.LIST"] as never), fallback: "cleared" },
     ];
-    for (const { values, fallback } of lists)
-      for (const b of values) {
-        if (!preserveLifecycle && lifecycleState(b) !== "posted") continue;
-        const bill_name = text(b.NAME ?? b.BILLNAME);
-        if (!bill_name) continue;
-        const method = text(b.BILLTYPE ?? b.METHOD)
-          .toLowerCase()
-          .replace(/[\s-]+/g, "_");
-        const reference_type: TallyBill["reference_type"] =
-          method === "against_ref" || method === "agst_ref"
-            ? "against_ref"
-            : method === "on_account"
-              ? "on_account"
-              : method === "advance"
-                ? "advance"
-                : method === "new_ref"
-                  ? "new_ref"
-                  : fallback;
-        const bill_date = parseTallyDate(text(b.BILLDATE ?? b.DATE)) || null;
-        bills.push({
-          party_name: partyName,
-          bill_name,
-          bill_date,
-          amount: num(b.AMOUNT ?? b.OPENINGBALANCE),
-          reference_type,
-          voucher_guid: voucherGuid,
-          external_ref: [
-            voucherGuid ?? "master",
-            partyName,
-            bill_name,
-            bill_date ?? "",
-            reference_type,
-          ].join("|"),
-          lifecycle_state: lifecycleState(b),
-        });
-      }
+    for (const { values, fallback } of lists) for (const b of values) {
+      const bill_name = text(b.NAME ?? b.BILLNAME);
+      if (!bill_name) continue;
+      const method = text(b.BILLTYPE ?? b.METHOD).toLowerCase().replace(/[\s-]+/g, "_");
+      const reference_type: TallyBill["reference_type"] =
+        method === "against_ref" || method === "agst_ref" ? "against_ref" :
+        method === "on_account" ? "on_account" : method === "advance" ? "advance" :
+        method === "new_ref" ? "new_ref" : fallback;
+      const bill_date = parseTallyDate(text(b.BILLDATE ?? b.DATE)) || null;
+      bills.push({
+        party_name: partyName,
+        bill_name,
+        bill_date,
+        amount: num(b.AMOUNT ?? b.OPENINGBALANCE),
+        reference_type,
+        voucher_guid: voucherGuid,
+        external_ref: [voucherGuid ?? "master", partyName, bill_name, bill_date ?? "", reference_type].join("|"),
+      });
+    }
   };
 
   for (const msg of messages) {
     /* ---------------- GROUP masters (Chart of Accounts) ---------------- */
     for (const g of arr<Record<string, unknown>>(msg.GROUP as never)) {
-      if (!preserveLifecycle && lifecycleState(g) !== "posted") continue;
+      if (isYes(g.ISDELETED)) continue;
       const name = text(g["@_NAME"] ?? g.NAME);
       if (!name) continue;
       const parent = text(g.PARENT);
@@ -393,41 +332,36 @@ export function parseTallyMasters(
         parent: parent || null,
         nature,
         affects_gross_profit: isYes(g.AFFECTSGROSSPROFIT),
-        lifecycle_state: lifecycleState(g),
       });
     }
 
     /* ---------------- GODOWN masters ---------------- */
     for (const g of arr<Record<string, unknown>>(msg.GODOWN as never)) {
-      if (!preserveLifecycle && lifecycleState(g) !== "posted") continue;
+      if (isYes(g.ISDELETED)) continue;
       const name = text(g["@_NAME"] ?? g.NAME);
       if (!name) continue;
       godowns.push({
         name,
         parent: text(g.PARENT) || null,
         address: flattenAddress(g["ADDRESS.LIST"]) || null,
-        lifecycle_state: lifecycleState(g),
       });
     }
 
     /* ---------------- COSTCENTRE masters ---------------- */
     for (const c of arr<Record<string, unknown>>(msg.COSTCENTRE as never)) {
-      if (!preserveLifecycle && lifecycleState(c) !== "posted") continue;
+      if (isYes(c.ISDELETED)) continue;
       const name = text(c["@_NAME"] ?? c.NAME);
       if (!name) continue;
-      costCentres.push({
-        name,
-        parent: text(c.PARENT) || null,
-        lifecycle_state: lifecycleState(c),
-      });
+      costCentres.push({ name, parent: text(c.PARENT) || null });
     }
 
     /* ---------------- LEDGER masters ---------------- */
     const ledgers = arr<Record<string, unknown>>(
-      msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined,
+      msg.LEDGER as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const l of ledgers) {
-      if (!preserveLifecycle && lifecycleState(l) !== "posted") continue;
+      // TallyPrime marks deleted masters with ISDELETED=Yes — skip them
+      if (isYes(l.ISDELETED)) continue;
       const name = text(l["@_NAME"] ?? l.NAME) || text(l.MAILINGNAME);
       if (!name) continue;
       const parentRaw = text(l.PARENT);
@@ -445,7 +379,6 @@ export function parseTallyMasters(
         opening_balance: Math.abs(opening),
         opening_type: opening >= 0 ? "dr" : "cr",
         notes: parentRaw ? `Tally group: ${parentRaw}` : null,
-        lifecycle_state: lifecycleState(l),
       });
 
       const isCustomer = parent.includes("sundry debtor") || parent.includes("debtor");
@@ -471,12 +404,13 @@ export function parseTallyMasters(
       partyType.set(name.toLowerCase(), isCustomer ? "customer" : "vendor");
     }
 
+
     /* ---------------- STOCKITEM masters ---------------- */
     const items = arr<Record<string, unknown>>(
-      msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined,
+      msg.STOCKITEM as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const it of items) {
-      if (!preserveLifecycle && lifecycleState(it) !== "posted") continue;
+      if (isYes(it.ISDELETED)) continue;
       const name = text(it["@_NAME"] ?? it.NAME);
       if (!name) continue;
       const parent = text(it.PARENT);
@@ -491,7 +425,6 @@ export function parseTallyMasters(
         opening_qty: qty,
         opening_rate: rate,
         group: parent,
-        lifecycle_state: lifecycleState(it),
       };
 
       const isRaw = parentMatches(parent, opts.rawGroups);
@@ -500,39 +433,36 @@ export function parseTallyMasters(
       if (isRaw) rawMaterials.push(stock);
       else if (isFinished) finishedGoods.push(stock);
       else {
-        if (/raw|material|component|fabric|foam|spring|cloth|thread/i.test(parent))
-          rawMaterials.push(stock);
+        if (/raw|material|component|fabric|foam|spring|cloth|thread/i.test(parent)) rawMaterials.push(stock);
         else finishedGoods.push(stock);
       }
     }
 
     /* ---------------- VOUCHER entries (Day Book / Ledger export) ---------------- */
     const vouchers = arr<Record<string, unknown>>(
-      msg.VOUCHER as Record<string, unknown> | Record<string, unknown>[] | undefined,
+      msg.VOUCHER as Record<string, unknown> | Record<string, unknown>[] | undefined
     );
     for (const v of vouchers) {
-      if (!preserveLifecycle && lifecycleState(v) !== "posted") continue;
+      // Skip cancelled, optional, deleted vouchers in TallyPrime exports
+      if (isYes(v.ISCANCELLED) || isYes(v.CANCELLED) || isYes(v.ISOPTIONAL) || isYes(v.ISDELETED)) {
+        continue;
+      }
       const dateRaw = text(v.DATE ?? v["@_DATE"]);
       const entry_date = parseTallyDate(dateRaw);
       if (!entry_date) continue;
       const voucher_type = text(v.VOUCHERTYPENAME ?? v["@_VCHTYPE"]) || null;
       const voucher_number = text(v.VOUCHERNUMBER) || null;
       const narration = text(v.NARRATION) || null;
-      const guid =
-        text(v.GUID ?? v["@_REMOTEID"]) ||
-        `${voucher_type ?? ""}|${voucher_number ?? ""}|${entry_date}`;
+      const guid = text(v.GUID ?? v["@_REMOTEID"]) || `${voucher_type ?? ""}|${voucher_number ?? ""}|${entry_date}`;
       // Prime uses PARTYLEDGERNAME for the bill-to party on Sales/Purchase;
       // some voucher lines only carry the offsetting account (e.g. Sales A/c).
       const partyLedgerName = text(v.PARTYLEDGERNAME ?? v.PARTYNAME) || null;
 
       const ledgerLines = arr<Record<string, unknown>>(
-        v["ALLLEDGERENTRIES.LIST"] as
-          | Record<string, unknown>
-          | Record<string, unknown>[]
-          | undefined,
+        v["ALLLEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
       );
       const altLines = arr<Record<string, unknown>>(
-        v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined,
+        v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined
       );
       const lines = [...ledgerLines, ...altLines];
 
@@ -545,19 +475,13 @@ export function parseTallyMasters(
         entries: lines.map((line) => {
           const amount = num(line.AMOUNT);
           const debit = isYes(line.ISDEEMEDPOSITIVE) ? Math.abs(amount) : 0;
-          return {
-            ledger_name: text(line.LEDGERNAME),
-            debit,
-            credit: debit ? 0 : Math.abs(amount),
-          };
+          return { ledger_name: text(line.LEDGERNAME), debit, credit: debit ? 0 : Math.abs(amount) };
         }),
-        lifecycle_state: lifecycleState(v),
       });
 
       for (const line of lines) {
         const ledgerName = text(line.LEDGERNAME);
-        if (ledgerName && partyType.has(ledgerName.toLowerCase()))
-          collectBills(ledgerName, line, guid);
+        if (ledgerName && partyType.has(ledgerName.toLowerCase())) collectBills(ledgerName, line, guid);
       }
 
       // First pass: emit entries for lines that directly reference a known party.
@@ -634,7 +558,7 @@ export function parseTallyMasters(
   ) {
     throw new TallyXmlError(
       "The XML was valid but contained no masters or voucher entries.",
-      "Make sure you exported the right report from Tally: Masters (List of Accounts) for parties, ledgers and stock, or Day Book / Ledger for transactions.",
+      "Make sure you exported the right report from Tally: Masters (List of Accounts) for parties, ledgers and stock, or Day Book / Ledger for transactions."
     );
   }
 
@@ -652,3 +576,4 @@ export function parseTallyMasters(
     vouchers: vouchersOut,
   };
 }
+

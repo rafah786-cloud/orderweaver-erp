@@ -1,13 +1,13 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 
 const TABS = [
-  { to: "/communications/setup", label: "Setup Wizard" },
-  { to: "/communications/events", label: "Events" },
-  { to: "/communications/providers", label: "Providers" },
-  { to: "/communications/templates", label: "Templates" },
+  { to: "/communications/setup",                  label: "Setup Wizard" },
+  { to: "/communications/events",                 label: "Events" },
+  { to: "/communications/providers",              label: "Providers" },
+  { to: "/communications/templates",              label: "Templates" },
   { to: "/communications/employee-subscriptions", label: "Staff Subscriptions" },
-  { to: "/communications/whatsapp-logs", label: "Activity Log" },
-  { to: "/communications/inbox", label: "My Inbox" },
+  { to: "/communications/whatsapp-logs",          label: "Activity Log" },
+  { to: "/communications/inbox",                  label: "My Inbox" },
 ] as const;
 
 export const Route = createFileRoute("/_app/communications")({

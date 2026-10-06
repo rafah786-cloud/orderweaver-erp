@@ -1,5 +1,5 @@
 export function inr(amount: number | string | null | undefined): string {
-  const n = typeof amount === "string" ? parseFloat(amount) : (amount ?? 0);
+  const n = typeof amount === "string" ? parseFloat(amount) : amount ?? 0;
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",

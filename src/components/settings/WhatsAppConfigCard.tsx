@@ -13,12 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, Send } from "lucide-react";
@@ -87,7 +82,7 @@ export function WhatsAppConfigCard() {
         try {
           vars = JSON.parse(test.variables);
         } catch {
-          toast.error('Variables must be valid JSON, e.g. {"customer_name":"Alex"}');
+          toast.error("Variables must be valid JSON, e.g. {\"customer_name\":\"Alex\"}");
           setTestBusy(false);
           return;
         }
@@ -100,9 +95,7 @@ export function WhatsAppConfigCard() {
         },
       });
       if (r.ok) {
-        toast.success(
-          `Sent. Message id: ${r.messageId || "(none returned)"} · attempts: ${r.attempts}`,
-        );
+        toast.success(`Sent. Message id: ${r.messageId || "(none returned)"} · attempts: ${r.attempts}`);
         setTestOpen(false);
       } else {
         toast.error(`${r.status}: ${r.error ?? "send failed"} (attempts: ${r.attempts})`);
@@ -123,13 +116,9 @@ export function WhatsAppConfigCard() {
         </div>
         <div className="flex items-center gap-2">
           {apiKeyOk ? (
-            <Badge variant="default" className="gap-1">
-              <CheckCircle2 className="h-3 w-3" /> API key set
-            </Badge>
+            <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" /> API key set</Badge>
           ) : (
-            <Badge variant="destructive" className="gap-1">
-              <AlertCircle className="h-3 w-3" /> API key missing
-            </Badge>
+            <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" /> API key missing</Badge>
           )}
           <Switch
             checked={current.is_active}
@@ -141,8 +130,8 @@ export function WhatsAppConfigCard() {
       <CardContent className="space-y-4">
         {!apiKeyOk && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-sm">
-            Add <code>INTERAKT_API_KEY</code> in Project Settings → Secrets to authenticate. The key
-            is stored as an environment variable and never exposed to the browser.
+            Add <code>INTERAKT_API_KEY</code> in Project Settings → Secrets to authenticate.
+            The key is stored as an environment variable and never exposed to the browser.
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -189,58 +178,33 @@ export function WhatsAppConfigCard() {
         </div>
         <div className="flex justify-between items-center">
           <div className="text-xs text-muted-foreground">
-            All sends use a 3-attempt retry with backoff. Every request and response is logged in
-            Communications → WhatsApp Logs.
+            All sends use a 3-attempt retry with backoff. Every request and response is logged in Communications → WhatsApp Logs.
           </div>
           <div className="flex gap-2">
             <Dialog open={testOpen} onOpenChange={setTestOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={!apiKeyOk}>
-                  <Send className="h-4 w-4 mr-1" />
-                  Send Test
-                </Button>
+                <Button variant="outline" size="sm" disabled={!apiKeyOk}><Send className="h-4 w-4 mr-1" />Send Test</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Send Test WhatsApp Message</DialogTitle>
-                </DialogHeader>
+                <DialogHeader><DialogTitle>Send Test WhatsApp Message</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div>
                     <Label>Mobile Number (E.164, e.g. +91...)</Label>
-                    <Input
-                      value={test.mobileNumber}
-                      onChange={(e) => setTest({ ...test, mobileNumber: e.target.value })}
-                      placeholder="+919876543210"
-                    />
+                    <Input value={test.mobileNumber} onChange={(e) => setTest({ ...test, mobileNumber: e.target.value })} placeholder="+919876543210" />
                   </div>
                   <div>
                     <Label>Template Name</Label>
-                    <Input
-                      value={test.templateName}
-                      onChange={(e) => setTest({ ...test, templateName: e.target.value })}
-                      placeholder="ORDER_CONFIRMED"
-                    />
+                    <Input value={test.templateName} onChange={(e) => setTest({ ...test, templateName: e.target.value })} placeholder="ORDER_CONFIRMED" />
                   </div>
                   <div>
                     <Label>Variables (JSON object)</Label>
-                    <Input
-                      value={test.variables}
-                      onChange={(e) => setTest({ ...test, variables: e.target.value })}
-                      placeholder='{"customer_name":"Alex","order_no":"SO-123"}'
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Keys must match the template's declared variables.
-                    </p>
+                    <Input value={test.variables} onChange={(e) => setTest({ ...test, variables: e.target.value })} placeholder='{"customer_name":"Alex","order_no":"SO-123"}' />
+                    <p className="text-xs text-muted-foreground mt-1">Keys must match the template's declared variables.</p>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="ghost" onClick={() => setTestOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={runTest}
-                    disabled={testBusy || !test.mobileNumber || !test.templateName}
-                  >
+                  <Button variant="ghost" onClick={() => setTestOpen(false)}>Cancel</Button>
+                  <Button onClick={runTest} disabled={testBusy || !test.mobileNumber || !test.templateName}>
                     {testBusy ? "Sending…" : "Send Test"}
                   </Button>
                 </DialogFooter>

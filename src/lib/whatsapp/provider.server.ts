@@ -16,13 +16,12 @@ export type WhatsAppProvider = {
     languageCode?: string;
     bodyVariables?: string[];
   }): Promise<
-    { ok: true; messageId: string } | { ok: false; status: "failed" | "skipped"; error: string }
+    | { ok: true; messageId: string }
+    | { ok: false; status: "failed" | "skipped"; error: string }
   >;
-  sendFreeform(msg: {
-    to: string;
-    body: string;
-  }): Promise<
-    { ok: true; messageId: string } | { ok: false; status: "failed" | "skipped"; error: string }
+  sendFreeform(msg: { to: string; body: string }): Promise<
+    | { ok: true; messageId: string }
+    | { ok: false; status: "failed" | "skipped"; error: string }
   >;
 };
 
@@ -44,16 +43,8 @@ function wrap(p: NotificationProvider): WhatsAppProvider {
 const DISABLED: WhatsAppProvider = {
   name: "none",
   isConfigured: () => false,
-  sendTemplate: async () => ({
-    ok: false,
-    status: "skipped",
-    error: "No active WhatsApp provider configured",
-  }),
-  sendFreeform: async () => ({
-    ok: false,
-    status: "skipped",
-    error: "No active WhatsApp provider configured",
-  }),
+  sendTemplate: async () => ({ ok: false, status: "skipped", error: "No active WhatsApp provider configured" }),
+  sendFreeform: async () => ({ ok: false, status: "skipped", error: "No active WhatsApp provider configured" }),
 };
 
 /** @deprecated Use sendNotification('whatsapp', …) from notifications/send.server. */

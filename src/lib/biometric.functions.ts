@@ -21,11 +21,7 @@ function fail(tag: string, err: unknown, userMsg: string): never {
 }
 
 const DeviceSchema = z.object({
-  device_id: z
-    .string()
-    .min(1)
-    .max(64)
-    .regex(/^[a-zA-Z0-9_-]+$/),
+  device_id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/),
   name: z.string().min(1).max(120),
   ip_address: z.string().min(1).max(64),
   port: z.number().int().min(1).max(65535),

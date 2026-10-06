@@ -21,9 +21,7 @@ function ResetPasswordPage() {
 
   useEffect(() => {
     // Supabase fires PASSWORD_RECOVERY after parsing the recovery hash
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
     // Fallback: if a session exists from the recovery link, allow update
@@ -55,43 +53,24 @@ function ResetPasswordPage() {
           </div>
           <CardTitle className="text-2xl">Set a new password</CardTitle>
           <CardDescription>
-            {ready
-              ? "Choose a strong password for your account"
-              : "Open this page from the link in your email"}
+            {ready ? "Choose a strong password for your account" : "Open this page from the link in your email"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={!ready}
-              />
+              <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} disabled={!ready} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm">Confirm password</Label>
-              <Input
-                id="confirm"
-                type="password"
-                required
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                disabled={!ready}
-              />
+              <Input id="confirm" type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={!ready} />
             </div>
             <Button type="submit" className="w-full" disabled={loading || !ready}>
               {loading ? "Updating…" : "Update password"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              <Link to="/login" className="font-medium text-primary hover:underline">
-                Back to sign in
-              </Link>
+              <Link to="/login" className="font-medium text-primary hover:underline">Back to sign in</Link>
             </p>
           </form>
         </CardContent>

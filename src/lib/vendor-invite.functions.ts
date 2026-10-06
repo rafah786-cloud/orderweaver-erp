@@ -21,12 +21,10 @@ function hashToken(t: string) {
 export const createVendorInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z
-      .object({
-        supplier_id: z.string().uuid(),
-        email: z.string().email(),
-      })
-      .parse(d),
+    z.object({
+      supplier_id: z.string().uuid(),
+      email: z.string().email(),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -76,9 +74,7 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     if (new Date(row.expires_at) < new Date()) throw new Error("Invite expired");
 
     // Verify the calling user's email matches the invite target
-    const { data: userRes, error: uErr } = await supabaseAdmin.auth.admin.getUserById(
-      context.userId,
-    );
+    const { data: userRes, error: uErr } = await supabaseAdmin.auth.admin.getUserById(context.userId);
     if (uErr || !userRes?.user?.email) throw new Error("Could not verify account email");
     if (userRes.user.email.toLowerCase() !== row.email.toLowerCase()) {
       throw new Error("Invite email does not match your account");
@@ -92,21 +88,15 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     if (sErr) throw new Error(sErr.message);
 
     // Grant vendor role (idempotent)
-    await supabaseAdmin
-      .from("user_roles")
-      .upsert(
-        { user_id: context.userId, role: "vendor" as any },
-        { onConflict: "user_id,role", ignoreDuplicates: true },
-      );
+    await supabaseAdmin.from("user_roles").upsert(
+      { user_id: context.userId, role: "vendor" as any },
+      { onConflict: "user_id,role", ignoreDuplicates: true },
+    );
 
     // Auto-approve vendor profile
     await supabaseAdmin
       .from("profiles")
-      .update({
-        status: "approved",
-        approved_at: new Date().toISOString(),
-        approved_by: context.userId,
-      })
+      .update({ status: "approved", approved_at: new Date().toISOString(), approved_by: context.userId })
       .eq("id", context.userId);
 
     // Mark invite accepted

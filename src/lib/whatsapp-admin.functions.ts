@@ -44,22 +44,16 @@ export const listWhatsAppTemplates = createServerFn({ method: "GET" })
 export const upsertWhatsAppTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z
-      .object({
-        id: z.string().uuid().optional(),
-        template_name: z
-          .string()
-          .min(1)
-          .max(200)
-          .regex(/^[a-zA-Z0-9_]+$/, "Letters, digits, underscores only"),
-        event_key: z.string().min(1).max(100),
-        description: z.string().max(500).optional().nullable(),
-        language_code: z.string().min(2).max(10).default("en"),
-        variables: z.array(z.string().min(1).max(100)).max(20).default([]),
-        is_active: z.boolean().default(true),
-        body_template: z.string().max(4000).optional().nullable(),
-      })
-      .parse(d),
+    z.object({
+      id: z.string().uuid().optional(),
+      template_name: z.string().min(1).max(200).regex(/^[a-zA-Z0-9_]+$/, "Letters, digits, underscores only"),
+      event_key: z.string().min(1).max(100),
+      description: z.string().max(500).optional().nullable(),
+      language_code: z.string().min(2).max(10).default("en"),
+      variables: z.array(z.string().min(1).max(100)).max(20).default([]),
+      is_active: z.boolean().default(true),
+      body_template: z.string().max(4000).optional().nullable(),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -90,6 +84,7 @@ export const upsertWhatsAppTemplate = createServerFn({ method: "POST" })
     return { ok: true, id: ins.id };
   });
 
+
 export const deleteWhatsAppTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
@@ -104,26 +99,22 @@ export const deleteWhatsAppTemplate = createServerFn({ method: "POST" })
 export const listWhatsAppLogs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z
-      .object({
-        from: z.string().optional(),
-        to: z.string().optional(),
-        party_kind: z.enum(["customer", "vendor", "staff", "admin"]).optional(),
-        party_id: z.string().uuid().optional(),
-        status: z.enum(["sent", "failed", "skipped"]).optional(),
-        search: z.string().max(200).optional(),
-        limit: z.number().int().min(1).max(1000).default(500),
-      })
-      .parse(d),
+    z.object({
+      from: z.string().optional(),
+      to: z.string().optional(),
+      party_kind: z.enum(["customer", "vendor", "staff", "admin"]).optional(),
+      party_id: z.string().uuid().optional(),
+      status: z.enum(["sent", "failed", "skipped"]).optional(),
+      search: z.string().max(200).optional(),
+      limit: z.number().int().min(1).max(1000).default(500),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("notification_log")
-      .select(
-        "id, sent_at, channel, party_kind, party_id, recipient_phone, event_type, template_name, status, whatsapp_message_id, read_status, read_at, failure_reason, ref_table, ref_id",
-      )
+      .select("id, sent_at, channel, party_kind, party_id, recipient_phone, event_type, template_name, status, whatsapp_message_id, read_status, read_at, failure_reason, ref_table, ref_id")
       .eq("channel", "whatsapp")
       .order("sent_at", { ascending: false })
       .limit(data.limit);
@@ -137,27 +128,9 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
     if (error) throw error;
 
     // Resolve party names in two batched queries.
-    const partyIds = Array.from(
-      new Set(
-        (rows ?? [])
-          .filter((r) => r.party_kind === "customer" && r.party_id)
-          .map((r) => r.party_id as string),
-      ),
-    );
-    const vendorIds = Array.from(
-      new Set(
-        (rows ?? [])
-          .filter((r) => r.party_kind === "vendor" && r.party_id)
-          .map((r) => r.party_id as string),
-      ),
-    );
-    const adminIds = Array.from(
-      new Set(
-        (rows ?? [])
-          .filter((r) => (r.party_kind === "admin" || r.party_kind === "staff") && r.party_id)
-          .map((r) => r.party_id as string),
-      ),
-    );
+    const partyIds = Array.from(new Set((rows ?? []).filter((r) => r.party_kind === "customer" && r.party_id).map((r) => r.party_id as string)));
+    const vendorIds = Array.from(new Set((rows ?? []).filter((r) => r.party_kind === "vendor" && r.party_id).map((r) => r.party_id as string)));
+    const adminIds = Array.from(new Set((rows ?? []).filter((r) => (r.party_kind === "admin" || r.party_kind === "staff") && r.party_id).map((r) => r.party_id as string)));
 
     const [parties, vendors, admins] = await Promise.all([
       partyIds.length
@@ -178,7 +151,7 @@ export const listWhatsAppLogs = createServerFn({ method: "POST" })
     return {
       rows: (rows ?? []).map((r) => ({
         ...r,
-        recipient_name: r.party_id ? (nameMap.get(r.party_id as string) ?? "—") : "—",
+        recipient_name: r.party_id ? nameMap.get(r.party_id as string) ?? "—" : "—",
       })),
     };
   });
@@ -188,11 +161,7 @@ export const listCustomersForFilter = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("parties")
-      .select("id, name")
-      .order("name")
-      .limit(500);
+    const { data } = await supabaseAdmin.from("parties").select("id, name").order("name").limit(500);
     return { customers: data ?? [] };
   });
 
@@ -201,10 +170,6 @@ export const listVendorsForFilter = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("suppliers")
-      .select("id, name")
-      .order("name")
-      .limit(500);
+    const { data } = await supabaseAdmin.from("suppliers").select("id, name").order("name").limit(500);
     return { vendors: data ?? [] };
   });

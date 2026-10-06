@@ -76,8 +76,7 @@ export const recalcAttendance = createServerFn({ method: "POST" })
       _employee_id: data.employee_id,
       _date: data.date,
     });
-    if (error)
-      fail("recalcAttendance", error, "Failed to recalculate attendance. Please try again.");
+    if (error) fail("recalcAttendance", error, "Failed to recalculate attendance. Please try again.");
     return { ok: true };
   });
 
