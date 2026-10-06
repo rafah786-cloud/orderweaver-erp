@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
+
+const jsonSchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonSchema),
+    z.record(z.string(), jsonSchema),
+  ]),
+);
 
 const rowSchema = z.object({
   record_type: z.string().min(1).max(64),
@@ -10,7 +22,7 @@ const rowSchema = z.object({
   source_key: z.string().min(1).max(1000),
   lifecycle_state: z.enum(["posted", "cancelled", "optional", "deleted"]).default("posted"),
   parent_source_key: z.string().max(1000).nullable().optional(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), jsonSchema),
 });
 
 const inputSchema = z.object({
@@ -18,7 +30,7 @@ const inputSchema = z.object({
   sourceCompanyName: z.string().max(255).nullable().optional(),
   sourceCompanyGuid: z.string().max(255).nullable().optional(),
   sourceChecksum: z.string().min(16).max(128),
-  controlTotals: z.record(z.unknown()),
+  controlTotals: z.record(z.string(), jsonSchema),
   rows: z.array(rowSchema).max(50000),
 });
 

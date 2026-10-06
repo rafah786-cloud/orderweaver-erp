@@ -370,7 +370,6 @@ function InvoicesPage() {
         throw new Error("Payment exceeds invoice total");
       const status: InvoiceRow["status"] =
         newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
-      // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error } = await supabase.rpc("record_invoice_receipt", {
         p_invoice: payInv.id,
         p_amount: amt,
@@ -405,7 +404,6 @@ function InvoicesPage() {
 
   const cancelInvoice = useMutation({
     mutationFn: async (inv: InvoiceRow) => {
-      // @ts-expect-error This RPC requires the unapplied accounting migration.
       const { error } = await supabase.rpc("reverse_invoice", {
         p_invoice: inv.id,
         p_idempotency: `cancel:${inv.id}`,
