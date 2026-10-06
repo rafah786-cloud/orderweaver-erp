@@ -165,8 +165,12 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
     }
 
     const payload = (log.payload as Record<string, unknown> | null) ?? {};
-    const variables = (payload as any).variables ?? (payload as any).vars ?? {};
-    const message: string | undefined = (payload as any).message;
+    const variables =
+      payload && typeof payload.variables === "object" && payload.variables !== null
+        ? (payload.variables as Record<string, unknown>)
+        : payload && typeof payload.vars === "object" && payload.vars !== null
+          ? (payload.vars as Record<string, unknown>)
+          : {};
 
     if (!to) {
       await logWhatsAppNotification({
@@ -178,7 +182,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
         ref_id: log.ref_id,
         status: "skipped",
         failure_reason: "no phone (retry)",
-        payload: { retry_of: log.id, variables, message },
+        payload: { retry_of: log.id, variables },
       });
       return { ok: false, reason: "no_phone" };
     }
@@ -195,7 +199,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
         ref_id: log.ref_id,
         status: "skipped",
         failure_reason: "provider not configured (retry)",
-        payload: { retry_of: log.id, variables, message },
+        payload: { retry_of: log.id, variables },
       });
       return { ok: false, reason: "not_configured" };
     }
@@ -223,7 +227,10 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
     }
 
     const order: string[] = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
-    const bodyValues = order.map((n) => String((variables as any)[n] ?? ""));
+    const bodyValues = order.map((n) => {
+      const value = variables[n];
+      return value === null || value === undefined ? "" : String(value).slice(0, 500);
+    });
     result = await provider.sendTemplate({
       to,
       templateName: tpl.template_name,
