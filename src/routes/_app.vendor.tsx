@@ -37,10 +37,15 @@ function VendorShell() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-4">
-          <div className="font-semibold">Vendor Portal</div>
-          <nav className="flex gap-1 flex-1 flex-wrap">
+      <div className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-foreground">Supplier Portal</div>
+            <div className="text-[11px] text-muted-foreground">
+              Orders, purchase documents and account statement
+            </div>
+          </div>
+          <nav aria-label="Supplier portal" className="order-3 flex w-full gap-1 overflow-x-auto pb-0.5 sm:order-none sm:w-auto sm:flex-1 sm:flex-wrap">
             {NAV.map((n) => {
               const Icon = n.icon;
               const active = n.exact
@@ -58,16 +63,19 @@ function VendorShell() {
               );
             })}
           </nav>
-          <div className="text-xs text-muted-foreground">
-            {profile?.full_name ?? profile?.email}
+          <div className="hidden text-right sm:block">
+            <div className="max-w-40 truncate text-xs font-medium text-foreground">
+              {profile?.full_name ?? "Account"}
+            </div>
+            <div className="text-[10px] text-muted-foreground">Supplier access</div>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut}>
+          <Button variant="outline" size="sm" onClick={signOut} className="shrink-0">
             <LogOut className="h-4 w-4 mr-1" />
             Sign out
           </Button>
         </div>
       </div>
-      <div className="mx-auto max-w-6xl p-4">
+      <div className="mx-auto max-w-7xl p-4 sm:p-6">
         <Outlet />
       </div>
     </div>
