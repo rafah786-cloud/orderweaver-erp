@@ -99,6 +99,9 @@ function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+            <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              New accounts are automatically registered under <span className="font-medium text-foreground">ABOOD TRADINGS</span>. Company access is assigned by an administrator after approval.
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
