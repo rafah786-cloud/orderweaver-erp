@@ -1,5 +1,37 @@
 BEGIN;
 
+-- Prevent role/approval enumeration for arbitrary user IDs. All internal callers
+-- pass the current authenticated user's ID.
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path=public
+AS $$
+  SELECT _user_id=auth.uid()
+     AND EXISTS (
+       SELECT 1
+       FROM public.user_roles
+       WHERE user_id=auth.uid() AND role=_role
+     )
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_approved(_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path=public
+AS $$
+  SELECT _user_id=auth.uid()
+     AND EXISTS (
+       SELECT 1
+       FROM public.profiles
+       WHERE id=auth.uid() AND status='approved'
+     )
+$$;
+
 CREATE OR REPLACE FUNCTION public.current_company_id()
 RETURNS uuid
 LANGUAGE sql
