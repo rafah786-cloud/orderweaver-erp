@@ -10,7 +10,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Badge } from "@/components/ui/badge";
 
 export function CompanySwitcher() {
   const { companies, activeCompany, loading, switchCompany } = useCompany();
