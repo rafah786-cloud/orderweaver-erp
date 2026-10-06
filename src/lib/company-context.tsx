@@ -40,7 +40,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const refresh = async () => {
     setLoading(true);
     try {
-      const [{ data: profile, error: profileError }, { data: memberships, error: membershipError }] = await Promise.all([
+      const [
+        { data: profile, error: profileError },
+        { data: memberships, error: membershipError },
+      ] = await Promise.all([
         db.from("profiles").select("active_company_id").maybeSingle(),
         db.from("user_company_access").select("company_id").eq("can_view", true),
       ]);
@@ -56,7 +59,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = await db
         .from("companies")
-        .select("id, code, legal_name, display_name, mailing_name, address, state, country, gstin, pan, base_currency, currency_symbol, is_active")
+        .select(
+          "id, code, legal_name, display_name, mailing_name, address, state, country, gstin, pan, base_currency, currency_symbol, is_active",
+        )
         .in("id", ids)
         .eq("is_active", true)
         .order("display_name");
@@ -96,7 +101,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     window.location.reload();
   };
 
-  const value = useMemo(() => ({ companies, activeCompany, loading, switchCompany, refresh }), [companies, activeCompany, loading]);
+  const value = useMemo(
+    () => ({ companies, activeCompany, loading, switchCompany, refresh }),
+    [companies, activeCompany, loading],
+  );
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;
 }
 

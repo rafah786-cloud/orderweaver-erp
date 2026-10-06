@@ -5,11 +5,7 @@ export const COMPANY = {
   name: "ABOOD TRADINGS",
   brand: "Zizz",
   tagline: "",
-  address: [
-    "Build No: 2/53-A, Alfa Tower",
-    "Malappuram Road, Valluvambram",
-    "Malappuram",
-  ],
+  address: ["Build No: 2/53-A, Alfa Tower", "Malappuram Road, Valluvambram", "Malappuram"],
   gstin: "32ABWFA0954C1ZM",
   pan: "",
   state: "Kerala",
@@ -27,5 +23,6 @@ export const COMPANY = {
   terms: [
     "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
   ],
-  declaration: "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
+  declaration:
+    "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
 } as const;

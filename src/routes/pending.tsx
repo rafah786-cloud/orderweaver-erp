@@ -12,7 +12,12 @@ function PendingPage() {
   const { session, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+  if (loading)
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   if (!session) return <Navigate to="/login" />;
   if (profile?.status === "approved") return <Navigate to="/dashboard" />;
 

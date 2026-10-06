@@ -34,38 +34,51 @@ function InboxPage() {
       <PageBody>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><Bell className="h-4 w-4" />Notifications {unread > 0 && <Badge>{unread} new</Badge>}</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => mark.mutate({ all: true })} disabled={!unread}>
-              <Check className="h-4 w-4 mr-1" />Mark all read
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Notifications {unread > 0 && <Badge>{unread} new</Badge>}
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => mark.mutate({ all: true })}
+              disabled={!unread}
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Mark all read
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? <div className="text-sm text-muted-foreground">Loading…</div>
-              : data.length === 0 ? <div className="text-sm text-muted-foreground">No notifications yet.</div>
-              : (
-                <ul className="space-y-2">
-                  {data.map((n: any) => (
-                    <li key={n.id} className={`p-3 rounded border ${n.read_at ? "opacity-60" : "bg-muted/30"}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="font-medium">{n.title}</div>
-                          <div className="text-sm whitespace-pre-wrap">{n.body}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                            {n.event_key && <> · {n.event_key}</>}
-                          </div>
+            {isLoading ? (
+              <div className="text-sm text-muted-foreground">Loading…</div>
+            ) : data.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No notifications yet.</div>
+            ) : (
+              <ul className="space-y-2">
+                {data.map((n: any) => (
+                  <li
+                    key={n.id}
+                    className={`p-3 rounded border ${n.read_at ? "opacity-60" : "bg-muted/30"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium">{n.title}</div>
+                        <div className="text-sm whitespace-pre-wrap">{n.body}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                          {n.event_key && <> · {n.event_key}</>}
                         </div>
-                        {!n.read_at && (
-                          <Button size="sm" variant="ghost" onClick={() => mark.mutate({ id: n.id })}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        )}
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              )
-            }
+                      {!n.read_at && (
+                        <Button size="sm" variant="ghost" onClick={() => mark.mutate({ id: n.id })}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </PageBody>

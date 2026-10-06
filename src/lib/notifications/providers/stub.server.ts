@@ -1,9 +1,4 @@
-import type {
-  NotificationProvider,
-  ProviderFactory,
-  ProviderRecord,
-  SendResult,
-} from "../types";
+import type { NotificationProvider, ProviderFactory, ProviderRecord, SendResult } from "../types";
 
 /**
  * Generic "not configured yet" provider. Used as a placeholder for channels

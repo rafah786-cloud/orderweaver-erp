@@ -23,14 +23,20 @@ export function inspectTallyAccounting(data: TallyParsed): TallyIntegrity {
     const cr = voucher.entries.reduce((sum, entry) => sum + entry.credit, 0);
     debit += dr;
     credit += cr;
-    if (voucher.entries.some((entry) => !entry.ledger_name)) errors.push(`${label}: ledger name missing`);
-    if (Math.abs(dr - cr) > 0.01 || dr <= 0) errors.push(`${label}: unbalanced debit ${dr.toFixed(2)} / credit ${cr.toFixed(2)}`);
+    if (voucher.entries.some((entry) => !entry.ledger_name))
+      errors.push(`${label}: ledger name missing`);
+    if (Math.abs(dr - cr) > 0.01 || dr <= 0)
+      errors.push(`${label}: unbalanced debit ${dr.toFixed(2)} / credit ${cr.toFixed(2)}`);
   }
   const billRefs = new Set<string>();
   for (const bill of data.bills) {
-    if (billRefs.has(bill.external_ref)) errors.push(`${bill.party_name} / ${bill.bill_name}: duplicate bill reference ${bill.external_ref}`);
+    if (billRefs.has(bill.external_ref))
+      errors.push(
+        `${bill.party_name} / ${bill.bill_name}: duplicate bill reference ${bill.external_ref}`,
+      );
     billRefs.add(bill.external_ref);
-    if (bill.reference_type === "against_ref" && !bill.voucher_guid) errors.push(`${bill.party_name} / ${bill.bill_name}: settlement without source voucher`);
+    if (bill.reference_type === "against_ref" && !bill.voucher_guid)
+      errors.push(`${bill.party_name} / ${bill.bill_name}: settlement without source voucher`);
   }
   return { voucherCount: data.vouchers.length, debit, credit, errors };
 }

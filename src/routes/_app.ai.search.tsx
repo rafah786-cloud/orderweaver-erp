@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PageBody, PageHeader } from "@/components/PageHeader";
 import { naturalLanguageSearch } from "@/lib/ai.functions";
 
@@ -64,7 +71,11 @@ function SearchPage() {
               placeholder="e.g. overdue invoices above ₹1 lakh"
             />
             <Button type="submit" disabled={mutation.isPending || !question.trim()}>
-              {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
             </Button>
           </form>
 
@@ -76,8 +87,12 @@ function SearchPage() {
             ))}
           </div>
 
-          {mutation.isError && <p className="text-sm text-destructive">{(mutation.error as Error).message}</p>}
-          {mutation.data && !mutation.data.ok && <p className="text-sm text-destructive">{mutation.data.error}</p>}
+          {mutation.isError && (
+            <p className="text-sm text-destructive">{(mutation.error as Error).message}</p>
+          )}
+          {mutation.data && !mutation.data.ok && (
+            <p className="text-sm text-destructive">{mutation.data.error}</p>
+          )}
 
           {mutation.data?.ok && (
             <Card>

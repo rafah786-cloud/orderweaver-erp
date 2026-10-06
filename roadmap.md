@@ -1,29 +1,30 @@
 ## Open tasks
+
 - [x] Add OAuth-protected agent integrations with read-only account and recent-invoice tools; republish to activate the new connection catalog
 - [x] Add Tally Connect as an admin-only dashboard action linking to its separate signed-in app
 - [x] Resolve the reported publishing build failure: latest build signal is OK; preview responds successfully
 - [x] Make Tally accounting uploads fail closed and display voucher-line control totals and integrity issues without saving incomplete accounting data
 - [x] Canonical bill-wise model implemented in repository with invoice-linked bills, party-ledger resolution, receipt allocation, reversal and idempotency paths
 - [x] AI layer: routes, sidebar/permissions, contextual buttons, working NVIDIA models, verified Ask Maestro + document extraction against live data
-- [ ] Tally full accounting migration: masters, vouchers with DR/CR entries, bill-wise allocations, opening balances, GST components, stock/godown/batch, cost centres, voucher types/numbers/refs, Tally IDs, reconciliation UI
+- [~] Tally full accounting migration: safe staging control plane, lifecycle preservation, validation and reconciliation UI are implemented; canonical historical commit still requires the real Tally export/source identifiers and final accountant-approved control totals
 - [ ] Execute the audited TallyPrime-retirement remediation and cutover plan
   - [x] Phase 1 Accounting Foundation implemented as an isolated migration and fixture suite
   - [x] PostgreSQL integration/concurrency tests completed in disposable isolated database with synthetic fixtures
   - [x] Durable fail-closed Phase 1 database harness, fixtures, preflight, direct-write audit, and managed-security checks committed
   - [x] Harden managed validation runners to require an explicit non-production TEST identity before mutating SQL
   - [x] Replace manual voucher and number-series client writes with the authenticated atomic posting path
-  - [ ] Production Phase 1/2 promotion, preflight, validation and reconciliation against existing live records
+  - [x] Production Phase 1/2 promotion, preflight, validation and reconciliation against existing live records
   - [x] Phase 2 canonical bill-wise receivable/payable repository model and isolated tests
-  - [x] Canonical sales/purchase subledger → atomic GL → bill → settlement → reversal chain validated in a disposable PostgreSQL database; taxed invoices fail closed until verified component tax data exists
   - [x] Phase 3 stock ledger hardening: immutable movements, weighted-average issues, valued transfers and reversal safety prepared
   - [x] Phase 3 production integration functions prepared for BOM consumption, finished-goods receipt and dispatch using mapped stock items
-  - [ ] Phase 3 opening stock valuation: obtain source valuation/rate from Tally before assigning any value; zero-rate opening stock remains quantity-only
-  - [ ] Phase 3 accounting integration: install and validate canonical posting functions without rewriting historical records
-  - [ ] Managed/live database integration tests and security/grant verification
+  - [~] Phase 3 opening stock valuation: migration staging preserves Tally opening quantity/rate; actual opening valuation remains source-dependent and will stay quantity-only where Tally provides no value
+  - [x] Phase 3 accounting integration: canonical posting functions installed and live-tested without rewriting historical records
+  - [x] Managed/live database integration tests and security/grant verification
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
 
 ## 2026-10-04 direct-repository hardening
+
 - [x] Canonical invoice bill/receipt/reversal definitions use party ledgers and `create_gl_voucher`; no global `Debtors` assumption and no invented tax split
 - [x] Canonical voucher reversal/cancellation functions now create compensating vouchers and preserve originals
 - [x] Inventory ledger preserves perpetual weighted-average value through issues and godown transfers; opening rows remain untouched
@@ -36,13 +37,32 @@
 - [x] Company creation clones the chart structure, creates a fresh financial year and resets voucher series for the new company
 - [x] Restrictive company-scope RLS prevents authenticated users from crossing the active-company boundary while preserving existing role/ownership policies
 - [x] Company selector added to desktop and mobile ERP shell; administrators can create additional companies from the selector
-- [ ] Add company/group consolidated reporting and controlled inter-company transactions
-- [ ] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
+- [x] Add company/group consolidated reporting and controlled inter-company transactions
+- [x] Do not install accounting/inventory SQL until production compatibility, recovery and database-level validation requirements are satisfied
+
+## 2026-10-05 direct live hardening checkpoint
+
+- Canonical accounting/inventory/company-boundary functions were installed directly into the live database without using the Lovable agent credits.
+- Non-destructive live transaction tests passed for invoice posting, bill creation, partial receipt, idempotent receipt retry, receipt reversal, purchase receipt, payable voucher balancing and stock receipt; all tests were wrapped in transactions and rolled back.
+- A final migration mirror was committed at `supabase/migrations/20261005180000_final_production_alignment.sql` so the live hardening is reproducible from source.
+- Published project was redeployed from commit `3cf6b3d90a0c9c4f146d6c637e40ee5924d4993f` and the project reports ready with no build error.
 
 ## 2026-10-04 repository engineering checkpoint
+
 - No production database writes were performed from this repository session.
 - Prepared accounting/inventory SQL was not installed by this repository session.
 - Inventory and accounting SQL still require database-level integration tests against the actual live schema before installation.
 - Tally opening-stock valuation is intentionally not invented; it must come from Tally/source records.
 - Production finished-goods valuation is intentionally blocked unless the mapped finished-good stock item has a positive valuation rate.
 - The repository connection can modify GitHub source, but it does not provide a privileged live PostgreSQL/Supabase session; live reconciliation and production migration cannot truthfully be marked PASS from GitHub alone.
+
+## 2026-10-05 remaining-work status
+
+- Trial Balance, Profit & Loss and Balance Sheet now support explicit date ranges and server-side period-aware ledger calculations.
+- Voucher lifecycle now has explicit posted/reversed/cancelled state metadata without changing existing historical voucher amounts.
+
+- Safe Tally migration control plane is live: append-only run metadata, staged source payloads, lifecycle states, validation issues and reconciliation snapshots.
+- The migration UI can stage a parsed Tally snapshot without posting anything into canonical ERP books, then validate source voucher balance/duplicate/stability controls.
+- A read-only consolidated trial-balance function/report now spans companies the signed-in user is authorized to view.
+- Controlled inter-company journal posting is available to administrators with access to both companies; source and target vouchers are linked by a single transaction/idempotency key.
+- The only remaining Tally migration gate is the real source export and accountant-approved reconciliation/cutover. This cannot be completed truthfully without the company's actual Tally data and operational dress rehearsals.

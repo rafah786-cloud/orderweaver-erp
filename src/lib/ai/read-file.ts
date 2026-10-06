@@ -76,6 +76,7 @@ export async function readDocumentFile(file: File): Promise<ParsedFile> {
 
   // Unknown type: try text, and give a clear error if it is binary noise.
   const text = await readAsText(file);
-  if (!text.trim()) throw new Error(`${file.name} could not be read. Try a PDF, image or text file.`);
+  if (!text.trim())
+    throw new Error(`${file.name} could not be read. Try a PDF, image or text file.`);
   return { text };
 }

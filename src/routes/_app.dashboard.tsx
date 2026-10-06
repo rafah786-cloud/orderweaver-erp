@@ -5,12 +5,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import {
-  IndianRupee, AlertTriangle, Factory, Users, ShoppingCart, ReceiptText,
-  CalendarCheck, FileText, TrendingUp, Wallet, Upload, ArrowRight, Package,
-  Gem, ShieldCheck, Leaf, Heart,
+  IndianRupee,
+  AlertTriangle,
+  Factory,
+  Users,
+  ShoppingCart,
+  ReceiptText,
+  CalendarCheck,
+  FileText,
+  TrendingUp,
+  Wallet,
+  Upload,
+  ArrowRight,
+  Package,
+  Gem,
+  ShieldCheck,
+  Leaf,
+  Heart,
 } from "lucide-react";
 import zizz from "@/assets/brands/zizz.png.asset.json";
 import softnights from "@/assets/brands/softnights.jpeg.asset.json";
@@ -24,9 +45,17 @@ export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
       { title: "Business Dashboard | Mattress Maestro" },
-      { name: "description", content: "Live sales, production, inventory and financial overview for House of Abood Tradings." },
+      {
+        name: "description",
+        content:
+          "Live sales, production, inventory and financial overview for House of Abood Tradings.",
+      },
       { property: "og:title", content: "Business Dashboard | Mattress Maestro" },
-      { property: "og:description", content: "Live sales, production, inventory and financial overview for House of Abood Tradings." },
+      {
+        property: "og:description",
+        content:
+          "Live sales, production, inventory and financial overview for House of Abood Tradings.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -54,8 +83,12 @@ function DashboardPage() {
         <section aria-labelledby="business-overview" className="hoa-panel space-y-5">
           <div className="hoa-section-head">
             <p className="hoa-kicker">Mattress Maestro ERP</p>
-            <h2 id="business-overview" className="hoa-title">Business Overview. <em>Live and Accurate.</em></h2>
-            <p className="hoa-sub">Operational intelligence across sales, production, inventory and finance.</p>
+            <h2 id="business-overview" className="hoa-title">
+              Business Overview. <em>Live and Accurate.</em>
+            </h2>
+            <p className="hoa-sub">
+              Operational intelligence across sales, production, inventory and finance.
+            </p>
           </div>
           {isAdmin && <AdminPanels />}
           {isSales && !isAdmin && <SalesPanels />}
@@ -70,7 +103,12 @@ function DashboardPage() {
             <h2>Premium Sleep. Healthier Lives.</h2>
             <p>House of Abood Tradings</p>
           </div>
-          <a className="hoa-btn hoa-btn-light" href="https://zizzmattress.com" target="_blank" rel="noreferrer">
+          <a
+            className="hoa-btn hoa-btn-light"
+            href="https://zizzmattress.com"
+            target="_blank"
+            rel="noreferrer"
+          >
             Contact Us <ArrowRight aria-hidden="true" />
           </a>
         </section>
@@ -103,30 +141,55 @@ const TRUST = [
 function HeroSection({ name, roles }: { name: string; roles: string[] }) {
   return (
     <section className="hoa-hero" aria-labelledby="hoa-hero-title">
-      <img src={zizzBedroom.url} alt="A Zizz bedroom designed for premium sleep" width={1600} height={1000} className="hoa-hero-img" />
+      <img
+        src={zizzBedroom.url}
+        alt="A Zizz bedroom designed for premium sleep"
+        width={1600}
+        height={1000}
+        className="hoa-hero-img"
+      />
       <div className="hoa-hero-veil" aria-hidden="true" />
       <div className="hoa-hero-body">
         <p className="hoa-kicker">Est. Premium Sleep &amp; Comfort</p>
         <h1 id="hoa-hero-title">
-          Better Sleep<br /><em>Brighter Tomorrows</em>
+          Better Sleep
+          <br />
+          <em>Brighter Tomorrows</em>
         </h1>
         <p className="hoa-hero-lead">
-          {name ? `Welcome back, ${name}. ` : ""}Premium sleep &amp; comfort solutions for healthier lives and happier homes.
+          {name ? `Welcome back, ${name}. ` : ""}Premium sleep &amp; comfort solutions for healthier
+          lives and happier homes.
           {roles.length ? ` Signed in as ${roles.join(", ")}.` : ""}
         </p>
         <div className="hoa-hero-cta">
-          <a className="hoa-btn hoa-btn-primary" href="https://zizzmattress.com" target="_blank" rel="noreferrer">
+          <a
+            className="hoa-btn hoa-btn-primary"
+            href="https://zizzmattress.com"
+            target="_blank"
+            rel="noreferrer"
+          >
             Explore Our Brands <ArrowRight aria-hidden="true" />
           </a>
-          <Link className="hoa-btn hoa-btn-ghost" to="/inventory">View Products</Link>
+          <Link className="hoa-btn hoa-btn-ghost" to="/inventory">
+            View Products
+          </Link>
         </div>
         <ul className="hoa-trust">
           {TRUST.map(({ icon: Icon, a, b }) => (
-            <li key={a}><Icon aria-hidden="true" /><span>{a}<br />{b}</span></li>
+            <li key={a}>
+              <Icon aria-hidden="true" />
+              <span>
+                {a}
+                <br />
+                {b}
+              </span>
+            </li>
           ))}
         </ul>
       </div>
-      <p className="hoa-hero-quote" aria-hidden="true">“Comfort today. A healthier tomorrow.”</p>
+      <p className="hoa-hero-quote" aria-hidden="true">
+        “Comfort today. A healthier tomorrow.”
+      </p>
     </section>
   );
 }
@@ -136,14 +199,23 @@ function BrandShowcase() {
     <section aria-labelledby="our-brands" className="hoa-panel">
       <div className="hoa-section-head hoa-center">
         <p className="hoa-kicker">Our Specialized Brands</p>
-        <h2 id="our-brands" className="hoa-title">Different Needs. <em>A Stronger Tomorrow.</em></h2>
-        <p className="hoa-sub">A range of trusted brands, each designed to bring comfort, health and value to every home.</p>
+        <h2 id="our-brands" className="hoa-title">
+          Different Needs. <em>A Stronger Tomorrow.</em>
+        </h2>
+        <p className="hoa-sub">
+          A range of trusted brands, each designed to bring comfort, health and value to every home.
+        </p>
       </div>
       <div className="hoa-brand-grid">
         {SISTER_BRANDS.map((brand) => (
-          <article className={`hoa-brand-card${brand.flagship ? " is-flagship" : ""}`} key={brand.name}>
+          <article
+            className={`hoa-brand-card${brand.flagship ? " is-flagship" : ""}`}
+            key={brand.name}
+          >
             {brand.flagship && <span className="hoa-flag">Flagship</span>}
-            <div className="hoa-brand-mark"><img src={brand.asset.url} alt={`${brand.name} logo`} loading="lazy" /></div>
+            <div className="hoa-brand-mark">
+              <img src={brand.asset.url} alt={`${brand.name} logo`} loading="lazy" />
+            </div>
             <h3>{brand.name}</h3>
             <p>{brand.descriptor}</p>
           </article>
@@ -164,13 +236,26 @@ function WhySection() {
     <section className="hoa-panel hoa-why" aria-labelledby="hoa-why">
       <div>
         <p className="hoa-kicker">Why House of Abood Tradings</p>
-        <h2 id="hoa-why" className="hoa-title">More Than Mattresses.<br /><em>A Healthier Tomorrow.</em></h2>
-        <p className="hoa-sub">We bring together trusted brands, quality products and a commitment to better sleep for every home and business.</p>
-        <Link className="hoa-btn hoa-btn-primary" to="/parties">Our Customers <ArrowRight aria-hidden="true" /></Link>
+        <h2 id="hoa-why" className="hoa-title">
+          More Than Mattresses.
+          <br />
+          <em>A Healthier Tomorrow.</em>
+        </h2>
+        <p className="hoa-sub">
+          We bring together trusted brands, quality products and a commitment to better sleep for
+          every home and business.
+        </p>
+        <Link className="hoa-btn hoa-btn-primary" to="/parties">
+          Our Customers <ArrowRight aria-hidden="true" />
+        </Link>
       </div>
       <div className="hoa-stat-grid">
         {stats.map((s) => (
-          <div className="hoa-stat" key={s.small}><s.icon aria-hidden="true" /><strong>{s.big}</strong><span>{s.small}</span></div>
+          <div className="hoa-stat" key={s.small}>
+            <s.icon aria-hidden="true" />
+            <strong>{s.big}</strong>
+            <span>{s.small}</span>
+          </div>
         ))}
       </div>
     </section>
@@ -180,32 +265,55 @@ function WhySection() {
 function QuickActions({ roles }: { roles: string[] }) {
   const isAdmin = roles.includes("admin");
   const items = [
-    ...(isAdmin || roles.includes("sales") ? [{ to: "/sales-orders" as const, label: "Create sales order", icon: ShoppingCart }] : []),
-    ...(isAdmin || roles.includes("sales") ? [{ to: "/invoices" as const, label: "Generate invoice", icon: ReceiptText }] : []),
-    ...(isAdmin || roles.includes("production") ? [{ to: "/production" as const, label: "Production status", icon: Factory }] : []),
-    ...(isAdmin || roles.includes("accountant") || roles.includes("production") || roles.includes("sales") ? [{ to: "/inventory" as const, label: "Review inventory", icon: Package }] : []),
+    ...(isAdmin || roles.includes("sales")
+      ? [{ to: "/sales-orders" as const, label: "Create sales order", icon: ShoppingCart }]
+      : []),
+    ...(isAdmin || roles.includes("sales")
+      ? [{ to: "/invoices" as const, label: "Generate invoice", icon: ReceiptText }]
+      : []),
+    ...(isAdmin || roles.includes("production")
+      ? [{ to: "/production" as const, label: "Production status", icon: Factory }]
+      : []),
+    ...(isAdmin ||
+    roles.includes("accountant") ||
+    roles.includes("production") ||
+    roles.includes("sales")
+      ? [{ to: "/inventory" as const, label: "Review inventory", icon: Package }]
+      : []),
   ];
   if (items.length === 0) return null;
   return (
     <section aria-labelledby="quick-actions" className="hoa-panel">
       <div className="hoa-section-head">
         <p className="hoa-kicker">Work Faster</p>
-        <h2 id="quick-actions" className="hoa-title">Quick <em>Actions</em></h2>
+        <h2 id="quick-actions" className="hoa-title">
+          Quick <em>Actions</em>
+        </h2>
       </div>
       <div className="hoa-action-grid">
         {items.map(({ to, label, icon: Icon }) => (
-          <Link key={to} to={to} className="hoa-action"><Icon aria-hidden="true" /><span>{label}</span><ArrowRight aria-hidden="true" /></Link>
+          <Link key={to} to={to} className="hoa-action">
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
+            <ArrowRight aria-hidden="true" />
+          </Link>
         ))}
         {isAdmin && (
-          <a className="hoa-action" href="https://biz-tally-sync.lovable.app" target="_blank" rel="noopener noreferrer">
-            <Upload aria-hidden="true" /><span>Tally Connect</span><ArrowRight aria-hidden="true" />
+          <a
+            className="hoa-action"
+            href="https://biz-tally-sync.lovable.app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Upload aria-hidden="true" />
+            <span>Tally Connect</span>
+            <ArrowRight aria-hidden="true" />
           </a>
         )}
       </div>
     </section>
   );
 }
-
 
 /* ------------------------------ ADMIN ------------------------------ */
 
@@ -237,7 +345,10 @@ function AdminPanels() {
   const { data: employees } = useQuery({
     queryKey: ["dash-employees"],
     queryFn: async () => {
-      const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
+      const { count, error } = await supabase
+        .from("employees")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
       if (error) throw error;
       return count ?? 0;
     },
@@ -245,7 +356,10 @@ function AdminPanels() {
 
   const totalOutstanding = (outstanding ?? []).reduce((s, p) => s + Number(p.outstanding ?? 0), 0);
   const overdueCount = (outstanding ?? []).filter(
-    (p) => Number(p.outstanding ?? 0) >= 50000 && p.oldest_unpaid_date && daysBetween(p.oldest_unpaid_date) > 90
+    (p) =>
+      Number(p.outstanding ?? 0) >= 50000 &&
+      p.oldest_unpaid_date &&
+      daysBetween(p.oldest_unpaid_date) > 90,
   ).length;
 
   const pipeline = (production ?? []).reduce<Record<string, number>>((acc, o) => {
@@ -262,16 +376,33 @@ function AdminPanels() {
     <>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <KpiCard label="Invoice outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
-        <KpiCard label="Stored customer balance" value={inr(storedBalance ?? 0)} icon={IndianRupee} />
-        <KpiCard label="Overdue >90d" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
-        <KpiCard label="In Production" value={String((pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0))} icon={Factory} />
+        <KpiCard
+          label="Stored customer balance"
+          value={inr(storedBalance ?? 0)}
+          icon={IndianRupee}
+        />
+        <KpiCard
+          label="Overdue >90d"
+          value={String(overdueCount)}
+          icon={AlertTriangle}
+          accent="warning"
+        />
+        <KpiCard
+          label="In Production"
+          value={String(
+            (pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0),
+          )}
+          icon={Factory}
+        />
         <KpiCard label="Active Employees" value={String(employees ?? 0)} icon={Users} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ProductionPipelineCard pipeline={pipeline} />
         <Card>
-          <CardHeader><CardTitle>Top customers by invoice outstanding</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Top customers by invoice outstanding</CardTitle>
+          </CardHeader>
           <CardContent>
             {topCustomers.length === 0 ? (
               <p className="text-sm text-muted-foreground">No data yet.</p>
@@ -297,8 +428,8 @@ function AdminPanels() {
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            Import customers, vendors, raw materials, finished goods and ledger entries from a Tally XML export.
-            Existing records are matched by GSTIN or name and updated in place.
+            Import customers, vendors, raw materials, finished goods and ledger entries from a Tally
+            XML export. Existing records are matched by GSTIN or name and updated in place.
           </p>
           <Link
             to="/tally-import"
@@ -318,7 +449,9 @@ function SalesPanels() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
 
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString()
+    .slice(0, 10);
 
   // My sales orders (RLS already restricts to created_by = me)
   const { data: myOrders = [] } = useQuery({
@@ -341,7 +474,9 @@ function SalesPanels() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("id, invoice_number, party_id, invoice_date, due_date, total_amount, paid_amount, status, updated_at");
+        .select(
+          "id, invoice_number, party_id, invoice_date, due_date, total_amount, paid_amount, status, updated_at",
+        );
       if (error) throw error;
       return data ?? [];
     },
@@ -363,10 +498,9 @@ function SalesPanels() {
   });
 
   // Party names
-  const partyIds = Array.from(new Set([
-    ...myOrders.map((o) => o.party_id),
-    ...myInvoices.map((i) => i.party_id),
-  ]));
+  const partyIds = Array.from(
+    new Set([...myOrders.map((o) => o.party_id), ...myInvoices.map((i) => i.party_id)]),
+  );
   const { data: partyMap = {} } = useQuery({
     queryKey: ["sales-party-names", partyIds.join(",")],
     enabled: partyIds.length > 0,
@@ -374,7 +508,9 @@ function SalesPanels() {
       const { data, error } = await supabase.from("parties").select("id, name").in("id", partyIds);
       if (error) throw error;
       const map: Record<string, string> = {};
-      (data ?? []).forEach((p) => { map[p.id] = p.name; });
+      (data ?? []).forEach((p) => {
+        map[p.id] = p.name;
+      });
       return map;
     },
   });
@@ -397,7 +533,7 @@ function SalesPanels() {
     .reduce((s, i) => s + Number(i.paid_amount ?? 0), 0);
   const myOutstandingTotal = outstanding.reduce((s, p) => s + Number(p.outstanding ?? 0), 0);
   const overdueCount = outstanding.filter(
-    (p) => p.oldest_unpaid_date && daysBetween(p.oldest_unpaid_date) > 30
+    (p) => p.oldest_unpaid_date && daysBetween(p.oldest_unpaid_date) > 30,
   ).length;
 
   const prodByOrder = new Map(prodForMyOrders.map((p) => [p.sales_order_id, p]));
@@ -407,9 +543,18 @@ function SalesPanels() {
     <>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <KpiCard label="My Sales (this month)" value={inr(salesThisMonth)} icon={TrendingUp} />
-        <KpiCard label="My Collections (this month)" value={inr(collectionsThisMonth)} icon={Wallet} />
+        <KpiCard
+          label="My Collections (this month)"
+          value={inr(collectionsThisMonth)}
+          icon={Wallet}
+        />
         <KpiCard label="My Outstanding" value={inr(myOutstandingTotal)} icon={IndianRupee} />
-        <KpiCard label="Overdue Customers" value={String(overdueCount)} icon={AlertTriangle} accent="warning" />
+        <KpiCard
+          label="Overdue Customers"
+          value={String(overdueCount)}
+          icon={AlertTriangle}
+          accent="warning"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 mb-4">
@@ -417,7 +562,9 @@ function SalesPanels() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>My Order Status</span>
-              <Link to="/sales-orders" className="text-xs text-primary hover:underline">View all</Link>
+              <Link to="/sales-orders" className="text-xs text-primary hover:underline">
+                View all
+              </Link>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -433,26 +580,44 @@ function SalesPanels() {
               </TableHeader>
               <TableBody>
                 {recentOrders.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No orders yet. <Link to="/sales-orders" className="text-primary hover:underline">Place one</Link>.</TableCell></TableRow>
-                ) : recentOrders.map((o) => {
-                  const p = prodByOrder.get(o.id);
-                  return (
-                    <TableRow key={o.id}>
-                      <TableCell className="font-medium">{o.order_number}</TableCell>
-                      <TableCell className="truncate max-w-[140px]">{partyMap[o.party_id] ?? "—"}</TableCell>
-                      <TableCell>{formatDate(o.order_date)}</TableCell>
-                      <TableCell><StatusPill status={p?.status ?? "pending"} /></TableCell>
-                      <TableCell className="text-right">{inr(Number(o.total_amount ?? 0))}</TableCell>
-                    </TableRow>
-                  );
-                })}
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                      No orders yet.{" "}
+                      <Link to="/sales-orders" className="text-primary hover:underline">
+                        Place one
+                      </Link>
+                      .
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  recentOrders.map((o) => {
+                    const p = prodByOrder.get(o.id);
+                    return (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-medium">{o.order_number}</TableCell>
+                        <TableCell className="truncate max-w-[140px]">
+                          {partyMap[o.party_id] ?? "—"}
+                        </TableCell>
+                        <TableCell>{formatDate(o.order_date)}</TableCell>
+                        <TableCell>
+                          <StatusPill status={p?.status ?? "pending"} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {inr(Number(o.total_amount ?? 0))}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Customer Outstanding (Aging)</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Customer Outstanding (Aging)</CardTitle>
+          </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -465,29 +630,52 @@ function SalesPanels() {
               </TableHeader>
               <TableBody>
                 {outstanding.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="py-6 text-center text-muted-foreground">No outstanding balances.</TableCell></TableRow>
-                ) : outstanding
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                      No outstanding balances.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  outstanding
                     .slice()
                     .sort((a, b) => Number(b.outstanding ?? 0) - Number(a.outstanding ?? 0))
                     .slice(0, 10)
                     .map((c) => {
-                      const sinceInv = c.oldest_unpaid_date ? daysBetween(c.oldest_unpaid_date) : null;
+                      const sinceInv = c.oldest_unpaid_date
+                        ? daysBetween(c.oldest_unpaid_date)
+                        : null;
                       // Past due derived from earliest matching invoice's due_date (best effort)
                       const inv = myInvoices
-                        .filter((i) => i.party_id === c.party_id && (i.status === "unpaid" || i.status === "partial") && Number(i.total_amount) - Number(i.paid_amount) > 0)
-                        .sort((a, b) => (a.due_date ?? a.invoice_date).localeCompare(b.due_date ?? b.invoice_date))[0];
+                        .filter(
+                          (i) =>
+                            i.party_id === c.party_id &&
+                            (i.status === "unpaid" || i.status === "partial") &&
+                            Number(i.total_amount) - Number(i.paid_amount) > 0,
+                        )
+                        .sort((a, b) =>
+                          (a.due_date ?? a.invoice_date).localeCompare(
+                            b.due_date ?? b.invoice_date,
+                          ),
+                        )[0];
                       const pastDue = inv?.due_date ? daysBetween(inv.due_date) : null;
                       return (
                         <TableRow key={c.party_id}>
                           <TableCell className="truncate max-w-[160px]">{c.name}</TableCell>
-                          <TableCell className="text-right font-medium">{inr(Number(c.outstanding ?? 0))}</TableCell>
-                          <TableCell className="text-right">{sinceInv !== null ? `${sinceInv}d` : "—"}</TableCell>
-                          <TableCell className={`text-right ${pastDue !== null && pastDue > 0 ? "text-warning font-medium" : ""}`}>
+                          <TableCell className="text-right font-medium">
+                            {inr(Number(c.outstanding ?? 0))}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {sinceInv !== null ? `${sinceInv}d` : "—"}
+                          </TableCell>
+                          <TableCell
+                            className={`text-right ${pastDue !== null && pastDue > 0 ? "text-warning font-medium" : ""}`}
+                          >
                             {pastDue === null ? "—" : pastDue > 0 ? `${pastDue}d` : "current"}
                           </TableCell>
                         </TableRow>
                       );
-                    })}
+                    })
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -496,7 +684,10 @@ function SalesPanels() {
 
       <div className="rounded-xl glass-sm p-4 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">Ready to take a new order?</div>
-        <Link to="/sales-orders" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+        <Link
+          to="/sales-orders"
+          className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+        >
           <ShoppingCart className="h-4 w-4" /> New Sales Order
         </Link>
       </div>
@@ -518,13 +709,17 @@ function ProductionPanels() {
   const { data: lowStock = [] } = useQuery({
     queryKey: ["prod-dash-stock"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("raw_materials").select("id, name, reorder_level, unit");
+      const { data, error } = await supabase
+        .from("raw_materials")
+        .select("id, name, reorder_level, unit");
       if (error) throw error;
-      const rows = await Promise.all((data ?? []).map(async (m) => {
-        // @ts-expect-error This RPC requires the unapplied accounting migration.
-        const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: m.id });
-        return { ...m, on_hand: Number(onHand ?? 0) };
-      }));
+      const rows = await Promise.all(
+        (data ?? []).map(async (m) => {
+          // @ts-expect-error This RPC requires the unapplied accounting migration.
+          const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: m.id });
+          return { ...m, on_hand: Number(onHand ?? 0) };
+        }),
+      );
       return rows.filter((m) => m.on_hand <= Number(m.reorder_level));
     },
   });
@@ -539,21 +734,36 @@ function ProductionPanels() {
     <>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <KpiCard label="WIP Orders" value={String(wip)} icon={Factory} />
-        <KpiCard label="Ready to Dispatch" value={String(pipeline.ready ?? 0)} icon={ShoppingCart} />
+        <KpiCard
+          label="Ready to Dispatch"
+          value={String(pipeline.ready ?? 0)}
+          icon={ShoppingCart}
+        />
         <KpiCard label="Dispatched" value={String(pipeline.dispatched ?? 0)} icon={ReceiptText} />
-        <KpiCard label="Low Stock Items" value={String(lowStock.length)} icon={AlertTriangle} accent="warning" />
+        <KpiCard
+          label="Low Stock Items"
+          value={String(lowStock.length)}
+          icon={AlertTriangle}
+          accent="warning"
+        />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <ProductionPipelineCard pipeline={pipeline} />
         <Card>
-          <CardHeader><CardTitle>Low Stock Alerts</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Low Stock Alerts</CardTitle>
+          </CardHeader>
           <CardContent>
-            {lowStock.length === 0 ? <p className="text-sm text-muted-foreground">All stock levels are healthy.</p> : (
+            {lowStock.length === 0 ? (
+              <p className="text-sm text-muted-foreground">All stock levels are healthy.</p>
+            ) : (
               <div className="space-y-2">
                 {lowStock.slice(0, 8).map((m) => (
                   <div key={m.id} className="flex items-center justify-between text-sm">
                     <span className="truncate">{m.name}</span>
-                    <span className="font-medium text-warning">{Number(m.on_hand)} {m.unit}</span>
+                    <span className="font-medium text-warning">
+                      {Number(m.on_hand)} {m.unit}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -572,7 +782,10 @@ function HRPanels() {
   const { data: empCount = 0 } = useQuery({
     queryKey: ["hr-dash-emp"],
     queryFn: async () => {
-      const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true }).eq("is_active", true);
+      const { count, error } = await supabase
+        .from("employees")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
       if (error) throw error;
       return count ?? 0;
     },
@@ -580,7 +793,10 @@ function HRPanels() {
   const { data: todayAtt = [] } = useQuery({
     queryKey: ["hr-dash-att", today],
     queryFn: async () => {
-      const { data, error } = await supabase.from("attendance").select("status, is_late").eq("attendance_date", today);
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("status, is_late")
+        .eq("attendance_date", today);
       if (error) throw error;
       return data ?? [];
     },
@@ -604,7 +820,11 @@ function CustomerPanels() {
   const { data: orders = [] } = useQuery({
     queryKey: ["cust-dash-orders"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sales_orders").select("id, order_number, order_date, total_amount").order("order_date", { ascending: false }).limit(8);
+      const { data, error } = await supabase
+        .from("sales_orders")
+        .select("id, order_number, order_date, total_amount")
+        .order("order_date", { ascending: false })
+        .limit(8);
       if (error) throw error;
       return data ?? [];
     },
@@ -612,7 +832,10 @@ function CustomerPanels() {
   const { data: invoices = [] } = useQuery({
     queryKey: ["cust-dash-inv"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("invoices").select("id, invoice_number, total_amount, paid_amount, status, due_date, invoice_date").order("invoice_date", { ascending: false });
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, total_amount, paid_amount, status, due_date, invoice_date")
+        .order("invoice_date", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -627,17 +850,42 @@ function CustomerPanels() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-6">
         <KpiCard label="My Orders" value={String(orders.length)} icon={ShoppingCart} />
         <KpiCard label="My Invoices" value={String(invoices.length)} icon={FileText} />
-        <KpiCard label="Amount Due" value={inr(outstanding)} icon={IndianRupee} accent={outstanding > 0 ? "warning" : undefined} />
+        <KpiCard
+          label="Amount Due"
+          value={inr(outstanding)}
+          icon={IndianRupee}
+          accent={outstanding > 0 ? "warning" : undefined}
+        />
       </div>
       <Card>
-        <CardHeader><CardTitle>Recent Orders</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Recent Orders</CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Order #</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order #</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
-              {orders.length === 0 ? <TableRow><TableCell colSpan={3} className="py-6 text-center text-muted-foreground">No orders yet.</TableCell></TableRow> : orders.map((o) => (
-                <TableRow key={o.id}><TableCell className="font-medium">{o.order_number}</TableCell><TableCell>{formatDate(o.order_date)}</TableCell><TableCell className="text-right">{inr(Number(o.total_amount))}</TableCell></TableRow>
-              ))}
+              {orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
+                    No orders yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                orders.map((o) => (
+                  <TableRow key={o.id}>
+                    <TableCell className="font-medium">{o.order_number}</TableCell>
+                    <TableCell>{formatDate(o.order_date)}</TableCell>
+                    <TableCell className="text-right">{inr(Number(o.total_amount))}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -649,11 +897,16 @@ function CustomerPanels() {
 /* ------------------------------ EMPLOYEE ------------------------------ */
 
 function EmployeePanels() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString()
+    .slice(0, 10);
   const { data: myAtt = [] } = useQuery({
     queryKey: ["emp-dash-att"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("attendance").select("attendance_date, status, hours_worked, is_late").gte("attendance_date", monthStart);
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("attendance_date, status, hours_worked, is_late")
+        .gte("attendance_date", monthStart);
       if (error) throw error;
       return data ?? [];
     },
@@ -661,7 +914,12 @@ function EmployeePanels() {
   const { data: payslips = [] } = useQuery({
     queryKey: ["emp-dash-pay"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("payslips").select("period_month, period_year, net_salary").order("period_year", { ascending: false }).order("period_month", { ascending: false }).limit(3);
+      const { data, error } = await supabase
+        .from("payslips")
+        .select("period_month, period_year, net_salary")
+        .order("period_year", { ascending: false })
+        .order("period_month", { ascending: false })
+        .limit(3);
       if (error) throw error;
       return data ?? [];
     },
@@ -674,9 +932,18 @@ function EmployeePanels() {
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
       <KpiCard label="Days Present (MTD)" value={String(present)} icon={CalendarCheck} />
-      <KpiCard label="Late Days (MTD)" value={String(late)} icon={AlertTriangle} accent={late > 0 ? "warning" : undefined} />
+      <KpiCard
+        label="Late Days (MTD)"
+        value={String(late)}
+        icon={AlertTriangle}
+        accent={late > 0 ? "warning" : undefined}
+      />
       <KpiCard label="Hours Worked (MTD)" value={hours.toFixed(1)} icon={TrendingUp} />
-      <KpiCard label="Latest Payslip" value={latest ? inr(Number(latest.net_salary)) : "—"} icon={Wallet} />
+      <KpiCard
+        label="Latest Payslip"
+        value={latest ? inr(Number(latest.net_salary)) : "—"}
+        icon={Wallet}
+      />
     </div>
   );
 }
@@ -686,7 +953,9 @@ function EmployeePanels() {
 function ProductionPipelineCard({ pipeline }: { pipeline: Record<string, number> }) {
   return (
     <Card>
-      <CardHeader><CardTitle>Production Pipeline</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Production Pipeline</CardTitle>
+      </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {["received", "in_production", "qc", "ready", "dispatched"].map((s) => (
@@ -711,22 +980,40 @@ function StatusPill({ status }: { status: string }) {
     pending: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${map[status] ?? "bg-muted text-muted-foreground"}`}>
+    <span
+      className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${map[status] ?? "bg-muted text-muted-foreground"}`}
+    >
       {status.replace("_", " ")}
     </span>
   );
 }
 
-function KpiCard({ label, value, icon: Icon, accent }: { label: string; value: string; icon: React.ComponentType<{ className?: string }>; accent?: "warning" }) {
+function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accent?: "warning";
+}) {
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div>
             <div className="text-sm text-muted-foreground">{label}</div>
-            <div className={`text-2xl font-semibold mt-1 ${accent === "warning" ? "text-warning" : "text-foreground"}`}>{value}</div>
+            <div
+              className={`text-2xl font-semibold mt-1 ${accent === "warning" ? "text-warning" : "text-foreground"}`}
+            >
+              {value}
+            </div>
           </div>
-          <div className={`h-9 w-9 rounded-md flex items-center justify-center ${accent === "warning" ? "bg-warning/15 text-warning" : "bg-primary/10 text-primary"}`}>
+          <div
+            className={`h-9 w-9 rounded-md flex items-center justify-center ${accent === "warning" ? "bg-warning/15 text-warning" : "bg-primary/10 text-primary"}`}
+          >
             <Icon className="h-5 w-5" />
           </div>
         </div>

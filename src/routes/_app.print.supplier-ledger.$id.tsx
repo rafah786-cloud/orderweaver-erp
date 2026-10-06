@@ -23,10 +23,14 @@ function PrintSupplierLedger() {
       const { data: sup, error: e1 } = await supabase
         .from("suppliers")
         .select("name, address, gstin, phone, email, opening_balance, current_balance")
-        .eq("id", id).single();
+        .eq("id", id)
+        .single();
       if (e1) throw e1;
-      let q = supabase.from("supplier_ledger_entries")
-        .select("*").eq("supplier_id", id).order("entry_date", { ascending: true });
+      let q = supabase
+        .from("supplier_ledger_entries")
+        .select("*")
+        .eq("supplier_id", id)
+        .order("entry_date", { ascending: true });
       if (from) q = q.gte("entry_date", from);
       if (to) q = q.lte("entry_date", to);
       const { data: entries, error: e2 } = await q;
@@ -36,7 +40,8 @@ function PrintSupplierLedger() {
   });
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
-  if (error || !data) return <div className="p-10 text-center text-destructive">Ledger not found.</div>;
+  if (error || !data)
+    return <div className="p-10 text-center text-destructive">Ledger not found.</div>;
 
   const { sup, entries } = data;
   const opening = Number(sup.opening_balance ?? 0);
@@ -54,7 +59,10 @@ function PrintSupplierLedger() {
       docLabel="Supplier Statement"
       meta={[
         ["Supplier", sup.name],
-        ["Period", `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(new Date().toISOString().slice(0, 10))}`],
+        [
+          "Period",
+          `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(new Date().toISOString().slice(0, 10))}`,
+        ],
         ["Closing Balance", inr(sup.current_balance ?? running)],
       ]}
     >
@@ -67,11 +75,25 @@ function PrintSupplierLedger() {
           contact={[sup.phone, sup.email].filter(Boolean).join(" · ")}
         />
         <div className="rounded border border-gray-300 p-3 text-xs">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Summary</div>
-          <div className="flex justify-between"><span>Opening Balance</span><span className="font-medium">{inr(opening)}</span></div>
-          <div className="flex justify-between"><span>Total Debits</span><span className="font-medium">{inr(totalDr)}</span></div>
-          <div className="flex justify-between"><span>Total Credits</span><span className="font-medium">{inr(totalCr)}</span></div>
-          <div className="mt-1 flex justify-between border-t pt-1 font-semibold"><span>Closing Balance</span><span>{inr(running)}</span></div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+            Summary
+          </div>
+          <div className="flex justify-between">
+            <span>Opening Balance</span>
+            <span className="font-medium">{inr(opening)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Total Debits</span>
+            <span className="font-medium">{inr(totalDr)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Total Credits</span>
+            <span className="font-medium">{inr(totalCr)}</span>
+          </div>
+          <div className="mt-1 flex justify-between border-t pt-1 font-semibold">
+            <span>Closing Balance</span>
+            <span>{inr(running)}</span>
+          </div>
         </div>
       </div>
 
@@ -91,7 +113,8 @@ function PrintSupplierLedger() {
             <Td>{from ? formatDate(from) : "—"}</Td>
             <Td>—</Td>
             <Td className="italic text-gray-600">Opening Balance</Td>
-            <Td /><Td />
+            <Td />
+            <Td />
             <Td className="text-right font-medium">{inr(opening)}</Td>
           </tr>
           {rows.map((e: any) => (
@@ -104,9 +127,14 @@ function PrintSupplierLedger() {
               <Td className="text-right">{inr(e.running)}</Td>
             </tr>
           ))}
-          {rows.length === 0 && <tr><Td className="text-center text-gray-500" >No entries in this period.</Td></tr>}
+          {rows.length === 0 && (
+            <tr>
+              <Td className="text-center text-gray-500">No entries in this period.</Td>
+            </tr>
+          )}
           <tr className="bg-gray-100 font-semibold">
-            <Td /><Td />
+            <Td />
+            <Td />
             <Td className="text-right">Totals</Td>
             <Td className="text-right">{inr(totalDr)}</Td>
             <Td className="text-right">{inr(totalCr)}</Td>

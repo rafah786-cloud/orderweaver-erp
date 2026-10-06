@@ -6,8 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useRef, useState } from "react";
 import { sb, type LedgerAccount, type VoucherType, VOUCHER_TYPE_LABEL } from "@/lib/accounting";
 import { inr } from "@/lib/format";
@@ -24,7 +37,10 @@ export const Route = createFileRoute("/_app/accounting/vouchers/new")({
       { title: "New Voucher | Mattress Maestro" },
       { name: "description", content: "Create a balanced accounting voucher in Mattress Maestro." },
       { property: "og:title", content: "New Voucher | Mattress Maestro" },
-      { property: "og:description", content: "Create a balanced accounting voucher in Mattress Maestro." },
+      {
+        property: "og:description",
+        content: "Create a balanced accounting voucher in Mattress Maestro.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -35,7 +51,14 @@ export const Route = createFileRoute("/_app/accounting/vouchers/new")({
 type Line = { ledger_account_id: string; debit: number; credit: number; narration: string };
 
 // Only manual-entry types here (sales/purchase auto-post from invoices/bills).
-const MANUAL_TYPES: VoucherType[] = ["receipt", "payment", "contra", "journal", "debit_note", "credit_note"];
+const MANUAL_TYPES: VoucherType[] = [
+  "receipt",
+  "payment",
+  "contra",
+  "journal",
+  "debit_note",
+  "credit_note",
+];
 
 function NewVoucherPage() {
   const navigate = useNavigate();
@@ -56,7 +79,11 @@ function NewVoucherPage() {
   const ledgersQ = useQuery({
     queryKey: ["all_ledgers"],
     queryFn: async () => {
-      const { data, error } = await sb.from("ledger_accounts").select("*").eq("is_active", true).order("name");
+      const { data, error } = await sb
+        .from("ledger_accounts")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
       if (error) throw error;
       return data as LedgerAccount[];
     },
@@ -73,7 +100,7 @@ function NewVoucherPage() {
     setLines((arr) => [...arr, { ledger_account_id: "", debit: 0, credit: 0, narration: "" }]);
   }
   function removeLine(i: number) {
-    setLines((arr) => arr.length > 2 ? arr.filter((_, idx) => idx !== i) : arr);
+    setLines((arr) => (arr.length > 2 ? arr.filter((_, idx) => idx !== i) : arr));
   }
 
   async function save() {
@@ -81,7 +108,9 @@ function NewVoucherPage() {
       toast.error("Voucher is not balanced. Debits must equal credits.");
       return;
     }
-    const validLines = lines.filter((l) => l.ledger_account_id && (Number(l.debit) > 0 || Number(l.credit) > 0));
+    const validLines = lines.filter(
+      (l) => l.ledger_account_id && (Number(l.debit) > 0 || Number(l.credit) > 0),
+    );
     if (validLines.length < 2) {
       toast.error("At least 2 ledger lines are required.");
       return;
@@ -89,21 +118,23 @@ function NewVoucherPage() {
     setSaving(true);
     try {
       if (!idempotencyKey.current) idempotencyKey.current = `manual-voucher:${crypto.randomUUID()}`;
-      const result = await createVoucher({ data: {
-        type,
-        date: voucherDate,
-        narration: narration || undefined,
-        reference: reference || undefined,
-        idempotencyKey: idempotencyKey.current,
-        status: "posted",
-        entries: validLines.map((l, i) => ({
-          ledger_account_id: l.ledger_account_id,
-          debit: Number(l.debit || 0),
-          credit: Number(l.credit || 0),
-          narration: l.narration || undefined,
-          line_order: i + 1,
-        })),
-      } });
+      const result = await createVoucher({
+        data: {
+          type,
+          date: voucherDate,
+          narration: narration || undefined,
+          reference: reference || undefined,
+          idempotencyKey: idempotencyKey.current,
+          status: "posted",
+          entries: validLines.map((l, i) => ({
+            ledger_account_id: l.ledger_account_id,
+            debit: Number(l.debit || 0),
+            credit: Number(l.credit || 0),
+            narration: l.narration || undefined,
+            line_order: i + 1,
+          })),
+        },
+      });
       const row = Array.isArray(result) ? result[0] : result;
       if (!row || typeof row.id !== "string" || typeof row.voucher_number !== "string") {
         throw new Error("Accounting service returned an invalid voucher");
@@ -134,19 +165,13 @@ function NewVoucherPage() {
                 data: {
                   party_id: partyId,
                   event: "payment.received",
-                  ref_table: "vouchers",
                   ref_id: voucher.id,
-                  vars: {
-                    receipt_no: voucher.voucherNumber,
-                    payment_amount: amount.toFixed(2),
-                  },
                 },
               }).catch(() => {});
               // Fan out to staff (Accounts / Management)
               notifyStaff({
                 data: {
                   event: "staff.payment.received",
-                  ref_table: "vouchers",
                   ref_id: voucher.id,
                   customer_party_id: partyId,
                   vars: { receipt_no: voucher.voucherNumber, payment_amount: amount.toFixed(2) },
@@ -170,26 +195,43 @@ function NewVoucherPage() {
 
   return (
     <>
-      <PageHeader title="New Voucher" description="Manual journal, receipt, payment, contra, or note." />
+      <PageHeader
+        title="New Voucher"
+        description="Manual journal, receipt, payment, contra, or note."
+      />
       <PageBody>
         <Card className="mb-4">
           <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <Label className="text-xs">Type</Label>
               <Select value={type} onValueChange={(v) => setType(v as VoucherType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {MANUAL_TYPES.map((t) => <SelectItem key={t} value={t}>{VOUCHER_TYPE_LABEL[t]}</SelectItem>)}
+                  {MANUAL_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {VOUCHER_TYPE_LABEL[t]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label className="text-xs">Date</Label>
-              <Input type="date" value={voucherDate} onChange={(e) => setVoucherDate(e.target.value)} />
+              <Input
+                type="date"
+                value={voucherDate}
+                onChange={(e) => setVoucherDate(e.target.value)}
+              />
             </div>
             <div className="md:col-span-2">
               <Label className="text-xs">Reference</Label>
-              <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional reference / cheque # etc." />
+              <Input
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                placeholder="Optional reference / cheque # etc."
+              />
             </div>
           </CardContent>
         </Card>
@@ -210,24 +252,40 @@ function NewVoucherPage() {
                 {lines.map((l, i) => (
                   <TableRow key={i}>
                     <TableCell>
-                      <Select value={l.ledger_account_id} onValueChange={(v) => updateLine(i, { ledger_account_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Select ledger" /></SelectTrigger>
+                      <Select
+                        value={l.ledger_account_id}
+                        onValueChange={(v) => updateLine(i, { ledger_account_id: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select ledger" />
+                        </SelectTrigger>
                         <SelectContent>
                           {(ledgersQ.data ?? []).map((la) => (
-                            <SelectItem key={la.id} value={la.id}>{la.name}</SelectItem>
+                            <SelectItem key={la.id} value={la.id}>
+                              {la.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Input value={l.narration} onChange={(e) => updateLine(i, { narration: e.target.value })} placeholder="Optional" />
+                      <Input
+                        value={l.narration}
+                        onChange={(e) => updateLine(i, { narration: e.target.value })}
+                        placeholder="Optional"
+                      />
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         className="text-right tabular-nums"
                         value={l.debit || ""}
-                        onChange={(e) => updateLine(i, { debit: Number(e.target.value), credit: Number(e.target.value) > 0 ? 0 : l.credit })}
+                        onChange={(e) =>
+                          updateLine(i, {
+                            debit: Number(e.target.value),
+                            credit: Number(e.target.value) > 0 ? 0 : l.credit,
+                          })
+                        }
                       />
                     </TableCell>
                     <TableCell>
@@ -235,11 +293,21 @@ function NewVoucherPage() {
                         type="number"
                         className="text-right tabular-nums"
                         value={l.credit || ""}
-                        onChange={(e) => updateLine(i, { credit: Number(e.target.value), debit: Number(e.target.value) > 0 ? 0 : l.debit })}
+                        onChange={(e) =>
+                          updateLine(i, {
+                            credit: Number(e.target.value),
+                            debit: Number(e.target.value) > 0 ? 0 : l.debit,
+                          })
+                        }
                       />
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => removeLine(i)} disabled={lines.length <= 2}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeLine(i)}
+                        disabled={lines.length <= 2}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -247,7 +315,9 @@ function NewVoucherPage() {
                 ))}
                 <TableRow className="font-semibold bg-muted/30">
                   <TableCell colSpan={2}>
-                    <Button variant="outline" size="sm" onClick={addLine}><Plus className="h-3.5 w-3.5 mr-1" /> Add row</Button>
+                    <Button variant="outline" size="sm" onClick={addLine}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add row
+                    </Button>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{inr(totalDr)}</TableCell>
                   <TableCell className="text-right tabular-nums">{inr(totalCr)}</TableCell>
@@ -261,10 +331,17 @@ function NewVoucherPage() {
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
           <div className="md:col-span-2">
             <Label className="text-xs">Narration</Label>
-            <Textarea value={narration} onChange={(e) => setNarration(e.target.value)} rows={3} placeholder="Being..." />
+            <Textarea
+              value={narration}
+              onChange={(e) => setNarration(e.target.value)}
+              rows={3}
+              placeholder="Being..."
+            />
           </div>
           <div className="space-y-2">
-            <div className={`text-sm font-medium ${balanced ? "text-emerald-600" : "text-amber-600"}`}>
+            <div
+              className={`text-sm font-medium ${balanced ? "text-emerald-600" : "text-amber-600"}`}
+            >
               {balanced ? "✓ Balanced" : `Difference: ${inr(Math.abs(totalDr - totalCr))}`}
             </div>
             <Button className="w-full" disabled={!balanced || saving} onClick={save}>

@@ -34,11 +34,12 @@ export const Route = createFileRoute("/api/public/whatsapp/interakt")({
         }
 
         // Interakt sends an array of events or a single event under various shapes.
-        const events: any[] = Array.isArray(payload) ? payload : payload?.events ?? [payload];
+        const events: any[] = Array.isArray(payload) ? payload : (payload?.events ?? [payload]);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         for (const ev of events) {
-          const messageId: string | undefined = ev?.id ?? ev?.message_id ?? ev?.data?.message_id ?? ev?.message?.id;
+          const messageId: string | undefined =
+            ev?.id ?? ev?.message_id ?? ev?.data?.message_id ?? ev?.message?.id;
           const eventType: string | undefined = ev?.type ?? ev?.event ?? ev?.status;
           if (!messageId || !eventType) continue;
 
@@ -56,7 +57,10 @@ export const Route = createFileRoute("/api/public/whatsapp/interakt")({
             update.read_status = "sent";
           }
           if (Object.keys(update).length === 0) continue;
-          await supabaseAdmin.from("notification_log").update(update as any).eq("whatsapp_message_id", messageId);
+          await supabaseAdmin
+            .from("notification_log")
+            .update(update as any)
+            .eq("whatsapp_message_id", messageId);
         }
 
         return new Response("ok", { status: 200 });

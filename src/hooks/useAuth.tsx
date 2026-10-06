@@ -48,7 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = async (userId: string) => {
     const [{ data: p }, { data: r }, { data: td }] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, status").eq("id", userId).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("id, full_name, email, status")
+        .eq("id", userId)
+        .maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase
         .from("trusted_devices")
@@ -72,7 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
         setTimeout(() => loadProfile(newSession.user.id), 0);
@@ -101,7 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
     };
-    const onVisible = () => { if (document.visibilityState === "visible") revive(); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") revive();
+    };
     window.addEventListener("focus", revive);
     window.addEventListener("online", revive);
     document.addEventListener("visibilitychange", onVisible);
@@ -137,7 +145,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimer();
       inactivityTimer.current = setTimeout(trigger, INACTIVITY_MS);
     };
-    const events: (keyof WindowEventMap)[] = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "wheel"];
+    const events: (keyof WindowEventMap)[] = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+      "wheel",
+    ];
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
     document.addEventListener("visibilitychange", reset);
     reset();

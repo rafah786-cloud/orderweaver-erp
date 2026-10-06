@@ -14,8 +14,15 @@ export function uninstalledAccountingFunction(error: { message?: string } | null
 }
 
 export type VoucherType =
-  | "sales" | "purchase" | "receipt" | "payment"
-  | "contra" | "journal" | "debit_note" | "credit_note" | "stock_journal";
+  | "sales"
+  | "purchase"
+  | "receipt"
+  | "payment"
+  | "contra"
+  | "journal"
+  | "debit_note"
+  | "credit_note"
+  | "stock_journal";
 
 export type LedgerNature = "assets" | "liabilities" | "income" | "expenses";
 

@@ -1,7 +1,17 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Maximize2, ZoomIn, ZoomOut, Maximize, RotateCcw, FileDown, Loader2 } from "lucide-react";
+import {
+  Printer,
+  X,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  RotateCcw,
+  FileDown,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface PrintPreviewModalProps {
@@ -14,7 +24,11 @@ const ZOOM_STEP = 0.15;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 3;
 
-export function PrintPreviewModal({ url, title = "Print Preview", onClose }: PrintPreviewModalProps) {
+export function PrintPreviewModal({
+  url,
+  title = "Print Preview",
+  onClose,
+}: PrintPreviewModalProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -37,8 +51,10 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
     return Math.max(MIN_ZOOM, Math.min(1, available / pageWidth));
   }, []);
 
-  const handleZoomIn = () => setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100));
-  const handleZoomOut = () => setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100));
+  const handleZoomIn = () =>
+    setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100));
+  const handleZoomOut = () =>
+    setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100));
   const handleFitToPage = () => setZoom(computeFitZoom());
   const handleResetZoom = () => setZoom(1);
 
@@ -104,14 +120,25 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
               <Button size="icon" variant="ghost" onClick={handleResetZoom} title="Reset zoom">
                 <RotateCcw className="h-4 w-4" />
               </Button>
-              <span className="ml-1 text-xs text-muted-foreground w-10 text-right select-none">{zoomPercent}%</span>
+              <span className="ml-1 text-xs text-muted-foreground w-10 text-right select-none">
+                {zoomPercent}%
+              </span>
             </div>
             <div className="h-5 w-px bg-border mx-1" />
             <Button size="sm" variant="outline" onClick={handleOpenFull}>
               <Maximize2 className="h-4 w-4 mr-1" /> Open
             </Button>
-            <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exporting || !loaded}>
-              {exporting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileDown className="h-4 w-4 mr-1" />}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={exporting || !loaded}
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4 mr-1" />
+              )}
               Export PDF
             </Button>
             <Button size="sm" onClick={handlePrint}>
@@ -122,7 +149,10 @@ export function PrintPreviewModal({ url, title = "Print Preview", onClose }: Pri
             </Button>
           </div>
         </DialogHeader>
-        <div ref={containerRef} className="relative flex-1 bg-muted/30 overflow-auto flex items-start justify-center p-4">
+        <div
+          ref={containerRef}
+          className="relative flex-1 bg-muted/30 overflow-auto flex items-start justify-center p-4"
+        >
           {!loaded && (
             <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
               Loading preview…

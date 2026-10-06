@@ -4,7 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function adminDb(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
   if (!data) throw new Error("Admin only");
   return supabaseAdmin;
 }
@@ -27,7 +32,10 @@ async function sumColumn(db: SupabaseClient, table: string, column: string) {
   let rows = 0;
   let nonzero = 0;
   for (;;) {
-    const { data, error } = await db.from(table).select(column).range(from, from + 999);
+    const { data, error } = await db
+      .from(table)
+      .select(column)
+      .range(from, from + 999);
     if (error) return { total: null, rows, nonzero, error: error.message };
     const batch = data ?? [];
     for (const row of batch) {
@@ -61,17 +69,33 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       current.credit += c;
       byVoucher.set(row.voucher_id, current);
     }
-    const unbalanced = [...byVoucher.entries()].filter(([, v]) => Math.abs(v.debit - v.credit) > 0.009).length;
+    const unbalanced = [...byVoucher.entries()].filter(
+      ([, v]) => Math.abs(v.debit - v.credit) > 0.009,
+    ).length;
     const numbers = new Map<string, number>();
     for (const row of vouchers.data ?? []) {
       const key = `${row.voucher_type}:${row.voucher_number}`;
       numbers.set(key, (numbers.get(key) ?? 0) + 1);
     }
-    const duplicateNumbers = [...numbers.entries()].filter(([, n]) => n > 1).map(([key, count]) => ({ key, count }));
-    const series = await db.from("voucher_number_series").select("voucher_type, prefix, next_number");
-    const years = await db.from("financial_years").select("name, start_date, end_date, is_current, is_locked").order("start_date");
+    const duplicateNumbers = [...numbers.entries()]
+      .filter(([, n]) => n > 1)
+      .map(([key, count]) => ({ key, count }));
+    const series = await db
+      .from("voucher_number_series")
+      .select("voucher_type, prefix, next_number");
+    const years = await db
+      .from("financial_years")
+      .select("name, start_date, end_date, is_current, is_locked")
+      .order("start_date");
     const yearRows = years.data ?? [];
-    const overlaps = yearRows.filter((year, index) => yearRows.some((other, otherIndex) => otherIndex !== index && year.start_date <= other.end_date && other.start_date <= year.end_date)).length;
+    const overlaps = yearRows.filter((year, index) =>
+      yearRows.some(
+        (other, otherIndex) =>
+          otherIndex !== index &&
+          year.start_date <= other.end_date &&
+          other.start_date <= year.end_date,
+      ),
+    ).length;
     const bills = await countOf(db, "bills");
     const allocations = await countOf(db, "bill_allocations");
     const stock = await sumColumn(db, "raw_materials", "current_stock");
@@ -90,13 +114,20 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       supplierOutstanding: await sumColumn(db, "suppliers", "current_balance"),
       invoicePaid,
       invoiceTotal,
-      invoiceOutstanding: invoicePaid.total != null && invoiceTotal.total != null ? invoiceTotal.total - invoicePaid.total : null,
+      invoiceOutstanding:
+        invoicePaid.total != null && invoiceTotal.total != null
+          ? invoiceTotal.total - invoicePaid.total
+          : null,
       purchases: await countOf(db, "purchase_bills"),
       bills,
       billAllocations: allocations,
       billColumns: await probe(db, "bills", "party_kind, party_id, original_amount, external_ref"),
       billAllocationColumns: await probe(db, "bill_allocations", "id, bill_id, amount"),
-      stockMovementColumns: await probe(db, "stock_movements", "stock_item_id, movement_type, quantity, narration"),
+      stockMovementColumns: await probe(
+        db,
+        "stock_movements",
+        "stock_item_id, movement_type, quantity, narration",
+      ),
       rawMaterialStockQuantity: stock,
       stockMovements: await countOf(db, "stock_movements"),
       financialYears: yearRows,

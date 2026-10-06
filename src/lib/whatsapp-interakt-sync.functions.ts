@@ -50,27 +50,29 @@ function normalizeInterakt(raw: any): InteraktTemplate[] {
     raw?.data ??
     raw?.templates ??
     (Array.isArray(raw) ? raw : []);
-  return list.map((t) => {
-    const name: string = t.name ?? t.template_name ?? "";
-    const status: string = String(t.status ?? t.template_status ?? "UNKNOWN").toUpperCase();
-    const language: string = t.language ?? t.language_code ?? "en";
-    const category: string | undefined = t.category ?? t.template_category;
-    // Body text can appear in several shapes
-    let body = "";
-    if (Array.isArray(t.components)) {
-      const b = t.components.find((c: any) => String(c.type).toUpperCase() === "BODY");
-      body = b?.text ?? b?.body ?? "";
-    }
-    body = body || t.body_text || t.body || t.message || "";
-    return {
-      name,
-      status,
-      language,
-      category,
-      variable_count: countVars(body),
-      body_text: body || undefined,
-    };
-  }).filter((t) => t.name);
+  return list
+    .map((t) => {
+      const name: string = t.name ?? t.template_name ?? "";
+      const status: string = String(t.status ?? t.template_status ?? "UNKNOWN").toUpperCase();
+      const language: string = t.language ?? t.language_code ?? "en";
+      const category: string | undefined = t.category ?? t.template_category;
+      // Body text can appear in several shapes
+      let body = "";
+      if (Array.isArray(t.components)) {
+        const b = t.components.find((c: any) => String(c.type).toUpperCase() === "BODY");
+        body = b?.text ?? b?.body ?? "";
+      }
+      body = body || t.body_text || t.body || t.message || "";
+      return {
+        name,
+        status,
+        language,
+        category,
+        variable_count: countVars(body),
+        body_text: body || undefined,
+      };
+    })
+    .filter((t) => t.name);
 }
 
 async function fetchInteraktTemplatesRaw(): Promise<InteraktTemplate[]> {
@@ -142,7 +144,11 @@ export const fetchInteraktTemplates = createServerFn({ method: "GET" })
       const templates = await fetchInteraktTemplatesRaw();
       return { ok: true as const, templates };
     } catch (e) {
-      return { ok: false as const, error: e instanceof Error ? e.message : "fetch failed", templates: [] as InteraktTemplate[] };
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "fetch failed",
+        templates: [] as InteraktTemplate[],
+      };
     }
   });
 
@@ -234,9 +240,7 @@ export const importInteraktTemplates = createServerFn({ method: "POST" })
     const { data: locals } = await supabaseAdmin
       .from("whatsapp_templates")
       .select("id, event_key, template_name");
-    const existingByEvent = new Map(
-      (locals ?? []).map((l) => [l.event_key as string, l as any]),
-    );
+    const existingByEvent = new Map((locals ?? []).map((l) => [l.event_key as string, l as any]));
 
     // Build event -> best remote template
     const chosen = new Map<string, InteraktTemplate>();
@@ -246,8 +250,11 @@ export const importInteraktTemplates = createServerFn({ method: "POST" })
       if (!key) continue;
       const prev = chosen.get(key);
       // Prefer approved, then more recent name match (shortest wins as tiebreak)
-      if (!prev || (prev.status !== "APPROVED" && t.status === "APPROVED") ||
-          (prev.status === t.status && t.name.length < prev.name.length)) {
+      if (
+        !prev ||
+        (prev.status !== "APPROVED" && t.status === "APPROVED") ||
+        (prev.status === t.status && t.name.length < prev.name.length)
+      ) {
         chosen.set(key, t);
       }
     }

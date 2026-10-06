@@ -8,24 +8,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileUp, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { parseTallyMasters, TallyXmlError, type TallyParsed } from "@/lib/tally-import";
 import { inspectTallyAccounting } from "@/lib/tally-integrity";
-import { importTallyMasters, recomputeTallyBalances, type TallyImportResult } from "@/lib/tally-import.functions";
+import {
+  importTallyMasters,
+  recomputeTallyBalances,
+  type TallyImportResult,
+} from "@/lib/tally-import.functions";
+import {
+  stageTallyMigration,
+  listTallyMigrationRuns,
+  validateTallyMigration,
+} from "@/lib/tally-migration.functions";
+import { useCompany } from "@/lib/company-context";
 import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_app/tally-import")({
-  head: () => ({ meta: [
-    { title: "Tally Import | Mattress Maestro" },
-    { name: "description", content: "Review Tally exports and accounting import integrity in Mattress Maestro." },
-    { property: "og:title", content: "Tally Import | Mattress Maestro" },
-    { property: "og:description", content: "Review Tally exports and accounting import integrity in Mattress Maestro." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Tally Import | Mattress Maestro" },
+      {
+        name: "description",
+        content: "Review Tally exports and accounting import integrity in Mattress Maestro.",
+      },
+      { property: "og:title", content: "Tally Import | Mattress Maestro" },
+      {
+        property: "og:description",
+        content: "Review Tally exports and accounting import integrity in Mattress Maestro.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: TallyImportPage,
 });
 
@@ -58,7 +83,10 @@ async function readXmlFile(file: File): Promise<string> {
   }
   // Default UTF-8; honor an explicit encoding= attribute if present
   const utf8 = new TextDecoder("utf-8").decode(buf);
-  const enc = utf8.slice(0, 200).match(/encoding=["']([^"']+)["']/i)?.[1]?.toLowerCase();
+  const enc = utf8
+    .slice(0, 200)
+    .match(/encoding=["']([^"']+)["']/i)?.[1]
+    ?.toLowerCase();
   if (enc && enc !== "utf-8" && enc !== "utf8") {
     try {
       return new TextDecoder(enc).decode(buf);
@@ -74,22 +102,38 @@ function TallyImportPage() {
   const qc = useQueryClient();
   const runImport = useServerFn(importTallyMasters);
   const runRecompute = useServerFn(recomputeTallyBalances);
+  const stageMigration = useServerFn(stageTallyMigration);
+  const listRuns = useServerFn(listTallyMigrationRuns);
+  const validateMigration = useServerFn(validateTallyMigration);
+  const { activeCompany } = useCompany();
 
   const [rawGroups, setRawGroups] = useState("Raw Materials, Components, Fabric, Foam");
   const [finishedGroups, setFinishedGroups] = useState("Finished Goods, Mattresses, Products");
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [parsed, setParsed] = useState<TallyParsed | null>(null);
+  const [migrationParsed, setMigrationParsed] = useState<TallyParsed | null>(null);
   const [result, setResult] = useState<TallyImportResult | null>(null);
+  const [staging, setStaging] = useState(false);
+  const [migrationRuns, setMigrationRuns] = useState<any[]>([]);
+  const [migrationValidation, setMigrationValidation] = useState<any | null>(null);
   const [fileName, setFileName] = useState<string>("");
-  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
-  const accountingExport = !!parsed && (parsed.vouchers.length > 0 || parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(
+    null,
+  );
+  const accountingExport =
+    !!parsed &&
+    (parsed.vouchers.length > 0 || parsed.ledgerEntries.length > 0 || parsed.bills.length > 0);
   const integrity = parsed ? inspectTallyAccounting(parsed) : null;
 
   if (!hasRole("admin")) {
     return (
       <PageBody>
-        <Card><CardContent className="p-8 text-center text-muted-foreground">Only admins can import Tally data.</CardContent></Card>
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            Only admins can import Tally data.
+          </CardContent>
+        </Card>
       </PageBody>
     );
   }
@@ -102,16 +146,32 @@ function TallyImportPage() {
     setParsing(true);
     try {
       const xml = await readXmlFile(f);
-      const out = parseTallyMasters(xml, {
-        rawGroups: rawGroups.split(",").map((s) => s.trim()).filter(Boolean),
-        finishedGroups: finishedGroups.split(",").map((s) => s.trim()).filter(Boolean),
-      });
+      const opts = {
+        rawGroups: rawGroups
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        finishedGroups: finishedGroups
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
+      const out = parseTallyMasters(xml, opts);
+      const migrationOut = parseTallyMasters(xml, { ...opts, preserveLifecycle: true });
       setParsed(out);
+      setMigrationParsed(migrationOut);
       const total =
-        out.customers.length + out.vendors.length + out.rawMaterials.length + out.finishedGoods.length +
-        out.groups.length + out.ledgers.length + out.godowns.length + out.costCentres.length;
+        out.customers.length +
+        out.vendors.length +
+        out.rawMaterials.length +
+        out.finishedGoods.length +
+        out.groups.length +
+        out.ledgers.length +
+        out.godowns.length +
+        out.costCentres.length;
 
-      if (total === 0) toast.warning("No masters found in this XML. Make sure you exported Masters from Tally.");
+      if (total === 0)
+        toast.warning("No masters found in this XML. Make sure you exported Masters from Tally.");
       else toast.success(`Parsed ${total} records. Review and import.`);
     } catch (err) {
       if (err instanceof TallyXmlError) {
@@ -128,6 +188,164 @@ function TallyImportPage() {
     }
   };
 
+  const stageMigrationRun = async () => {
+    if (!migrationParsed || !activeCompany) return;
+    setStaging(true);
+    try {
+      const encoder = new TextEncoder();
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        encoder.encode(JSON.stringify(migrationParsed)),
+      );
+      const checksum = Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      const rows: Array<any> = [];
+      const add = (
+        record_type: string,
+        list: any[],
+        keyFn: (x: any, i: number) => string,
+        idFn?: (x: any) => string | null,
+        parentFn?: (x: any) => string | null,
+      ) => {
+        list.forEach((x, i) =>
+          rows.push({
+            record_type,
+            source_id: idFn?.(x) ?? null,
+            alter_id: null,
+            source_key: keyFn(x, i),
+            lifecycle_state: x.lifecycle_state ?? "posted",
+            parent_source_key: parentFn?.(x) ?? null,
+            payload: x,
+          }),
+        );
+      };
+      add(
+        "group",
+        migrationParsed.groups,
+        (x) => `group:${x.parent ?? ""}:${x.name}`,
+        (x) => x.name,
+      );
+      add(
+        "ledger",
+        migrationParsed.ledgers,
+        (x) => `ledger:${x.name}`,
+        (x) => x.name,
+        (x) => (x.parent ? `group::${x.parent}` : null),
+      );
+      add(
+        "stock_item",
+        [...migrationParsed.rawMaterials, ...migrationParsed.finishedGoods],
+        (x) => `stock:${x.name}`,
+        (x) => x.name,
+      );
+      add(
+        "godown",
+        migrationParsed.godowns,
+        (x) => `godown:${x.parent ?? ""}:${x.name}`,
+        (x) => x.name,
+      );
+      add(
+        "cost_center",
+        migrationParsed.costCentres,
+        (x) => `cost:center:${x.parent ?? ""}:${x.name}`,
+        (x) => x.name,
+      );
+      add(
+        "party",
+        migrationParsed.customers,
+        (x) => `party:customer:${x.name}`,
+        (x) => x.name,
+      );
+      add(
+        "party",
+        migrationParsed.vendors,
+        (x) => `party:vendor:${x.name}`,
+        (x) => x.name,
+      );
+      add(
+        "opening_balance",
+        migrationParsed.customers.filter((x) => x.opening_balance !== 0),
+        (x) => `opening:customer:${x.name}`,
+      );
+      add(
+        "opening_balance",
+        migrationParsed.vendors.filter((x) => x.opening_balance !== 0),
+        (x) => `opening:vendor:${x.name}`,
+      );
+      add(
+        "voucher",
+        migrationParsed.vouchers,
+        (x) => `voucher:${x.source_id}`,
+        (x) => x.source_id,
+      );
+      add(
+        "ledger",
+        migrationParsed.ledgerEntries,
+        (x) => `ledger-entry:${x.external_ref}`,
+        (x) => x.external_ref,
+      );
+      add(
+        "bill_allocation",
+        migrationParsed.bills,
+        (x) => `bill:${x.external_ref}`,
+        (x) => x.external_ref,
+      );
+      const stockOpen = [...migrationParsed.rawMaterials, ...migrationParsed.finishedGoods].filter(
+        (x) => x.opening_qty !== 0 || x.opening_rate !== 0,
+      );
+      add(
+        "inventory_line",
+        stockOpen,
+        (x) => `stock-opening:${x.name}`,
+        (x) => x.name,
+      );
+      const dr = migrationParsed.vouchers.reduce(
+        (s, v) => s + v.entries.reduce((a, e) => a + e.debit, 0),
+        0,
+      );
+      const cr = migrationParsed.vouchers.reduce(
+        (s, v) => s + v.entries.reduce((a, e) => a + e.credit, 0),
+        0,
+      );
+      const controlTotals = {
+        vouchers: migrationParsed.vouchers.length,
+        voucherDebit: dr,
+        voucherCredit: cr,
+        customers: migrationParsed.customers.length,
+        vendors: migrationParsed.vendors.length,
+        ledgers: migrationParsed.ledgers.length,
+        groups: migrationParsed.groups.length,
+        stockItems: migrationParsed.rawMaterials.length + migrationParsed.finishedGoods.length,
+        godowns: migrationParsed.godowns.length,
+        costCentres: migrationParsed.costCentres.length,
+        bills: migrationParsed.bills.length,
+      };
+      const res = await stageMigration({
+        data: {
+          companyId: activeCompany.id,
+          sourceCompanyName: activeCompany.display_name,
+          sourceCompanyGuid: null,
+          sourceChecksum: checksum,
+          controlTotals,
+          rows,
+        },
+      });
+      const validation = await validateMigration({ data: { runId: res.runId } });
+      setMigrationValidation(validation);
+      toast.success(
+        `Migration run staged and validated: ${res.rowCount} source records. No ERP books were changed.`,
+      );
+      const runs = await listRuns();
+      setMigrationRuns(runs);
+    } catch (e) {
+      toast.error(`Migration staging failed: ${(e as Error).message}`);
+    } finally {
+      setStaging(false);
+    }
+  };
+
   const commit = async () => {
     if (!parsed || accountingExport) return;
     setImporting(true);
@@ -141,13 +359,36 @@ function TallyImportPage() {
     const LEDGER_CHUNK = 2000;
 
     const chunks: Array<{ label: string; payload: Record<string, unknown> }> = [];
-    const push = <T,>(arr: T[], size: number, key: "customers" | "vendors" | "rawMaterials" | "finishedGoods" | "ledgerEntries" | "groups" | "ledgers" | "godowns" | "costCentres" | "bills", label: string) => {
+    const push = <T,>(
+      arr: T[],
+      size: number,
+      key:
+        | "customers"
+        | "vendors"
+        | "rawMaterials"
+        | "finishedGoods"
+        | "ledgerEntries"
+        | "groups"
+        | "ledgers"
+        | "godowns"
+        | "costCentres"
+        | "bills",
+      label: string,
+    ) => {
       for (let i = 0; i < arr.length; i += size) {
         chunks.push({
           label: `${label} ${Math.min(i + size, arr.length)}/${arr.length}`,
           payload: {
-            customers: [], vendors: [], rawMaterials: [], finishedGoods: [], ledgerEntries: [],
-            groups: [], ledgers: [], godowns: [], costCentres: [], bills: [],
+            customers: [],
+            vendors: [],
+            rawMaterials: [],
+            finishedGoods: [],
+            ledgerEntries: [],
+            groups: [],
+            ledgers: [],
+            godowns: [],
+            costCentres: [],
+            bills: [],
             skipRecompute: true,
             [key]: arr.slice(i, i + size),
           } as any,
@@ -197,18 +438,26 @@ function TallyImportPage() {
         const { label, payload } = chunks[i];
         setProgress({ done: i, total, label });
         const res = await runImport({ data: payload });
-        agg.customers.inserted += res.customers.inserted; agg.customers.updated += res.customers.updated;
-        agg.vendors.inserted += res.vendors.inserted; agg.vendors.updated += res.vendors.updated;
-        agg.rawMaterials.inserted += res.rawMaterials.inserted; agg.rawMaterials.updated += res.rawMaterials.updated;
-        agg.finishedGoods.inserted += res.finishedGoods.inserted; agg.finishedGoods.updated += res.finishedGoods.updated;
+        agg.customers.inserted += res.customers.inserted;
+        agg.customers.updated += res.customers.updated;
+        agg.vendors.inserted += res.vendors.inserted;
+        agg.vendors.updated += res.vendors.updated;
+        agg.rawMaterials.inserted += res.rawMaterials.inserted;
+        agg.rawMaterials.updated += res.rawMaterials.updated;
+        agg.finishedGoods.inserted += res.finishedGoods.inserted;
+        agg.finishedGoods.updated += res.finishedGoods.updated;
         agg.partyLedgerEntries.inserted += res.partyLedgerEntries.inserted;
         agg.partyLedgerEntries.skipped += res.partyLedgerEntries.skipped;
         agg.supplierLedgerEntries.inserted += res.supplierLedgerEntries.inserted;
         agg.supplierLedgerEntries.skipped += res.supplierLedgerEntries.skipped;
-        agg.ledgerGroups.inserted += res.ledgerGroups.inserted; agg.ledgerGroups.updated += res.ledgerGroups.updated;
-        agg.ledgerAccounts.inserted += res.ledgerAccounts.inserted; agg.ledgerAccounts.updated += res.ledgerAccounts.updated;
-        agg.godowns.inserted += res.godowns.inserted; agg.godowns.updated += res.godowns.updated;
-        agg.costCentres.inserted += res.costCentres.inserted; agg.costCentres.updated += res.costCentres.updated;
+        agg.ledgerGroups.inserted += res.ledgerGroups.inserted;
+        agg.ledgerGroups.updated += res.ledgerGroups.updated;
+        agg.ledgerAccounts.inserted += res.ledgerAccounts.inserted;
+        agg.ledgerAccounts.updated += res.ledgerAccounts.updated;
+        agg.godowns.inserted += res.godowns.inserted;
+        agg.godowns.updated += res.godowns.updated;
+        agg.costCentres.inserted += res.costCentres.inserted;
+        agg.costCentres.updated += res.costCentres.updated;
         agg.billReferences.staged += res.billReferences.staged;
         agg.billReferences.unmatched += res.billReferences.unmatched;
         agg.errors.push(...res.errors);
@@ -239,15 +488,22 @@ function TallyImportPage() {
       setResult(agg);
       qc.invalidateQueries();
       const totals =
-        agg.customers.inserted + agg.customers.updated +
-        agg.vendors.inserted + agg.vendors.updated +
-        agg.rawMaterials.inserted + agg.rawMaterials.updated +
-        agg.finishedGoods.inserted + agg.finishedGoods.updated;
-      toast.success(`Imported ${totals} records${agg.errors.length ? ` with ${agg.errors.length} errors` : ""}.`);
+        agg.customers.inserted +
+        agg.customers.updated +
+        agg.vendors.inserted +
+        agg.vendors.updated +
+        agg.rawMaterials.inserted +
+        agg.rawMaterials.updated +
+        agg.finishedGoods.inserted +
+        agg.finishedGoods.updated;
+      toast.success(
+        `Imported ${totals} records${agg.errors.length ? ` with ${agg.errors.length} errors` : ""}.`,
+      );
     } catch (err) {
       toast.error(`Import failed: ${(err as Error).message}`);
       // Preserve whatever progress we made so the admin can inspect it.
-      if (agg.customers.inserted || agg.vendors.inserted || agg.partyLedgerEntries.inserted) setResult(agg);
+      if (agg.customers.inserted || agg.vendors.inserted || agg.partyLedgerEntries.inserted)
+        setResult(agg);
     } finally {
       setImporting(false);
       setProgress(null);
@@ -262,35 +518,108 @@ function TallyImportPage() {
       />
       <PageBody>
         <Card className="mb-4">
-          <CardHeader><CardTitle className="text-base">How to export from Tally (Tally ERP 9 & TallyPrime 3/4/5)</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Migration control plane</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Stage a complete parsed Tally snapshot first. Staging preserves source payloads and
+              lifecycle state and does not post anything into the accounting books.
+            </p>
+            <Button
+              onClick={() => void stageMigrationRun()}
+              disabled={!migrationParsed || staging || !activeCompany}
+            >
+              {staging ? "Staging…" : "Stage migration run safely"}
+            </Button>
+            {migrationRuns.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                {migrationRuns.length} migration run(s) available for validation/reconciliation.
+              </div>
+            )}
+            {migrationValidation && (
+              <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                <div className="font-medium">
+                  Latest staging validation: {migrationValidation.status}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {migrationValidation.total_rows} rows · {migrationValidation.voucher_count}{" "}
+                  vouchers · {migrationValidation.critical_issues} critical ·{" "}
+                  {migrationValidation.warning_issues} warnings ·{" "}
+                  {migrationValidation.unbalanced_vouchers} unbalanced vouchers
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="text-base">
+              How to export from Tally (Tally ERP 9 & TallyPrime 3/4/5)
+            </CardTitle>
+          </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-1">
-            <p><b>Masters (customers, vendors, stock, opening balances):</b> Gateway of Tally → Display More Reports → List of Accounts (TallyPrime: Chart of Accounts) → <b>Alt + E → Export</b> as XML.</p>
-            <p><b>Ledger / current balances (voucher entries):</b> Gateway of Tally → Display More Reports → Day Book (or open a specific party's Ledger) → <b>Alt + E → Export</b> as XML. Upload that XML here too — the importer reads both masters and vouchers from any Tally XML.</p>
-            <p className="text-xs">Cancelled, optional, and deleted vouchers are automatically skipped. GSTIN is picked up from either the flat <code>PARTYGSTIN</code> tag or the nested <code>GSTREGDETAILS.LIST</code> used by TallyPrime 4+. After import, each customer's and vendor's <b>current balance</b> is recalculated as <code>opening balance + sum of debits − sum of credits</code> from the imported ledger entries.</p>
+            <p>
+              <b>Masters (customers, vendors, stock, opening balances):</b> Gateway of Tally →
+              Display More Reports → List of Accounts (TallyPrime: Chart of Accounts) →{" "}
+              <b>Alt + E → Export</b> as XML.
+            </p>
+            <p>
+              <b>Ledger / current balances (voucher entries):</b> Gateway of Tally → Display More
+              Reports → Day Book (or open a specific party's Ledger) → <b>Alt + E → Export</b> as
+              XML. Upload that XML here too — the importer reads both masters and vouchers from any
+              Tally XML.
+            </p>
+            <p className="text-xs">
+              Cancelled, optional, and deleted vouchers are automatically skipped. GSTIN is picked
+              up from either the flat <code>PARTYGSTIN</code> tag or the nested{" "}
+              <code>GSTREGDETAILS.LIST</code> used by TallyPrime 4+. After import, each customer's
+              and vendor's <b>current balance</b> is recalculated as{" "}
+              <code>opening balance + sum of debits − sum of credits</code> from the imported ledger
+              entries.
+            </p>
           </CardContent>
         </Card>
 
         <div className="grid gap-4 lg:grid-cols-3 mb-4">
           <Card className="lg:col-span-2">
-            <CardHeader><CardTitle className="text-base">1. Stock group mapping</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">1. Stock group mapping</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label className="text-xs text-muted-foreground">Tally groups treated as Raw Materials (comma-separated, case-insensitive partial match)</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Tally groups treated as Raw Materials (comma-separated, case-insensitive partial
+                  match)
+                </Label>
                 <Input value={rawGroups} onChange={(e) => setRawGroups(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs text-muted-foreground">Tally groups treated as Finished Goods</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Tally groups treated as Finished Goods
+                </Label>
                 <Input value={finishedGroups} onChange={(e) => setFinishedGroups(e.target.value)} />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base">2. Upload XML</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">2. Upload XML</CardTitle>
+            </CardHeader>
             <CardContent>
               <label className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 cursor-pointer hover:bg-muted/30 transition">
                 <FileUp className="h-6 w-6 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{fileName || "Choose Tally XML file"}</span>
-                <input type="file" accept=".xml,application/xml,text/xml" className="hidden" onChange={onFile} disabled={parsing} />
+                <span className="text-sm text-muted-foreground">
+                  {fileName || "Choose Tally XML file"}
+                </span>
+                <input
+                  type="file"
+                  accept=".xml,application/xml,text/xml"
+                  className="hidden"
+                  onChange={onFile}
+                  disabled={parsing}
+                />
               </label>
             </CardContent>
           </Card>
@@ -301,23 +630,46 @@ function TallyImportPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-base">
                 <span>3. Preview & import</span>
-                <Button onClick={commit} disabled={importing || accountingExport} className="btn-3d">
+                <Button
+                  onClick={commit}
+                  disabled={importing || accountingExport}
+                  className="btn-3d"
+                >
                   <Upload className="h-4 w-4 mr-1" />
                   {importing ? "Importing…" : "Import to database"}
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {accountingExport && <div role="alert" className="mb-4 border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
-                <p>Accounting transactions and bill references are available for review only. Import is paused because this importer cannot safely preserve every voucher leg and bill allocation. No accounting records will be uploaded.</p>
-                <p className="mt-2">{integrity?.voucherCount ?? 0} vouchers · debit {integrity?.debit.toFixed(2)} · credit {integrity?.credit.toFixed(2)} · {integrity?.errors.length ?? 0} integrity issues</p>
-                {integrity?.errors.slice(0, 20).map((issue, index) => <p key={index} className="mt-1 text-xs">{issue}</p>)}
-              </div>}
+              {accountingExport && (
+                <div
+                  role="alert"
+                  className="mb-4 border border-warning/30 bg-warning/5 p-3 text-sm text-warning"
+                >
+                  <p>
+                    Accounting transactions and bill references are available for review only.
+                    Import is paused because this importer cannot safely preserve every voucher leg
+                    and bill allocation. No accounting records will be uploaded.
+                  </p>
+                  <p className="mt-2">
+                    {integrity?.voucherCount ?? 0} vouchers · debit {integrity?.debit.toFixed(2)} ·
+                    credit {integrity?.credit.toFixed(2)} · {integrity?.errors.length ?? 0}{" "}
+                    integrity issues
+                  </p>
+                  {integrity?.errors.slice(0, 20).map((issue, index) => (
+                    <p key={index} className="mt-1 text-xs">
+                      {issue}
+                    </p>
+                  ))}
+                </div>
+              )}
               {progress && (
                 <div className="mb-4 space-y-1.5">
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{progress.label}</span>
-                    <span>{progress.done}/{progress.total}</span>
+                    <span>
+                      {progress.done}/{progress.total}
+                    </span>
                   </div>
                   <Progress value={progress.total ? (progress.done / progress.total) * 100 : 0} />
                 </div>
@@ -346,68 +698,151 @@ function TallyImportPage() {
                   <TabsTrigger value="coa">Chart of accounts</TabsTrigger>
                   <TabsTrigger value="other">Godowns & cost centres</TabsTrigger>
                 </TabsList>
-                <TabsContent value="outstanding"><OutstandingTable customers={parsed.customers} vendors={parsed.vendors} /></TabsContent>
-                <TabsContent value="customers"><PartyTable rows={parsed.customers} /></TabsContent>
-                <TabsContent value="vendors"><PartyTable rows={parsed.vendors} /></TabsContent>
-                <TabsContent value="raw"><StockTable rows={parsed.rawMaterials} /></TabsContent>
-                <TabsContent value="finished"><StockTable rows={parsed.finishedGoods} /></TabsContent>
-                <TabsContent value="ledger"><LedgerTable rows={parsed.ledgerEntries} /></TabsContent>
-                <TabsContent value="coa"><ChartOfAccountsTable groups={parsed.groups} ledgers={parsed.ledgers} /></TabsContent>
-                <TabsContent value="other"><NamedTable rows={[...parsed.godowns.map((g) => ({ name: g.name, kind: "Godown", parent: g.parent })), ...parsed.costCentres.map((c) => ({ name: c.name, kind: "Cost centre", parent: c.parent }))]} /></TabsContent>
+                <TabsContent value="outstanding">
+                  <OutstandingTable customers={parsed.customers} vendors={parsed.vendors} />
+                </TabsContent>
+                <TabsContent value="customers">
+                  <PartyTable rows={parsed.customers} />
+                </TabsContent>
+                <TabsContent value="vendors">
+                  <PartyTable rows={parsed.vendors} />
+                </TabsContent>
+                <TabsContent value="raw">
+                  <StockTable rows={parsed.rawMaterials} />
+                </TabsContent>
+                <TabsContent value="finished">
+                  <StockTable rows={parsed.finishedGoods} />
+                </TabsContent>
+                <TabsContent value="ledger">
+                  <LedgerTable rows={parsed.ledgerEntries} />
+                </TabsContent>
+                <TabsContent value="coa">
+                  <ChartOfAccountsTable groups={parsed.groups} ledgers={parsed.ledgers} />
+                </TabsContent>
+                <TabsContent value="other">
+                  <NamedTable
+                    rows={[
+                      ...parsed.godowns.map((g) => ({
+                        name: g.name,
+                        kind: "Godown",
+                        parent: g.parent,
+                      })),
+                      ...parsed.costCentres.map((c) => ({
+                        name: c.name,
+                        kind: "Cost centre",
+                        parent: c.parent,
+                      })),
+                    ]}
+                  />
+                </TabsContent>
               </Tabs>
-
             </CardContent>
           </Card>
         )}
 
         {result && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" />Import results</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                Import results
+              </CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-3">
-                <ResultStat label="Customers" inserted={result.customers.inserted} updated={result.customers.updated} />
-                <ResultStat label="Vendors" inserted={result.vendors.inserted} updated={result.vendors.updated} />
-                <ResultStat label="Raw materials" inserted={result.rawMaterials.inserted} updated={result.rawMaterials.updated} />
-                <ResultStat label="Finished goods" inserted={result.finishedGoods.inserted} updated={result.finishedGoods.updated} />
-                <ResultStat label="Account groups" inserted={result.ledgerGroups.inserted} updated={result.ledgerGroups.updated} />
-                <ResultStat label="Ledger accounts" inserted={result.ledgerAccounts.inserted} updated={result.ledgerAccounts.updated} />
-                <ResultStat label="Godowns" inserted={result.godowns.inserted} updated={result.godowns.updated} />
-                <ResultStat label="Cost centres" inserted={result.costCentres.inserted} updated={result.costCentres.updated} />
+                <ResultStat
+                  label="Customers"
+                  inserted={result.customers.inserted}
+                  updated={result.customers.updated}
+                />
+                <ResultStat
+                  label="Vendors"
+                  inserted={result.vendors.inserted}
+                  updated={result.vendors.updated}
+                />
+                <ResultStat
+                  label="Raw materials"
+                  inserted={result.rawMaterials.inserted}
+                  updated={result.rawMaterials.updated}
+                />
+                <ResultStat
+                  label="Finished goods"
+                  inserted={result.finishedGoods.inserted}
+                  updated={result.finishedGoods.updated}
+                />
+                <ResultStat
+                  label="Account groups"
+                  inserted={result.ledgerGroups.inserted}
+                  updated={result.ledgerGroups.updated}
+                />
+                <ResultStat
+                  label="Ledger accounts"
+                  inserted={result.ledgerAccounts.inserted}
+                  updated={result.ledgerAccounts.updated}
+                />
+                <ResultStat
+                  label="Godowns"
+                  inserted={result.godowns.inserted}
+                  updated={result.godowns.updated}
+                />
+                <ResultStat
+                  label="Cost centres"
+                  inserted={result.costCentres.inserted}
+                  updated={result.costCentres.updated}
+                />
               </div>
 
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2 mb-3">
                 <div className="rounded-xl glass-sm p-3">
                   <div className="text-xs text-muted-foreground">Customer ledger entries</div>
                   <div className="mt-1 text-sm">
-                    <span className="text-emerald-500 font-medium">+{result.partyLedgerEntries.inserted}</span> inserted ·{" "}
-                    <span className="text-muted-foreground">{result.partyLedgerEntries.skipped}</span> already present
+                    <span className="text-emerald-500 font-medium">
+                      +{result.partyLedgerEntries.inserted}
+                    </span>{" "}
+                    inserted ·{" "}
+                    <span className="text-muted-foreground">
+                      {result.partyLedgerEntries.skipped}
+                    </span>{" "}
+                    already present
                   </div>
                 </div>
                 <div className="rounded-xl glass-sm p-3">
                   <div className="text-xs text-muted-foreground">Vendor ledger entries</div>
                   <div className="mt-1 text-sm">
-                    <span className="text-emerald-500 font-medium">+{result.supplierLedgerEntries.inserted}</span> inserted ·{" "}
-                    <span className="text-muted-foreground">{result.supplierLedgerEntries.skipped}</span> already present
+                    <span className="text-emerald-500 font-medium">
+                      +{result.supplierLedgerEntries.inserted}
+                    </span>{" "}
+                    inserted ·{" "}
+                    <span className="text-muted-foreground">
+                      {result.supplierLedgerEntries.skipped}
+                    </span>{" "}
+                    already present
                   </div>
                 </div>
               </div>
               {result.unmatchedLedgerNames.length > 0 && (
                 <div className="rounded-md border border-warning/30 bg-warning/5 p-3 mb-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-warning mb-2">
-                    <AlertTriangle className="h-4 w-4" /> {result.unmatchedLedgerNames.length} ledger name(s) had no matching customer/vendor — entries skipped
+                    <AlertTriangle className="h-4 w-4" /> {result.unmatchedLedgerNames.length}{" "}
+                    ledger name(s) had no matching customer/vendor — entries skipped
                   </div>
                   <ul className="text-xs text-muted-foreground space-y-0.5 max-h-32 overflow-y-auto">
-                    {result.unmatchedLedgerNames.slice(0, 30).map((n, i) => <li key={i}>• {n}</li>)}
+                    {result.unmatchedLedgerNames.slice(0, 30).map((n, i) => (
+                      <li key={i}>• {n}</li>
+                    ))}
                   </ul>
                 </div>
               )}
               {result.errors.length > 0 && (
                 <div className="rounded-md border border-warning/30 bg-warning/5 p-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-warning mb-2">
-                    <AlertTriangle className="h-4 w-4" /> {result.errors.length} record(s) had errors
+                    <AlertTriangle className="h-4 w-4" /> {result.errors.length} record(s) had
+                    errors
                   </div>
                   <ul className="text-xs text-muted-foreground space-y-0.5 max-h-40 overflow-y-auto">
-                    {result.errors.slice(0, 50).map((e, i) => <li key={i}>• {e}</li>)}
+                    {result.errors.slice(0, 50).map((e, i) => (
+                      <li key={i}>• {e}</li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -428,44 +863,102 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function ResultStat({ label, inserted, updated }: { label: string; inserted: number; updated: number }) {
+function ResultStat({
+  label,
+  inserted,
+  updated,
+}: {
+  label: string;
+  inserted: number;
+  updated: number;
+}) {
   return (
     <div className="rounded-xl glass-sm p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-sm"><span className="text-emerald-500 font-medium">+{inserted}</span> new · <span className="text-primary font-medium">{updated}</span> updated</div>
+      <div className="mt-1 text-sm">
+        <span className="text-emerald-500 font-medium">+{inserted}</span> new ·{" "}
+        <span className="text-primary font-medium">{updated}</span> updated
+      </div>
     </div>
   );
 }
 
-function LedgerTable({ rows }: { rows: Array<{ party_name: string; entry_date: string; voucher_type: string | null; voucher_number: string | null; debit: number; credit: number }> }) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No voucher entries found in this XML. Export a Day Book or Ledger XML to bring in transactions.</p>;
+function LedgerTable({
+  rows,
+}: {
+  rows: Array<{
+    party_name: string;
+    entry_date: string;
+    voucher_type: string | null;
+    voucher_number: string | null;
+    debit: number;
+    credit: number;
+  }>;
+}) {
+  if (rows.length === 0)
+    return (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        No voucher entries found in this XML. Export a Day Book or Ledger XML to bring in
+        transactions.
+      </p>
+    );
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Party</TableHead><TableHead>Voucher</TableHead><TableHead className="text-right">Debit</TableHead><TableHead className="text-right">Credit</TableHead></TableRow></TableHeader>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Party</TableHead>
+            <TableHead>Voucher</TableHead>
+            <TableHead className="text-right">Debit</TableHead>
+            <TableHead className="text-right">Credit</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {rows.slice(0, 200).map((r, i) => (
             <TableRow key={i}>
               <TableCell className="text-xs">{r.entry_date}</TableCell>
               <TableCell className="font-medium">{r.party_name}</TableCell>
-              <TableCell className="text-xs text-muted-foreground">{r.voucher_type ?? "—"} {r.voucher_number ?? ""}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">
+                {r.voucher_type ?? "—"} {r.voucher_number ?? ""}
+              </TableCell>
               <TableCell className="text-right">{r.debit.toFixed(2)}</TableCell>
               <TableCell className="text-right">{r.credit.toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      {rows.length > 200 && <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>}
+      {rows.length > 200 && (
+        <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>
+      )}
     </div>
   );
 }
 
-function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | null; phone?: string | null; opening_balance: number; closing_balance: number }> }) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
+function PartyTable({
+  rows,
+}: {
+  rows: Array<{
+    name: string;
+    gstin?: string | null;
+    phone?: string | null;
+    opening_balance: number;
+    closing_balance: number;
+  }>;
+}) {
+  if (rows.length === 0)
+    return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>GSTIN</TableHead><TableHead className="text-right">Opening</TableHead><TableHead className="text-right">Closing</TableHead></TableRow></TableHeader>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>GSTIN</TableHead>
+            <TableHead className="text-right">Opening</TableHead>
+            <TableHead className="text-right">Closing</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {rows.slice(0, 200).map((r, i) => (
             <TableRow key={i}>
@@ -477,17 +970,38 @@ function PartyTable({ rows }: { rows: Array<{ name: string; gstin?: string | nul
           ))}
         </TableBody>
       </Table>
-      {rows.length > 200 && <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>}
+      {rows.length > 200 && (
+        <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>
+      )}
     </div>
   );
 }
 
-function StockTable({ rows }: { rows: Array<{ name: string; unit: string; opening_qty: number; opening_rate: number; group: string }> }) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
+function StockTable({
+  rows,
+}: {
+  rows: Array<{
+    name: string;
+    unit: string;
+    opening_qty: number;
+    opening_rate: number;
+    group: string;
+  }>;
+}) {
+  if (rows.length === 0)
+    return <p className="text-sm text-muted-foreground py-6 text-center">None found.</p>;
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Group</TableHead><TableHead>Unit</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Rate</TableHead></TableRow></TableHeader>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Group</TableHead>
+            <TableHead>Unit</TableHead>
+            <TableHead className="text-right">Qty</TableHead>
+            <TableHead className="text-right">Rate</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {rows.slice(0, 200).map((r, i) => (
             <TableRow key={i}>
@@ -500,7 +1014,9 @@ function StockTable({ rows }: { rows: Array<{ name: string; unit: string; openin
           ))}
         </TableBody>
       </Table>
-      {rows.length > 200 && <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>}
+      {rows.length > 200 && (
+        <p className="text-xs text-muted-foreground p-2">Showing first 200 of {rows.length}.</p>
+      )}
     </div>
   );
 }
@@ -511,13 +1027,19 @@ function OutstandingTable({ customers, vendors }: { customers: OutRow[]; vendors
   const rows = [
     ...customers.map((c) => ({ ...c, kind: "Customer" as const })),
     ...vendors.map((v) => ({ ...v, kind: "Vendor" as const })),
-  ].filter((r) => Math.abs(r.closing_balance) > 0.005)
-   .sort((a, b) => Math.abs(b.closing_balance) - Math.abs(a.closing_balance));
+  ]
+    .filter((r) => Math.abs(r.closing_balance) > 0.005)
+    .sort((a, b) => Math.abs(b.closing_balance) - Math.abs(a.closing_balance));
 
   const receivable = customers.reduce((a, c) => a + Math.max(c.closing_balance, 0), 0);
   const payable = vendors.reduce((a, v) => a + Math.max(-v.closing_balance, 0), 0);
 
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No outstanding balances found in this export.</p>;
+  if (rows.length === 0)
+    return (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        No outstanding balances found in this export.
+      </p>
+    );
 
   return (
     <div>
@@ -533,19 +1055,30 @@ function OutstandingTable({ customers, vendors }: { customers: OutRow[]; vendors
       </div>
       <div className="max-h-[420px] overflow-y-auto">
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Outstanding</TableHead><TableHead>Dr/Cr</TableHead></TableRow></TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-right">Outstanding</TableHead>
+              <TableHead>Dr/Cr</TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
             {rows.slice(0, 300).map((r, i) => (
               <TableRow key={i}>
                 <TableCell className="font-medium">{r.name}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{r.kind}</TableCell>
-                <TableCell className="text-right">{Math.abs(r.closing_balance).toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  {Math.abs(r.closing_balance).toFixed(2)}
+                </TableCell>
                 <TableCell className="text-xs">{r.closing_balance >= 0 ? "Dr" : "Cr"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        {rows.length > 300 && <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>}
+        {rows.length > 300 && (
+          <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>
+        )}
       </div>
     </div>
   );
@@ -559,14 +1092,37 @@ function ChartOfAccountsTable({
   ledgers: Array<{ name: string; parent: string; opening_balance: number; opening_type: string }>;
 }) {
   const rows = [
-    ...groups.map((g) => ({ name: g.name, parent: g.parent ?? "—", kind: "Group", detail: g.nature })),
-    ...ledgers.map((l) => ({ name: l.name, parent: l.parent, kind: "Ledger", detail: `${l.opening_balance.toFixed(2)} ${l.opening_type.toUpperCase()}` })),
+    ...groups.map((g) => ({
+      name: g.name,
+      parent: g.parent ?? "—",
+      kind: "Group",
+      detail: g.nature,
+    })),
+    ...ledgers.map((l) => ({
+      name: l.name,
+      parent: l.parent,
+      kind: "Ledger",
+      detail: `${l.opening_balance.toFixed(2)} ${l.opening_type.toUpperCase()}`,
+    })),
   ];
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No account groups or ledgers found. Export the Chart of Accounts / List of Accounts from Tally.</p>;
+  if (rows.length === 0)
+    return (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        No account groups or ledgers found. Export the Chart of Accounts / List of Accounts from
+        Tally.
+      </p>
+    );
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Under</TableHead><TableHead>Type</TableHead><TableHead>Detail</TableHead></TableRow></TableHeader>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Under</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Detail</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {rows.slice(0, 300).map((r, i) => (
             <TableRow key={i}>
@@ -578,17 +1134,34 @@ function ChartOfAccountsTable({
           ))}
         </TableBody>
       </Table>
-      {rows.length > 300 && <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>}
+      {rows.length > 300 && (
+        <p className="text-xs text-muted-foreground p-2">Showing first 300 of {rows.length}.</p>
+      )}
     </div>
   );
 }
 
-function NamedTable({ rows }: { rows: Array<{ name: string; kind: string; parent: string | null }> }) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-6 text-center">No godowns or cost centres found.</p>;
+function NamedTable({
+  rows,
+}: {
+  rows: Array<{ name: string; kind: string; parent: string | null }>;
+}) {
+  if (rows.length === 0)
+    return (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        No godowns or cost centres found.
+      </p>
+    );
   return (
     <div className="max-h-[420px] overflow-y-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Under</TableHead></TableRow></TableHeader>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Under</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {rows.slice(0, 200).map((r, i) => (
             <TableRow key={i}>
@@ -602,4 +1175,3 @@ function NamedTable({ rows }: { rows: Array<{ name: string; kind: string; parent
     </div>
   );
 }
-

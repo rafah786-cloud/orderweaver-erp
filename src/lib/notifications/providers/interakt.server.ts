@@ -58,7 +58,11 @@ export const interaktFactory: ProviderFactory = (record: ProviderRecord): Notifi
         json?.id ?? json?.message_id ?? json?.data?.id ?? json?.data?.message_id ?? "";
       return { ok: true, messageId, raw: json };
     } catch (e) {
-      return { ok: false, status: "failed", error: e instanceof Error ? e.message : "network error" };
+      return {
+        ok: false,
+        status: "failed",
+        error: e instanceof Error ? e.message : "network error",
+      };
     }
   }
 

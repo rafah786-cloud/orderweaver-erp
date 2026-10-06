@@ -1,39 +1,304 @@
 export type StockMovement = {
-  id: string; itemId: string; godownId: string;
-  type: "purchase" | "sale" | "transfer_in" | "transfer_out" | "production_in" | "production_out" | "opening";
-  quantity: number; rate: number; amount: number; date: string; source: string; key: string | null; reverses: string | null;
+  id: string;
+  itemId: string;
+  godownId: string;
+  type:
+    | "purchase"
+    | "sale"
+    | "transfer_in"
+    | "transfer_out"
+    | "production_in"
+    | "production_out"
+    | "opening";
+  quantity: number;
+  rate: number;
+  amount: number;
+  date: string;
+  source: string;
+  key: string | null;
+  reverses: string | null;
 };
 
-export function resolveStockItem(matches: string[]) { if (matches.length !== 1) return { ok: false as const, reason: matches.length === 0 ? "no stock item" : "ambiguous stock item" }; return { ok: true as const, stockItemId: matches[0] }; }
-export function applyDocumentTransition(kind: "purchase" | "sales", status: string, next: string, lines: Array<{ id: string; matches: string[] }>) {
+export function resolveStockItem(matches: string[]) {
+  if (matches.length !== 1)
+    return {
+      ok: false as const,
+      reason: matches.length === 0 ? "no stock item" : "ambiguous stock item",
+    };
+  return { ok: true as const, stockItemId: matches[0] };
+}
+export function applyDocumentTransition(
+  kind: "purchase" | "sales",
+  status: string,
+  next: string,
+  lines: Array<{ id: string; matches: string[] }>,
+) {
   if (kind === "purchase" && next !== "received") return { movements: [], status: next };
   if (kind === "sales" && next !== "dispatched") return { movements: [], status: next };
-  if ((kind === "purchase" && status === "received") || (kind === "sales" && status === "dispatched")) return { movements: [], status };
-  const movements = []; for (const line of lines) { const item = resolveStockItem(line.matches); if (!item.ok) return { movements: [], status, reason: item.reason }; movements.push({ key: `${next}:${line.id}`, stockItemId: item.stockItemId }); }
+  if (
+    (kind === "purchase" && status === "received") ||
+    (kind === "sales" && status === "dispatched")
+  )
+    return { movements: [], status };
+  const movements = [];
+  for (const line of lines) {
+    const item = resolveStockItem(line.matches);
+    if (!item.ok) return { movements: [], status, reason: item.reason };
+    movements.push({ key: `${next}:${line.id}`, stockItemId: item.stockItemId });
+  }
   return { movements, status: next };
 }
-export function planPurchaseReceipt(status: "draft" | "received", items: Array<{ id: string; quantity: number; rate: number }>) { if (status !== "received") return []; return items.map((item) => ({ key: `receipt:${item.id}`, quantity: item.quantity, rate: item.rate, source: item.id })); }
-export function planSalesDispatch(input: { orderId: string; ordered: number; available: number; ratedQuantity: number; alreadyDispatched: boolean }) {
-  if (input.alreadyDispatched) return { ok: false as const, reason: "already dispatched" }; if (input.ratedQuantity <= 0) return { ok: false as const, reason: "opening stock has no rate" }; if (input.available < input.ordered) return { ok: false as const, reason: "insufficient stock" }; return { ok: true as const, key: `dispatch:${input.orderId}`, quantity: input.ordered, reserved: 0 };
+export function planPurchaseReceipt(
+  status: "draft" | "received",
+  items: Array<{ id: string; quantity: number; rate: number }>,
+) {
+  if (status !== "received") return [];
+  return items.map((item) => ({
+    key: `receipt:${item.id}`,
+    quantity: item.quantity,
+    rate: item.rate,
+    source: item.id,
+  }));
 }
-export function planProduction(orderId: string, lines: Array<{ id: string; modelId: string | null; quantity: number }>, bom: Array<{ modelId: string; rawMaterialId: string; quantityPerUnit: number }>, mappings: Map<string, string>) {
+export function planSalesDispatch(input: {
+  orderId: string;
+  ordered: number;
+  available: number;
+  ratedQuantity: number;
+  alreadyDispatched: boolean;
+}) {
+  if (input.alreadyDispatched) return { ok: false as const, reason: "already dispatched" };
+  if (input.ratedQuantity <= 0) return { ok: false as const, reason: "opening stock has no rate" };
+  if (input.available < input.ordered) return { ok: false as const, reason: "insufficient stock" };
+  return {
+    ok: true as const,
+    key: `dispatch:${input.orderId}`,
+    quantity: input.ordered,
+    reserved: 0,
+  };
+}
+export function planProduction(
+  orderId: string,
+  lines: Array<{ id: string; modelId: string | null; quantity: number }>,
+  bom: Array<{ modelId: string; rawMaterialId: string; quantityPerUnit: number }>,
+  mappings: Map<string, string>,
+) {
   const consumption: Array<{ key: string; stockItemId: string; quantity: number }> = [];
-  for (const line of lines) { if (!line.modelId || line.quantity <= 0) continue; for (const component of bom.filter((b) => b.modelId === line.modelId)) { if (component.quantityPerUnit <= 0) throw new Error("invalid BOM quantity"); const stockItemId = mappings.get(component.rawMaterialId); if (!stockItemId) throw new Error("no stock item mapped to BOM raw material"); consumption.push({ key: `bom:${orderId}:${line.id}:${component.rawMaterialId}`, stockItemId, quantity: component.quantityPerUnit * line.quantity }); } }
+  for (const line of lines) {
+    if (!line.modelId || line.quantity <= 0) continue;
+    for (const component of bom.filter((b) => b.modelId === line.modelId)) {
+      if (component.quantityPerUnit <= 0) throw new Error("invalid BOM quantity");
+      const stockItemId = mappings.get(component.rawMaterialId);
+      if (!stockItemId) throw new Error("no stock item mapped to BOM raw material");
+      consumption.push({
+        key: `bom:${orderId}:${line.id}:${component.rawMaterialId}`,
+        stockItemId,
+        quantity: component.quantityPerUnit * line.quantity,
+      });
+    }
+  }
   return consumption;
 }
-export function planFinishedGoodsReceipt(orderId: string, lines: Array<{ id: string; modelId: string | null; quantity: number }>, mappings: Map<string, { stockItemId: string; rate: number }>) {
-  return lines.map((line) => { if (!line.modelId || line.quantity <= 0) throw new Error("invalid finished-goods line"); const item = mappings.get(line.modelId); if (!item) throw new Error("finished product has no stock item mapping"); if (item.rate <= 0) throw new Error("finished product has no valuation rate"); return { key: `fg:${orderId}:${line.id}`, stockItemId: item.stockItemId, quantity: line.quantity, rate: item.rate }; });
+export function planFinishedGoodsReceipt(
+  orderId: string,
+  lines: Array<{ id: string; modelId: string | null; quantity: number }>,
+  mappings: Map<string, { stockItemId: string; rate: number }>,
+) {
+  return lines.map((line) => {
+    if (!line.modelId || line.quantity <= 0) throw new Error("invalid finished-goods line");
+    const item = mappings.get(line.modelId);
+    if (!item) throw new Error("finished product has no stock item mapping");
+    if (item.rate <= 0) throw new Error("finished product has no valuation rate");
+    return {
+      key: `fg:${orderId}:${line.id}`,
+      stockItemId: item.stockItemId,
+      quantity: line.quantity,
+      rate: item.rate,
+    };
+  });
 }
 
 export class IsolatedStockLedger {
-  private rows: StockMovement[]; private seq = 1; private queue = Promise.resolve();
-  constructor(opening: Array<{ itemId: string; godownId: string; quantity: number }>) { this.rows = opening.map((row) => ({ id: `opening-${this.seq++}`, itemId: row.itemId, godownId: row.godownId, type: "opening", quantity: row.quantity, rate: 0, amount: 0, date: "2025-04-01", source: "opening", key: null, reverses: null })); }
-  private async locked<T>(work: () => T) { let release: () => void = () => undefined; const prior = this.queue; this.queue = new Promise<void>((resolve) => { release = resolve; }); await prior; try { return work(); } finally { release(); } }
-  available(itemId: string, godownId: string) { return this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId).reduce((sum, row) => sum + (["sale", "transfer_out", "production_out"].includes(row.type) ? -row.quantity : row.quantity), 0); }
-  weightedRate(itemId: string, godownId: string) { const rows = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId); const quantity = rows.reduce((sum, row) => sum + (["sale", "transfer_out", "production_out"].includes(row.type) ? -row.quantity : row.quantity), 0); if (quantity <= 0) return 0; const value = rows.reduce((sum, row) => sum + (["sale", "transfer_out", "production_out"].includes(row.type) ? -row.amount : row.amount), 0); return value > 0 ? value / quantity : 0; }
-  async receive(itemId: string, godownId: string, quantity: number, rate: number, key: string) { return this.locked(() => { const existing = this.rows.find((row) => row.key === key); if (existing) return existing; if (quantity <= 0 || rate <= 0) throw new Error("invalid receipt"); const row: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId, type: "purchase", quantity, rate, amount: quantity * rate, date: "2026-04-01", source: "purchase", key, reverses: null }; this.rows.push(row); return row; }); }
-  async issue(itemId: string, godownId: string, quantity: number, key: string) { return this.locked(() => { const existing = this.rows.find((row) => row.key === key); if (existing) return existing; if (quantity <= 0) throw new Error("invalid issue"); if (this.available(itemId, godownId) < quantity) throw new Error("insufficient stock"); const rate = this.weightedRate(itemId, godownId); if (rate <= 0) throw new Error("opening stock has no rate"); const row: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId, type: "sale", quantity, rate, amount: quantity * rate, date: "2026-04-02", source: "dispatch", key, reverses: null }; this.rows.push(row); return row; }); }
-  async transfer(itemId: string, from: string, to: string, quantity: number, key: string) { return this.locked(() => { const existing = this.rows.filter((row) => row.key === key); if (existing.length) return existing; if (from === to || quantity <= 0 || this.available(itemId, from) < quantity) throw new Error("insufficient stock"); const rate = this.weightedRate(itemId, from); if (rate <= 0) throw new Error("opening stock has no rate"); const amount = quantity * rate; const out: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: from, type: "transfer_out", quantity, rate, amount, date: "2026-04-03", source: "transfer", key, reverses: null }; const inn: StockMovement = { id: `mv-${this.seq++}`, itemId, godownId: to, type: "transfer_in", quantity, rate, amount, date: "2026-04-03", source: "transfer", key, reverses: null }; this.rows.push(out, inn); return [out, inn]; }); }
-  async reverse(id: string, key: string) { return this.locked(() => { const existing = this.rows.find((row) => row.key === key); if (existing) return existing; const original = this.rows.find((row) => row.id === id); if (!original || original.type === "opening") throw new Error("cannot reverse opening"); const opposite = original.type === "purchase" ? "sale" : original.type === "sale" ? "purchase" : original.type === "transfer_out" ? "transfer_in" : original.type === "transfer_in" ? "transfer_out" : original.type === "production_out" ? "production_in" : "production_out"; const row: StockMovement = { ...original, id: `mv-${this.seq++}`, type: opposite, key, reverses: original.id }; this.rows.push(row); return row; }); }
-  openingUntouched() { return this.rows.filter((row) => row.type === "opening").every((row) => row.rate === 0 && row.amount === 0 && row.key === null); }
+  private rows: StockMovement[];
+  private seq = 1;
+  private queue = Promise.resolve();
+  constructor(opening: Array<{ itemId: string; godownId: string; quantity: number }>) {
+    this.rows = opening.map((row) => ({
+      id: `opening-${this.seq++}`,
+      itemId: row.itemId,
+      godownId: row.godownId,
+      type: "opening",
+      quantity: row.quantity,
+      rate: 0,
+      amount: 0,
+      date: "2025-04-01",
+      source: "opening",
+      key: null,
+      reverses: null,
+    }));
+  }
+  private async locked<T>(work: () => T) {
+    let release: () => void = () => undefined;
+    const prior = this.queue;
+    this.queue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await prior;
+    try {
+      return work();
+    } finally {
+      release();
+    }
+  }
+  available(itemId: string, godownId: string) {
+    return this.rows
+      .filter((row) => row.itemId === itemId && row.godownId === godownId)
+      .reduce(
+        (sum, row) =>
+          sum +
+          (["sale", "transfer_out", "production_out"].includes(row.type)
+            ? -row.quantity
+            : row.quantity),
+        0,
+      );
+  }
+  weightedRate(itemId: string, godownId: string) {
+    const rows = this.rows.filter((row) => row.itemId === itemId && row.godownId === godownId);
+    const quantity = rows.reduce(
+      (sum, row) =>
+        sum +
+        (["sale", "transfer_out", "production_out"].includes(row.type)
+          ? -row.quantity
+          : row.quantity),
+      0,
+    );
+    if (quantity <= 0) return 0;
+    const value = rows.reduce(
+      (sum, row) =>
+        sum +
+        (["sale", "transfer_out", "production_out"].includes(row.type) ? -row.amount : row.amount),
+      0,
+    );
+    return value > 0 ? value / quantity : 0;
+  }
+  async receive(itemId: string, godownId: string, quantity: number, rate: number, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.find((row) => row.key === key);
+      if (existing) return existing;
+      if (quantity <= 0 || rate <= 0) throw new Error("invalid receipt");
+      const row: StockMovement = {
+        id: `mv-${this.seq++}`,
+        itemId,
+        godownId,
+        type: "purchase",
+        quantity,
+        rate,
+        amount: quantity * rate,
+        date: "2026-04-01",
+        source: "purchase",
+        key,
+        reverses: null,
+      };
+      this.rows.push(row);
+      return row;
+    });
+  }
+  async issue(itemId: string, godownId: string, quantity: number, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.find((row) => row.key === key);
+      if (existing) return existing;
+      if (quantity <= 0) throw new Error("invalid issue");
+      if (this.available(itemId, godownId) < quantity) throw new Error("insufficient stock");
+      const rate = this.weightedRate(itemId, godownId);
+      if (rate <= 0) throw new Error("opening stock has no rate");
+      const row: StockMovement = {
+        id: `mv-${this.seq++}`,
+        itemId,
+        godownId,
+        type: "sale",
+        quantity,
+        rate,
+        amount: quantity * rate,
+        date: "2026-04-02",
+        source: "dispatch",
+        key,
+        reverses: null,
+      };
+      this.rows.push(row);
+      return row;
+    });
+  }
+  async transfer(itemId: string, from: string, to: string, quantity: number, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.filter((row) => row.key === key);
+      if (existing.length) return existing;
+      if (from === to || quantity <= 0 || this.available(itemId, from) < quantity)
+        throw new Error("insufficient stock");
+      const rate = this.weightedRate(itemId, from);
+      if (rate <= 0) throw new Error("opening stock has no rate");
+      const amount = quantity * rate;
+      const out: StockMovement = {
+        id: `mv-${this.seq++}`,
+        itemId,
+        godownId: from,
+        type: "transfer_out",
+        quantity,
+        rate,
+        amount,
+        date: "2026-04-03",
+        source: "transfer",
+        key,
+        reverses: null,
+      };
+      const inn: StockMovement = {
+        id: `mv-${this.seq++}`,
+        itemId,
+        godownId: to,
+        type: "transfer_in",
+        quantity,
+        rate,
+        amount,
+        date: "2026-04-03",
+        source: "transfer",
+        key,
+        reverses: null,
+      };
+      this.rows.push(out, inn);
+      return [out, inn];
+    });
+  }
+  async reverse(id: string, key: string) {
+    return this.locked(() => {
+      const existing = this.rows.find((row) => row.key === key);
+      if (existing) return existing;
+      const original = this.rows.find((row) => row.id === id);
+      if (!original || original.type === "opening") throw new Error("cannot reverse opening");
+      const opposite =
+        original.type === "purchase"
+          ? "sale"
+          : original.type === "sale"
+            ? "purchase"
+            : original.type === "transfer_out"
+              ? "transfer_in"
+              : original.type === "transfer_in"
+                ? "transfer_out"
+                : original.type === "production_out"
+                  ? "production_in"
+                  : "production_out";
+      const row: StockMovement = {
+        ...original,
+        id: `mv-${this.seq++}`,
+        type: opposite,
+        key,
+        reverses: original.id,
+      };
+      this.rows.push(row);
+      return row;
+    });
+  }
+  openingUntouched() {
+    return this.rows
+      .filter((row) => row.type === "opening")
+      .every((row) => row.rate === 0 && row.amount === 0 && row.key === null);
+  }
 }

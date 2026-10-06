@@ -13,13 +13,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileSpreadsheet, FileText, RotateCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-
 
 export const Route = createFileRoute("/_app/communications/whatsapp-logs")({
   component: WhatsAppLogsPage,
@@ -70,7 +82,6 @@ function WhatsAppLogsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const monthAgo = useMemo(() => {
     const d = new Date();
@@ -86,13 +97,21 @@ function WhatsAppLogsPage() {
   const [status, setStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const { data: customers } = useQuery({ queryKey: ["wa-flt-customers"], queryFn: () => listCustomersFn() });
-  const { data: vendors } = useQuery({ queryKey: ["wa-flt-vendors"], queryFn: () => listVendorsFn() });
+  const { data: customers } = useQuery({
+    queryKey: ["wa-flt-customers"],
+    queryFn: () => listCustomersFn(),
+  });
+  const { data: vendors } = useQuery({
+    queryKey: ["wa-flt-vendors"],
+    queryFn: () => listVendorsFn(),
+  });
 
   const partyId =
-    partyKind === "customer" && customerId !== "all" ? customerId :
-    partyKind === "vendor" && vendorId !== "all" ? vendorId :
-    undefined;
+    partyKind === "customer" && customerId !== "all"
+      ? customerId
+      : partyKind === "vendor" && vendorId !== "all"
+        ? vendorId
+        : undefined;
 
   const filters = {
     from: from ? new Date(from + "T00:00:00").toISOString() : undefined,
@@ -167,7 +186,9 @@ function WhatsAppLogsPage() {
       />
       <PageBody>
         <Card className="mb-4">
-          <CardHeader><CardTitle className="text-base">Filters</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Filters</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-7">
               <div className="space-y-1">
@@ -181,7 +202,9 @@ function WhatsAppLogsPage() {
               <div className="space-y-1">
                 <Label>Recipient type</Label>
                 <Select value={partyKind} onValueChange={setPartyKind}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="customer">Customer</SelectItem>
@@ -195,11 +218,15 @@ function WhatsAppLogsPage() {
                 <div className="space-y-1">
                   <Label>Customer</Label>
                   <Select value={customerId} onValueChange={setCustomerId}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
                       {(customers?.customers ?? []).map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -209,11 +236,15 @@ function WhatsAppLogsPage() {
                 <div className="space-y-1">
                   <Label>Vendor</Label>
                   <Select value={vendorId} onValueChange={setVendorId}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
                       {(vendors?.vendors ?? []).map((v: any) => (
-                        <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -222,7 +253,9 @@ function WhatsAppLogsPage() {
               <div className="space-y-1">
                 <Label>Status</Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
@@ -233,10 +266,19 @@ function WhatsAppLogsPage() {
               </div>
               <div className="space-y-1">
                 <Label>Phone search</Label>
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="+9198…" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="+9198…"
+                />
               </div>
               <div className="flex items-end">
-                <Button variant="outline" className="w-full" onClick={() => refetch()} disabled={isFetching}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => refetch()}
+                  disabled={isFetching}
+                >
                   {isFetching ? "Refreshing…" : "Apply"}
                 </Button>
               </div>
@@ -250,7 +292,12 @@ function WhatsAppLogsPage() {
               {rows.length} message{rows.length === 1 ? "" : "s"}
             </CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={exportExcel} disabled={rows.length === 0}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportExcel}
+                disabled={rows.length === 0}
+              >
                 <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
               </Button>
               <Button variant="outline" size="sm" onClick={exportPDF} disabled={rows.length === 0}>
@@ -276,42 +323,64 @@ function WhatsAppLogsPage() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+                        Loading…
+                      </TableCell>
+                    </TableRow>
                   ) : rows.length === 0 ? (
-                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">No messages match the current filters.</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+                        No messages match the current filters.
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     rows.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="text-xs whitespace-nowrap">{format(new Date(r.sent_at), "yyyy-MM-dd HH:mm")}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">
+                          {format(new Date(r.sent_at), "yyyy-MM-dd HH:mm")}
+                        </TableCell>
                         <TableCell>
                           <div className="font-medium">{r.recipient_name}</div>
                           <div className="text-xs text-muted-foreground">{r.party_kind}</div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{r.recipient_phone ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {r.recipient_phone ?? "—"}
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{r.event_type}</TableCell>
-                        <TableCell className="text-xs">{r.template_name ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.template_name ?? <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         <TableCell>{statusBadge(r.status)}</TableCell>
                         <TableCell>{readBadge(r.read_status)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-xs truncate" title={r.failure_reason ?? ""}>
+                        <TableCell
+                          className="text-xs text-muted-foreground max-w-xs truncate"
+                          title={r.failure_reason ?? ""}
+                        >
                           {r.failure_reason ?? "—"}
                         </TableCell>
                         <TableCell className="text-right">
                           {r.status !== "sent" && (
-                            <Button size="sm" variant="outline" disabled={retry.isPending}
-                              onClick={() => retry.mutate(r.id)}>
-                              <RotateCw className="h-3 w-3 mr-1" />Retry
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={retry.isPending}
+                              onClick={() => retry.mutate(r.id)}
+                            >
+                              <RotateCw className="h-3 w-3 mr-1" />
+                              Retry
                             </Button>
                           )}
                         </TableCell>
                       </TableRow>
                     ))
                   )}
-
                 </TableBody>
               </Table>
             </div>
             <p className="mt-3 text-xs text-muted-foreground flex items-center gap-1">
-              <Download className="h-3 w-3" /> Exports include all currently filtered rows (up to 1000).
+              <Download className="h-3 w-3" /> Exports include all currently filtered rows (up to
+              1000).
             </p>
           </CardContent>
         </Card>

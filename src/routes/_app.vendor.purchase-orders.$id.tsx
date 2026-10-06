@@ -8,15 +8,25 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Download, CheckCircle2, XCircle } from "lucide-react";
 import { notifyAdminPurchaseAck } from "@/lib/whatsapp.functions";
 
-export const Route = createFileRoute("/_app/vendor/purchase-orders/$id")({ component: VendorPODetail });
+export const Route = createFileRoute("/_app/vendor/purchase-orders/$id")({
+  component: VendorPODetail,
+});
 
-const inr = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(n);
+const inr = (n: number) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(n);
 const fmt = (d: string) => new Date(d).toLocaleDateString("en-IN");
 
 function VendorPODetail() {
@@ -31,7 +41,9 @@ function VendorPODetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("purchase_bills")
-        .select("id, bill_number, bill_date, total_amount, subtotal, tax_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date")
+        .select(
+          "id, bill_number, bill_date, total_amount, subtotal, tax_amount, notes, vendor_ack_status, vendor_ack_at, vendor_ack_note, expected_dispatch_date",
+        )
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -59,12 +71,15 @@ function VendorPODetail() {
   const notifyAdmin = useServerFn(notifyAdminPurchaseAck);
   const ack = useMutation({
     mutationFn: async (status: "accepted" | "rejected") => {
-      const { error } = await supabase.from("purchase_bills").update({
-        vendor_ack_status: status,
-        vendor_ack_at: new Date().toISOString(),
-        vendor_ack_note: note || null,
-        expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : null,
-      }).eq("id", id);
+      const { error } = await supabase
+        .from("purchase_bills")
+        .update({
+          vendor_ack_status: status,
+          vendor_ack_at: new Date().toISOString(),
+          vendor_ack_note: note || null,
+          expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : null,
+        })
+        .eq("id", id);
       if (error) throw error;
       return status;
     },
@@ -74,9 +89,19 @@ function VendorPODetail() {
       qc.invalidateQueries({ queryKey: ["vendor-po-list"] });
       qc.invalidateQueries({ queryKey: ["vendor-pos"] });
       try {
-        const r = await notifyAdmin({ data: { bill_id: id, status, note: note || undefined, expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : undefined } });
+        const r = await notifyAdmin({
+          data: {
+            bill_id: id,
+            status,
+            note: note || undefined,
+            expected_dispatch_date:
+              status === "accepted" && dispatchDate ? dispatchDate : undefined,
+          },
+        });
         if (r?.ok) toast.success("Buyer notified via WhatsApp");
-      } catch { /* non-fatal */ }
+      } catch {
+        /* non-fatal */
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -94,7 +119,11 @@ function VendorPODetail() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/vendor/purchase-orders" })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/vendor/purchase-orders" })}
+        >
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
         <Button size="sm" variant="outline" onClick={downloadPDF}>
@@ -114,21 +143,34 @@ function VendorPODetail() {
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Rate</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Rate</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {items.map((it: any) => (
                 <TableRow key={it.id}>
                   <TableCell>{it.raw_materials?.name ?? "—"}</TableCell>
-                  <TableCell className="text-right">{Number(it.quantity)} {it.raw_materials?.unit ?? ""}</TableCell>
+                  <TableCell className="text-right">
+                    {Number(it.quantity)} {it.raw_materials?.unit ?? ""}
+                  </TableCell>
                   <TableCell className="text-right">{inr(Number(it.unit_price))}</TableCell>
-                  <TableCell className="text-right">{inr(Number(it.quantity) * Number(it.unit_price))}</TableCell>
+                  <TableCell className="text-right">
+                    {inr(Number(it.quantity) * Number(it.unit_price))}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
           <div className="flex justify-end mt-4 text-sm">
             <div className="space-y-1 text-right">
-              <div className="text-muted-foreground">Subtotal: {inr(Number(bill.subtotal ?? 0))}</div>
+              <div className="text-muted-foreground">
+                Subtotal: {inr(Number(bill.subtotal ?? 0))}
+              </div>
               <div className="text-muted-foreground">Tax: {inr(Number(bill.tax_amount ?? 0))}</div>
               <div className="font-semibold text-base">Total: {inr(Number(bill.total_amount))}</div>
             </div>
@@ -137,31 +179,50 @@ function VendorPODetail() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Acknowledgement</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Acknowledgement</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           {!editable ? (
             <div className="text-sm">
-              <Badge variant="secondary" className="mr-2">{bill.vendor_ack_status}</Badge>
+              <Badge variant="secondary" className="mr-2">
+                {bill.vendor_ack_status}
+              </Badge>
               on {bill.vendor_ack_at ? new Date(bill.vendor_ack_at).toLocaleString("en-IN") : "—"}
-              {bill.vendor_ack_note && <p className="text-muted-foreground mt-2">Note: {bill.vendor_ack_note}</p>}
+              {bill.vendor_ack_note && (
+                <p className="text-muted-foreground mt-2">Note: {bill.vendor_ack_note}</p>
+              )}
             </div>
           ) : (
             <>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Expected dispatch date</Label>
-                  <Input type="date" value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} />
+                  <Input
+                    type="date"
+                    value={dispatchDate}
+                    onChange={(e) => setDispatchDate(e.target.value)}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs">Note (optional)</Label>
-                <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Any comments for the buyer…" />
+                <Textarea
+                  rows={2}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Any comments for the buyer…"
+                />
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => ack.mutate("accepted")} disabled={ack.isPending}>
                   <CheckCircle2 className="h-4 w-4 mr-1" /> Accept
                 </Button>
-                <Button variant="destructive" onClick={() => ack.mutate("rejected")} disabled={ack.isPending}>
+                <Button
+                  variant="destructive"
+                  onClick={() => ack.mutate("rejected")}
+                  disabled={ack.isPending}
+                >
                   <XCircle className="h-4 w-4 mr-1" /> Reject
                 </Button>
               </div>

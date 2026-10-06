@@ -85,7 +85,13 @@ export async function sendWhatsAppMessage(
       failure_reason: "provider not configured",
       payload: { variables },
     });
-    return { ok: false, messageId: "", status: "skipped", attempts: 0, error: "provider not configured" };
+    return {
+      ok: false,
+      messageId: "",
+      status: "skipped",
+      attempts: 0,
+      error: "provider not configured",
+    };
   }
 
   const result = await provider.sendTemplate({

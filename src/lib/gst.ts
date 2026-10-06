@@ -83,14 +83,16 @@ type InvoiceFull = {
   place_of_supply: string | null;
   dispatch_state_code: string | null;
   supplier_gstin: string | null;
-  invoice_items: {
-    description: string;
-    quantity: number;
-    unit_price: number;
-    amount: number | null;
-    hsn_code: string | null;
-    tax_rate: number | null;
-  }[] | null;
+  invoice_items:
+    | {
+        description: string;
+        quantity: number;
+        unit_price: number;
+        amount: number | null;
+        hsn_code: string | null;
+        tax_rate: number | null;
+      }[]
+    | null;
 };
 
 type PurchaseFull = {
@@ -105,11 +107,13 @@ type PurchaseFull = {
   eligibility_for_itc: string | null;
   reverse_charge: boolean | null;
   invoice_type: string | null;
-  purchase_bill_items: {
-    quantity: number;
-    unit_price: number;
-    amount: number | null;
-  }[] | null;
+  purchase_bill_items:
+    | {
+        quantity: number;
+        unit_price: number;
+        amount: number | null;
+      }[]
+    | null;
 };
 
 type Party = { id: string; name: string; gstin: string | null; state_code: string | null };
@@ -119,7 +123,9 @@ export async function fetchPeriodInvoices(year: number, month: number): Promise<
   const to = new Date(year, month, 0).toISOString().slice(0, 10);
   const { data, error } = await sb
     .from("invoices")
-    .select("id,invoice_number,invoice_date,total_amount,subtotal,tax_amount,party_id,invoice_type,reverse_charge,place_of_supply,dispatch_state_code,supplier_gstin,invoice_items(description,quantity,unit_price,amount,hsn_code,tax_rate)")
+    .select(
+      "id,invoice_number,invoice_date,total_amount,subtotal,tax_amount,party_id,invoice_type,reverse_charge,place_of_supply,dispatch_state_code,supplier_gstin,invoice_items(description,quantity,unit_price,amount,hsn_code,tax_rate)",
+    )
     .gte("invoice_date", from)
     .lte("invoice_date", to);
   if (error) throw error;
@@ -131,7 +137,9 @@ export async function fetchPeriodPurchases(year: number, month: number): Promise
   const to = new Date(year, month, 0).toISOString().slice(0, 10);
   const { data, error } = await sb
     .from("purchase_bills")
-    .select("id,bill_number,bill_date,total_amount,subtotal,tax_amount,supplier_id,supplier_gstin,eligibility_for_itc,reverse_charge,invoice_type,purchase_bill_items(quantity,unit_price,amount)")
+    .select(
+      "id,bill_number,bill_date,total_amount,subtotal,tax_amount,supplier_id,supplier_gstin,eligibility_for_itc,reverse_charge,invoice_type,purchase_bill_items(quantity,unit_price,amount)",
+    )
     .gte("bill_date", from)
     .lte("bill_date", to);
   if (error) throw error;
@@ -161,60 +169,107 @@ export function buildHsnSummary(invoices: InvoiceFull[], parties: Map<string, Pa
       const tax = (taxable * rate) / 100;
       const key = `${code}__${rate}`;
       const cur: HsnRow = map.get(key) ?? {
-        hsn_code: code, description: it.description?.slice(0, 60) ?? "",
-        uqc: "PCS", total_qty: 0, total_value: 0, taxable_value: 0,
-        igst: 0, cgst: 0, sgst: 0, cess: 0, rate,
+        hsn_code: code,
+        description: it.description?.slice(0, 60) ?? "",
+        uqc: "PCS",
+        total_qty: 0,
+        total_value: 0,
+        taxable_value: 0,
+        igst: 0,
+        cgst: 0,
+        sgst: 0,
+        cess: 0,
+        rate,
       };
       cur.total_qty += qty;
       cur.taxable_value += taxable;
-      if (isInter) cur.igst += tax; else { cur.cgst += tax / 2; cur.sgst += tax / 2; }
+      if (isInter) cur.igst += tax;
+      else {
+        cur.cgst += tax / 2;
+        cur.sgst += tax / 2;
+      }
       cur.total_value = cur.taxable_value + cur.igst + cur.cgst + cur.sgst;
       map.set(key, cur);
     }
   }
-  return [...map.values()].map((r) => ({
-    ...r,
-    total_qty: round(r.total_qty),
-    taxable_value: round(r.taxable_value),
-    total_value: round(r.total_value),
-    igst: round(r.igst), cgst: round(r.cgst), sgst: round(r.sgst), cess: round(r.cess),
-  })).sort((a, b) => a.hsn_code.localeCompare(b.hsn_code));
+  return [...map.values()]
+    .map((r) => ({
+      ...r,
+      total_qty: round(r.total_qty),
+      taxable_value: round(r.taxable_value),
+      total_value: round(r.total_value),
+      igst: round(r.igst),
+      cgst: round(r.cgst),
+      sgst: round(r.sgst),
+      cess: round(r.cess),
+    }))
+    .sort((a, b) => a.hsn_code.localeCompare(b.hsn_code));
 }
 
 // GSTR-1 summary (counts, totals) — display-side.
-export function summariseGstr1(invoices: InvoiceFull[], parties: Map<string, Party>): GstReturnSummary {
-  let b2b = 0, b2cs = 0, taxable = 0, igst = 0, cgst = 0, sgst = 0, totalInv = 0;
+export function summariseGstr1(
+  invoices: InvoiceFull[],
+  parties: Map<string, Party>,
+): GstReturnSummary {
+  let b2b = 0,
+    b2cs = 0,
+    taxable = 0,
+    igst = 0,
+    cgst = 0,
+    sgst = 0,
+    totalInv = 0;
   const supplierState = COMPANY.stateCode;
   for (const inv of invoices) {
     const party = parties.get(inv.party_id);
     const isB2b = !!party?.gstin && /^\d{2}[A-Z0-9]{13}$/.test(party.gstin.trim());
     const buyerState = (party?.state_code || supplierState).padStart(2, "0");
     const isInter = buyerState !== supplierState;
-    if (isB2b) b2b++; else b2cs++;
+    if (isB2b) b2b++;
+    else b2cs++;
     taxable += Number(inv.subtotal ?? 0);
     totalInv += Number(inv.total_amount ?? 0);
     const tax = Number(inv.tax_amount ?? 0);
-    if (isInter) igst += tax; else { cgst += tax / 2; sgst += tax / 2; }
+    if (isInter) igst += tax;
+    else {
+      cgst += tax / 2;
+      sgst += tax / 2;
+    }
   }
   return {
     invoice_count: invoices.length,
     b2b_count: b2b,
     b2cs_count: b2cs,
     taxable_value: round(taxable),
-    igst: round(igst), cgst: round(cgst), sgst: round(sgst),
+    igst: round(igst),
+    cgst: round(cgst),
+    sgst: round(sgst),
     total_tax: round(igst + cgst + sgst),
     total_invoice_value: round(totalInv),
   };
 }
 
-export function buildGstr3b(invoices: InvoiceFull[], purchases: PurchaseFull[], parties: Map<string, Party>): Gstr3bSummary {
+export function buildGstr3b(
+  invoices: InvoiceFull[],
+  purchases: PurchaseFull[],
+  parties: Map<string, Party>,
+): Gstr3bSummary {
   const supplierState = COMPANY.stateCode;
   const s: Gstr3bSummary = {
-    outward_taxable: 0, outward_zero_rated: 0, outward_nil_rated: 0,
-    outward_inward_rcm: 0, outward_non_gst: 0,
-    itc_inputs: 0, itc_capital: 0, itc_services: 0, itc_reversed: 0,
-    igst_payable: 0, cgst_payable: 0, sgst_payable: 0,
-    igst_itc: 0, cgst_itc: 0, sgst_itc: 0,
+    outward_taxable: 0,
+    outward_zero_rated: 0,
+    outward_nil_rated: 0,
+    outward_inward_rcm: 0,
+    outward_non_gst: 0,
+    itc_inputs: 0,
+    itc_capital: 0,
+    itc_services: 0,
+    itc_reversed: 0,
+    igst_payable: 0,
+    cgst_payable: 0,
+    sgst_payable: 0,
+    igst_itc: 0,
+    cgst_itc: 0,
+    sgst_itc: 0,
     inward_exempt: 0,
   };
   for (const inv of invoices) {
@@ -223,19 +278,28 @@ export function buildGstr3b(invoices: InvoiceFull[], purchases: PurchaseFull[], 
     const isInter = buyerState !== supplierState;
     const taxable = Number(inv.subtotal ?? 0);
     const tax = Number(inv.tax_amount ?? 0);
-    if (inv.invoice_type === "export" || inv.invoice_type === "sez") s.outward_zero_rated += taxable;
+    if (inv.invoice_type === "export" || inv.invoice_type === "sez")
+      s.outward_zero_rated += taxable;
     else if (inv.invoice_type === "bill_of_supply") s.outward_nil_rated += taxable;
     else s.outward_taxable += taxable;
-    if (isInter) s.igst_payable += tax; else { s.cgst_payable += tax / 2; s.sgst_payable += tax / 2; }
+    if (isInter) s.igst_payable += tax;
+    else {
+      s.cgst_payable += tax / 2;
+      s.sgst_payable += tax / 2;
+    }
   }
   for (const pb of purchases) {
     const tax = Number(pb.tax_amount ?? 0);
     const taxable = Number(pb.subtotal ?? 0);
     const elig = pb.eligibility_for_itc ?? "inputs";
-    if (elig === "ineligible") { s.itc_reversed += tax; continue; }
+    if (elig === "ineligible") {
+      s.itc_reversed += tax;
+      continue;
+    }
     const half = tax / 2;
     if (pb.supplier_gstin && pb.supplier_gstin.startsWith(supplierState)) {
-      s.cgst_itc += half; s.sgst_itc += half;
+      s.cgst_itc += half;
+      s.sgst_itc += half;
     } else {
       s.igst_itc += tax;
     }
@@ -267,8 +331,11 @@ export async function generateReturn(opts: {
 
   if (opts.type === "GSTR-1") {
     payload = buildGstr1Json({
-      gstin, year: opts.year, month: opts.month,
-      invoices, parties: [...parties.values()],
+      gstin,
+      year: opts.year,
+      month: opts.month,
+      invoices,
+      parties: [...parties.values()],
       supplierStateCode: COMPANY.stateCode,
     });
     summary = summariseGstr1(invoices, parties);
@@ -279,7 +346,9 @@ export async function generateReturn(opts: {
     summary = {
       invoice_count: invoices.length,
       taxable_value: s3b.outward_taxable + s3b.outward_zero_rated + s3b.outward_nil_rated,
-      igst: s3b.igst_payable, cgst: s3b.cgst_payable, sgst: s3b.sgst_payable,
+      igst: s3b.igst_payable,
+      cgst: s3b.cgst_payable,
+      sgst: s3b.sgst_payable,
       total_tax: s3b.igst_payable + s3b.cgst_payable + s3b.sgst_payable,
     };
   } else {
@@ -300,7 +369,7 @@ export async function generateReturn(opts: {
         payload,
         summary,
       },
-      { onConflict: "return_type,period_year,period_month,gstin" }
+      { onConflict: "return_type,period_year,period_month,gstin" },
     )
     .select("id")
     .single();
@@ -309,6 +378,16 @@ export async function generateReturn(opts: {
 }
 
 export const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];

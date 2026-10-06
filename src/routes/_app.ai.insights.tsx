@@ -4,7 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PageBody, PageHeader } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { getErpMetrics } from "@/lib/ai.functions";
@@ -59,7 +66,8 @@ function InsightsPage() {
     queryFn: () => metrics({ data: { topic: "forecast" } }),
   });
 
-  const anomalyList = ((anomalies.data?.data as { anomalies?: Anomaly[] } | undefined)?.anomalies ?? []) as Anomaly[];
+  const anomalyList = ((anomalies.data?.data as { anomalies?: Anomaly[] } | undefined)?.anomalies ??
+    []) as Anomaly[];
   const fc = forecast.data?.data as ForecastData | undefined;
   const labels = nextMonths(fc?.revenueForecast.length ?? 0);
 
@@ -82,26 +90,35 @@ function InsightsPage() {
             <CardContent>
               {anomalies.isPending && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Scanning sales, margins, stock, production, receivables and supplier prices…
+                  <Loader2 className="h-4 w-4 animate-spin" /> Scanning sales, margins, stock,
+                  production, receivables and supplier prices…
                 </p>
               )}
-              {anomalies.error && <p className="text-sm text-destructive">{(anomalies.error as Error).message}</p>}
+              {anomalies.error && (
+                <p className="text-sm text-destructive">{(anomalies.error as Error).message}</p>
+              )}
               {anomalies.data && anomalyList.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Nothing unusual detected. Statistical checks only run where there is enough history.
+                  Nothing unusual detected. Statistical checks only run where there is enough
+                  history.
                 </p>
               )}
               <div className="space-y-2">
                 {anomalyList.map((a, i) => (
                   <div key={i} className="flex items-start gap-3 rounded-lg border p-3">
-                    <Badge variant={a.severity === "high" ? "destructive" : "secondary"} className="mt-0.5 capitalize">
+                    <Badge
+                      variant={a.severity === "high" ? "destructive" : "secondary"}
+                      className="mt-0.5 capitalize"
+                    >
                       {a.severity}
                     </Badge>
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{a.title}</p>
                       <p className="text-xs text-muted-foreground">{a.detail}</p>
                     </div>
-                    <Badge variant="outline" className="ml-auto capitalize">{a.area}</Badge>
+                    <Badge variant="outline" className="ml-auto capitalize">
+                      {a.area}
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -112,7 +129,9 @@ function InsightsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-4 w-4" /> Forecasts
-                <Badge variant="outline" className="ml-2 text-[10px]">Estimate</Badge>
+                <Badge variant="outline" className="ml-2 text-[10px]">
+                  Estimate
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -123,7 +142,8 @@ function InsightsPage() {
               )}
               {fc && !fc.sufficientData && (
                 <p className="text-sm text-muted-foreground">
-                  Not enough closed months of history yet ({fc.basis.monthsOfHistory}). Forecasts appear once there are at least four.
+                  Not enough closed months of history yet ({fc.basis.monthsOfHistory}). Forecasts
+                  appear once there are at least four.
                 </p>
               )}
               {fc?.sufficientData && (
@@ -139,7 +159,9 @@ function InsightsPage() {
                           </div>
                         ))}
                       </div>
-                      <p className="mt-2 text-xs text-muted-foreground">Trend fit: {Math.round(fc.revenueTrendConfidence * 100)}%</p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Trend fit: {Math.round(fc.revenueTrendConfidence * 100)}%
+                      </p>
                     </div>
                     <div className="rounded-lg border p-3">
                       <p className="text-xs text-muted-foreground">Gross profit forecast</p>
@@ -172,10 +194,18 @@ function InsightsPage() {
                             {fc.materialRequirements.map((m) => (
                               <TableRow key={m.material}>
                                 <TableCell>{m.material}</TableCell>
-                                <TableCell className="text-right">{m.currentStock} {m.unit}</TableCell>
-                                <TableCell className="text-right">{m.projectedConsumption30d}</TableCell>
-                                <TableCell className="text-right">{m.projectedConsumption90d}</TableCell>
-                                <TableCell className="text-right font-medium">{m.suggestedPurchaseFor90d}</TableCell>
+                                <TableCell className="text-right">
+                                  {m.currentStock} {m.unit}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {m.projectedConsumption30d}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {m.projectedConsumption90d}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {m.suggestedPurchaseFor90d}
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -184,7 +214,9 @@ function InsightsPage() {
                     </div>
                   )}
 
-                  <p className="text-xs text-muted-foreground">{fc.disclaimer} Method: {fc.basis.method}.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {fc.disclaimer} Method: {fc.basis.method}.
+                  </p>
                 </>
               )}
             </CardContent>

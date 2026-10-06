@@ -16,19 +16,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { MessageSquare, Mail, Smartphone, Bell, Send } from "lucide-react";
 
 const CHANNELS = [
   { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare },
-  { key: "sms",      label: "SMS",      Icon: Smartphone },
-  { key: "email",    label: "Email",    Icon: Mail },
-  { key: "in_app",   label: "In-App",   Icon: Bell },
+  { key: "sms", label: "SMS", Icon: Smartphone },
+  { key: "email", label: "Email", Icon: Mail },
+  { key: "in_app", label: "In-App", Icon: Bell },
 ] as const;
 
-type Channel = typeof CHANNELS[number]["key"];
+type Channel = (typeof CHANNELS)[number]["key"];
 
 export const Route = createFileRoute("/_app/communications/events")({
   component: EventsPage,
@@ -73,15 +87,22 @@ function EventsPage() {
 
   return (
     <div>
-      <PageHeader title="Notification Engine" description="Configure which channels fire for each ERP event. Toggle channels per event; add new channels without touching business logic." />
+      <PageHeader
+        title="Notification Engine"
+        description="Configure which channels fire for each ERP event. Toggle channels per event; add new channels without touching business logic."
+      />
       <PageBody>
         <Card>
           <CardHeader className="flex flex-row items-start justify-between">
             <div>
               <CardTitle>Event → Channel Routing</CardTitle>
-              <CardDescription>Admin controls. Disabled events skip dispatch entirely.</CardDescription>
+              <CardDescription>
+                Admin controls. Disabled events skip dispatch entirely.
+              </CardDescription>
             </div>
-            <TestDispatchDialog events={events.map((e: any) => ({ key: e.event_key, label: e.label }))} />
+            <TestDispatchDialog
+              events={events.map((e: any) => ({ key: e.event_key, label: e.label }))}
+            />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -95,7 +116,10 @@ function EventsPage() {
                     <TableHead>Active</TableHead>
                     {CHANNELS.map((c) => (
                       <TableHead key={c.key} className="text-center">
-                        <span className="inline-flex items-center gap-1"><c.Icon className="h-4 w-4" />{c.label}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <c.Icon className="h-4 w-4" />
+                          {c.label}
+                        </span>
                       </TableHead>
                     ))}
                     <TableHead></TableHead>
@@ -109,13 +133,21 @@ function EventsPage() {
                         <TableCell>
                           <div className="font-medium">{ev.label}</div>
                           <div className="text-xs text-muted-foreground">{ev.event_key}</div>
-                          {ev.description && <div className="text-xs text-muted-foreground mt-1">{ev.description}</div>}
+                          {ev.description && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {ev.description}
+                            </div>
+                          )}
                         </TableCell>
-                        <TableCell><Badge variant="secondary">{ev.category}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{ev.category}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Switch
                             checked={ev.is_active}
-                            onCheckedChange={(v) => toggleActiveMut.mutate({ event_key: ev.event_key, is_active: v })}
+                            onCheckedChange={(v) =>
+                              toggleActiveMut.mutate({ event_key: ev.event_key, is_active: v })
+                            }
                           />
                         </TableCell>
                         {CHANNELS.map((c) => {
@@ -161,8 +193,16 @@ function EventsPage() {
 }
 
 function EditTemplatesDialog({
-  eventKey, eventLabel, rows, onSave,
-}: { eventKey: string; eventLabel: string; rows: Record<Channel, any>; onSave: (p: any) => void }) {
+  eventKey,
+  eventLabel,
+  rows,
+  onSave,
+}: {
+  eventKey: string;
+  eventLabel: string;
+  rows: Record<Channel, any>;
+  onSave: (p: any) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const cell = rows[channel] ?? {};
@@ -180,25 +220,45 @@ function EditTemplatesDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button variant="outline" size="sm">Templates</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          Templates
+        </Button>
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{eventLabel} — Templates</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{eventLabel} — Templates</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="flex gap-2">
             {CHANNELS.map((c) => (
-              <Button key={c.key} type="button" size="sm"
+              <Button
+                key={c.key}
+                type="button"
+                size="sm"
                 variant={channel === c.key ? "default" : "outline"}
-                onClick={() => loadChannel(c.key)}>{c.label}</Button>
+                onClick={() => loadChannel(c.key)}
+              >
+                {c.label}
+              </Button>
             ))}
           </div>
           <div className="space-y-2">
             <Label>Template name (provider template, e.g. ORDER_DISPATCHED)</Label>
-            <Input value={tpl} onChange={(e) => setTpl(e.target.value)} placeholder="EVENT_TEMPLATE_KEY" />
+            <Input
+              value={tpl}
+              onChange={(e) => setTpl(e.target.value)}
+              placeholder="EVENT_TEMPLATE_KEY"
+            />
           </div>
           {(channel === "email" || channel === "in_app") && (
             <div className="space-y-2">
               <Label>Subject template</Label>
-              <Input value={subj} onChange={(e) => setSubj(e.target.value)} placeholder="Order {{order_no}} update" />
+              <Input
+                value={subj}
+                onChange={(e) => setSubj(e.target.value)}
+                placeholder="Order {{order_no}} update"
+              />
             </div>
           )}
           {(channel === "email" || channel === "in_app") && (
@@ -209,17 +269,21 @@ function EditTemplatesDialog({
           )}
         </div>
         <DialogFooter>
-          <Button onClick={() => {
-            onSave({
-              event_key: eventKey,
-              channel,
-              is_enabled: !!cell.is_enabled,
-              template_name: tpl || null,
-              subject_template: subj || null,
-              body_template: body || null,
-            });
-            setOpen(false);
-          }}>Save</Button>
+          <Button
+            onClick={() => {
+              onSave({
+                event_key: eventKey,
+                channel,
+                is_enabled: !!cell.is_enabled,
+                template_name: tpl || null,
+                subject_template: subj || null,
+                body_template: body || null,
+              });
+              setOpen(false);
+            }}
+          >
+            Save
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -238,41 +302,86 @@ function TestDispatchDialog({ events }: { events: { key: string; label: string }
   const mut = useMutation({
     mutationFn: async () => {
       let parsed = {};
-      try { parsed = JSON.parse(vars || "{}"); } catch { throw new Error("Variables must be valid JSON"); }
+      try {
+        parsed = JSON.parse(vars || "{}");
+      } catch {
+        throw new Error("Variables must be valid JSON");
+      }
       return dispatchFn({
         data: {
           event_key: eventKey,
           phone: phone || undefined,
           email: email || undefined,
-          user_ids: userIds ? userIds.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+          user_ids: userIds
+            ? userIds
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : undefined,
           variables: parsed,
         },
       });
     },
-    onSuccess: (r) => { setResult(r); toast.success("Dispatched"); },
+    onSuccess: (r) => {
+      setResult(r);
+      toast.success("Dispatched");
+    },
     onError: (e: any) => toast.error(e?.message ?? "Dispatch failed"),
   });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button size="sm"><Send className="h-4 w-4 mr-1" />Test Dispatch</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Send className="h-4 w-4 mr-1" />
+          Test Dispatch
+        </Button>
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Test Notification Dispatch</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Test Notification Dispatch</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-2">
             <Label>Event</Label>
-            <select className="w-full border rounded px-2 py-1 bg-background" value={eventKey} onChange={(e) => setEventKey(e.target.value)}>
-              {events.map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
+            <select
+              className="w-full border rounded px-2 py-1 bg-background"
+              value={eventKey}
+              onChange={(e) => setEventKey(e.target.value)}
+            >
+              {events.map((e) => (
+                <option key={e.key} value={e.key}>
+                  {e.label}
+                </option>
+              ))}
             </select>
           </div>
-          <div className="space-y-2"><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-          <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-          <div className="space-y-2"><Label>User IDs (comma-separated)</Label><Input value={userIds} onChange={(e) => setUserIds(e.target.value)} /></div>
-          <div className="space-y-2"><Label>Variables (JSON)</Label><Textarea rows={4} value={vars} onChange={(e) => setVars(e.target.value)} /></div>
-          {result && <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">{JSON.stringify(result, null, 2)}</pre>}
+          <div className="space-y-2">
+            <Label>Phone</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>User IDs (comma-separated)</Label>
+            <Input value={userIds} onChange={(e) => setUserIds(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Variables (JSON)</Label>
+            <Textarea rows={4} value={vars} onChange={(e) => setVars(e.target.value)} />
+          </div>
+          {result && (
+            <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          )}
         </div>
         <DialogFooter>
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? "Sending…" : "Dispatch"}</Button>
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+            {mut.isPending ? "Sending…" : "Dispatch"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

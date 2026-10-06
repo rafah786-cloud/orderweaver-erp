@@ -139,7 +139,11 @@ export async function dispatchNotificationEvent(input: DispatchInput): Promise<D
         continue;
       }
       await guarded(row.channel, recipients.phone, (c) =>
-        sendNotification(row.channel, { to: recipients.phone!, templateName: tplName, variables }, c),
+        sendNotification(
+          row.channel,
+          { to: recipients.phone!, templateName: tplName, variables },
+          c,
+        ),
       );
     } else if (row.channel === "email") {
       if (!recipients.email) {
@@ -151,7 +155,11 @@ export async function dispatchNotificationEvent(input: DispatchInput): Promise<D
       await guarded("email", recipients.email, (c) =>
         body
           ? sendFreeformNotification("email", { to: recipients.email!, subject, body }, c)
-          : sendNotification("email", { to: recipients.email!, templateName: tplName, subject, variables }, c),
+          : sendNotification(
+              "email",
+              { to: recipients.email!, templateName: tplName, subject, variables },
+              c,
+            ),
       );
     } else if (row.channel === "in_app") {
       const users = recipients.userIds ?? [];
@@ -164,8 +172,16 @@ export async function dispatchNotificationEvent(input: DispatchInput): Promise<D
       for (const uid of users) {
         await guarded("in_app", uid, (c) =>
           body
-            ? sendFreeformNotification("in_app", { to: uid, subject, body }, { ...c, party_kind: "staff", party_id: null })
-            : sendNotification("in_app", { to: uid, templateName: tplName, subject, variables }, { ...c, party_kind: "staff", party_id: null }),
+            ? sendFreeformNotification(
+                "in_app",
+                { to: uid, subject, body },
+                { ...c, party_kind: "staff", party_id: null },
+              )
+            : sendNotification(
+                "in_app",
+                { to: uid, templateName: tplName, subject, variables },
+                { ...c, party_kind: "staff", party_id: null },
+              ),
         );
       }
     } else if (row.channel === "push") {

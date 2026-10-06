@@ -43,6 +43,7 @@ import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
+import { Route as AppAccountingConsolidatedRouteImport } from './routes/_app.accounting.consolidated'
 import { Route as AppAccountingDayBookRouteImport } from './routes/_app.accounting.day-book'
 import { Route as AppAccountingLedgersRouteImport } from './routes/_app.accounting.ledgers'
 import { Route as AppAccountingPeriodsRouteImport } from './routes/_app.accounting.periods'
@@ -265,6 +266,12 @@ const AppAccountingBalanceSheetRoute =
   AppAccountingBalanceSheetRouteImport.update({
     id: '/balance-sheet',
     path: '/balance-sheet',
+    getParentRoute: () => AppAccountingRoute,
+  } as any)
+const AppAccountingConsolidatedRoute =
+  AppAccountingConsolidatedRouteImport.update({
+    id: '/consolidated',
+    path: '/consolidated',
     getParentRoute: () => AppAccountingRoute,
   } as any)
 const AppAccountingDayBookRoute = AppAccountingDayBookRouteImport.update({
@@ -571,6 +578,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
+  '/accounting/consolidated': typeof AppAccountingConsolidatedRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/periods': typeof AppAccountingPeriodsRoute
@@ -655,6 +663,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
+  '/accounting/consolidated': typeof AppAccountingConsolidatedRoute
   '/accounting/day-book': typeof AppAccountingDayBookRoute
   '/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/accounting/periods': typeof AppAccountingPeriodsRoute
@@ -744,6 +753,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_app/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
+  '/_app/accounting/consolidated': typeof AppAccountingConsolidatedRoute
   '/_app/accounting/day-book': typeof AppAccountingDayBookRoute
   '/_app/accounting/ledgers': typeof AppAccountingLedgersRoute
   '/_app/accounting/periods': typeof AppAccountingPeriodsRoute
@@ -833,6 +843,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
+    | '/accounting/consolidated'
     | '/accounting/day-book'
     | '/accounting/ledgers'
     | '/accounting/periods'
@@ -917,6 +928,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
+    | '/accounting/consolidated'
     | '/accounting/day-book'
     | '/accounting/ledgers'
     | '/accounting/periods'
@@ -1005,6 +1017,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/_app/accounting/audit-log'
     | '/_app/accounting/balance-sheet'
+    | '/_app/accounting/consolidated'
     | '/_app/accounting/day-book'
     | '/_app/accounting/ledgers'
     | '/_app/accounting/periods'
@@ -1313,6 +1326,13 @@ declare module '@tanstack/react-router' {
       path: '/balance-sheet'
       fullPath: '/accounting/balance-sheet'
       preLoaderRoute: typeof AppAccountingBalanceSheetRouteImport
+      parentRoute: typeof AppAccountingRoute
+    }
+    '/_app/accounting/consolidated': {
+      id: '/_app/accounting/consolidated'
+      path: '/consolidated'
+      fullPath: '/accounting/consolidated'
+      preLoaderRoute: typeof AppAccountingConsolidatedRouteImport
       parentRoute: typeof AppAccountingRoute
     }
     '/_app/accounting/day-book': {
@@ -1685,6 +1705,7 @@ declare module '@tanstack/react-router' {
 interface AppAccountingRouteChildren {
   AppAccountingAuditLogRoute: typeof AppAccountingAuditLogRoute
   AppAccountingBalanceSheetRoute: typeof AppAccountingBalanceSheetRoute
+  AppAccountingConsolidatedRoute: typeof AppAccountingConsolidatedRoute
   AppAccountingDayBookRoute: typeof AppAccountingDayBookRoute
   AppAccountingLedgersRoute: typeof AppAccountingLedgersRoute
   AppAccountingPeriodsRoute: typeof AppAccountingPeriodsRoute
@@ -1698,6 +1719,7 @@ interface AppAccountingRouteChildren {
 const AppAccountingRouteChildren: AppAccountingRouteChildren = {
   AppAccountingAuditLogRoute: AppAccountingAuditLogRoute,
   AppAccountingBalanceSheetRoute: AppAccountingBalanceSheetRoute,
+  AppAccountingConsolidatedRoute: AppAccountingConsolidatedRoute,
   AppAccountingDayBookRoute: AppAccountingDayBookRoute,
   AppAccountingLedgersRoute: AppAccountingLedgersRoute,
   AppAccountingPeriodsRoute: AppAccountingPeriodsRoute,
