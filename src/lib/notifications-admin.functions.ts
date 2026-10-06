@@ -159,52 +159,37 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
       return { ok: false, reason: "not_configured" };
     }
 
-    // Prefer the same template row; fall back to freeform with body_template.
+    // Retries are constrained to the same currently-active approved template.
+    // Never replay arbitrary stored freeform content or caller-controlled payloads.
     let result:
       | { ok: true; messageId: string }
       | { ok: false; status: "failed" | "skipped"; error: string };
-    let usedTemplate: string | null = log.template_name;
+    let usedTemplate: string | null = null;
 
-    if (log.template_name) {
-      const { data: tpl } = await supabaseAdmin
-        .from("whatsapp_templates")
-        .select("template_name, language_code, variables, body_template, is_active")
-        .eq("template_name", log.template_name)
-        .maybeSingle();
-      if (tpl && tpl.is_active) {
-        const order: string[] = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
-        const bodyValues = order.map((n) => String((variables as any)[n] ?? ""));
-        result = await provider.sendTemplate({
-          to,
-          templateName: tpl.template_name,
-          languageCode: tpl.language_code ?? "en",
-          bodyVariables: bodyValues,
-        });
-      } else if (tpl?.body_template) {
-        result = await provider.sendFreeform({
-          to,
-          body: renderBody(tpl.body_template, variables as any),
-        });
-        usedTemplate = null;
-      } else {
-        const body =
-          message ??
-          Object.values(variables as any)
-            .map((v) => String(v ?? ""))
-            .join(" ")
-            .trim();
-        result = await provider.sendFreeform({ to, body: body || "(no content)" });
-        usedTemplate = null;
-      }
-    } else {
-      const body =
-        message ??
-        Object.values(variables as any)
-          .map((v) => String(v ?? ""))
-          .join(" ")
-          .trim();
-      result = await provider.sendFreeform({ to, body: body || "(no content)" });
+    if (!log.template_name) {
+      throw new Error("This notification has no approved template and cannot be retried");
     }
+
+    const { data: tpl } = await supabaseAdmin
+      .from("whatsapp_templates")
+      .select("template_name, language_code, variables, is_active")
+      .eq("template_name", log.template_name)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (!tpl) {
+      throw new Error("The original WhatsApp template is no longer active");
+    }
+
+    const order: string[] = Array.isArray(tpl.variables) ? (tpl.variables as string[]) : [];
+    const bodyValues = order.map((n) => String((variables as any)[n] ?? ""));
+    result = await provider.sendTemplate({
+      to,
+      templateName: tpl.template_name,
+      languageCode: tpl.language_code ?? "en",
+      bodyVariables: bodyValues,
+    });
+    usedTemplate = tpl.template_name;
 
     await logWhatsAppNotification({
       party_kind: log.party_kind as any,
