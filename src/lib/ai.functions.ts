@@ -256,7 +256,7 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
         .from("ai_insights")
         .select("payload, generated_at, expires_at, model")
         .eq("kind", "business_brief")
-        .eq("scope_key", "global")
+        .eq("company_id", companyId)
         .maybeSingle();
       if (cached?.payload && cached.expires_at && new Date(cached.expires_at) > new Date()) {
         return {
@@ -299,6 +299,7 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
     await context.supabase.from("ai_insights").upsert(
       {
         kind: "business_brief",
+        company_id: companyId,
         scope_key: "global",
         payload: payload as never,
         model: model || null,
@@ -487,9 +488,13 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       await import("@/lib/ai/documents.server");
     const { logAiUsage } = await import("@/lib/ai/audit.server");
 
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+
     const { data: created, error: insertError } = await context.supabase
       .from("ai_documents")
       .insert({
+        company_id: companyId,
         title: data.title,
         doc_kind: data.docKind,
         file_name: data.fileName ?? null,
