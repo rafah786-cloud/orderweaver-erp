@@ -255,15 +255,3 @@ function LoginPage() {
   );
 }
 
-function defaultRouteFromStrings(roles: string) {
-  const list = roles.split(",");
-  if (list.includes("admin")) return "/dashboard";
-  if (list.includes("accountant")) return "/accounting";
-  if (list.includes("sales")) return "/dashboard";
-  if (list.includes("production")) return "/production";
-  if (list.includes("hr")) return "/employees";
-  if (list.includes("employee")) return "/attendance";
-  if (list.includes("customer")) return "/dashboard";
-  if (list.includes("vendor")) return "/vendor";
-  return "/pending";
-}
