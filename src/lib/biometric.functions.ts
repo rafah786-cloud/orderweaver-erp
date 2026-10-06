@@ -56,7 +56,7 @@ export const rotateDeviceKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const companyId = await activeCompanyId(context.supabase);
     const apiKey = randomBytes(24).toString("hex");
     const api_key_hash = await bcrypt.hash(apiKey, 10);
