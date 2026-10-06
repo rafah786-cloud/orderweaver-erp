@@ -169,14 +169,7 @@ function NewVoucherPage() {
                 },
               }).catch(() => {});
               // Fan out to staff (Accounts / Management)
-              notifyStaff({
-                data: {
-                  event: "staff.payment.received",
-                  ref_id: voucher.id,
-                  customer_party_id: partyId,
-                  vars: { receipt_no: voucher.voucherNumber, payment_amount: amount.toFixed(2) },
-                },
-              }).catch(() => {});
+              notifyStaff({ data: { event: "staff.payment.received", ref_id: voucher.id } }).catch(() => {});
             }
           }
         } catch {
