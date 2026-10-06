@@ -64,17 +64,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Abood Tradings ERP" },
-      { name: "description", content: "ERP for mattress manufacturing — sales, production, HR" },
-      { property: "og:title", content: "Abood Tradings ERP" },
-      { name: "twitter:title", content: "Abood Tradings ERP" },
+      { title: "Zizz Mattress | House of Abood Tradings" },
+      {
+        name: "description",
+        content: "Premium sleep and comfort solutions from House of Abood Tradings, led by Zizz.",
+      },
+      { property: "og:title", content: "Zizz Mattress | House of Abood Tradings" },
+      { name: "twitter:title", content: "Zizz Mattress | House of Abood Tradings" },
       {
         property: "og:description",
-        content: "ERP for mattress manufacturing — sales, production, HR",
+        content: "Premium sleep and comfort solutions from House of Abood Tradings, led by Zizz.",
       },
       {
         name: "twitter:description",
-        content: "ERP for mattress manufacturing — sales, production, HR",
+        content: "Premium sleep and comfort solutions from House of Abood Tradings, led by Zizz.",
       },
       {
         property: "og:image",
