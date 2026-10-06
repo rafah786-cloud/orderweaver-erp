@@ -133,8 +133,8 @@ export const sendTestWhatsAppMessage = createServerFn({ method: "POST" })
       .maybeSingle();
     if (providerError) throw new Error("Unable to load WhatsApp configuration");
     const cfg = (provider?.config as Record<string, unknown> | null) ?? {};
-    const configuredBusinessNumber = String(cfg.business_number ?? "").replace(/[s-()]/g, "");
-    const requestedNumber = data.mobileNumber.replace(/[s-()]/g, "");
+    const configuredBusinessNumber = String(cfg.business_number ?? "").replace(/[\s()-]/g, "");
+    const requestedNumber = data.mobileNumber.replace(/[\s()-]/g, "");
     if (!configuredBusinessNumber) {
       throw new Error("Configure the WhatsApp business number before testing");
     }
