@@ -2,9 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function assertAdmin(db: any, userId: string) {
+  const { data } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -24,9 +23,8 @@ function normalizeWa(raw: string | null | undefined): string | null {
   return /^\+[1-9]\d{7,14}$/.test(t) ? t : null;
 }
 
-async function resolveTemplate(eventKey: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function resolveTemplate(db: any, eventKey: string) {
+  const { data } = await db
     .from("whatsapp_templates")
     .select("template_name, language_code, variables, is_active")
     .eq("event_key", eventKey)
@@ -84,11 +82,11 @@ export const quickAddParty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const to = normalizeWa(data.phone);
     const { data: row, error } = await context.supabase
       .from("parties")
-      .insert({ name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: true })
+      .insert({ name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: false })
       .select("id, name")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to add party");
@@ -100,7 +98,7 @@ export const quickAddSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const to = normalizeWa(data.phone);
     const { data: row, error } = await context.supabase
       .from("suppliers")
@@ -115,7 +113,7 @@ export const deleteParty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("parties").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -125,7 +123,7 @@ export const deleteSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("suppliers").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -140,19 +138,18 @@ export const broadcastPromo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => BroadcastSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertAdmin(context.supabase, context.userId);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const table = data.audience === "parties" ? "parties" : "suppliers";
     const eventKey = data.audience === "parties" ? "party.promo" : "supplier.promo";
     const partyKind = data.audience === "parties" ? "customer" : "vendor";
     const nameVar = data.audience === "parties" ? "customer_name" : "vendor_name";
-    const template = await resolveTemplate(eventKey);
+    const template = await resolveTemplate(context.supabase, eventKey);
     if (!template?.template_name) throw new Error("No approved promotional template is active");
     const { data: activeCompanyId, error: companyError } =
       await context.supabase.rpc("current_company_id");
     if (companyError || !activeCompanyId) throw new Error("No active company selected");
-    const { data: rows } = await supabaseAdmin
+    const { data: rows } = await context.supabase
       .from(table)
       .select("id, name, phone, whatsapp_number, whatsapp_opt_in, promo_opt_in, company_id")
       .eq("company_id", activeCompanyId)
