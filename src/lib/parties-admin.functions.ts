@@ -86,14 +86,13 @@ const AddPartySchema = z.object({
   phone: z.string().trim().min(4).max(24),
 });
 
-/** Admin quick-add a customer with just Name + Mobile, then send welcome WhatsApp. */
+/** Admin quick-add a customer with just Name + Mobile. */
 export const quickAddParty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const to = normalizeWa(data.phone);
     const { data: row, error } = await supabaseAdmin
       .from("parties")
@@ -101,32 +100,16 @@ export const quickAddParty = createServerFn({ method: "POST" })
       .select("id, name")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to add party");
-    if (to) {
-      const r = await sendWa({ to, eventKey: "party.welcome", vars: { customer_name: row.name } });
-      await logWhatsAppNotification({
-        party_kind: "customer",
-        party_id: row.id,
-        recipient_phone: to,
-        event_type: "party.welcome",
-        template_name: r.template_name,
-        ref_table: "parties",
-        ref_id: row.id,
-        status: r.ok ? "sent" : r.status,
-        whatsapp_message_id: r.ok ? r.messageId : null,
-        failure_reason: r.ok ? null : r.error,
-      });
-    }
     return { ok: true, id: row.id };
   });
 
-/** Admin quick-add a supplier with just Name + Mobile, then send welcome WhatsApp. */
+/** Admin quick-add a supplier with just Name + Mobile. */
 export const quickAddSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const to = normalizeWa(data.phone);
     const { data: row, error } = await supabaseAdmin
       .from("suppliers")
@@ -134,21 +117,6 @@ export const quickAddSupplier = createServerFn({ method: "POST" })
       .select("id, name")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to add supplier");
-    if (to) {
-      const r = await sendWa({ to, eventKey: "supplier.welcome", vars: { vendor_name: row.name } });
-      await logWhatsAppNotification({
-        party_kind: "vendor",
-        party_id: row.id,
-        recipient_phone: to,
-        event_type: "supplier.welcome",
-        template_name: r.template_name,
-        ref_table: "suppliers",
-        ref_id: row.id,
-        status: r.ok ? "sent" : r.status,
-        whatsapp_message_id: r.ok ? r.messageId : null,
-        failure_reason: r.ok ? null : r.error,
-      });
-    }
     return { ok: true, id: row.id };
   });
 
@@ -175,11 +143,10 @@ export const deleteSupplier = createServerFn({ method: "POST" })
   });
 
 const BroadcastSchema = z.object({
-  message: z.string().trim().min(1).max(1000),
   audience: z.enum(["parties", "suppliers"]),
 });
 
-/** Admin broadcast a marketing message to all opted-in parties or suppliers. */
+/** Admin broadcast an approved template to all opted-in parties or suppliers. */
 export const broadcastPromo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => BroadcastSchema.parse(d))
@@ -191,6 +158,8 @@ export const broadcastPromo = createServerFn({ method: "POST" })
     const eventKey = data.audience === "parties" ? "party.promo" : "supplier.promo";
     const partyKind = data.audience === "parties" ? "customer" : "vendor";
     const nameVar = data.audience === "parties" ? "customer_name" : "vendor_name";
+    const template = await resolveTemplate(eventKey);
+    if (!template?.template_name) throw new Error("No approved promotional template is active");
     const { data: rows } = await supabaseAdmin
       .from(table)
       .select("id, name, phone, whatsapp_number, whatsapp_opt_in, promo_opt_in")
@@ -223,7 +192,7 @@ export const broadcastPromo = createServerFn({ method: "POST" })
       const res = await sendWa({
         to,
         eventKey,
-        vars: { [nameVar]: r.name, message: data.message },
+        vars: { [nameVar]: r.name },
       });
       await logWhatsAppNotification({
         party_kind: partyKind,
@@ -236,7 +205,7 @@ export const broadcastPromo = createServerFn({ method: "POST" })
         status: res.ok ? "sent" : res.status,
         whatsapp_message_id: res.ok ? res.messageId : null,
         failure_reason: res.ok ? null : res.error,
-        payload: { message: data.message },
+        payload: { approved_template: template.template_name },
       });
       if (res.ok) sent += 1;
       else skipped += 1;

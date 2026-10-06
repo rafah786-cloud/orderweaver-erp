@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type AllowedRole = "admin" | "sales" | "production" | "accountant" | "hr" | "vendor";
+const APP_ORIGIN = "https://orderweaver-erp.lovable.app";
 
 async function assertHasAnyRole(userId: string, roles: AllowedRole[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -104,7 +105,6 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       .object({
         bill_id: z.string().uuid(),
         event: z.enum(["created", "updated", "cancelled"]).default("created"),
-        origin: z.string().url().optional(),
       })
       .parse(d),
   )
@@ -158,7 +158,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       });
       return { ok: false, reason: "no_phone" };
     }
-    const po_url = data.origin ? `${data.origin}/print/purchase/${bill.id}` : "";
+    const po_url = `${APP_ORIGIN}/print/purchase/${bill.id}`;
     const result = await sendForEvent({
       to,
       eventKey,
@@ -203,9 +203,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
           "dispatch.update",
           "ledger.statement_ready",
         ]),
-        ref_table: z.string().optional(),
-        ref_id: z.string().uuid().optional(),
-        vars: z.record(z.string(), z.union([z.string(), z.number()])).default({}),
+        ref_id: z.string().uuid(),
       })
       .parse(d),
   )
@@ -213,6 +211,12 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
     await assertHasAnyRole(context.userId, ["admin", "sales", "production", "accountant"]);
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const reference = await resolveCustomerEventReference(
+      supabaseAdmin,
+      data.event,
+      data.ref_id,
+      data.party_id,
+    );
     const { data: party } = await supabaseAdmin
       .from("parties")
       .select("id, name, phone, whatsapp_number, whatsapp_opt_in")
@@ -224,8 +228,8 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
         party_kind: "customer",
         party_id: party.id,
         event_type: data.event,
-        ref_table: data.ref_table ?? null,
-        ref_id: data.ref_id ?? null,
+        ref_table: reference.table,
+        ref_id: data.ref_id,
         status: "skipped",
         failure_reason: "opted out",
       });
@@ -237,8 +241,8 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
         party_kind: "customer",
         party_id: party.id,
         event_type: data.event,
-        ref_table: data.ref_table ?? null,
-        ref_id: data.ref_id ?? null,
+        ref_table: reference.table,
+        ref_id: data.ref_id,
         status: "skipped",
         failure_reason: "no phone",
       });
@@ -247,7 +251,7 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
     const result = await sendForEvent({
       to,
       eventKey: data.event,
-      vars: { customer_name: party.name, ...data.vars },
+      vars: { customer_name: party.name, ...reference.vars },
     });
     await logWhatsAppNotification({
       party_kind: "customer",
@@ -255,12 +259,12 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
       recipient_phone: to,
       event_type: data.event,
       template_name: result.template_name,
-      ref_table: data.ref_table ?? null,
-      ref_id: data.ref_id ?? null,
+      ref_table: reference.table,
+      ref_id: data.ref_id,
       status: result.ok ? "sent" : result.status,
       whatsapp_message_id: result.ok ? result.messageId : null,
       failure_reason: result.ok ? null : result.error,
-      payload: { vars: data.vars },
+      payload: { source: reference.table },
     });
     return { ok: result.ok };
   });
