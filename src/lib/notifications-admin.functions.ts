@@ -2,15 +2,36 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+async function assertAdmin(db: any, userId: string) {
+  const { data, error } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  if (!data) throw new Error("Admin only");
+  if (error || !data) throw new Error("Admin only");
+}
+
+async function assertVisibleParty(db: any, kind: "customer" | "vendor", id: string) {
+  const table = kind === "customer" ? "parties" : "suppliers";
+  const { data, error } = await db.from(table).select("id").eq("id", id).maybeSingle();
+  if (error || !data) throw new Error("Record is not visible in the active company");
+}
+
+async function assertVisibleNotificationSource(db: any, refTable: string | null, refId: string | null) {
+  if (!refTable || !refId) return;
+  const allowed = new Set([
+    "parties",
+    "suppliers",
+    "sales_orders",
+    "purchase_bills",
+    "invoices",
+    "production_orders",
+    "vouchers",
+  ]);
+  if (!allowed.has(refTable)) throw new Error("Notification source is not permitted for retry");
+  const { data, error } = await db.from(refTable).select("id").eq("id", refId).maybeSingle();
+  if (error || !data) throw new Error("Notification source is not visible in the active company");
 }
 
 function normalizeWa(raw: string | null | undefined): string | null {
@@ -47,7 +68,8 @@ export const setPromoOptIn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
+    await assertVisibleParty(context.supabase, data.party_kind, data.party_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const table = data.party_kind === "customer" ? "parties" : "suppliers";
     const { error } = await supabaseAdmin
@@ -71,7 +93,7 @@ export const listPartyMessages = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("notification_log")
@@ -91,7 +113,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logWhatsAppNotification } = await import("./whatsapp/log.server");
     const { getWhatsAppProvider } = await import("./whatsapp/provider.server");
@@ -103,6 +125,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!log) throw new Error("Log not found");
     if (log.channel !== "whatsapp") throw new Error("Only WhatsApp messages can be retried here");
+    await assertVisibleNotificationSource(context.supabase, log.ref_table, log.ref_id);
 
     // Try to recover recipient phone if missing (from the party/supplier record)
     let to = normalizeWa(log.recipient_phone ?? null);
@@ -215,7 +238,7 @@ export const retryNotificationLog = createServerFn({ method: "POST" })
 export const listNotificationProviders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { listProviders } = await import("./notifications/registry.server");
     const providers = await listProviders();
     return { providers };
@@ -242,7 +265,7 @@ export const upsertNotificationProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => ProviderSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const row = {
       channel: data.channel,
@@ -282,7 +305,7 @@ export const toggleNotificationProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("notification_providers")
@@ -296,7 +319,7 @@ export const deleteNotificationProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("notification_providers").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
