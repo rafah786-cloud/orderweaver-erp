@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowRight,
   BedDouble,
@@ -67,11 +67,22 @@ const loginItems = [
 function LoginMenu({ mobile = false, compact = false }: { mobile?: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+        const first = menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+        if (first) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -87,9 +98,15 @@ function LoginMenu({ mobile = false, compact = false }: { mobile?: boolean; comp
 
   return (
     <div
+      ref={menuRef}
       className={mobile ? "relative w-full" : "relative"}
       onPointerLeave={() => {
         if (!mobile) setOpen(false);
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
       }}
     >
       <button
@@ -98,7 +115,12 @@ function LoginMenu({ mobile = false, compact = false }: { mobile?: boolean; comp
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
-        onFocus={() => undefined}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+          }
+        }}
         className={`${baseButton} ${mobile ? mobileButton : desktopButton}`}
       >
         <span>Login</span>
