@@ -128,6 +128,8 @@ function TallyImportPage() {
   const integrity = parsed ? inspectTallyAccounting(parsed) : null;
 
   const targetCompany = companies.find((c) => c.id === (targetCompanyId || activeCompany?.id));
+  const managementBook = activeCompany?.code.endsWith("_MGMT") ?? false;
+
   if (!hasRole("admin")) {
     return (
       <PageBody>
@@ -140,7 +142,27 @@ function TallyImportPage() {
     );
   }
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (managementBook) {
+    return (
+      <PageBody>
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-6">
+            <div className="flex gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-800" />
+              <div>
+                <h2 className="font-semibold text-amber-950">Tally migration is blocked for management books</h2>
+                <p className="mt-1 text-sm leading-6 text-amber-900">
+                  Switch to the official company book before staging or importing Tally data. Management books are for internal analysis only.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </PageBody>
+    );
+  }
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) =>
     const f = e.target.files?.[0];
     if (!f) return;
     setFileName(f.name);
