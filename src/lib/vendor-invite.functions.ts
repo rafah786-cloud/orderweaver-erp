@@ -108,12 +108,20 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     }
 
     // Link the supplier only when it is still unclaimed.
-    const { error: sErr } = await supabaseAdmin
+    const { data: linkedSupplier, error: sErr } = await supabaseAdmin
       .from("suppliers")
       .update({ user_id: context.userId })
       .eq("id", row.supplier_id)
-      .is("user_id", null);
+      .is("user_id", null)
+      .select("id, company_id")
+      .maybeSingle();
     if (sErr) throw new Error(sErr.message);
+    // The first successful claimant owns the supplier. A concurrent claim must fail
+    // rather than granting a second account access to the supplier company.
+    if (!linkedSupplier) throw new Error("This supplier account has already been claimed");
+    if (linkedSupplier.company_id !== supplier.company_id) {
+      throw new Error("Supplier company changed during claim");
+    }
 
     // Vendor access is explicitly bound to the supplier's company.
     const { error: accessErr } = await supabaseAdmin
