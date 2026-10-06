@@ -36,6 +36,21 @@ export const setUserStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.status === "approved") {
+      const { data: targetRoles, error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user_id);
+      if (roleError) {
+        console.error("[approvals] approval role check", roleError);
+        throw new Error("Failed to verify user roles");
+      }
+      if (!targetRoles?.length) {
+        throw new Error("Assign at least one role before approving this user");
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -77,6 +92,25 @@ export const removeUserRole = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Prevent removing the final role from an approved account because it would
+    // leave the account approved but unusable.
+    const { data: targetProfile, error: targetProfileError } = await supabaseAdmin
+      .from("profiles")
+      .select("status")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    if (targetProfileError) {
+      console.error("[approvals] target profile lookup", targetProfileError);
+      throw new Error("Failed to verify target user");
+    }
+    const { count: roleCount } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("user_id", data.user_id);
+    if (targetProfile?.status === "approved" && (roleCount ?? 0) <= 1) {
+      throw new Error("Assign another role or reject the user before removing the last role");
+    }
+
     // Prevent admins removing their own last admin role (lockout protection)
     if (data.user_id === context.userId && data.role === "admin") {
       const { count } = await supabaseAdmin
