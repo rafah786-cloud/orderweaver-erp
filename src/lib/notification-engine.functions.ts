@@ -8,6 +8,13 @@ export const listNotificationEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
+    const { data: admin, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !admin) throw new Error("Forbidden");
     const [events, channels] = await Promise.all([
       supabase.from("notification_events").select("*").order("category").order("label"),
       supabase.from("notification_event_channels").select("*"),
@@ -117,14 +124,26 @@ export const dispatchTestEvent = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: roleRow } = await supabaseAdmin
+    const { data: admin, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
       .eq("role", "admin")
       .maybeSingle();
-    if (!roleRow) throw new Error("Forbidden");
+    if (roleError || !admin) throw new Error("Forbidden");
+
+    const { data: eventRow, error: eventError } = await context.supabase
+      .from("notification_events")
+      .select("event_key, is_active")
+      .eq("event_key", data.event_key)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (eventError || !eventRow) throw new Error("Notification event is not active");
+
+    const recipientCount =
+      Number(Boolean(data.phone)) + Number(Boolean(data.email)) + Number((data.user_ids ?? []).length > 0);
+    if (recipientCount !== 1) throw new Error("Select exactly one test recipient");
+    if ((data.user_ids ?? []).length > 1) throw new Error("A test event may target only one user");
 
     const { dispatchNotificationEvent } = await import("@/lib/notifications/engine.server");
     return dispatchNotificationEvent({
