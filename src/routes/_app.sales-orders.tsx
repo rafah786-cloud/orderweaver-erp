@@ -214,13 +214,7 @@ function SalesOrdersPage() {
           data: {
             party_id: savedParty,
             event: "sales_order.created",
-            ref_table: "sales_orders",
             ref_id: res.id,
-            vars: {
-              order_no: res.orderNumber,
-              order_date: orderDate,
-              order_value: total.toFixed(2),
-            },
           },
         });
         if (r?.ok) toast.success("Customer notified via WhatsApp");
@@ -231,7 +225,6 @@ function SalesOrdersPage() {
       notifyStaff({
         data: {
           event: "staff.sales_order.created",
-          ref_table: "sales_orders",
           ref_id: res.id,
           customer_party_id: savedParty,
           vars: { order_no: res.orderNumber, order_value: total.toFixed(2) },

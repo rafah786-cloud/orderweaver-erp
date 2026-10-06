@@ -143,13 +143,7 @@ function ProductionPage() {
             data: {
               party_id: partyId,
               event: "dispatch.update",
-              ref_table: "production_orders",
               ref_id: res.order.id,
-              vars: {
-                order_no: res.order.sales_orders?.order_number ?? res.order.production_number,
-                tracking_no: res.order.tracking_number ?? "",
-                transporter_name: res.order.transporter_name ?? "",
-              },
             },
           });
           if (r?.ok) toast.success("Customer notified via WhatsApp");
@@ -160,14 +154,8 @@ function ProductionPage() {
           notifyStaff({
             data: {
               event: "staff.dispatch.ready",
-              ref_table: "production_orders",
               ref_id: res.order.id,
               customer_party_id: partyId,
-              vars: {
-                order_no: res.order.sales_orders?.order_number ?? res.order.production_number,
-                tracking_no: res.order.tracking_number ?? "",
-                transporter_name: res.order.transporter_name ?? "",
-              },
             },
           }).catch(() => {});
       }

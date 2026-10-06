@@ -165,19 +165,13 @@ function NewVoucherPage() {
                 data: {
                   party_id: partyId,
                   event: "payment.received",
-                  ref_table: "vouchers",
                   ref_id: voucher.id,
-                  vars: {
-                    receipt_no: voucher.voucherNumber,
-                    payment_amount: amount.toFixed(2),
-                  },
                 },
               }).catch(() => {});
               // Fan out to staff (Accounts / Management)
               notifyStaff({
                 data: {
                   event: "staff.payment.received",
-                  ref_table: "vouchers",
                   ref_id: voucher.id,
                   customer_party_id: partyId,
                   vars: { receipt_no: voucher.voucherNumber, payment_amount: amount.toFixed(2) },
