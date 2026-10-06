@@ -775,4 +775,9 @@ GRANT EXECUTE ON FUNCTION public.approve_tally_migration_run(uuid) TO authentica
 GRANT EXECUTE ON FUNCTION public.create_company(text,text,text,text,text,text,text,text,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.initialize_company_books(uuid) TO authenticated;
 
+-- This mutation is reached only through the authenticated admin server function,
+-- which performs its own authorization check. Do not expose the SECURITY DEFINER
+-- RPC directly through the REST API.
+REVOKE ALL ON FUNCTION public.set_user_company_access(uuid,uuid[]) FROM PUBLIC, anon, authenticated;
+
 COMMIT;
