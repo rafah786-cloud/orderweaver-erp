@@ -96,3 +96,26 @@ export const removeUserRole = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+
+export const setUserCompanyAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      user_id: z.string().uuid(),
+      company_ids: z.array(z.string().uuid()).max(20),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: access, error } = await supabaseAdmin.rpc("set_user_company_access", {
+      p_user_id: data.user_id,
+      p_company_ids: data.company_ids,
+    });
+    if (error) {
+      console.error("[approvals] setUserCompanyAccess", error);
+      throw new Error("Failed to update company access");
+    }
+    return { ok: true, access: access ?? [] };
+  });
