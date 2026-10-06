@@ -764,17 +764,17 @@ BEGIN
 END;
 $$;
 
--- 6) Company-access mutation is an ordinary invoker function. The authenticated
--- admin server route calls it with the user's session, so RLS remains in force.
+-- 6) Company-access mutation is internal to the authenticated admin server
+-- route. Keep it SECURITY DEFINER, but do not expose the RPC to REST clients.
 CREATE OR REPLACE FUNCTION public.set_user_company_access(
   p_user_id uuid,
   p_company_ids uuid[]
 )
 RETURNS TABLE(company_id uuid, can_view boolean, can_create boolean, can_edit boolean, can_delete boolean)
 LANGUAGE plpgsql
-SECURITY INVOKER
+SECURITY DEFINER
 SET search_path=public
-AS $$
+AS $
 DECLARE
   abood uuid;
 BEGIN
@@ -828,6 +828,6 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.set_user_company_access(uuid,uuid[]) TO authenticated;
+REVOKE ALL ON FUNCTION public.set_user_company_access(uuid,uuid[]) FROM PUBLIC, anon, authenticated;
 
 COMMIT;
