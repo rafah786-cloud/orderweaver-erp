@@ -143,8 +143,7 @@ export const setUserCompanyAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: access, error } = await supabaseAdmin.rpc("set_user_company_access", {
+    const { data: access, error } = await context.supabase.rpc("set_user_company_access", {
       p_user_id: data.user_id,
       p_company_ids: data.company_ids,
     });
