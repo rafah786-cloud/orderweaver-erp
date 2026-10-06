@@ -73,3 +73,6 @@
 - [x] Existing users have been reset to ABOOD TRADINGS as their default/initial company access.
 - [x] Admin approval now includes multi-select company access and approval saves the selected access before approving.
 - [x] Admin company access is enforced server-side through a SECURITY DEFINER assignment function; ABOOD remains the default landing company.
+
+- [x] Tally Import now requires an explicit administrator-selected target company for every XML staging run, reducing the risk of cross-company data mixing.
+- [x] Four-book setup is aligned for separate imports: ABOOD TRADINGS, ABRAZ SLEEPING SOLUTIONS, and two clearly labeled management/internal books.
