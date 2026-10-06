@@ -57,6 +57,7 @@ export const syncVelocityWarehouses = createServerFn({ method: "POST" })
 export const listVelocityWarehouses = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
     const { data, error } = await context.supabase
       .from("velocity_warehouses")
       .select(
