@@ -30,6 +30,17 @@ type RpcClient = {
 };
 const rpc = (value: unknown) => value as RpcClient;
 
+async function assertAccountingRole(db: any, userId: string, allowed: string[] = ["admin", "accountant"]) {
+  const { data, error } = await db
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", allowed);
+  if (error || !data?.some((row: { role?: string }) => allowed.includes(row.role ?? ""))) {
+    throw new Error("You do not have permission to perform this accounting action.");
+  }
+}
+
 export const createGlVoucher = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) =>
@@ -46,6 +57,7 @@ export const createGlVoucher = createServerFn({ method: "POST" })
       .parse(value),
   )
   .handler(async ({ data, context }) => {
+    await assertAccountingRole(context.supabase, context.userId);
     const result = await rpc(context.supabase).rpc("create_gl_voucher", {
       _type: data.type,
       _date: data.date,
@@ -67,6 +79,7 @@ export const cancelGlVoucher = createServerFn({ method: "POST" })
       .parse(value),
   )
   .handler(async ({ data, context }) => {
+    await assertAccountingRole(context.supabase, context.userId);
     const result = await rpc(context.supabase).rpc("cancel_gl_voucher", {
       _id: data.id,
       _date: data.date,
@@ -84,6 +97,7 @@ export const reverseGlVoucher = createServerFn({ method: "POST" })
       .parse(value),
   )
   .handler(async ({ data, context }) => {
+    await assertAccountingRole(context.supabase, context.userId);
     const result = await rpc(context.supabase).rpc("reverse_gl_voucher", {
       _id: data.id,
       _date: data.date,
@@ -97,6 +111,7 @@ export const closeFinancialYear = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value) => z.object({ id: z.string().uuid() }).parse(value))
   .handler(async ({ data, context }) => {
+    await assertAccountingRole(context.supabase, context.userId);
     const result = await rpc(context.supabase).rpc("close_financial_year", { _id: data.id });
     if (result.error) throw new Error(result.error.message);
     return result.data;
@@ -108,6 +123,7 @@ export const reopenFinancialYear = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), reason: z.string().trim().min(3) }).parse(value),
   )
   .handler(async ({ data, context }) => {
+    await assertAccountingRole(context.supabase, context.userId, ["admin"]);
     const result = await rpc(context.supabase).rpc("reopen_financial_year", {
       _id: data.id,
       _reason: data.reason,
