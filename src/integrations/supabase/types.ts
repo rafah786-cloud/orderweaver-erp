@@ -167,6 +167,7 @@ export type Database = {
       }
       ai_documents: {
         Row: {
+          company_id: string | null
           content_text: string | null
           created_at: string
           doc_kind: string
@@ -185,6 +186,7 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          company_id?: string | null
           content_text?: string | null
           created_at?: string
           doc_kind?: string
@@ -203,6 +205,7 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          company_id?: string | null
           content_text?: string | null
           created_at?: string
           doc_kind?: string
@@ -221,6 +224,13 @@ export type Database = {
           uploaded_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ai_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ai_documents_party_id_fkey"
             columns: ["party_id"]
@@ -246,6 +256,7 @@ export type Database = {
       }
       ai_insights: {
         Row: {
+          company_id: string | null
           created_by: string | null
           expires_at: string | null
           generated_at: string
@@ -256,6 +267,7 @@ export type Database = {
           scope_key: string
         }
         Insert: {
+          company_id?: string | null
           created_by?: string | null
           expires_at?: string | null
           generated_at?: string
@@ -266,6 +278,7 @@ export type Database = {
           scope_key?: string
         }
         Update: {
+          company_id?: string | null
           created_by?: string | null
           expires_at?: string | null
           generated_at?: string
@@ -275,7 +288,15 @@ export type Database = {
           payload?: Json
           scope_key?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_messages: {
         Row: {
@@ -1044,6 +1065,7 @@ export type Database = {
       device_settings: {
         Row: {
           api_key_hash: string
+          company_id: string
           created_at: string
           device_id: string
           id: string
@@ -1057,6 +1079,7 @@ export type Database = {
         }
         Insert: {
           api_key_hash: string
+          company_id: string
           created_at?: string
           device_id: string
           id?: string
@@ -1070,6 +1093,7 @@ export type Database = {
         }
         Update: {
           api_key_hash?: string
+          company_id?: string
           created_at?: string
           device_id?: string
           id?: string
@@ -1081,7 +1105,15 @@ export type Database = {
           port?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "device_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       e_invoices: {
         Row: {
@@ -4891,6 +4923,16 @@ export type Database = {
         Returns: string
       }
       set_active_company: { Args: { _company_id: string }; Returns: string }
+      set_user_company_access: {
+        Args: { p_company_ids: string[]; p_user_id: string }
+        Returns: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          company_id: string
+        }[]
+      }
       snapshot_invoice_tax: { Args: { p_invoice: string }; Returns: undefined }
       stock_available: {
         Args: { p_godown?: string; p_item: string }

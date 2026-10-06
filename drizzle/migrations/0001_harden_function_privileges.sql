@@ -1,0 +1,17 @@
+ALTER FUNCTION public._apply_raw_delta(uuid, numeric) SET search_path = public;
+ALTER FUNCTION public.stock_on_hand(uuid, uuid) SET search_path = public;
+ALTER FUNCTION public.stock_available(uuid, uuid) SET search_path = public;
+ALTER FUNCTION public.bill_outstanding(uuid) SET search_path = public;
+REVOKE EXECUTE ON FUNCTION public._apply_raw_delta(uuid, numeric) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.stock_on_hand(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.stock_available(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bill_outstanding(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.validate_tally_migration_run(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.provision_user_abood_access() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.assign_new_user_default_company() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.ensure_company_context() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.current_company_id() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.has_company_access(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.stock_on_hand(uuid, uuid), public.stock_available(uuid, uuid), public.bill_outstanding(uuid), public.validate_tally_migration_run(uuid), public.current_company_id(), public.has_company_access(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public._apply_raw_delta(uuid, numeric) TO service_role;
+COMMENT ON TABLE public.velocity_auth_token IS 'Server-only credential cache: RLS enabled with no policies by design; accessed only via service role.';

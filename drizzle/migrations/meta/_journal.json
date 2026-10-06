@@ -8,6 +8,13 @@
       "when": 1791052507134,
       "tag": "0000_restrict_selected_accounting_and_stock_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791292144543,
+      "tag": "0001_harden_function_privileges",
+      "breakpoints": true
     }
   ]
 }
