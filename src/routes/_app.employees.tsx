@@ -297,7 +297,6 @@ function EmployeesPage() {
                         )}
                       </TableRow>
                     ))
-                  )}
                 </TableBody>
               </Table>
             </div>
