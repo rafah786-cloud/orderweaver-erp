@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
@@ -21,6 +22,19 @@ export function NotificationInboxButton({
 
   const count = data?.count ?? 0;
   const label = count > 99 ? "99+" : String(count);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const badgeApi = navigator as Navigator & {
+      setAppBadge?: (count?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (count > 0) {
+      void badgeApi.setAppBadge?.(count);
+    } else {
+      void badgeApi.clearAppBadge?.();
+    }
+  }, [count]);
 
   return (
     <Link
