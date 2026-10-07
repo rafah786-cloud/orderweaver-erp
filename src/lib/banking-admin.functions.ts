@@ -141,3 +141,25 @@ export const unreconcileBankLine = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+
+export const matchBankLines = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      book_id: z.string().uuid(),
+      statement_id: z.string().uuid(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
+    const { data: companyId, error: companyError } =
+      await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { data: result, error } = await context.supabase.rpc("match_bank_lines", {
+      p_book: data.book_id,
+      p_statement: data.statement_id,
+    });
+    if (error) throw new Error(error.message);
+    return result;
+  });
