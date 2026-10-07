@@ -84,7 +84,8 @@ export const unregisterWebPushSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ endpoint: z.string().url().startsWith("https://").max(2048) }).parse(d))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
+    const db = context.supabase as any;
+    const { error } = await db
       .from("web_push_subscriptions")
       .delete()
       .eq("user_id", context.userId)
