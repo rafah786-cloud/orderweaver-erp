@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { todayIndia } from "@/lib/format";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -90,7 +91,7 @@ export const updateChequeStatus = createServerFn({ method: "POST" })
     await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
     const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
-    const patch = { status: data.status, ...(data.status === "cleared" ? { cleared_date: new Date().toISOString().slice(0, 10) } : {}) };
+    const patch = { status: data.status, ...(data.status === "cleared" ? { cleared_date: todayIndia() } : {}) };
     // Cheque company isolation is enforced by RLS through its linked business records.
     const { error } = await context.supabase.from("cheques").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
