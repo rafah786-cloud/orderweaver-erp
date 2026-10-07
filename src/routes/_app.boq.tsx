@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { saveRawMaterial, saveProductModel } from "@/lib/boq-admin.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -96,6 +97,7 @@ function BoqPage() {
 
 function MaterialsTab({ canEdit }: { canEdit: boolean }) {
   const qc = useQueryClient();
+  const saveRawMaterialFn = useServerFn(saveRawMaterial);
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<RawMaterial | null>(null);
   const [form, setForm] = useState({
@@ -127,28 +129,16 @@ function MaterialsTab({ canEdit }: { canEdit: boolean }) {
   const save = useMutation({
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error("Name required");
-      if (edit) {
-        const { error } = await supabase
-          .from("raw_materials")
-          .update({
-            code: form.code || null,
-            name: form.name,
-            unit: form.unit,
-            reorder_level: Number(form.reorder_level) || 0,
-            notes: form.notes || null,
-          })
-          .eq("id", edit.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("raw_materials").insert({
+      return saveRawMaterialFn({
+        data: {
+          id: edit?.id,
           code: form.code || null,
           name: form.name,
           unit: form.unit,
           reorder_level: Number(form.reorder_level) || 0,
           notes: form.notes || null,
-        });
-        if (error) throw error;
-      }
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Saved");
@@ -511,65 +501,32 @@ function ModelEditor({
     );
   }
 
+  const saveProductModelFn = useServerFn(saveProductModel);
   const save = useMutation({
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error("Model name required");
-      if (
-        recipe.length === 0 ||
-        recipe.some((r) => !r.raw_material_id || !(r.quantity_per_unit > 0))
-      ) {
+      if (recipe.length === 0 || recipe.some((r) => !r.raw_material_id || !(r.quantity_per_unit > 0)))
         throw new Error("Add at least one raw-material recipe line with quantity");
-      }
-      const extra_specs = Object.fromEntries(
-        extras.filter((e) => e.k.trim()).map((e) => [e.k.trim(), e.v]),
-      );
-      let modelId = model?.id;
-      if (isEdit) {
-        const { error } = await supabase
-          .from("product_models")
-          .update({
-            code: form.code || null,
-            name: form.name,
-            size: form.size || null,
-            thickness: form.thickness || null,
-            cover_fabric: form.cover_fabric || null,
-            foam_density: form.foam_density || null,
-            warranty: form.warranty || null,
-            default_price: Number(form.default_price) || 0,
-            extra_specs,
-            notes: form.notes || null,
-          })
-          .eq("id", modelId!);
-        if (error) throw error;
-        await supabase.from("model_boq").delete().eq("model_id", modelId!);
-      } else {
-        const { data, error } = await supabase
-          .from("product_models")
-          .insert({
-            code: form.code || null,
-            name: form.name,
-            size: form.size || null,
-            thickness: form.thickness || null,
-            cover_fabric: form.cover_fabric || null,
-            foam_density: form.foam_density || null,
-            warranty: form.warranty || null,
-            default_price: Number(form.default_price) || 0,
-            extra_specs,
-            notes: form.notes || null,
-          })
-          .select("id")
-          .single();
-        if (error) throw error;
-        modelId = data.id;
-      }
-      const { error: bErr } = await supabase.from("model_boq").insert(
-        recipe.map((r) => ({
-          model_id: modelId!,
-          raw_material_id: r.raw_material_id,
-          quantity_per_unit: Number(r.quantity_per_unit),
-        })),
-      );
-      if (bErr) throw bErr;
+      const extra_specs = Object.fromEntries(extras.filter((e) => e.k.trim()).map((e) => [e.k.trim(), e.v]));
+      return saveProductModelFn({
+        data: {
+          id: model?.id,
+          code: form.code || null,
+          name: form.name,
+          size: form.size || null,
+          thickness: form.thickness || null,
+          cover_fabric: form.cover_fabric || null,
+          foam_density: form.foam_density || null,
+          warranty: form.warranty || null,
+          default_price: Number(form.default_price) || 0,
+          extra_specs,
+          notes: form.notes || null,
+          recipe: recipe.map((r) => ({
+            raw_material_id: r.raw_material_id,
+            quantity_per_unit: Number(r.quantity_per_unit),
+          })),
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Model saved");
