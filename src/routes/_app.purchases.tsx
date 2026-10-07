@@ -54,7 +54,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
-import { createPurchaseBill } from "@/lib/procurement-admin.functions";
+import { createPurchaseBill, receivePurchaseBill } from "@/lib/procurement-admin.functions";
 import { quickAddSupplier, deleteSupplier, broadcastPromo, saveSupplier } from "@/lib/parties-admin.functions";
 import { setPromoOptIn } from "@/lib/notifications-admin.functions";
 import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
@@ -71,6 +71,7 @@ function ReceiveBillButton({
   onDone: () => void;
 }) {
   const [pending, setPending] = useState(false);
+  const receivePurchaseBillFn = useServerFn(receivePurchaseBill);
   const receive = async () => {
     if (
       !confirm(
@@ -80,8 +81,7 @@ function ReceiveBillButton({
       return;
     setPending(true);
     try {
-      const { error } = await supabase.rpc("receive_purchase_bill", { p_bill: billId } as never);
-      if (error) throw error;
+      await receivePurchaseBillFn({ data: { id: billId } });
       toast.success(`Purchase bill ${billNumber} received. Inventory and payable posted.`);
       onDone();
     } catch (e) {
