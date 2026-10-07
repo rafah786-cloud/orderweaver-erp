@@ -296,7 +296,7 @@ function EmployeesPage() {
                           </TableCell>
                         )}
                       </TableRow>
-                    ))
+                    ))}
                 </TableBody>
               </Table>
             </div>
@@ -481,8 +481,3 @@ function EmployeesPage() {
   );
 }
 
-</Label>
-      {children}
-    </div>
-  );
-}

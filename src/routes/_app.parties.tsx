@@ -572,8 +572,3 @@ function PartiesPage() {
   );
 }
 
-</Label>
-      {children}
-    </div>
-  );
-}

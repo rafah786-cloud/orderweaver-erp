@@ -526,8 +526,7 @@ function InvoicesPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })
-                )}
+                  })}
               </TableBody>
             </Table>
           </CardContent>
