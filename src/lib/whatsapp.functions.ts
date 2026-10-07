@@ -257,7 +257,6 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       });
     }
 
-    const po_url = `${APP_ORIGIN}/print/purchase/${bill.id}`;
     const result = await sendForEvent({
       db: context.supabase,
       to,
