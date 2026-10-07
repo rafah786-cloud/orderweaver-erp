@@ -190,7 +190,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     const { data: bill, error } = await context.supabase
       .from("purchase_bills")
       .select(
-        "id, bill_number, bill_date, total_amount, supplier_id, suppliers(id, name, phone, whatsapp_number, whatsapp_opt_in)",
+        "id, bill_number, bill_date, total_amount, supplier_id, suppliers(id, user_id, name, phone, whatsapp_number, whatsapp_opt_in)",
       )
       .eq("id", data.bill_id)
       .maybeSingle();
@@ -233,6 +233,8 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       });
       return { ok: false, reason: "no_phone" };
     }
+    const po_url = `${APP_ORIGIN}/print/purchase/${bill.id}`;
+
     if (sup.user_id) {
       const { dispatchNotificationEvent } = await import("./notifications/engine.server");
       await dispatchNotificationEvent({
