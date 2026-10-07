@@ -191,7 +191,6 @@ describe("Tally import — stable Alter IDs", () => {
       },
     ]);
   });
-  });
 });
 
 describe("Tally import — TallyPrime 4/5 format", () => {
