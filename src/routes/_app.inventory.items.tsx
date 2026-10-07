@@ -23,6 +23,8 @@ import {
 import { sb, type StockItem, VALUATION_LABEL, type ValuationMethod } from "@/lib/inventory";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { createStockItem } from "@/lib/inventory-admin.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app/inventory/items")({ component: StockItemsPage });
 
@@ -30,6 +32,7 @@ function StockItemsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const createStockItemFn = useServerFn(createStockItem);
   const [form, setForm] = useState({
     name: "",
     code: "",
@@ -62,18 +65,15 @@ function StockItemsPage() {
       toast.error("Name required");
       return;
     }
-    const { error } = await sb.from("stock_items").insert({
-      name: form.name,
-      code: form.code || null,
-      unit: form.unit,
-      hsn_code: form.hsn_code || null,
-      gst_rate: Number(form.gst_rate),
-      valuation_method: form.valuation_method,
-      reorder_level: Number(form.reorder_level),
-      standard_cost: Number(form.standard_cost),
-    });
-    if (error) {
-      toast.error(error.message);
+    try {
+      await createStockItemFn({ data: {
+        name: form.name, code: form.code || null, unit: form.unit,
+        hsn_code: form.hsn_code || null, gst_rate: Number(form.gst_rate),
+        valuation_method: form.valuation_method, reorder_level: Number(form.reorder_level),
+        standard_cost: Number(form.standard_cost),
+      }});
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create stock item");
       return;
     }
     toast.success("Stock item created");
