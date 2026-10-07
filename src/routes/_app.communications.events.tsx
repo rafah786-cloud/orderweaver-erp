@@ -36,10 +36,10 @@ import { toast } from "sonner";
 import { MessageSquare, Mail, Smartphone, Bell, Send } from "lucide-react";
 
 const CHANNELS = [
-  { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare },
-  { key: "sms", label: "SMS", Icon: Smartphone },
-  { key: "email", label: "Email", Icon: Mail },
-  { key: "in_app", label: "In-App", Icon: Bell },
+  { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare, implemented: true },
+  { key: "sms", label: "SMS", Icon: Smartphone, implemented: false },
+  { key: "email", label: "Email", Icon: Mail, implemented: false },
+  { key: "in_app", label: "In-App", Icon: Bell, implemented: true },
 ] as const;
 
 type Channel = (typeof CHANNELS)[number]["key"];
@@ -156,7 +156,7 @@ function EventsPage() {
                             <TableCell key={c.key} className="text-center">
                               <Switch
                                 checked={!!cell?.is_enabled}
-                                disabled={!ev.is_active}
+                                disabled={!ev.is_active || !c.implemented}
                                 onCheckedChange={(v) =>
                                   setChannelMut.mutate({
                                     event_key: ev.event_key,
