@@ -33,6 +33,10 @@ export function normalizeAlterId(value: string): bigint {
   return id;
 }
 
+export function hashSyncPayload(payload: Record<string, unknown>): string {
+  return createHash("sha256").update(stableJson(payload)).digest("hex");
+}
+
 export function hashSyncBatch(recordType: string, rows: TallySyncRow[]): string {
   const canonicalRows = [...rows]
     .sort((a, b) => {
@@ -82,6 +86,9 @@ export function validateSyncBatch(
 
     if (alterId <= previous) {
       throw new Error("Sync row Alter ID " + alterKey + " is not newer than the stored watermark");
+    }
+    if (row.payload_hash !== hashSyncPayload(row.payload)) {
+      throw new Error("Payload hash mismatch for Alter ID " + alterKey);
     }
 
     return {
