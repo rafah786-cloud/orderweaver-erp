@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -293,13 +293,16 @@ function EditTemplatesDialog({
 
 function TestDispatchDialog({ events }: { events: { key: string; label: string }[] }) {
   const [open, setOpen] = useState(false);
-  const [eventKey, setEventKey] = useState(events[0]?.key ?? "");
+  const [eventKey, setEventKey] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [userIds, setUserIds] = useState("");
   const [vars, setVars] = useState("{}");
   const [result, setResult] = useState<any>(null);
   const dispatchFn = useServerFn(dispatchTestEvent);
+  useEffect(() => {
+    if (!eventKey && events[0]?.key) setEventKey(events[0].key);
+  }, [eventKey, events]);
   const mut = useMutation({
     mutationFn: async () => {
       let parsed = {};
