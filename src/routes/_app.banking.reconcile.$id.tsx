@@ -34,9 +34,9 @@ function Reconcile() {
   const [bookSel, setBookSel] = useState<string | null>(null);
   const [stmtSel, setStmtSel] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [stmt, setStmt] = useState({
   const addStatementLineFn = useServerFn(addBankStatementLine);
   const unreconcileBankLineFn = useServerFn(unreconcileBankLine);
+  const [stmt, setStmt] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
     reference: "",
