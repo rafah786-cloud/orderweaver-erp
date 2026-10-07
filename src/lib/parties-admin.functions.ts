@@ -83,10 +83,12 @@ export const quickAddParty = createServerFn({ method: "POST" })
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     const to = normalizeWa(data.phone);
     const { data: row, error } = await context.supabase
       .from("parties")
-      .insert({ name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: false })
+      .insert({ company_id: companyId, name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: false })
       .select("id, name")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to add party");
@@ -99,10 +101,12 @@ export const quickAddSupplier = createServerFn({ method: "POST" })
   .inputValidator((d) => AddPartySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     const to = normalizeWa(data.phone);
     const { data: row, error } = await context.supabase
       .from("suppliers")
-      .insert({ name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: true })
+      .insert({ company_id: companyId, name: data.name, phone: data.phone, whatsapp_number: to, whatsapp_opt_in: true })
       .select("id, name")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to add supplier");
@@ -152,12 +156,13 @@ export const saveParty = createServerFn({ method: "POST" })
     const { data: roles } = await context.supabase
       .from("user_roles").select("role").eq("user_id", context.userId).in("role", ["admin", "sales"]);
     if (!roles?.length) throw new Error("Insufficient permissions");
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     if (data.id) {
-      const { error } = await context.supabase.from("parties").update(data.party).eq("id", data.id);
+      const { error } = await context.supabase.from("parties").update(data.party).eq("id", data.id).eq("company_id", companyId);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
     const { data: row, error } = await context.supabase.from("parties")
       .insert({ ...data.party, company_id: companyId }).select("id").single();
@@ -180,14 +185,15 @@ export const saveSupplier = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId).in("role", ["admin", "production"]);
     if (!roles?.length) throw new Error("Insufficient permissions");
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
     if (data.id) {
       const { error } = await context.supabase.from("suppliers").update({
         name:data.name, gstin:data.gstin ?? null, phone:data.phone ?? null, email:data.email ?? null, address:data.address ?? null
-      }).eq("id", data.id);
+      }).eq("id", data.id).eq("company_id", companyId);
       if (error) throw new Error(error.message);
       return { id:data.id };
     }
-    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
     const { data: row, error } = await context.supabase.from("suppliers").insert({
       name:data.name, gstin:data.gstin ?? null, phone:data.phone ?? null, email:data.email ?? null, address:data.address ?? null, company_id:companyId
