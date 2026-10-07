@@ -3880,6 +3880,201 @@ export type Database = {
           },
         ]
       }
+      tally_sync_batches: {
+        Row: {
+          accepted_at: string
+          applied_at: string | null
+          company_id: string
+          created_at: string
+          id: string
+          last_error: string | null
+          new_alter_id: number
+          payload_hash: string
+          previous_alter_id: number
+          record_type: string
+          row_count: number
+          source_id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string
+          applied_at?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          new_alter_id: number
+          payload_hash: string
+          previous_alter_id: number
+          record_type: string
+          row_count: number
+          source_id: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string
+          applied_at?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          new_alter_id?: number
+          payload_hash?: string
+          previous_alter_id?: number
+          record_type?: string
+          row_count?: number
+          source_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      tally_sync_dead_letters: {
+        Row: {
+          company_id: string
+          created_at: string
+          error_code: string
+          error_message: string
+          id: string
+          resolved_at: string | null
+          retry_count: number
+          row_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          error_code: string
+          error_message: string
+          id?: string
+          resolved_at?: string | null
+          retry_count?: number
+          row_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          error_code?: string
+          error_message?: string
+          id?: string
+          resolved_at?: string | null
+          retry_count?: number
+          row_id?: string
+        }
+        Relationships: []
+      }
+      tally_sync_rows: {
+        Row: {
+          alter_id: number
+          batch_id: string
+          canonical_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          last_error: string | null
+          lifecycle_state: string
+          payload: Json
+          payload_hash: string
+          processing_status: string
+          record_type: string
+          source_id: string
+          source_id_value: string | null
+          source_key: string
+        }
+        Insert: {
+          alter_id: number
+          batch_id: string
+          canonical_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          lifecycle_state?: string
+          payload: Json
+          payload_hash: string
+          processing_status?: string
+          record_type: string
+          source_id: string
+          source_id_value?: string | null
+          source_key: string
+        }
+        Update: {
+          alter_id?: number
+          batch_id?: string
+          canonical_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          lifecycle_state?: string
+          payload?: Json
+          payload_hash?: string
+          processing_status?: string
+          record_type?: string
+          source_id?: string
+          source_id_value?: string | null
+          source_key?: string
+        }
+        Relationships: []
+      }
+      tally_sync_sources: {
+        Row: {
+          company_id: string
+          connector_id: string
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          source_company_guid: string | null
+          source_company_name: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          connector_id: string
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          source_company_guid?: string | null
+          source_company_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          connector_id?: string
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          source_company_guid?: string | null
+          source_company_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tally_sync_watermarks: {
+        Row: {
+          id: string
+          last_alter_id: number
+          record_type: string
+          source_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          last_alter_id?: number
+          record_type: string
+          source_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          last_alter_id?: number
+          record_type?: string
+          source_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tally_migration_rows: {
         Row: {
           alter_id: string | null
