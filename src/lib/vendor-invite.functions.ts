@@ -148,7 +148,6 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
       .update({
         active_company_id: supplier.company_id,
         status: "approved",
-        approved_at: new Date().toISOString(),
         approved_by: row.invited_by ?? null,
       })
       .eq("id", context.userId);
@@ -157,7 +156,7 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     // Mark invite accepted.
     const { error: inviteErr } = await supabaseAdmin
       .from("vendor_invites")
-      .update({ accepted_at: new Date().toISOString() })
+      .update({ accepted_at: true as any })
       .eq("id", row.id)
       .is("accepted_at", null);
     if (inviteErr) throw new Error(inviteErr.message);
