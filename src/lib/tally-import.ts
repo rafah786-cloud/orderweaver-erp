@@ -100,6 +100,17 @@ export type TallyVoucher = {
   voucher_date: string;
   alter_id?: string | null;
   entries: Array<{ ledger_name: string; debit: number; credit: number }>;
+  inventory_entries: Array<{
+    stock_item_name: string;
+    actual_qty: number;
+    billed_qty: number;
+    unit: string;
+    rate: number;
+    amount: number;
+    is_deemed_positive: boolean;
+    godown_name: string | null;
+    batch_name: string | null;
+  }>;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
@@ -554,6 +565,53 @@ export function parseTallyMasters(
       );
       const lines = [...ledgerLines, ...altLines];
 
+      const inventoryEntries: TallyVoucher["inventory_entries"] = [];
+      const rawInventoryEntries = arr<Record<string, unknown>>(
+        v["ALLINVENTORYENTRIES.LIST"] as
+          | Record<string, unknown>
+          | Record<string, unknown>[]
+          | undefined,
+      );
+      for (const inv of rawInventoryEntries) {
+        const actual = parseQtyUnit(text(inv.ACTUALQTY));
+        const billed = parseQtyUnit(text(inv.BILLEDQTY));
+        const batches = arr<Record<string, unknown>>(
+          inv["BATCHALLOCATIONS.LIST"] as
+            | Record<string, unknown>
+            | Record<string, unknown>[]
+            | undefined,
+        );
+        if (batches.length === 0) {
+          inventoryEntries.push({
+            stock_item_name: text(inv.STOCKITEMNAME),
+            actual_qty: actual.qty,
+            billed_qty: billed.qty,
+            unit: actual.unit || billed.unit,
+            rate: parseRate(text(inv.RATE)),
+            amount: num(inv.AMOUNT),
+            is_deemed_positive: isYes(inv.ISDEEMEDPOSITIVE),
+            godown_name: null,
+            batch_name: null,
+          });
+        } else {
+          for (const batch of batches) {
+            const batchActual = parseQtyUnit(text(batch.ACTUALQTY));
+            const batchBilled = parseQtyUnit(text(batch.BILLEDQTY));
+            inventoryEntries.push({
+              stock_item_name: text(inv.STOCKITEMNAME),
+              actual_qty: batchActual.qty || actual.qty,
+              billed_qty: batchBilled.qty || billed.qty,
+              unit: batchActual.unit || batchBilled.unit || actual.unit || billed.unit,
+              rate: parseRate(text(batch.RATE ?? inv.RATE)),
+              amount: num(batch.AMOUNT ?? inv.AMOUNT),
+              is_deemed_positive: isYes(inv.ISDEEMEDPOSITIVE),
+              godown_name: text(batch.GODOWNNAME ?? batch.DESTINATIONGODOWNNAME) || null,
+              batch_name: text(batch.BATCHNAME) || null,
+            });
+          }
+        }
+      }
+
       vouchersOut.push({
         source_id: guid,
         alter_id: alterIdOf(v),
@@ -570,6 +628,7 @@ export function parseTallyMasters(
             credit: debit ? 0 : Math.abs(amount),
           };
         }),
+        inventory_entries: inventoryEntries,
         lifecycle_state: lifecycleState(v),
       });
 
