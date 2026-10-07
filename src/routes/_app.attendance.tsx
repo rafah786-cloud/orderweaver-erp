@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Activity, Download, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime, todayIndia } from "@/lib/format";
 import {
   addManualPunch,
   deletePunchEvent,
@@ -128,8 +129,8 @@ function AttendancePage() {
   const exportCSV = () => {
     const rows = (employees ?? []).map((e) => {
       const r = byEmp.get(e.id);
-      const inTime = r?.first_in ? new Date(r.first_in).toLocaleTimeString() : "";
-      const outTime = r?.last_out ? new Date(r.last_out).toLocaleTimeString() : "";
+      const inTime = r?.first_in ? new Date(r.first_in).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
+      const outTime = r?.last_out ? new Date(r.last_out).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
       const hours = r?.hours_worked ? Number(r.hours_worked).toFixed(1) : "";
       const status = !r ? "Absent" : r.is_half_day ? "Half Day" : "Present";
       return [
@@ -514,8 +515,8 @@ function EmployeePunchesDialog({
   const load = async () => {
     if (!employeeId) return;
     setLoading(true);
-    const start = new Date(`${date}T00:00:00`).toISOString();
-    const end = new Date(`${date}T23:59:59`).toISOString();
+    const start = new Date(`${date}T00:00:00+05:30`).toISOString();
+    const end = new Date(new Date(`${date}T00:00:00+05:30`).getTime() + 86400000 - 1000).toISOString();
     const { data } = await supabase
       .from("punch_events")
       .select("id, employee_id, employee_code, punch_type, punch_time")
@@ -539,7 +540,7 @@ function EmployeePunchesDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Punches — {employeeName ?? ""}</DialogTitle>
-          <DialogDescription>{new Date(date).toLocaleDateString()}</DialogDescription>
+          <DialogDescription>{formatDateTime(`${date}T00:00:00+05:30`)}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -562,7 +563,7 @@ function EmployeePunchesDialog({
                       >
                         {p.punch_type.toUpperCase()}
                       </Badge>
-                      <span>{new Date(p.punch_time).toLocaleTimeString()}</span>
+                      <span>{new Date(p.punch_time).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
                     </div>
                     <Button
                       size="icon"
