@@ -34,14 +34,16 @@ export const createInvoice = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    const row = Array.isArray(result) ? result[0] : result;
-    if (!row?.id || !row?.invoice_number) {
+    const response: unknown = result;
+    const parsed = z.object({ id: z.string().uuid(), invoice_number: z.string().min(1) })
+      .safeParse(Array.isArray(response) ? response[0] : response);
+    if (!parsed.success) {
       throw new Error("Invoice creation returned no document");
     }
 
     return {
-      id: row.id as string,
-      invoiceNumber: row.invoice_number as string,
+      id: parsed.data.id,
+      invoiceNumber: parsed.data.invoice_number,
       posted: true,
     };
   });

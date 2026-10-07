@@ -18,7 +18,7 @@ export const createStockItem=createServerFn({method:"POST"}).middleware([require
   await assertInventoryRole(context.supabase,context.userId);
   const {data:companyId,error:ce}=await context.supabase.rpc("current_company_id");
   if(ce||!companyId) throw new Error("No active company selected");
-  const {data:row,error}=await context.supabase.from("stock_items").insert({...data,company_id:companyId}).select("id").single();
+  const {data:row,error}=await context.supabase.from("stock_items").insert({...data,valuation_method:data.valuation_method === "standard" ? "standard_cost" : data.valuation_method,company_id:companyId}).select("id").single();
   if(error||!row) throw new Error(error?.message??"Failed to create stock item");
   return row.id;
  });

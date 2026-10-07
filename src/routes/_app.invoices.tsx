@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { TableState } from "@/components/ui/table-state";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,12 @@ import { useCompany } from "@/lib/company-context";
 import { createInvoice, recordInvoiceReceipt, reverseInvoice } from "@/lib/invoices-admin.functions";
 
 export const Route = createFileRoute("/_app/invoices")({
+  head: () => ({
+    meta: [
+      { title: "Invoices | Mattress Maestro ERP" },
+      { name: "description", content: "Create and manage sales invoices with credit controls." },
+    ],
+  }),
   component: InvoicesPage,
 });
 
@@ -438,20 +445,8 @@ function InvoicesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                      Loading…
-                    </TableCell>
-                  </TableRow>
-                ) : invoices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                      No invoices yet.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  invoices.map((inv) => {
+                <TableState isLoading={isLoading} isEmpty={invoices.length === 0} colSpan={8} emptyMessage="No invoices yet." />
+                {!isLoading && invoices.map((inv) => {
                     const canManage = hasAnyRole(["admin", "sales"]);
                     const closed = inv.status === "paid" || inv.status === "cancelled";
                     return (

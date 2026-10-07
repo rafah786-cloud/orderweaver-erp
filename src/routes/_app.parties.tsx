@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { Field } from "@/components/ui/field";
+import { TableState } from "@/components/ui/table-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,12 @@ import { setPromoOptIn } from "@/lib/notifications-admin.functions";
 import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
 export const Route = createFileRoute("/_app/parties")({
+  head: () => ({
+    meta: [
+      { title: "Parties | Mattress Maestro ERP" },
+      { name: "description", content: "Manage customers, vendors, and their outstanding balances." },
+    ],
+  }),
   component: PartiesPage,
 });
 
@@ -293,20 +301,8 @@ function PartiesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
-                      Loading…
-                    </TableCell>
-                  </TableRow>
-                ) : parties.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
-                      No parties yet. Click New Party to add one.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  parties.map((p) => {
+                <TableState isLoading={isLoading} isEmpty={parties.length === 0} colSpan={10} emptyMessage="No parties yet. Click New Party to add one." />
+                {!isLoading && parties.map((p) => {
                     const o = outstandingMap.get(p.id);
                     const out = Number(o?.outstanding ?? 0);
                     const block = blockedStatus(o, p.credit_limit);
@@ -577,10 +573,7 @@ function PartiesPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+</Label>
       {children}
     </div>
   );

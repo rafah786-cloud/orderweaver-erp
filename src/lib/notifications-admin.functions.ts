@@ -360,12 +360,12 @@ export const toggleNotificationProvider = createServerFn({ method: "POST" })
         .maybeSingle();
       if (loadError || !provider) throw new Error("Provider not found");
       const { hasProviderImplementation } = await import("./notifications/registry.server");
-      if (!hasProviderImplementation(provider.channel, provider.name)) {
+      const channel = z.enum(["whatsapp", "sms", "email", "push", "in_app"]).parse(provider.channel);
+      if (!hasProviderImplementation(channel, provider.name)) {
         throw new Error("Cannot activate a provider without a server implementation");
       }
-      const missing = (
-        Array.isArray(provider.secret_env_keys) ? provider.secret_env_keys : []
-      ).filter((key: string) => !process.env[key]);
+      const keys = z.array(z.string()).parse(provider.secret_env_keys ?? []);
+      const missing = keys.filter((key) => !process.env[key]);
       if (missing.length) {
         throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
       }
