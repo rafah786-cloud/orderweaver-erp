@@ -4666,6 +4666,18 @@ export type Database = {
       }
     }
     Functions: {
+      accept_tally_sync_batch: {
+        Args: {
+          p_new_alter_id: number
+          p_payload_hash: string
+          p_previous_alter_id: number
+          p_record_type: string
+          p_rows: Json
+          p_source_id: string
+        }
+        Returns: string
+      }
+
       _apply_raw_delta: {
         Args: { p_item: string; p_qty: number }
         Returns: undefined
