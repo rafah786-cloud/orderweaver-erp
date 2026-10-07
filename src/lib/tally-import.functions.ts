@@ -325,7 +325,6 @@ export const importTallyMasters = createServerFn({ method: "POST" })
 
       for (const m of data.rawMaterials) {
         const existingId = byName.get(norm(m.name));
-        const fresh = !existingId;
         const key = `tally:raw:${norm(m.name)}`;
         // @ts-expect-error This RPC is defined by the unapplied accounting migration; fail closed at runtime if absent.
         const { data: accepted, error: ingestErr } = await supabase.rpc("ingest_tally_event", {
@@ -374,9 +373,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
 
       for (const f of data.finishedGoods) {
         const existingId = byName.get(norm(f.name));
+        // Tally OPENINGRATE is an inventory valuation rate, not the ERP's
+        // selling/default price. Never overwrite a sales price from a Tally
+        // stock opening valuation.
         const row = {
           name: f.name,
-          default_price: f.opening_rate,
           notes: f.group ? `Tally group: ${f.group}` : null,
         };
         if (existingId) {
@@ -389,7 +390,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             result.errors.push(`Finished good ${f.name}: update failed`);
           } else result.finishedGoods.updated++;
         } else {
-          const { error: iErr } = await supabase.from("product_models").insert(row);
+          const { error: iErr } = await supabase.from("product_models").insert({ ...row, default_price: 0 });
           if (iErr) {
             console.error("[tally-import] finished insert", iErr);
             result.errors.push(`Finished good ${f.name}: insert failed`);
