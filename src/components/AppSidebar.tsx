@@ -33,6 +33,7 @@ import { ROUTE_ROLES } from "@/lib/permissions";
 import { useState, useEffect } from "react";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 import { AccountMenu } from "@/components/AccountMenu";
+import { NotificationInboxButton } from "@/components/NotificationInboxButton";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard": LayoutDashboard,
@@ -193,6 +194,16 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
             <PanelLeft className="h-4 w-4" />
           </button>
         )}
+      </div>
+      <div className="border-b border-sidebar-border px-3 py-3">
+        <div className={collapsed ? "flex justify-center" : "flex items-center justify-between"}>
+          {!collapsed && (
+            <span className="px-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/40">
+              Alerts
+            </span>
+          )}
+          <NotificationInboxButton compact />
+        </div>
       </div>
       <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
         {groups.map((group) => (
