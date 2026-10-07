@@ -213,18 +213,8 @@ BEGIN
     RETURNING * INTO wm;
   END IF;
 
-  -- Optimistic concurrency: a batch is accepted only against the watermark
-  -- that the connector actually read. This prevents two connector workers
-  -- from advancing the same stream independently.
-  IF wm.last_alter_id <> p_previous_alter_id THEN
-    RAISE EXCEPTION 'Watermark conflict: expected %, current %',
-      p_previous_alter_id, wm.last_alter_id;
-  END IF;
-
-  IF new_aid <= previous_aid THEN
-    RAISE EXCEPTION 'New Alter ID must advance the watermark';
-  END IF;
-
+  -- A retry of the exact same accepted batch is idempotent and must return
+  -- the original batch even though the watermark has already advanced.
   SELECT id INTO batch_id
   FROM public.tally_sync_batches
   WHERE source_id=p_source_id
@@ -233,6 +223,17 @@ BEGIN
 
   IF batch_id IS NOT NULL THEN
     RETURN batch_id;
+  END IF;
+
+  -- Optimistic concurrency: a new batch is accepted only against the
+  -- watermark that the connector actually read.
+  IF wm.last_alter_id <> previous_aid THEN
+    RAISE EXCEPTION 'Watermark conflict: expected %, current %',
+      previous_aid, wm.last_alter_id;
+  END IF;
+
+  IF new_aid <= previous_aid THEN
+    RAISE EXCEPTION 'New Alter ID must advance the watermark';
   END IF;
 
   row_count := jsonb_array_length(p_rows);
@@ -268,6 +269,11 @@ BEGIN
       RAISE EXCEPTION 'Every sync row requires payload_hash';
     END IF;
   END LOOP;
+
+  IF (SELECT max((value->>'alter_id')::bigint)
+      FROM jsonb_array_elements(p_rows)) <> new_aid THEN
+    RAISE EXCEPTION 'New Alter ID must equal the highest Alter ID in the batch';
+  END IF;
 
   INSERT INTO public.tally_sync_batches(
     source_id,company_id,record_type,previous_alter_id,new_alter_id,
