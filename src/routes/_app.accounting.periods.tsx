@@ -9,6 +9,8 @@ import { sb } from "@/lib/accounting";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Lock, Unlock } from "lucide-react";
+import { createFinancialYear, setFinancialYearLock } from "@/lib/accounting-masters.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app/accounting/periods")({
   component: PeriodsPage,
@@ -25,6 +27,8 @@ type FY = {
 
 function PeriodsPage() {
   const qc = useQueryClient();
+  const createFinancialYearFn = useServerFn(createFinancialYear);
+  const setFinancialYearLockFn = useServerFn(setFinancialYearLock);
   const [form, setForm] = useState({ name: "", start_date: "", end_date: "" });
 
   const q = useQuery({
@@ -41,8 +45,7 @@ function PeriodsPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      const { error } = await sb.from("financial_years").insert(form);
-      if (error) throw error;
+      await createFinancialYearFn({ data: form });
     },
     onSuccess: () => {
       toast.success("Financial year created");
@@ -54,8 +57,7 @@ function PeriodsPage() {
 
   const toggleLock = useMutation({
     mutationFn: async ({ id, is_locked }: { id: string; is_locked: boolean }) => {
-      const { error } = await sb.from("financial_years").update({ is_locked }).eq("id", id);
-      if (error) throw error;
+      await setFinancialYearLockFn({ data: { id, is_locked } });
     },
     onSuccess: (_d, v) => {
       toast.success(v.is_locked ? "Period locked" : "Period unlocked");
