@@ -23,7 +23,7 @@ export type EventRecipients = {
   email?: string | null;
   /** App user ids for In-App inbox */
   userIds?: string[];
-  /** Device tokens for Push (future) */
+  /** Legacy provider tokens; push routing now resolves subscriptions from userIds. */
   pushTokens?: string[];
 };
 
@@ -185,14 +185,46 @@ export async function dispatchNotificationEvent(input: DispatchInput): Promise<D
         );
       }
     } else if (row.channel === "push") {
-      const tokens = recipients.pushTokens ?? [];
-      if (tokens.length === 0) {
-        outcomes.push({ channel: "push", status: "skipped", error: "no push tokens" });
+      const userIds = Array.from(new Set(recipients.userIds ?? []));
+      if (userIds.length === 0) {
+        outcomes.push({ channel: "push", status: "skipped", error: "no user ids" });
         continue;
       }
-      for (const tok of tokens) {
-        await guarded("push", tok, (c) =>
-          sendNotification("push", { to: tok, templateName: tplName, variables }, c),
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: subscriptions, error: subscriptionError } = await supabaseAdmin
+        .from("web_push_subscriptions")
+        .select("id,user_id")
+        .in("user_id", userIds)
+        .eq("is_active", true);
+
+      if (subscriptionError) {
+        outcomes.push({ channel: "push", status: "failed", error: subscriptionError.message });
+        continue;
+      }
+
+      const rows = subscriptions ?? [];
+      if (rows.length === 0) {
+        outcomes.push({ channel: "push", status: "skipped", error: "no active push subscriptions" });
+        continue;
+      }
+
+      const subject = render(row.subject_template, variables) || tplName;
+      const body = render(row.body_template, variables);
+
+      for (const sub of rows) {
+        await guarded("push", sub.id, (c) =>
+          body
+            ? sendFreeformNotification(
+                "push",
+                { to: sub.id, subject, body },
+                { ...c, party_kind: context.party_kind ?? "customer", party_id: context.party_id ?? null },
+              )
+            : sendNotification(
+                "push",
+                { to: sub.id, templateName: tplName, subject, variables },
+                { ...c, party_kind: context.party_kind ?? "customer", party_id: context.party_id ?? null },
+              ),
         );
       }
     }
