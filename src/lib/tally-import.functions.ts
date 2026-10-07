@@ -325,7 +325,6 @@ export const importTallyMasters = createServerFn({ method: "POST" })
 
       for (const m of data.rawMaterials) {
         const existingId = byName.get(norm(m.name));
-        const fresh = !existingId;
         const key = `tally:raw:${norm(m.name)}`;
         // @ts-expect-error This RPC is defined by the unapplied accounting migration; fail closed at runtime if absent.
         const { data: accepted, error: ingestErr } = await supabase.rpc("ingest_tally_event", {
