@@ -165,6 +165,37 @@ export const saveParty = createServerFn({ method: "POST" })
     return { id: row.id };
   });
 
+
+const SupplierSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1).max(200),
+  gstin: z.string().trim().max(30).nullable().optional(),
+  phone: z.string().trim().max(30).nullable().optional(),
+  email: z.string().trim().email().max(320).nullable().optional(),
+  address: z.string().trim().max(2000).nullable().optional(),
+});
+export const saveSupplier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => SupplierSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId).in("role", ["admin", "production"]);
+    if (!roles?.length) throw new Error("Insufficient permissions");
+    if (data.id) {
+      const { error } = await context.supabase.from("suppliers").update({
+        name:data.name, gstin:data.gstin ?? null, phone:data.phone ?? null, email:data.email ?? null, address:data.address ?? null
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { id:data.id };
+    }
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { data: row, error } = await context.supabase.from("suppliers").insert({
+      name:data.name, gstin:data.gstin ?? null, phone:data.phone ?? null, email:data.email ?? null, address:data.address ?? null, company_id:companyId
+    }).select("id").single();
+    if (error || !row) throw new Error(error?.message ?? "Failed to create supplier");
+    return { id:row.id };
+  });
+
 const BroadcastSchema = z.object({
   audience: z.enum(["parties", "suppliers"]),
 });
