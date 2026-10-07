@@ -29,6 +29,10 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   "in_app:internal": inAppFactory,
 };
 
+export function hasProviderImplementation(channel: NotificationChannel, name: string): boolean {
+  return Boolean(PROVIDER_FACTORIES[`${channel}:${name}`]);
+}
+
 function toRecord(row: any): ProviderRecord {
   return {
     id: row.id,
