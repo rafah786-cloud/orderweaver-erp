@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PrintLayout } from "@/components/print/PrintLayout";
 import { PartyBlock, PrintTable, Th, Td } from "@/components/print/print-tables";
-import { inr, formatDate } from "@/lib/format";
+import { inr, formatDate, todayIndia } from "@/lib/format";
 import { z } from "zod";
 
 const search = z.object({ from: z.string().optional(), to: z.string().optional() });
