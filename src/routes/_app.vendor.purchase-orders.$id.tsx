@@ -75,7 +75,6 @@ function VendorPODetail() {
         .from("purchase_bills")
         .update({
           vendor_ack_status: status,
-          vendor_ack_at: new Date().toISOString(),
           vendor_ack_note: note || null,
           expected_dispatch_date: status === "accepted" && dispatchDate ? dispatchDate : null,
         })
