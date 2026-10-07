@@ -21,7 +21,7 @@ async function log(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("notification_log").insert({
     channel,
-    recipient_phone: to,
+    recipient_phone: channel === "whatsapp" || channel === "sms" ? to : null,
     party_kind: ctx.party_kind ?? "customer",
     party_id: ctx.party_id ?? null,
     event_type: ctx.event_type,
@@ -32,7 +32,10 @@ async function log(
     whatsapp_message_id: result.ok ? result.messageId : null,
     failure_reason: result.ok ? null : result.error,
     error: result.ok ? null : result.error,
-    payload: (ctx.payload ?? null) as any,
+    payload: ({
+      ...(ctx.payload ?? {}),
+      ...(channel === "push" ? { push_subscription_id: to } : {}),
+    } as any),
     idempotency_key: ctx.idempotency_key ?? null,
   });
 }

@@ -190,7 +190,7 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
     const { data: bill, error } = await context.supabase
       .from("purchase_bills")
       .select(
-        "id, bill_number, bill_date, total_amount, supplier_id, suppliers(id, name, phone, whatsapp_number, whatsapp_opt_in)",
+        "id, bill_number, bill_date, total_amount, supplier_id, suppliers(id, user_id, name, phone, whatsapp_number, whatsapp_opt_in)",
       )
       .eq("id", data.bill_id)
       .maybeSingle();
@@ -234,6 +234,29 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       return { ok: false, reason: "no_phone" };
     }
     const po_url = `${APP_ORIGIN}/print/purchase/${bill.id}`;
+
+    if (sup.user_id) {
+      const { dispatchNotificationEvent } = await import("./notifications/engine.server");
+      await dispatchNotificationEvent({
+        eventKey,
+        recipients: { userIds: [sup.user_id] },
+        variables: {
+          vendor_name: sup.name,
+          po_number: bill.bill_number,
+          po_date: bill.bill_date,
+          po_value: Number(bill.total_amount ?? 0).toFixed(2),
+          po_url,
+        },
+        context: {
+          party_kind: "vendor",
+          party_id: sup.id,
+          ref_table: "purchase_bills",
+          ref_id: bill.id,
+          payload: { source: "vendor-notification" },
+        },
+      });
+    }
+
     const result = await sendForEvent({
       db: context.supabase,
       to,
@@ -299,10 +322,28 @@ export const notifyCustomerEvent = createServerFn({ method: "POST" })
     );
     const { data: party, error: partyError } = await context.supabase
       .from("parties")
-      .select("id, name, phone, whatsapp_number, whatsapp_opt_in")
+      .select("id, user_id, name, phone, whatsapp_number, whatsapp_opt_in")
       .eq("id", data.party_id)
       .maybeSingle();
     if (partyError || !party) throw new Error("Party not found");
+    // Transactional customer alerts are account-aware. WhatsApp opt-out does
+    // not suppress the separate ERP push channel.
+    if ((party as any).user_id) {
+      const { dispatchNotificationEvent } = await import("./notifications/engine.server");
+      await dispatchNotificationEvent({
+        eventKey: data.event,
+        recipients: { userIds: [(party as any).user_id] },
+        variables: { customer_name: party.name, ...reference.vars },
+        context: {
+          party_kind: "customer",
+          party_id: party.id,
+          ref_table: reference.table,
+          ref_id: data.ref_id,
+          payload: { source: "customer-notification" },
+        },
+      });
+    }
+
     if ((party as any).whatsapp_opt_in === false) {
       await logWhatsAppNotification({
         party_kind: "customer",

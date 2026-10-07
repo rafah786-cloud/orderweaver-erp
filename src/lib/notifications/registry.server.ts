@@ -7,6 +7,7 @@ import type {
 import { interaktFactory } from "./providers/interakt.server";
 import { stubFactory } from "./providers/stub.server";
 import { inAppFactory } from "./providers/in-app.server";
+import { webPushFactory } from "./providers/web-push.server";
 
 /**
  * Registry of available provider implementations.
@@ -25,7 +26,7 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   // Stubs — replace with real implementations and register here.
   "sms:stub": stubFactory,
   "email:stub": stubFactory,
-  "push:stub": stubFactory,
+  "push:webpush": webPushFactory,
   "in_app:internal": inAppFactory,
 };
 
