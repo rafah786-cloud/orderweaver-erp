@@ -2,7 +2,8 @@ import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar, MobileTopBar } from "@/components/AppSidebar";
 import { allowedRolesFor, defaultRouteForRoles } from "@/lib/permissions";
-import { Bell, Search, ShieldAlert } from "lucide-react";
+import { Search, ShieldAlert } from "lucide-react";
+import { NotificationInboxButton } from "@/components/NotificationInboxButton";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider, useCompany } from "@/lib/company-context";
 import { AccountMenu } from "@/components/AccountMenu";
@@ -90,11 +91,7 @@ function AppFrame({
                 <Search aria-hidden="true" />
               </Link>
             )}
-            {hasAnyRole(["admin"]) && (
-              <Link to="/communications/inbox" aria-label="Notifications" title="Notifications">
-                <Bell aria-hidden="true" />
-              </Link>
-            )}
+            <NotificationInboxButton />
             <AccountMenu />
           </nav>
         </header>
