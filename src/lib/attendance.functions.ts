@@ -18,6 +18,16 @@ async function getActiveCompanyId(db: any): Promise<string> {
   return data;
 }
 
+function parseIndiaPunchTime(value: string): string {
+  // datetime-local values have no timezone. ERP attendance input is explicitly India local time.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value)) {
+    return new Date(`${value}+05:30`).toISOString();
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) throw new Error("Invalid punch date/time");
+  return parsed.toISOString();
+}
+
 function fail(tag: string, err: unknown, userMsg: string): never {
   console.error(`[attendance] ${tag}`, err);
   throw new Error(userMsg);
@@ -48,7 +58,7 @@ export const addManualPunch = createServerFn({ method: "POST" })
       employee_id: data.employee_id,
       employee_code: emp.employee_code,
       punch_type: data.punch_type,
-      punch_time: new Date(data.punch_time).toISOString(),
+      punch_time: parseIndiaPunchTime(data.punch_time),
       device_id: "manual",
       raw_payload: { source: "manual", by: context.userId, note: data.note ?? null },
     });
