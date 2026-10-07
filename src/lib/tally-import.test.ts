@@ -134,6 +134,27 @@ describe("Tally import — idempotent re-import", () => {
   });
 });
 
+describe("Tally import — stable Alter IDs", () => {
+  it("preserves ALTERID from masters and vouchers for migration staging", () => {
+    const xml = `<?xml version="1.0"?><ENVELOPE><BODY><DATA>
+      <TALLYMESSAGE>
+        <GROUP NAME="Sundry Debtors"><PARENT>Current Assets</PARENT><ALTERID>101</ALTERID></GROUP>
+        <LEDGER NAME="Alter Customer"><PARENT>Sundry Debtors</PARENT><OPENINGBALANCE>10</OPENINGBALANCE><ALTERID>202</ALTERID></LEDGER>
+      </TALLYMESSAGE>
+      <TALLYMESSAGE>
+        <VOUCHER REMOTEID="alter-voucher-1"><DATE>20261007</DATE><GUID>alter-voucher-1</GUID><ALTERID>303</ALTERID>
+          <ALLLEDGERENTRIES.LIST><LEDGERNAME>Alter Customer</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-10</AMOUNT></ALLLEDGERENTRIES.LIST>
+        </VOUCHER>
+      </TALLYMESSAGE>
+    </DATA></BODY></ENVELOPE>`;
+    const p = parseTallyMasters(xml, groups);
+    expect(p.groups[0].alter_id).toBe("101");
+    expect(p.customers[0].alter_id).toBe("202");
+    expect(p.vouchers[0].alter_id).toBe("303");
+    expect(p.ledgerEntries[0].alter_id).toBe("303");
+  });
+});
+
 describe("Tally import — TallyPrime 4/5 format", () => {
   const PRIME_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <ENVELOPE><BODY><IMPORTDATA><REQUESTDATA>
