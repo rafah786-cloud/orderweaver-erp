@@ -39,6 +39,7 @@ const CHANNELS = [
   { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare, implemented: true },
   { key: "sms", label: "SMS", Icon: Smartphone, implemented: false },
   { key: "email", label: "Email", Icon: Mail, implemented: false },
+  { key: "push", label: "Push", Icon: Bell, implemented: false },
   { key: "in_app", label: "In-App", Icon: Bell, implemented: true },
 ] as const;
 
@@ -65,7 +66,7 @@ function EventsPage() {
   const routing = useMemo(() => {
     const map = new Map<string, Record<Channel, any>>();
     for (const ev of events) {
-      map.set(ev.event_key, { whatsapp: null, sms: null, email: null, in_app: null } as any);
+      map.set(ev.event_key, { whatsapp: null, sms: null, email: null, push: null, in_app: null } as any);
     }
     for (const c of channels) {
       const row = map.get(c.event_key);
