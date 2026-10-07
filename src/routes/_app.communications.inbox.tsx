@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listMyInAppNotifications, markInAppRead } from "@/lib/notification-engine.functions";
+import { getMyUnreadNotificationCount, listMyInAppNotifications, markInAppRead } from "@/lib/notification-engine.functions";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,16 +18,27 @@ function InboxPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listMyInAppNotifications);
   const markFn = useServerFn(markInAppRead);
+  const countFn = useServerFn(getMyUnreadNotificationCount);
   const { data = [], isLoading } = useQuery({
     queryKey: ["in-app-inbox"],
     queryFn: () => listFn(),
   });
+  const { data: unreadData } = useQuery({
+    queryKey: ["my-unread-notification-count"],
+    queryFn: () => countFn(),
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    staleTime: 5_000,
+  });
   const mark = useMutation({
     mutationFn: (v: { id?: string; all?: boolean }) => markFn({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["in-app-inbox"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["in-app-inbox"] });
+      qc.invalidateQueries({ queryKey: ["my-unread-notification-count"] });
+    },
   });
 
-  const unread = data.filter((n: any) => !n.read_at).length;
+  const unread = unreadData?.count ?? data.filter((n: any) => !n.read_at).length;
 
   return (
     <div>
