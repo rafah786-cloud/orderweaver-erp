@@ -80,3 +80,42 @@ export const updateChequeStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const BankStatementSchema = z.object({
+  bank_account_id: z.string().uuid(),
+  txn_date: z.string().date(),
+  value_date: z.string().date().nullable().optional(),
+  description: z.string().trim().max(500).nullable().optional(),
+  reference: z.string().trim().max(200).nullable().optional(),
+  debit: z.number().finite().nonnegative(),
+  credit: z.number().finite().nonnegative(),
+  balance: z.number().finite().nullable().optional(),
+});
+
+export const addBankStatementLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => BankStatementSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
+    if (data.debit > 0 && data.credit > 0) throw new Error("A bank line cannot have both debit and credit");
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { data: account } = await context.supabase.from("bank_accounts").select("id").eq("id", data.bank_account_id).eq("company_id", companyId).maybeSingle();
+    if (!account) throw new Error("Bank account is outside the active company");
+    const { data: row, error } = await context.supabase.from("bank_transactions").insert({
+      ...data, bank_account_id: data.bank_account_id, source: "statement", bank_date: data.txn_date, company_id: companyId,
+    }).select("id").single();
+    if (error || !row) throw new Error(error?.message ?? "Failed to add statement line");
+    return { id: row.id };
+  });
+
+export const unreconcileBankLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), reconciled_with: z.string().uuid().nullable() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
+    const ids = [data.id, data.reconciled_with].filter(Boolean) as string[];
+    const { error } = await context.supabase.from("bank_transactions").update({ reconciled_at: null, reconciled_with: null }).in("id", ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
