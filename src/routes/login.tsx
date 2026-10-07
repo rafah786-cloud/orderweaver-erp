@@ -102,7 +102,6 @@ function LoginPage() {
             device_id: getDeviceId(),
             device_name: getDeviceName(),
             user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-            last_used_at: new Date().toISOString(),
           },
           { onConflict: "user_id,device_id" },
         );
