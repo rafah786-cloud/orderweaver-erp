@@ -17,6 +17,12 @@ import { inr } from "@/lib/format";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/_app/accounting/balance-sheet")({
+  head: () => ({
+    meta: [
+      { title: "Balance Sheet | Mattress Maestro ERP" },
+      { name: "description", content: "View assets, liabilities, and equity." },
+    ],
+  }),
   component: BalanceSheetPage,
 });
 

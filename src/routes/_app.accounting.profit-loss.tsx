@@ -17,6 +17,12 @@ import { inr } from "@/lib/format";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/_app/accounting/profit-loss")({
+  head: () => ({
+    meta: [
+      { title: "Profit & Loss | Mattress Maestro ERP" },
+      { name: "description", content: "Analyze revenue and expenses over time." },
+    ],
+  }),
   component: ProfitLossPage,
 });
 

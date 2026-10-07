@@ -36,7 +36,13 @@ const STAMP: Record<Status, string | null> = {
   dispatched: "dispatched_at",
 };
 
-export const Route = createFileRoute("/_app/production")({ component: ProductionPage });
+export const Route = createFileRoute("/_app/production")({
+  head: () => ({
+    meta: [
+      { title: "Production | Mattress Maestro ERP" },
+      { name: "description", content: "Track manufacturing orders and pipeline status." },
+    ],
+  }), component: ProductionPage });
 
 type Order = {
   id: string;

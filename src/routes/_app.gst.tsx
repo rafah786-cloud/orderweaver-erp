@@ -5,6 +5,12 @@ import { FileSpreadsheet, ListChecks, Hash, QrCode, ShieldAlert } from "lucide-r
 import { useCompany } from "@/lib/company-context";
 
 export const Route = createFileRoute("/_app/gst")({
+  head: () => ({
+    meta: [
+      { title: "GST Compliance | Mattress Maestro ERP" },
+      { name: "description", content: "Returns, HSN codes, and e-invoicing." },
+    ],
+  }),
   component: GstLayout,
 });
 
