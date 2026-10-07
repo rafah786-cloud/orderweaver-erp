@@ -87,7 +87,12 @@ VALUES
   ('invoice.issued','Invoice Issued','A customer invoice has been issued.','customer',true),
   ('invoice.paid','Invoice Paid','A customer invoice has been marked paid.','customer',true),
   ('dispatch.update','Dispatch Update','A customer dispatch status has changed.','customer',true),
-  ('ledger.statement_ready','Statement Ready','A customer ledger statement is ready.','customer',true)
+  ('ledger.statement_ready','Statement Ready','A customer ledger statement is ready.','customer',true),
+  ('purchase_order.created','Purchase Order Created','A purchase order has been created.','vendor',true),
+  ('purchase_order.updated','Purchase Order Updated','A purchase order has been updated.','vendor',true),
+  ('purchase_order.cancelled','Purchase Order Cancelled','A purchase order has been cancelled.','vendor',true),
+  ('purchase_order.accepted','Purchase Order Accepted','A purchase order has been accepted.','vendor',true),
+  ('purchase_order.rejected','Purchase Order Rejected','A purchase order has been rejected.','vendor',true)
 ON CONFLICT (event_key) DO NOTHING;
 
 -- Ensure push/in-app routing rows exist. Transactional events are enabled for
@@ -100,7 +105,8 @@ WHERE e.event_key IN (
   'dispatch.created','customer.registered','vendor.registered',
   'staff.sales_order.created','staff.purchase_request.created','staff.approval.pending',
   'staff.invoice.overdue','staff.payment.received','staff.dispatch.ready',
-  'production_order.ready','invoice.issued','invoice.paid','dispatch.update','ledger.statement_ready'
+  'production_order.ready','invoice.issued','invoice.paid','dispatch.update','ledger.statement_ready',
+  'purchase_order.created','purchase_order.updated','purchase_order.cancelled','purchase_order.accepted','purchase_order.rejected'
 )
 ON CONFLICT (event_key,channel) DO UPDATE SET is_enabled = true;
 
