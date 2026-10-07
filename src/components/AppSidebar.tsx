@@ -348,7 +348,10 @@ export function MobileTopBar() {
         </SheetContent>
       </Sheet>
       <CompanySwitcher />
-      <AccountMenu mobile />
+      <div className="ml-auto flex items-center gap-1">
+        <NotificationInboxButton compact />
+        <AccountMenu mobile />
+      </div>
     </header>
   );
 }
