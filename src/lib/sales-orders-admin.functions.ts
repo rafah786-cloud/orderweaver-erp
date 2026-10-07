@@ -35,7 +35,7 @@ export const createSalesOrder = createServerFn({ method: "POST" })
 
     const modelIds = [...new Set(data.lines.map((x) => x.model_id))];
     const { data: models, error: modelError } = await context.supabase
-      .from("product_models").select("id, name, size").in("id", modelIds);
+      .from("product_models").select("id, name, size").in("id", modelIds).eq("company_id", companyId);
     if (modelError) throw new Error(modelError.message);
     if ((models ?? []).length !== modelIds.length) throw new Error("One or more product models are invalid");
 
