@@ -500,9 +500,7 @@ function SalesPanels() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
 
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
+  const monthStart = `${todayIndia().slice(0, 7)}-01`;
 
   // My sales orders (RLS already restricts to created_by = me)
   const { data: myOrders = [] } = useQuery({
