@@ -129,6 +129,42 @@ export const deleteSupplier = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+const PartySchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  contact_person: z.string().trim().max(200).nullable().optional(),
+  phone: z.string().trim().max(30).nullable().optional(),
+  email: z.string().trim().email().max(320).nullable().optional(),
+  address: z.string().trim().max(2000).nullable().optional(),
+  gstin: z.string().trim().max(30).nullable().optional(),
+  credit_limit: z.number().finite().min(0),
+  notes: z.string().trim().max(5000).nullable().optional(),
+  opening_balance: z.number().finite(),
+});
+
+export const saveParty = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid().optional(),
+    party: PartySchema,
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId).in("role", ["admin", "sales"]);
+    if (!roles?.length) throw new Error("Insufficient permissions");
+    if (data.id) {
+      const { error } = await context.supabase.from("parties").update(data.party).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { data: row, error } = await context.supabase.from("parties")
+      .insert({ ...data.party, company_id: companyId }).select("id").single();
+    if (error || !row) throw new Error(error?.message ?? "Failed to create party");
+    return { id: row.id };
+  });
+
 const BroadcastSchema = z.object({
   audience: z.enum(["parties", "suppliers"]),
 });
