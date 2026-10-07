@@ -55,7 +55,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
-import { quickAddSupplier, deleteSupplier, broadcastPromo } from "@/lib/parties-admin.functions";
+import { quickAddSupplier, deleteSupplier, broadcastPromo, saveSupplier } from "@/lib/parties-admin.functions";
 import { setPromoOptIn } from "@/lib/notifications-admin.functions";
 import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
@@ -194,6 +194,7 @@ function SuppliersTab({
   const removeSupplier = useServerFn(deleteSupplier);
   const broadcast = useServerFn(broadcastPromo);
   const setOptIn = useServerFn(setPromoOptIn);
+  const saveSupplierFn = useServerFn(saveSupplier);
 
   const doQuickAdd = async () => {
     if (!quickForm.name.trim() || !quickForm.phone.trim()) {
@@ -249,10 +250,7 @@ function SuppliersTab({
         email: form.email || null,
         address: form.address || null,
       };
-      const { error } = edit
-        ? await supabase.from("suppliers").update(payload).eq("id", edit.id)
-        : await supabase.from("suppliers").insert(payload);
-      if (error) throw error;
+      await saveSupplierFn({ data: { ...payload, id: edit?.id } });
     },
     onSuccess: () => {
       toast.success("Saved");
