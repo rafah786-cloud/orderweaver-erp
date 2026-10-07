@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { PushNotificationSetup } from "@/components/PushNotificationSetup";
 
 export const Route = createFileRoute("/_app/communications/inbox")({
   component: InboxPage,
