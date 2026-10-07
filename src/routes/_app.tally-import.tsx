@@ -242,7 +242,7 @@ function TallyImportPage() {
         keyFn: (x: any, i: number) => string,
         idFn?: (x: any) => string | null,
         parentFn?: (x: any) => string | null,
-        alterIdFn?: (x: any) => string | null,
+        alterIdFn: (x: any) => string | null = (x) => x.alter_id ?? null,
       ) => {
         list.forEach((x, i) =>
           rows.push({
