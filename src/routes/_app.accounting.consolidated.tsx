@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { sb } from "@/lib/accounting";
-import { inr } from "@/lib/format";
+import { inr, todayIndia } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/accounting/consolidated")({
   component: ConsolidatedAccountingPage,
@@ -33,7 +33,7 @@ function ConsolidatedAccountingPage() {
     queryKey: ["consolidated_trial_balance"],
     queryFn: async () => {
       const { data, error } = await sb.rpc("get_consolidated_trial_balance", {
-        p_as_of: new Date().toISOString().slice(0, 10),
+        p_as_of: todayIndia(),
       });
       if (error) throw error;
       return (data ?? []) as Row[];
