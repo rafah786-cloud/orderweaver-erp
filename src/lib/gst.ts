@@ -1,5 +1,6 @@
 import { sb } from "@/lib/accounting";
 import { buildGstr1Json } from "@/lib/gstr1";
+import { todayIndia } from "@/lib/format";
 
 export type ReturnType = "GSTR-1" | "GSTR-3B" | "GSTR-9";
 export type ReturnStatus = "draft" | "generated" | "filed";
@@ -118,8 +119,8 @@ type PurchaseFull = {
 type Party = { id: string; name: string; gstin: string | null; state_code: string | null };
 
 export async function fetchPeriodInvoices(year: number, month: number): Promise<InvoiceFull[]> {
-  const from = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-  const to = new Date(year, month, 0).toISOString().slice(0, 10);
+  const from = `${year}-${String(month).padStart(2, "0")}-01`;
+  const to = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
   const { data, error } = await sb
     .from("invoices")
     .select(
@@ -132,8 +133,8 @@ export async function fetchPeriodInvoices(year: number, month: number): Promise<
 }
 
 export async function fetchPeriodPurchases(year: number, month: number): Promise<PurchaseFull[]> {
-  const from = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-  const to = new Date(year, month, 0).toISOString().slice(0, 10);
+  const from = `${year}-${String(month).padStart(2, "0")}-01`;
+  const to = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
   const { data, error } = await sb
     .from("purchase_bills")
     .select(
