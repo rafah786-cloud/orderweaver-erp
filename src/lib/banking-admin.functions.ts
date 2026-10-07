@@ -29,7 +29,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
     if (companyError || !companyId) throw new Error("No active company selected");
     const { data: row, error } = await context.supabase
       .from("bank_accounts")
-      .insert({ ...data, company_id: companyId })
+      .insert({ ...data })
       .select("id")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to create bank account");
