@@ -62,6 +62,7 @@ import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { useCompany } from "@/lib/company-context";
+import { createInvoice } from "@/lib/invoices-admin.functions";
 
 export const Route = createFileRoute("/_app/invoices")({
   component: InvoicesPage,
@@ -231,129 +232,39 @@ function InvoicesPage() {
     return null;
   };
 
+  const createInvoiceFn = useServerFn(createInvoice);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const create = useMutation({
     mutationFn: async () => {
       if (!partyId) throw new Error("Select a party");
       if (items.some((i) => !i.description.trim()))
         throw new Error("All line items need a description");
-      if (total <= 0) throw new Error("Invoice total must be greater than zero");
+      if (items.some((i) => !Number.isFinite(Number(i.quantity)) || Number(i.quantity) <= 0))
+        throw new Error("Every line must have a positive quantity");
+      if (items.some((i) => !Number.isFinite(Number(i.unit_price)) || Number(i.unit_price) < 0))
+        throw new Error("Every line must have a valid non-negative unit price");
       if (tax > 0 && !supply)
-        throw new Error(
-          "Select intra-state or inter-state tax treatment before creating the invoice",
-        );
+        throw new Error("Select intra-state or inter-state tax treatment before creating the invoice");
 
-      const blocked = await checkBlock(partyId, total);
-      if (blocked) {
-        setBlockMsg(blocked);
-        throw new Error(blocked.title);
-      }
-
-      const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
-      const { data: inv, error: invErr } = await supabase
-        .from("invoices")
-        .insert({
-          invoice_number: invoiceNumber,
+      return createInvoiceFn({
+        data: {
           party_id: partyId,
           invoice_date: invoiceDate,
           due_date: dueDate || null,
-          subtotal,
-          tax_amount: tax,
-          cgst_amount: supply ? cgst : null,
-          sgst_amount: supply ? sgst : null,
-          igst_amount: supply ? igst : null,
-          total_amount: total,
           notes: notes || null,
-          created_by: user?.id ?? null,
-        } as never)
-        .select("id")
-        .single();
-      if (invErr) throw invErr;
-
-      const { error: itemErr } = await supabase.from("invoice_items").insert(
-        items.map((i) => ({
-          invoice_id: inv.id,
-          description: i.description,
-          quantity: Number(i.quantity),
-          unit_price: Number(i.unit_price),
-          amount: Number(i.quantity) * Number(i.unit_price),
-        })),
-      );
-      if (itemErr) throw itemErr;
-      const { data: partyLedger } = await supabase
-        .from("ledger_accounts")
-        .select("id")
-        .eq("mapped_party_id", partyId)
-        .maybeSingle();
-      const { data: salesLedger } = await supabase
-        .from("ledger_accounts")
-        .select("id")
-        .eq("name", "Sales")
-        .eq("is_active", true)
-        .maybeSingle();
-      const { data: taxLedgers } = await supabase
-        .from("ledger_accounts")
-        .select("id, name")
-        .in("name", ["Output CGST", "Output SGST", "Output IGST"])
-        .eq("is_active", true);
-      const taxLedgerByName = new Map((taxLedgers ?? []).map((ledger) => [ledger.name, ledger.id]));
-      const taxComponents =
-        supply === "intra"
-          ? [
-              ...(cgst
-                ? [{ ledgerAccountId: taxLedgerByName.get("Output CGST") ?? "", amount: cgst }]
-                : []),
-              ...(sgst
-                ? [{ ledgerAccountId: taxLedgerByName.get("Output SGST") ?? "", amount: sgst }]
-                : []),
-            ]
-          : supply === "inter"
-            ? igst
-              ? [{ ledgerAccountId: taxLedgerByName.get("Output IGST") ?? "", amount: igst }]
-              : []
-            : undefined;
-      if (tax > 0 && taxComponents?.some((line) => !line.ledgerAccountId)) {
-        throw new Error("Required output tax ledgers are not configured");
-      }
-      const prepared = prepareInvoiceVoucher({
-        invoiceId: inv.id,
-        invoiceNumber,
-        invoiceDate,
-        partyLedgerId: partyLedger?.id ?? null,
-        salesLedgerId: salesLedger?.id ?? null,
-        subtotal,
-        taxAmount: tax,
-        taxComponents,
+          supply: supply || null,
+          lines: items.map((i) => ({
+            description: i.description,
+            quantity: Number(i.quantity),
+            unit_price: Number(i.unit_price),
+            hsn_code: i.hsn_code || null,
+            tax_rate: Number(i.tax_rate) || 0,
+          })),
+        },
       });
-      let posted = false;
-      if (prepared.ok) {
-        const { error: postErr } = await supabase.rpc(
-          "create_gl_voucher" as never,
-          {
-            _type: prepared.call.type,
-            _date: prepared.call.date,
-            _entries: prepared.call.entries,
-            _narration: prepared.call.narration,
-            _reference: prepared.call.reference,
-            _idempotency_key: prepared.call.idempotencyKey,
-          } as never,
-        );
-        if (postErr && !uninstalledAccountingFunction(postErr)) throw postErr;
-        posted = !postErr;
-      }
-      return {
-        id: inv.id as string,
-        invoiceNumber,
-        posted,
-        postingReason: prepared.ok ? null : prepared.reason,
-      };
     },
     onSuccess: async (res) => {
-      toast.success(
-        res.posted
-          ? "Invoice created and posted."
-          : `Invoice created. Accounting not posted: ${res.postingReason ?? "create_gl_voucher is not installed"}.`,
-      );
+      toast.success("Invoice created and posted.");
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["party-outstanding"] });
       const savedParty = partyId;
@@ -361,20 +272,14 @@ function InvoicesPage() {
       resetForm();
       try {
         const r = await notifyCustomer({
-          data: {
-            party_id: savedParty,
-            event: "invoice.issued",
-            ref_id: res.id,
-          },
+          data: { party_id: savedParty, event: "invoice.issued", ref_id: res.id },
         });
         if (r?.ok) toast.success("Customer notified via WhatsApp with invoice link");
       } catch {
         /* non-fatal */
       }
     },
-    onError: (e: Error) => {
-      if (!blockMsg) toast.error(e.message);
-    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const recordPayment = useMutation({
