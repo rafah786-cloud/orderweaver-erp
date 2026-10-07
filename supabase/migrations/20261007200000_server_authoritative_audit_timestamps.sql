@@ -57,3 +57,49 @@ $$;
 
 COMMENT ON FUNCTION public.enforce_server_audit_timestamps() IS
 'Keeps created_at immutable and makes created_at/updated_at authoritative to the PostgreSQL server clock. Business/document dates are intentionally unaffected.';
+
+
+-- Event timestamps that represent state transitions are also database-clock authoritative.
+CREATE OR REPLACE FUNCTION public.enforce_profile_approval_timestamp()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND NEW.status IS DISTINCT FROM OLD.status THEN
+    IF NEW.status = 'approved' THEN
+      NEW.approved_at := now();
+    ELSE
+      NEW.approved_at := NULL;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_profile_approval_timestamp ON public.profiles;
+CREATE TRIGGER trg_profile_approval_timestamp
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_profile_approval_timestamp();
+
+CREATE OR REPLACE FUNCTION public.enforce_notification_read_timestamp()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND OLD.read_at IS NULL
+     AND NEW.read_at IS NOT NULL THEN
+    NEW.read_at := now();
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_notification_read_timestamp ON public.in_app_notifications;
+CREATE TRIGGER trg_notification_read_timestamp
+BEFORE UPDATE ON public.in_app_notifications
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_notification_read_timestamp();
