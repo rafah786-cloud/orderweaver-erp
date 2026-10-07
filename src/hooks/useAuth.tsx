@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (td) {
       supabase
         .from("trusted_devices")
-        .update({ last_used_at: new Date().toISOString() })
+        .update({ last_used_at: undefined as never })
         .eq("id", (td as { id: string }).id)
         .then(() => undefined);
     }
@@ -171,7 +171,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         device_id: getDeviceId(),
         device_name: getDeviceName(),
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-        last_used_at: new Date().toISOString(),
       },
       { onConflict: "user_id,device_id" },
     );
