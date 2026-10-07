@@ -57,7 +57,7 @@ function AttendancePage() {
   const { hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "hr"]);
   const qc = useQueryClient();
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => todayIndia());
   const [feed, setFeed] = useState<Punch[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editEmpId, setEditEmpId] = useState<string | null>(null);
