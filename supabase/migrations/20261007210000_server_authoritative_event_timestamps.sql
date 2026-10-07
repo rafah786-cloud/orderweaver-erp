@@ -51,3 +51,21 @@ BEGIN
     CREATE TRIGGER trg_gst_filed_at BEFORE UPDATE ON public.gst_returns FOR EACH ROW EXECUTE FUNCTION public.enforce_gst_filed_at();
   END IF;
 END $$;
+
+
+CREATE OR REPLACE FUNCTION public.enforce_notification_log_read_at()
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+  IF TG_OP='UPDATE' AND NEW.read_status='read' AND OLD.read_status IS DISTINCT FROM 'read' THEN
+    NEW.read_at:=now();
+  END IF;
+  RETURN NEW;
+END $$;
+
+DO $$
+BEGIN
+  IF to_regclass('public.notification_log') IS NOT NULL THEN
+    DROP TRIGGER IF EXISTS trg_notification_log_read_at ON public.notification_log;
+    CREATE TRIGGER trg_notification_log_read_at BEFORE UPDATE ON public.notification_log FOR EACH ROW EXECUTE FUNCTION public.enforce_notification_log_read_at();
+  END IF;
+END $$;
