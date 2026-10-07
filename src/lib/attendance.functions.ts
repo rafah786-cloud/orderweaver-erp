@@ -68,7 +68,7 @@ export const deletePunchEvent = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("employees.company_id", companyId)
       .maybeSingle();
-    if (!row) throw new Error("Punch event not found in the active company");
+    if (!row || !row.employee_id) throw new Error("Punch event not found in the active company");
     const { error } = await supabaseAdmin
       .from("punch_events")
       .delete()
