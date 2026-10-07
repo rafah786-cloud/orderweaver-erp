@@ -40,7 +40,7 @@ import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
 import { inr, daysBetween, formatDate } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
-import { quickAddParty, deleteParty, broadcastPromo } from "@/lib/parties-admin.functions";
+import { quickAddParty, deleteParty, broadcastPromo, saveParty } from "@/lib/parties-admin.functions";
 import { setPromoOptIn } from "@/lib/notifications-admin.functions";
 import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
@@ -100,6 +100,7 @@ function PartiesPage() {
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const quickAdd = useServerFn(quickAddParty);
   const removeParty = useServerFn(deleteParty);
+  const savePartyFn = useServerFn(saveParty);
   const broadcast = useServerFn(broadcastPromo);
   const setOptIn = useServerFn(setPromoOptIn);
 
@@ -163,13 +164,7 @@ function PartiesPage() {
         notes: form.notes,
         opening_balance: Number(form.opening_balance) || 0,
       };
-      if (editing) {
-        const { error } = await supabase.from("parties").update(payload).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("parties").insert(payload);
-        if (error) throw error;
-      }
+      await savePartyFn({ data: { id: editing?.id, party: payload } });
     },
     onSuccess: () => {
       toast.success(editing ? "Party updated" : "Party added");
