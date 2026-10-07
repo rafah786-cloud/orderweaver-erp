@@ -308,7 +308,9 @@ export const upsertNotificationProvider = createServerFn({ method: "POST" })
     }
     if (data.is_active) {
       const missing = data.secret_env_keys.filter((key) => !process.env[key]);
-      if (missing.length) throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
+      if (missing.length) {
+        throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
+      }
     }
     const row = {
       channel: data.channel,
@@ -361,8 +363,12 @@ export const toggleNotificationProvider = createServerFn({ method: "POST" })
       if (!hasProviderImplementation(provider.channel, provider.name)) {
         throw new Error("Cannot activate a provider without a server implementation");
       }
-      const missing = (Array.isArray(provider.secret_env_keys) ? provider.secret_env_keys : []).filter((key: string) => !process.env[key]);
-      if (missing.length) throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
+      const missing = (
+        Array.isArray(provider.secret_env_keys) ? provider.secret_env_keys : []
+      ).filter((key: string) => !process.env[key]);
+      if (missing.length) {
+        throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
+      }
     }
     const { error } = await supabaseAdmin
       .from("notification_providers")
