@@ -32,6 +32,8 @@ import { useState } from "react";
 import { sb } from "@/lib/accounting";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { createHsnCode, deleteHsnCode } from "@/lib/accounting-masters.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app/gst/hsn")({
   component: HsnPage,
@@ -50,6 +52,8 @@ function HsnPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const createHsnCodeFn = useServerFn(createHsnCode);
+  const deleteHsnCodeFn = useServerFn(deleteHsnCode);
   const [form, setForm] = useState({
     code: "",
     description: "",
@@ -68,8 +72,7 @@ function HsnPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      const { error } = await sb.from("hsn_codes").insert(form);
-      if (error) throw error;
+      await createHsnCodeFn({ data: form });
     },
     onSuccess: () => {
       toast.success("HSN code added");
@@ -82,8 +85,7 @@ function HsnPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await sb.from("hsn_codes").delete().eq("id", id);
-      if (error) throw error;
+      await deleteHsnCodeFn({ data: { id } });
     },
     onSuccess: () => {
       toast.success("Deleted");

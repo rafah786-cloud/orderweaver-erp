@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -55,7 +54,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
-import { quickAddSupplier, deleteSupplier, broadcastPromo } from "@/lib/parties-admin.functions";
+import { createPurchaseBill, receivePurchaseBill } from "@/lib/procurement-admin.functions";
+import { quickAddSupplier, deleteSupplier, broadcastPromo, saveSupplier } from "@/lib/parties-admin.functions";
 import { setPromoOptIn } from "@/lib/notifications-admin.functions";
 import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
@@ -71,6 +71,7 @@ function ReceiveBillButton({
   onDone: () => void;
 }) {
   const [pending, setPending] = useState(false);
+  const receivePurchaseBillFn = useServerFn(receivePurchaseBill);
   const receive = async () => {
     if (
       !confirm(
@@ -80,8 +81,7 @@ function ReceiveBillButton({
       return;
     setPending(true);
     try {
-      const { error } = await supabase.rpc("receive_purchase_bill", { p_bill: billId } as never);
-      if (error) throw error;
+      await receivePurchaseBillFn({ data: { id: billId } });
       toast.success(`Purchase bill ${billNumber} received. Inventory and payable posted.`);
       onDone();
     } catch (e) {
@@ -194,6 +194,7 @@ function SuppliersTab({
   const removeSupplier = useServerFn(deleteSupplier);
   const broadcast = useServerFn(broadcastPromo);
   const setOptIn = useServerFn(setPromoOptIn);
+  const saveSupplierFn = useServerFn(saveSupplier);
 
   const doQuickAdd = async () => {
     if (!quickForm.name.trim() || !quickForm.phone.trim()) {
@@ -249,10 +250,7 @@ function SuppliersTab({
         email: form.email || null,
         address: form.address || null,
       };
-      const { error } = edit
-        ? await supabase.from("suppliers").update(payload).eq("id", edit.id)
-        : await supabase.from("suppliers").insert(payload);
-      if (error) throw error;
+      await saveSupplierFn({ data: { ...payload, id: edit?.id } });
     },
     onSuccess: () => {
       toast.success("Saved");
@@ -677,64 +675,50 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
     setItems([{ raw_material_id: "", quantity: 1, unit_price: 0 }]);
   };
 
+  const createPurchaseBillFn = useServerFn(createPurchaseBill);
   const notifyVendor = useServerFn(notifyVendorPurchaseBill);
   const notifyStaff = useServerFn(notifyStaffEvent);
   const create = useMutation({
     mutationFn: async () => {
       if (!billNumber.trim()) throw new Error("Bill number required");
-      if (items.some((i) => !i.raw_material_id || !(i.quantity > 0)))
-        throw new Error("All lines need material + qty");
-      const { data: bill, error } = await supabase
-        .from("purchase_bills")
-        .insert({
+      if (!supplierId) throw new Error("Select a supplier");
+      if (items.some((i) => !i.raw_material_id || !(Number(i.quantity) > 0)))
+        throw new Error("All lines need material + positive quantity");
+      if (items.some((i) => Number(i.unit_price) < 0))
+        throw new Error("Unit price cannot be negative");
+      return createPurchaseBillFn({
+        data: {
           bill_number: billNumber,
-          supplier_id: supplierId || null,
+          supplier_id: supplierId,
           bill_date: billDate,
-          subtotal,
-          tax_amount: taxAmount,
+          notes: notes || null,
           cgst_amount: Number(cgstAmount || 0),
           sgst_amount: Number(sgstAmount || 0),
           igst_amount: Number(igstAmount || 0),
-          total_amount: total,
-          notes: notes || null,
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      const { error: iErr } = await supabase.from("purchase_bill_items").insert(
-        items.map((i) => ({
-          purchase_bill_id: bill.id,
-          raw_material_id: i.raw_material_id,
-          quantity: Number(i.quantity),
-          unit_price: Number(i.unit_price),
-        })),
-      );
-      if (iErr) throw iErr;
-      return { id: bill.id as string, stockPosted: false };
+          lines: items.map((i) => ({
+            raw_material_id: i.raw_material_id,
+            quantity: Number(i.quantity),
+            unit_price: Number(i.unit_price),
+          })),
+        },
+      });
     },
     onSuccess: async (res) => {
       const billId = res.id;
-      toast.success(
-        "Purchase bill saved as draft. Stock is posted only when it is marked received.",
-      );
+      toast.success("Purchase bill saved as draft. Stock is posted only when it is marked received.");
       qc.invalidateQueries({ queryKey: ["purchase-bills"] });
       qc.invalidateQueries({ queryKey: ["purchase-bill-notifs"] });
       qc.invalidateQueries({ queryKey: ["raw-materials"] });
       setOpen(false);
+      const savedSupplier = supplierId;
       resetForm();
-      if (supplierId) {
+      if (savedSupplier) {
         try {
           const r = await notifyVendor({ data: { bill_id: billId, event: "created" } });
           if (r?.ok) toast.success("Vendor notified via WhatsApp");
-        } catch {
-          // notification failure is non-fatal
-        }
+        } catch {}
       }
-      // Fan out to staff (Purchase / Management) for new PO
-      notifyStaff({ data: { event: "staff.purchase_request.created", ref_id: billId } }).catch(
-        () => {},
-      );
+      notifyStaff({ data: { event: "staff.purchase_bill.created", ref_id: billId } }).catch(() => {});
     },
     onError: (e: Error) => toast.error(e.message),
   });

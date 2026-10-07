@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -40,6 +39,7 @@ import { toast } from "sonner";
 import { inr, formatDate } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
+import { createSalesOrder } from "@/lib/sales-orders-admin.functions";
 
 export const Route = createFileRoute("/_app/sales-orders")({
   component: SalesOrdersPage,
@@ -144,6 +144,7 @@ function SalesOrdersPage() {
     );
   };
 
+  const createSalesOrderFn = useServerFn(createSalesOrder);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
   const confirmOrder = useMutation({
@@ -168,60 +169,38 @@ function SalesOrdersPage() {
       if (!partyId) throw new Error("Select a party");
       if (items.some((i) => !i.model_id))
         throw new Error("Every line must select a registered model. Add it in BOQ first.");
-      if (total <= 0) throw new Error("Order total must be greater than zero");
+      if (items.some((i) => !Number.isFinite(Number(i.quantity)) || Number(i.quantity) <= 0))
+        throw new Error("Every line must have a positive quantity");
+      if (items.some((i) => !Number.isFinite(Number(i.unit_price)) || Number(i.unit_price) < 0))
+        throw new Error("Every line must have a valid non-negative unit price");
 
-      const orderNumber = `SO-${Date.now().toString().slice(-8)}`;
-      const { data: so, error: soErr } = await supabase
-        .from("sales_orders")
-        .insert({
-          order_number: orderNumber,
+      return createSalesOrderFn({
+        data: {
           party_id: partyId,
           order_date: orderDate,
           expected_delivery: expectedDelivery || null,
-          total_amount: total,
           notes: notes || null,
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (soErr) throw soErr;
-
-      const { error: itemErr } = await supabase.from("sales_order_items").insert(
-        items.map((i) => ({
-          sales_order_id: so.id,
-          model_id: i.model_id,
-          product_name: i.product_name,
-          size: i.size || null,
-          quantity: Number(i.quantity),
-          unit_price: Number(i.unit_price),
-          amount: Number(i.quantity) * Number(i.unit_price),
-        })),
-      );
-      if (itemErr) throw itemErr;
-      return { id: so.id as string, orderNumber };
+          lines: items.map((i) => ({
+            model_id: i.model_id,
+            product_name: i.product_name,
+            size: i.size || null,
+            quantity: Number(i.quantity),
+            unit_price: Number(i.unit_price),
+          })),
+        },
+      });
     },
     onSuccess: async (res) => {
-      toast.success(
-        "Sales order created. Ordered quantity is saved. Nothing is reserved or dispatched.",
-      );
+      toast.success("Sales order created. Ordered quantity is saved. Nothing is reserved or dispatched.");
       qc.invalidateQueries({ queryKey: ["sales-orders"] });
       qc.invalidateQueries({ queryKey: ["production-orders"] });
       setOpen(false);
       const savedParty = partyId;
       resetForm();
       try {
-        const r = await notifyCustomer({
-          data: {
-            party_id: savedParty,
-            event: "sales_order.created",
-            ref_id: res.id,
-          },
-        });
+        const r = await notifyCustomer({ data: { party_id: savedParty, event: "sales_order.created", ref_id: res.id } });
         if (r?.ok) toast.success("Customer notified via WhatsApp");
-      } catch {
-        // non-fatal
-      }
-      // Fan out to subscribed staff departments
+      } catch {}
       notifyStaff({ data: { event: "staff.sales_order.created", ref_id: res.id } }).catch(() => {});
     },
     onError: (e: Error) => toast.error(e.message),

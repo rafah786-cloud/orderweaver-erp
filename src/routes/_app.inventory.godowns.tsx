@@ -16,12 +16,15 @@ import {
 import { sb, type Godown } from "@/lib/inventory";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { createGodown } from "@/lib/inventory-admin.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app/inventory/godowns")({ component: GodownsPage });
 
 function GodownsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const createGodownFn = useServerFn(createGodown);
   const [form, setForm] = useState({ name: "", code: "", address: "" });
 
   const q = useQuery({
@@ -38,13 +41,10 @@ function GodownsPage() {
       toast.error("Name required");
       return;
     }
-    const { error } = await sb.from("godowns").insert({
-      name: form.name,
-      code: form.code || null,
-      address: form.address || null,
-    });
-    if (error) {
-      toast.error(error.message);
+    try {
+      await createGodownFn({ data: { name: form.name, code: form.code || null, address: form.address || null }});
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create godown");
       return;
     }
     toast.success("Godown created");

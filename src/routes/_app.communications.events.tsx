@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -36,10 +36,11 @@ import { toast } from "sonner";
 import { MessageSquare, Mail, Smartphone, Bell, Send } from "lucide-react";
 
 const CHANNELS = [
-  { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare },
-  { key: "sms", label: "SMS", Icon: Smartphone },
-  { key: "email", label: "Email", Icon: Mail },
-  { key: "in_app", label: "In-App", Icon: Bell },
+  { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare, implemented: true },
+  { key: "sms", label: "SMS", Icon: Smartphone, implemented: false },
+  { key: "email", label: "Email", Icon: Mail, implemented: false },
+  { key: "push", label: "Push", Icon: Bell, implemented: false },
+  { key: "in_app", label: "In-App", Icon: Bell, implemented: true },
 ] as const;
 
 type Channel = (typeof CHANNELS)[number]["key"];
@@ -65,7 +66,7 @@ function EventsPage() {
   const routing = useMemo(() => {
     const map = new Map<string, Record<Channel, any>>();
     for (const ev of events) {
-      map.set(ev.event_key, { whatsapp: null, sms: null, email: null, in_app: null } as any);
+      map.set(ev.event_key, { whatsapp: null, sms: null, email: null, push: null, in_app: null } as any);
     }
     for (const c of channels) {
       const row = map.get(c.event_key);
@@ -156,7 +157,7 @@ function EventsPage() {
                             <TableCell key={c.key} className="text-center">
                               <Switch
                                 checked={!!cell?.is_enabled}
-                                disabled={!ev.is_active}
+                                disabled={!ev.is_active || !c.implemented}
                                 onCheckedChange={(v) =>
                                   setChannelMut.mutate({
                                     event_key: ev.event_key,
@@ -292,13 +293,16 @@ function EditTemplatesDialog({
 
 function TestDispatchDialog({ events }: { events: { key: string; label: string }[] }) {
   const [open, setOpen] = useState(false);
-  const [eventKey, setEventKey] = useState(events[0]?.key ?? "");
+  const [eventKey, setEventKey] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [userIds, setUserIds] = useState("");
   const [vars, setVars] = useState("{}");
   const [result, setResult] = useState<any>(null);
   const dispatchFn = useServerFn(dispatchTestEvent);
+  useEffect(() => {
+    if (!eventKey && events[0]?.key) setEventKey(events[0].key);
+  }, [eventKey, events]);
   const mut = useMutation({
     mutationFn: async () => {
       let parsed = {};

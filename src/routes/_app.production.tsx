@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { uninstalledAccountingFunction } from "@/lib/accounting";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
@@ -12,6 +11,7 @@ import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
+import { advanceProductionOrder } from "@/lib/production-admin.functions";
 
 type Status = "received" | "in_production" | "qc" | "ready" | "dispatched";
 const STAGES: { key: Status; label: string }[] = [
@@ -54,6 +54,7 @@ function ProductionPage() {
   const qc = useQueryClient();
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
+  const advanceProductionOrderFn = useServerFn(advanceProductionOrder);
 
   const { data = [] } = useQuery({
     queryKey: ["production-orders"],
@@ -87,48 +88,11 @@ function ProductionPage() {
           ) ?? transporter;
       }
 
-      if (next === "in_production" && o.sales_order_id) {
-        const { error } = await supabase.rpc(
-          "produce_sales_order_bom" as never,
-          {
-            p_order: o.sales_order_id,
-            p_godown: null,
-            p_idempotency: `bom:${o.id}`,
-          } as never,
-        );
-        if (error && !uninstalledAccountingFunction(error)) throw error;
-      }
-      if (next === "ready" && o.sales_order_id) {
-        const { error } = await supabase.rpc(
-          "receive_sales_order_finished_goods" as never,
-          {
-            p_order: o.sales_order_id,
-            p_godown: null,
-            p_idempotency: `fg:${o.id}`,
-          } as never,
-        );
-        if (error && !uninstalledAccountingFunction(error)) throw error;
-      }
-      if (next === "dispatched" && o.sales_order_id) {
-        const { error } = await supabase.rpc(
-          "dispatch_sales_order" as never,
-          {
-            p_order: o.sales_order_id,
-            p_godown: null,
-            p_idempotency: `dispatch:${o.id}`,
-          } as never,
-        );
-        if (error && !uninstalledAccountingFunction(error)) throw error;
-      }
-
-      const patch = {
-        status: next,
-        ...(col ? { [col]: new Date().toISOString() } : {}),
-        ...(tracking !== null ? { tracking_number: tracking || null } : {}),
-        ...(transporter !== null ? { transporter_name: transporter || null } : {}),
-      };
-      const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
-      if (error) throw error;
+      await advanceProductionOrderFn({ data: {
+        id: o.id, status: next,
+        tracking_number: tracking || null,
+        transporter_name: transporter || null,
+      }});
       return { next, order: { ...o, tracking_number: tracking, transporter_name: transporter } };
     },
     onSuccess: async (res) => {

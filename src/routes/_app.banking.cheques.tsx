@@ -31,6 +31,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Printer } from "lucide-react";
+import { createCheque, updateChequeStatus } from "@/lib/banking-admin.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app/banking/cheques")({ component: Cheques });
 
@@ -45,6 +47,8 @@ function Cheques() {
   const [list, setList] = useState<Cheque[]>([]);
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [open, setOpen] = useState(false);
+  const createChequeFn = useServerFn(createCheque);
+  const updateChequeStatusFn = useServerFn(updateChequeStatus);
   const [form, setForm] = useState<any>({
     direction: "issued",
     bank_account_id: "",
@@ -75,10 +79,10 @@ function Cheques() {
       toast.error("Cheque #, party and amount required");
       return;
     }
-    const payload = { ...form, bank_account_id: form.bank_account_id || null };
-    const { error } = await sb.from("cheques").insert(payload);
-    if (error) {
-      toast.error(error.message);
+    try {
+      await createChequeFn({ data: { ...form, bank_account_id: form.bank_account_id || null, bank_name: form.bank_name || null, branch: form.branch || null, narration: form.narration || null } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create cheque");
       return;
     }
     toast.success("Cheque added");
@@ -87,10 +91,13 @@ function Cheques() {
   }
 
   async function updateStatus(c: Cheque, status: Cheque["status"]) {
-    const patch: any = { status };
-    if (status === "cleared") patch.cleared_date = new Date().toISOString().slice(0, 10);
-    await sb.from("cheques").update(patch).eq("id", c.id);
-    toast.success(`Marked ${status}`);
+    try {
+      await updateChequeStatusFn({ data: { id: c.id, status: status as "cleared" | "bounced" | "cancelled" } });
+      toast.success(`Marked ${status}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update cheque");
+      return;
+    }
     load();
   }
 

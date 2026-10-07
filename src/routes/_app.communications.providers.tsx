@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_app/communications/providers")({
 
 type ProviderForm = {
   id?: string;
-  channel: "whatsapp" | "sms" | "email" | "push";
+  channel: "whatsapp" | "sms" | "email" | "push" | "in_app";
   name: string;
   display_name: string;
   is_active: boolean;
@@ -87,7 +87,7 @@ function ProvidersPage() {
   const [form, setForm] = useState<ProviderForm>(EMPTY);
 
   const grouped = useMemo(() => {
-    const by: Record<string, any[]> = { whatsapp: [], sms: [], email: [], push: [] };
+    const by: Record<string, any[]> = { whatsapp: [], sms: [], email: [], push: [], in_app: [] };
     for (const p of data?.providers ?? []) by[p.channel]?.push(p);
     return by;
   }, [data]);
@@ -168,7 +168,7 @@ function ProvidersPage() {
     <>
       <PageHeader
         title="Notification Providers"
-        description="Configure providers per channel (WhatsApp, SMS, Email, Push). Business logic stays unchanged — only this table decides which provider sends each notification."
+        description="Configure notification providers. WhatsApp and In-App are currently implemented; SMS, Email and Push remain unavailable until a real provider is registered."
         actions={
           <Button onClick={openNew}>
             <Plus className="h-4 w-4 mr-1" />
@@ -177,7 +177,7 @@ function ProvidersPage() {
         }
       />
       <PageBody>
-        {(["whatsapp", "sms", "email", "push"] as const).map((channel) => (
+        {(["whatsapp", "sms", "email", "push", "in_app"] as const).map((channel) => (
           <Card key={channel} className="mb-6">
             <CardHeader>
               <CardTitle className="capitalize">{channel}</CardTitle>
@@ -301,6 +301,7 @@ function ProvidersPage() {
                     <SelectItem value="sms">SMS</SelectItem>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="push">Push</SelectItem>
+                    <SelectItem value="in_app">In-App</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

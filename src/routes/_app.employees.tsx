@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { saveEmployee } from "@/lib/employees-admin.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -127,36 +129,33 @@ function EmployeesPage() {
     return Number(e.basic_salary) + Number(e.da) + Number(e.hra) + Number(e.other_allowances);
   };
 
+  const saveEmployeeFn = useServerFn(saveEmployee);
   const save = useMutation({
     mutationFn: async () => {
       if (!form.employee_code.trim()) throw new Error("Employee code is required");
       if (!form.full_name.trim()) throw new Error("Full name is required");
-      const payload = {
-        employee_code: form.employee_code.trim(),
-        full_name: form.full_name.trim(),
-        email: form.email || null,
-        phone: form.phone || null,
-        department: form.department || null,
-        designation: form.designation || null,
-        date_of_joining: form.date_of_joining || null,
-        pay_type: form.pay_type,
-        basic_salary: Number(form.basic_salary) || 0,
-        da: Number(form.da) || 0,
-        hra: Number(form.hra) || 0,
-        other_allowances: Number(form.other_allowances) || 0,
-        daily_wage: Number(form.daily_wage) || 0,
-        ot_rate_per_hour: Number(form.ot_rate_per_hour) || 0,
-        pf_deduction: Number(form.pf_deduction) || 0,
-        esi_deduction: Number(form.esi_deduction) || 0,
-        is_active: form.is_active,
-      };
-      if (editing) {
-        const { error } = await supabase.from("employees").update(payload).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("employees").insert(payload);
-        if (error) throw error;
-      }
+      return saveEmployeeFn({
+        data: {
+          id: editing?.id,
+          employee_code: form.employee_code.trim(),
+          full_name: form.full_name.trim(),
+          email: form.email || null,
+          phone: form.phone || null,
+          department: form.department || null,
+          designation: form.designation || null,
+          date_of_joining: form.date_of_joining || null,
+          pay_type: form.pay_type,
+          basic_salary: Number(form.basic_salary) || 0,
+          da: Number(form.da) || 0,
+          hra: Number(form.hra) || 0,
+          other_allowances: Number(form.other_allowances) || 0,
+          daily_wage: Number(form.daily_wage) || 0,
+          ot_rate_per_hour: Number(form.ot_rate_per_hour) || 0,
+          pf_deduction: Number(form.pf_deduction) || 0,
+          esi_deduction: Number(form.esi_deduction) || 0,
+          is_active: form.is_active,
+        },
+      });
     },
     onSuccess: () => {
       toast.success(editing ? "Employee updated" : "Employee added");

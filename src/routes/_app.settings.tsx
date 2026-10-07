@@ -22,6 +22,7 @@ import { createDevice, rotateDeviceKey, deleteDevice } from "@/lib/biometric.fun
 import { WhatsAppConfigCard } from "@/components/settings/WhatsAppConfigCard";
 import { VelocityShippingCard } from "@/components/settings/VelocityShippingCard";
 import { Trash2, KeyRound, Copy } from "lucide-react";
+import { saveShiftSettings } from "@/lib/settings-admin.functions";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
 
@@ -258,6 +259,7 @@ function DeviceCard() {
 }
 
 function ShiftCard() {
+  const saveShift = useServerFn(saveShiftSettings);
   const qc = useQueryClient();
   const { data: shift } = useQuery({
     queryKey: ["shift"],
@@ -344,16 +346,24 @@ function ShiftCard() {
         <Button
           onClick={async () => {
             if (!shift) return;
-            const { error } = await supabase
-              .from("shift_settings")
-              .update(form as never)
-              .eq("id", shift.id);
-            if (error) {
-              toast.error(error.message);
-              return;
+            try {
+              await saveShift({
+                data: {
+                  id: shift.id,
+                  shift_start: String(v("shift_start", "09:00")),
+                  shift_end: String(v("shift_end", "18:00")),
+                  late_grace_minutes: Number(v("late_grace_minutes", 10)),
+                  half_day_hours: Number(v("half_day_hours", 4)),
+                  late_deduction_pct: Number(v("late_deduction_pct", 0)),
+                  half_day_deduction_pct: Number(v("half_day_deduction_pct", 50)),
+                  working_days_per_month: Number(v("working_days_per_month", 26)),
+                },
+              });
+              toast.success("Saved");
+              qc.invalidateQueries({ queryKey: ["shift"] });
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Failed to save settings");
             }
-            toast.success("Saved");
-            qc.invalidateQueries({ queryKey: ["shift"] });
           }}
         >
           Save

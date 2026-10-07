@@ -302,6 +302,16 @@ export const upsertNotificationProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { hasProviderImplementation } = await import("./notifications/registry.server");
+    if (data.is_active && !hasProviderImplementation(data.channel, data.name)) {
+      throw new Error("Cannot activate a provider without a server implementation");
+    }
+    if (data.is_active) {
+      const missing = data.secret_env_keys.filter((key) => !process.env[key]);
+      if (missing.length) {
+        throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
+      }
+    }
     const row = {
       channel: data.channel,
       name: data.name,
@@ -342,6 +352,24 @@ export const toggleNotificationProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.is_active) {
+      const { data: provider, error: loadError } = await supabaseAdmin
+        .from("notification_providers")
+        .select("channel, name, secret_env_keys")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (loadError || !provider) throw new Error("Provider not found");
+      const { hasProviderImplementation } = await import("./notifications/registry.server");
+      if (!hasProviderImplementation(provider.channel, provider.name)) {
+        throw new Error("Cannot activate a provider without a server implementation");
+      }
+      const missing = (
+        Array.isArray(provider.secret_env_keys) ? provider.secret_env_keys : []
+      ).filter((key: string) => !process.env[key]);
+      if (missing.length) {
+        throw new Error(`Cannot activate provider; missing secrets: ${missing.join(", ")}`);
+      }
+    }
     const { error } = await supabaseAdmin
       .from("notification_providers")
       .update({ is_active: data.is_active })

@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { createBankAccount } from "@/lib/banking-admin.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app/banking/accounts")({ component: BankAccounts });
 
@@ -37,6 +39,7 @@ function BankAccounts() {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [ledgers, setLedgers] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const saveBankAccount = useServerFn(createBankAccount);
   const [form, setForm] = useState({
     name: "",
     bank_name: "",
@@ -74,10 +77,10 @@ function BankAccounts() {
       toast.error("Name, bank and account number are required");
       return;
     }
-    const payload = { ...form, ledger_account_id: form.ledger_account_id || null };
-    const { error } = await sb.from("bank_accounts").insert(payload);
-    if (error) {
-      toast.error(error.message);
+    try {
+      await saveBankAccount({ data: { ...form, ifsc_code: form.ifsc_code || null, branch: form.branch || null, ledger_account_id: form.ledger_account_id || null } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create bank account");
       return;
     }
     toast.success("Bank account added");
