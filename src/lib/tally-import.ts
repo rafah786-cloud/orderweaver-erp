@@ -12,6 +12,8 @@ export type TallyParty = {
   pan?: string | null;
   /** Positive = Dr (receivable / asset), negative = Cr (payable / liability) */
   opening_balance: number;
+  /** Tally Alter ID when supplied by the source export. */
+  alter_id?: string | null;
   /** Closing balance from LEDGER export, if present. Falls back to opening when absent. */
   closing_balance: number;
 };
@@ -22,6 +24,7 @@ export type TallyStockItem = {
   opening_qty: number;
   opening_rate: number;
   group: string;
+  alter_id?: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
@@ -44,6 +47,7 @@ export type TallyGroup = {
   parent: string | null;
   nature: "assets" | "liabilities" | "income" | "expenses";
   affects_gross_profit: boolean;
+  alter_id?: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
@@ -56,6 +60,7 @@ export type TallyLedgerMaster = {
   /** "dr" when the opening balance is a debit. */
   opening_type: "dr" | "cr";
   notes: string | null;
+  alter_id?: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
@@ -63,6 +68,7 @@ export type TallyGodown = {
   name: string;
   parent: string | null;
   address: string | null;
+  alter_id?: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 export type TallyCostCentre = {
@@ -81,6 +87,7 @@ export type TallyBill = {
   reference_type: "opening" | "new_ref" | "against_ref" | "on_account" | "advance" | "cleared";
   voucher_guid: string | null;
   external_ref: string;
+  alter_id?: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
@@ -91,6 +98,7 @@ export type TallyVoucher = {
   voucher_type: string | null;
   voucher_number: string | null;
   voucher_date: string;
+  alter_id?: string | null;
   entries: Array<{ ledger_name: string; debit: number; credit: number }>;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
@@ -167,6 +175,9 @@ function parentMatches(parent: string, patterns: string[]): boolean {
   const p = parent.toLowerCase();
   return patterns.some((pat) => p.includes(pat.toLowerCase()));
 }
+
+const alterIdOf = (node: Record<string, unknown>): string | null =>
+  text(node.ALTERID ?? node["@_ALTERID"]) || null;
 
 /** Tally dates are YYYYMMDD (e.g. 20240415). Returns ISO yyyy-mm-dd or "". */
 function parseTallyDate(raw: string): string {
@@ -365,6 +376,7 @@ export function parseTallyMasters(
           bill_name,
           bill_date,
           amount: num(b.AMOUNT ?? b.OPENINGBALANCE),
+          alter_id: alterIdOf(b),
           reference_type,
           voucher_guid: voucherGuid,
           external_ref: [
@@ -392,6 +404,7 @@ export function parseTallyMasters(
         name,
         parent: parent || null,
         nature,
+        alter_id: alterIdOf(g),
         affects_gross_profit: isYes(g.AFFECTSGROSSPROFIT),
         lifecycle_state: lifecycleState(g),
       });
@@ -406,6 +419,7 @@ export function parseTallyMasters(
         name,
         parent: text(g.PARENT) || null,
         address: flattenAddress(g["ADDRESS.LIST"]) || null,
+        alter_id: alterIdOf(g),
         lifecycle_state: lifecycleState(g),
       });
     }
@@ -418,6 +432,7 @@ export function parseTallyMasters(
       costCentres.push({
         name,
         parent: text(c.PARENT) || null,
+        alter_id: alterIdOf(c),
         lifecycle_state: lifecycleState(c),
       });
     }
@@ -442,6 +457,7 @@ export function parseTallyMasters(
         name,
         parent: parentRaw || "Primary",
         gstin: extractGstin(l),
+        alter_id: alterIdOf(l),
         opening_balance: Math.abs(opening),
         opening_type: opening >= 0 ? "dr" : "cr",
         notes: parentRaw ? `Tally group: ${parentRaw}` : null,
@@ -465,6 +481,7 @@ export function parseTallyMasters(
         contact_person: text(l.LEDGERCONTACT ?? l.CONTACTPERSON) || null,
         pan: text(l.INCOMETAXNUMBER ?? l.PANNUMBER) || null,
         opening_balance: opening,
+        alter_id: alterIdOf(l),
         closing_balance: closing,
       };
       (isCustomer ? customers : vendors).push(party);
@@ -489,6 +506,7 @@ export function parseTallyMasters(
         name,
         unit: baseUnit,
         opening_qty: qty,
+        alter_id: alterIdOf(it),
         opening_rate: rate,
         group: parent,
         lifecycle_state: lifecycleState(it),
@@ -538,6 +556,7 @@ export function parseTallyMasters(
 
       vouchersOut.push({
         source_id: guid,
+        alter_id: alterIdOf(v),
         has_stable_id: !!text(v.GUID ?? v["@_REMOTEID"]),
         voucher_type,
         voucher_number,
@@ -583,6 +602,7 @@ export function parseTallyMasters(
           credit,
           narration,
           external_ref: `${guid}|${ledgerName}`,
+          alter_id: alterIdOf(v),
         });
         matchedParty = true;
       }
@@ -613,6 +633,7 @@ export function parseTallyMasters(
               credit,
               narration,
               external_ref: `${guid}|${partyLedgerName}`,
+              alter_id: alterIdOf(v),
             });
           }
         }
