@@ -36,7 +36,9 @@ export const createSalesOrder = createServerFn({ method: "POST" })
       } as never,
     );
     if (error) throw new Error(error.message);
-    const row = Array.isArray(result) ? result[0] : result;
-    if (!row?.id || !row?.order_number) throw new Error("Sales order creation returned no document");
-    return { id: row.id as string, orderNumber: row.order_number as string };
+    const response: unknown = result;
+    const parsed = z.object({ id: z.string().uuid(), order_number: z.string().min(1) })
+      .safeParse(Array.isArray(response) ? response[0] : response);
+    if (!parsed.success) throw new Error("Sales order creation returned no document");
+    return { id: parsed.data.id, orderNumber: parsed.data.order_number };
   });

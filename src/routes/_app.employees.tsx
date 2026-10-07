@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { saveEmployee } from "@/lib/employees-admin.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { Field } from "@/components/ui/field";
+import { TableState } from "@/components/ui/table-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +40,12 @@ import { toast } from "sonner";
 import { inr, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/employees")({
+  head: () => ({
+    meta: [
+      { title: "Employees | Mattress Maestro ERP" },
+      { name: "description", content: "HR management and payroll configuration." },
+    ],
+  }),
   component: EmployeesPage,
 });
 
@@ -251,20 +259,8 @@ function EmployeesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
-                        Loading…
-                      </TableCell>
-                    </TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
-                        No employees found. {canEdit && "Click New Employee to add one."}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filtered.map((e) => (
+                  <TableState isLoading={isLoading} isEmpty={filtered.length === 0} colSpan={9} emptyMessage="No employees found." />
+                  {!isLoading && filtered.map((e) => (
                       <TableRow key={e.id}>
                         <TableCell className="font-mono text-sm">{e.employee_code}</TableCell>
                         <TableCell className="font-medium">{e.full_name}</TableCell>
@@ -300,8 +296,7 @@ function EmployeesPage() {
                           </TableCell>
                         )}
                       </TableRow>
-                    ))
-                  )}
+                    ))}
                 </TableBody>
               </Table>
             </div>
@@ -486,11 +481,3 @@ function EmployeesPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  );
-}

@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { Field } from "@/components/ui/field";
+import { TableState } from "@/components/ui/table-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,12 @@ import { setPromoOptIn } from "@/lib/notifications-admin.functions";
 import { PartyMessagesDialog } from "@/components/PartyMessagesDialog";
 
 export const Route = createFileRoute("/_app/parties")({
+  head: () => ({
+    meta: [
+      { title: "Parties | Mattress Maestro ERP" },
+      { name: "description", content: "Manage customers, vendors, and their outstanding balances." },
+    ],
+  }),
   component: PartiesPage,
 });
 
@@ -293,132 +301,119 @@ function PartiesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
-                      Loading…
-                    </TableCell>
-                  </TableRow>
-                ) : parties.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
-                      No parties yet. Click New Party to add one.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  parties.map((p) => {
-                    const o = outstandingMap.get(p.id);
-                    const out = Number(o?.outstanding ?? 0);
-                    const block = blockedStatus(o, p.credit_limit);
-                    return (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.name}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {p.contact_person ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{p.phone ?? "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {inr(Number(p.opening_balance ?? 0))}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums font-medium">
-                          {inr(Number(p.current_balance ?? 0))}
-                        </TableCell>
-                        <TableCell className="text-right">{inr(p.credit_limit)}</TableCell>
-                        <TableCell className="text-right font-medium">{inr(out)}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(o?.oldest_unpaid_date)}
-                        </TableCell>
-                        <TableCell>
-                          {block ? (
-                            <Badge variant="destructive" className="gap-1">
-                              <AlertTriangle className="h-3 w-3" />
-                              {block.kind === "limit" ? "Credit Limit" : `Overdue ${block.days}d`}
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">OK</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-1">
+                <TableState isLoading={isLoading} isEmpty={parties.length === 0} colSpan={10} emptyMessage="No parties yet. Click New Party to add one." />
+                {!isLoading && parties.map((p) => {
+                  const o = outstandingMap.get(p.id);
+                  const out = Number(o?.outstanding ?? 0);
+                  const block = blockedStatus(o, p.credit_limit);
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {p.contact_person ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{p.phone ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {inr(Number(p.opening_balance ?? 0))}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">
+                        {inr(Number(p.current_balance ?? 0))}
+                      </TableCell>
+                      <TableCell className="text-right">{inr(p.credit_limit)}</TableCell>
+                      <TableCell className="text-right font-medium">{inr(out)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(o?.oldest_unpaid_date)}
+                      </TableCell>
+                      <TableCell>
+                        {block ? (
+                          <Badge variant="destructive" className="gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {block.kind === "limit" ? "Credit Limit" : `Overdue ${block.days}d`}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">OK</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Print preview"
+                            onClick={() => setPreviewUrl(`/print/party-ledger/${p.id}`)}
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Send statement on WhatsApp"
+                            disabled={sendingId === p.id}
+                            onClick={() => sendStatement(p)}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Message history"
+                            onClick={() => setMsgFor(p)}
+                          >
+                            <MessageCircle className="h-4 w-4 opacity-60" />
+                          </Button>
+                          {isAdmin && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              title="Print preview"
-                              onClick={() => setPreviewUrl(`/print/party-ledger/${p.id}`)}
-                            >
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              title="Send statement on WhatsApp"
-                              disabled={sendingId === p.id}
-                              onClick={() => sendStatement(p)}
-                            >
-                              <MessageCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              title="Message history"
-                              onClick={() => setMsgFor(p)}
-                            >
-                              <MessageCircle className="h-4 w-4 opacity-60" />
-                            </Button>
-                            {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title={
-                                  p.promo_opt_in === false
-                                    ? "Promo opted-out (click to opt in)"
-                                    : "Opt-out of promos"
+                              title={
+                                p.promo_opt_in === false
+                                  ? "Promo opted-out (click to opt in)"
+                                  : "Opt-out of promos"
+                              }
+                              onClick={async () => {
+                                try {
+                                  await setOptIn({
+                                    data: {
+                                      party_kind: "customer",
+                                      party_id: p.id,
+                                      promo_opt_in: !(p.promo_opt_in !== false),
+                                    },
+                                  });
+                                  qc.invalidateQueries({ queryKey: ["parties"] });
+                                } catch (e) {
+                                  toast.error(e instanceof Error ? e.message : "Failed");
                                 }
-                                onClick={async () => {
-                                  try {
-                                    await setOptIn({
-                                      data: {
-                                        party_kind: "customer",
-                                        party_id: p.id,
-                                        promo_opt_in: !(p.promo_opt_in !== false),
-                                      },
-                                    });
-                                    qc.invalidateQueries({ queryKey: ["parties"] });
-                                  } catch (e) {
-                                    toast.error(e instanceof Error ? e.message : "Failed");
-                                  }
-                                }}
+                              }}
+                            >
+                              <Badge
+                                variant={p.promo_opt_in === false ? "secondary" : "default"}
+                                className="h-5 px-1 text-[10px]"
                               >
-                                <Badge
-                                  variant={p.promo_opt_in === false ? "secondary" : "default"}
-                                  className="h-5 px-1 text-[10px]"
-                                >
-                                  {p.promo_opt_in === false ? "OFF" : "ON"}
-                                </Badge>
-                              </Button>
-                            )}
+                                {p.promo_opt_in === false ? "OFF" : "ON"}
+                              </Badge>
+                            </Button>
+                          )}
 
-                            {canEdit && (
-                              <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Delete customer"
-                                onClick={() => doDelete(p)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
+                          {canEdit && (
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Delete customer"
+                              onClick={() => doDelete(p)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -577,11 +572,3 @@ function PartiesPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  );
-}

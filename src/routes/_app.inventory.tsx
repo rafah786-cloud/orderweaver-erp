@@ -12,6 +12,12 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/inventory")({
+  head: () => ({
+    meta: [
+      { title: "Inventory | Mattress Maestro ERP" },
+      { name: "description", content: "Multi-godown stock management and valuation." },
+    ],
+  }),
   component: InventoryHome,
 });
 

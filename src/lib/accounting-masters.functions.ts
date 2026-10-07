@@ -29,7 +29,7 @@ export const createHsnCode=createServerFn({method:"POST"}).middleware([requireSu
   await assertAdminAccountant(context.supabase,context.userId);
   const {data:companyId,error:ce}=await context.supabase.rpc("current_company_id");
   if(ce||!companyId) throw new Error("No active company selected");
-  const {data:row,error}=await context.supabase.from("hsn_codes").insert({...data,company_id:companyId}).select("id").single();
+  const {data:row,error}=await context.supabase.from("hsn_codes").insert(data).select("id").single();
   if(error||!row) throw new Error(error?.message??"Failed to create HSN/SAC code");
   return row.id;
  });

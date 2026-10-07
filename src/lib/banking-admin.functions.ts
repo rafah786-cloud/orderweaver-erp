@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 async function hasRole(db: any, userId: string, roles: string[]) {
   const { data } = await db.from("user_roles").select("role").eq("user_id", userId).in("role", roles);
@@ -64,9 +65,13 @@ export const createCheque = createServerFn({ method: "POST" })
     await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
     const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
+    if (!data.bank_account_id) throw new Error("Select a bank account to identify the cheque company");
+    const { data: account } = await context.supabase.from("bank_accounts")
+      .select("id").eq("id", data.bank_account_id).eq("company_id", companyId).maybeSingle();
+    if (!account) throw new Error("Bank account is outside the active company");
     const { data: row, error } = await context.supabase
       .from("cheques")
-      .insert({ ...data, company_id: companyId, status: "pending" })
+      .insert({ ...data, status: "pending", created_by: context.userId })
       .select("id")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to create cheque");
@@ -85,9 +90,9 @@ export const updateChequeStatus = createServerFn({ method: "POST" })
     await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
     const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.status === "cleared") patch.cleared_date = new Date().toISOString().slice(0, 10);
-    const { error } = await context.supabase.from("cheques").update(patch).eq("id", data.id).eq("company_id", companyId);
+    const patch = { status: data.status, ...(data.status === "cleared" ? { cleared_date: new Date().toISOString().slice(0, 10) } : {}) };
+    // Cheque company isolation is enforced by RLS through its linked business records.
+    const { error } = await context.supabase.from("cheques").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -114,7 +119,7 @@ export const addBankStatementLine = createServerFn({ method: "POST" })
     const { data: account } = await context.supabase.from("bank_accounts").select("id").eq("id", data.bank_account_id).eq("company_id", companyId).maybeSingle();
     if (!account) throw new Error("Bank account is outside the active company");
     const { data: row, error } = await context.supabase.from("bank_transactions").insert({
-      ...data, bank_account_id: data.bank_account_id, source: "statement", bank_date: data.txn_date, company_id: companyId,
+      ...data, bank_account_id: data.bank_account_id, source: "statement", bank_date: data.txn_date, created_by: context.userId,
     }).select("id").single();
     if (error || !row) throw new Error(error?.message ?? "Failed to add statement line");
     return { id: row.id };
@@ -125,19 +130,25 @@ export const unreconcileBankLine = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), reconciled_with: z.string().uuid().nullable() }).parse(d))
   .handler(async ({ data, context }) => {
     await hasRole(context.supabase, context.userId, ["admin", "accountant"]);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { data: accounts, error: accountError } = await context.supabase.from("bank_accounts")
+      .select("id").eq("company_id", companyId);
+    if (accountError) throw new Error("Unable to verify bank accounts");
+    const accountIds = (accounts ?? []).map((account) => account.id);
     const ids = [data.id, data.reconciled_with].filter(Boolean) as string[];
     const { data: rows, error: readError } = await context.supabase
       .from("bank_transactions")
-      .select("id, company_id")
+      .select("id, bank_account_id")
       .in("id", ids)
-      .eq("company_id", companyId);
+      .in("bank_account_id", accountIds);
     if (readError) throw new Error(readError.message);
     if ((rows ?? []).length !== ids.length) throw new Error("Bank transaction is outside the active company");
     const { error } = await context.supabase
       .from("bank_transactions")
       .update({ reconciled_at: null, reconciled_with: null })
       .in("id", ids)
-      .eq("company_id", companyId);
+      .in("bank_account_id", accountIds);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -156,7 +167,8 @@ export const matchBankLines = createServerFn({ method: "POST" })
     const { data: companyId, error: companyError } =
       await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
-    const { data: result, error } = await context.supabase.rpc("match_bank_lines", {
+    // Prepared RPC is absent from generated types; retain caller credentials and RLS.
+    const { data: result, error } = await (context.supabase as SupabaseClient).rpc("match_bank_lines", {
       p_book: data.book_id,
       p_statement: data.statement_id,
     });

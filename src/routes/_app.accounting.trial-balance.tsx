@@ -15,6 +15,12 @@ import { sb, type LedgerBalance } from "@/lib/accounting";
 import { inr } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/accounting/trial-balance")({
+  head: () => ({
+    meta: [
+      { title: "Trial Balance | Mattress Maestro ERP" },
+      { name: "description", content: "Review ledger balances and financial integrity." },
+    ],
+  }),
   component: TrialBalancePage,
 });
 

@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { TableState } from "@/components/ui/table-state";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,12 @@ import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { createSalesOrder } from "@/lib/sales-orders-admin.functions";
 
 export const Route = createFileRoute("/_app/sales-orders")({
+  head: () => ({
+    meta: [
+      { title: "Sales Orders | Mattress Maestro ERP" },
+      { name: "description", content: "Track sales orders and automated production pipeline." },
+    ],
+  }),
   component: SalesOrdersPage,
 });
 
