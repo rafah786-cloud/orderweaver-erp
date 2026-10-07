@@ -55,7 +55,6 @@ export const setUserStatus = createServerFn({ method: "POST" })
       .from("profiles")
       .update({
         status: data.status,
-        approved_at: data.status === "approved" ? new Date().toISOString() : null,
         approved_by: context.userId,
       })
       .eq("id", data.user_id);
