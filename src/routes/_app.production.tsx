@@ -89,40 +89,6 @@ function ProductionPage() {
           ) ?? transporter;
       }
 
-      if (next === "in_production" && o.sales_order_id) {
-        const { error } = await supabase.rpc(
-          "produce_sales_order_bom" as never,
-          {
-            p_order: o.sales_order_id,
-            p_godown: null,
-            p_idempotency: `bom:${o.id}`,
-          } as never,
-        );
-        if (error && !uninstalledAccountingFunction(error)) throw error;
-      }
-      if (next === "ready" && o.sales_order_id) {
-        const { error } = await supabase.rpc(
-          "receive_sales_order_finished_goods" as never,
-          {
-            p_order: o.sales_order_id,
-            p_godown: null,
-            p_idempotency: `fg:${o.id}`,
-          } as never,
-        );
-        if (error && !uninstalledAccountingFunction(error)) throw error;
-      }
-      if (next === "dispatched" && o.sales_order_id) {
-        const { error } = await supabase.rpc(
-          "dispatch_sales_order" as never,
-          {
-            p_order: o.sales_order_id,
-            p_godown: null,
-            p_idempotency: `dispatch:${o.id}`,
-          } as never,
-        );
-        if (error && !uninstalledAccountingFunction(error)) throw error;
-      }
-
       await advanceProductionOrderFn({ data: {
         id: o.id, status: next,
         tracking_number: tracking || null,
