@@ -14,14 +14,16 @@ async function assertAdmin(db: SupabaseClient, userId: string) {
 }
 
 // These read-only checks include optional tables absent from the generated schema until migrations run.
+// Never return provider diagnostics: they may contain schema, query or connection details.
+const CHECK_UNAVAILABLE = "Check unavailable. Contact your administrator for assistance.";
 const probe = async (db: SupabaseClient, table: string, columns: string) => {
   const { error } = await db.from(table).select(columns).limit(1);
-  return error ? error.message : "columns present";
+  return error ? CHECK_UNAVAILABLE : "columns present";
 };
 
 const countOf = async (db: SupabaseClient, table: string) => {
   const { count, error } = await db.from(table).select("id", { count: "exact", head: true });
-  if (error) return { count: null, error: error.message };
+  if (error) return { count: null, error: CHECK_UNAVAILABLE };
   return { count: count ?? 0, error: null };
 };
 
@@ -35,7 +37,7 @@ async function sumColumn(db: SupabaseClient, table: string, column: string) {
       .from(table)
       .select(column)
       .range(from, from + 999);
-    if (error) return { total: null, rows, nonzero, error: error.message };
+    if (error) return { total: null, rows, nonzero, error: CHECK_UNAVAILABLE };
     const batch = data ?? [];
     for (const row of batch) {
       const value = Number(Object.values(row)[0] ?? 0);
@@ -109,14 +111,14 @@ export const accountingPreflight = createServerFn({ method: "GET" })
     const invoicePaid = await sumColumn(db, "invoices", "paid_amount");
     const invoiceTotal = await sumColumn(db, "invoices", "total_amount");
     return {
-      vouchers: { count: vouchers.data?.length ?? 0, error: vouchers.error?.message ?? null },
-      entries: { count: entries.data?.length ?? 0, error: entries.error?.message ?? null },
+      vouchers: { count: vouchers.data?.length ?? 0, error: vouchers.error ? CHECK_UNAVAILABLE : null },
+      entries: { count: entries.data?.length ?? 0, error: entries.error ? CHECK_UNAVAILABLE : null },
       debit,
       credit,
       unbalancedVouchers: unbalanced,
       duplicateVoucherNumbers: duplicateNumbers,
       voucherSeries: series.data ?? [],
-      voucherSeriesError: series.error?.message ?? null,
+      voucherSeriesError: series.error ? CHECK_UNAVAILABLE : null,
       customerOutstanding: await sumColumn(db, "parties", "current_balance"),
       supplierOutstanding: await sumColumn(db, "suppliers", "current_balance"),
       invoicePaid,
@@ -139,7 +141,7 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       stockMovements: await countOf(db, "stock_movements"),
       financialYears: yearRows,
       financialYearOverlaps: overlaps,
-      financialYearError: years.error?.message ?? null,
+      financialYearError: years.error ? CHECK_UNAVAILABLE : null,
       companyId,
       directWriteGrants: "not readable from the application role",
     };
