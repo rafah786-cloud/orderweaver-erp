@@ -2,7 +2,8 @@ name: ERP CI
 
 on:
   push:
-    branches: ["main", "feat/**"]
+    branches: ["feat/**"]
+  workflow_dispatch:
   pull_request:
 
 concurrency:
