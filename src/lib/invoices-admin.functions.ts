@@ -45,3 +45,41 @@ export const createInvoice = createServerFn({ method: "POST" })
       posted: true,
     };
   });
+
+
+const InvoiceReceipt = z.object({
+  invoiceId: z.string().uuid(),
+  amount: z.number().positive(),
+  idempotencyKey: z.string().trim().min(8).max(200),
+});
+
+export const recordInvoiceReceipt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => InvoiceReceipt.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("record_invoice_receipt", {
+      p_invoice: data.invoiceId,
+      p_amount: data.amount,
+      p_idempotency: data.idempotencyKey,
+    });
+    if (error) throw new Error(error.message);
+    return { outstanding: Number(result ?? 0) };
+  });
+
+const ReverseInvoice = z.object({
+  invoiceId: z.string().uuid(),
+  idempotencyKey: z.string().trim().min(8).max(200),
+});
+
+export const reverseInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => ReverseInvoice.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("reverse_invoice", {
+      p_invoice: data.invoiceId,
+      p_idempotency: data.idempotencyKey,
+    });
+    if (error) throw new Error(error.message);
+    if (!result) throw new Error("Invoice reversal returned no voucher");
+    return { reversalId: result as string };
+  });
