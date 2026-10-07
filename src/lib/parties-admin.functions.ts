@@ -118,7 +118,9 @@ export const deleteParty = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { error } = await context.supabase.from("parties").delete().eq("id", data.id);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { error } = await context.supabase.from("parties").delete().eq("id", data.id).eq("company_id", companyId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -128,7 +130,9 @@ export const deleteSupplier = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { error } = await context.supabase.from("suppliers").delete().eq("id", data.id);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("No active company selected");
+    const { error } = await context.supabase.from("suppliers").delete().eq("id", data.id).eq("company_id", companyId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
