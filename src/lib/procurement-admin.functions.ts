@@ -22,3 +22,17 @@ export const createPurchaseBill=createServerFn({method:"POST"}).middleware([requ
  if(ie){await context.supabase.from("purchase_bills").delete().eq("id",bill.id);throw new Error(ie.message);}
  return {id:bill.id as string};
 });
+
+
+export const receivePurchaseBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc(
+      "receive_purchase_bill" as never,
+      { p_bill: data.id } as never,
+    );
+    if (error) throw new Error(error.message);
+    if (!result) throw new Error("Purchase receipt returned no bill");
+    return { ok: true, id: result as string };
+  });
