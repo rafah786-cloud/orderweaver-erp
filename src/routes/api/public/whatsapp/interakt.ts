@@ -47,7 +47,6 @@ export const Route = createFileRoute("/api/public/whatsapp/interakt")({
           const update: Record<string, any> = {};
           if (lc.includes("read")) {
             update.read_status = "read";
-            update.read_at = new Date().toISOString();
           } else if (lc.includes("deliver")) {
             update.read_status = "delivered";
           } else if (lc.includes("fail") || lc.includes("undeliver") || lc.includes("reject")) {
