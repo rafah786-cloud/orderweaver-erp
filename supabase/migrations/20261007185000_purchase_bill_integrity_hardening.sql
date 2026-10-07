@@ -147,6 +147,16 @@ BEGIN
 
   total := round(subtotal+tax,2);
 
+  IF p_supplier_id IS NOT NULL AND EXISTS (
+    SELECT 1
+    FROM public.purchase_bills
+    WHERE company_id=company
+      AND supplier_id=p_supplier_id
+      AND bill_number=btrim(p_bill_number)
+  ) THEN
+    RAISE EXCEPTION 'A purchase bill with this supplier invoice number already exists in the active company';
+  END IF;
+
   IF total<=0 THEN
     RAISE EXCEPTION 'Purchase bill total must be greater than zero';
   END IF;
@@ -175,10 +185,6 @@ BEGIN
   FROM jsonb_array_elements(p_lines);
 
   RETURN bill_id;
-EXCEPTION
-  WHEN unique_violation THEN
-    RAISE EXCEPTION
-      'A purchase bill with this supplier invoice number already exists in the active company';
 END;
 $function$;
 
