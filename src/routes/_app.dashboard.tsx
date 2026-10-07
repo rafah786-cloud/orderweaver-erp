@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { inr, daysBetween, formatDate } from "@/lib/format";
+import { inr, daysBetween, formatDate, todayIndia } from "@/lib/format";
 import {
   IndianRupee,
   AlertTriangle,
