@@ -192,7 +192,8 @@ export async function dispatchNotificationEvent(input: DispatchInput): Promise<D
       }
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: subscriptions, error: subscriptionError } = await supabaseAdmin
+      const db = supabaseAdmin as any;
+      const { data: subscriptions, error: subscriptionError } = await db
         .from("web_push_subscriptions")
         .select("id,user_id")
         .in("user_id", userIds)
