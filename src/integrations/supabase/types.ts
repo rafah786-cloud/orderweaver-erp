@@ -4640,6 +4640,29 @@ export type Database = {
         };
         Returns: string;
       };
+      create_invoice_atomic: {
+        Args: {
+          p_due_date: string | null;
+          p_invoice_date: string;
+          p_lines: Json;
+          p_notes: string | null;
+          p_party_id: string;
+          p_supply: string | null;
+        };
+        Returns: {
+          id: string;
+          invoice_number: string;
+        }[];
+      };
+      advance_production_order_atomic: {
+        Args: {
+          p_order: string;
+          p_status: string;
+          p_tracking_number?: string | null;
+          p_transporter_name?: string | null;
+        };
+        Returns: string;
+      };
       _apply_raw_delta: {
         Args: { p_item: string; p_qty: number };
         Returns: undefined;
