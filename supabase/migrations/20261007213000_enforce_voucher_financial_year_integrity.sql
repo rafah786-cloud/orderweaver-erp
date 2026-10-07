@@ -8,22 +8,24 @@ SET search_path = ''
 AS $$
 DECLARE
   matched_id uuid;
+  matched_count integer;
 BEGIN
   IF NEW.company_id IS NULL THEN
     RAISE EXCEPTION 'Voucher company is required';
   END IF;
 
   IF NEW.financial_year_id IS NULL THEN
-    SELECT fy.id
-    INTO matched_id
+    SELECT count(*), min(fy.id)
+    INTO matched_count, matched_id
     FROM public.financial_years fy
     WHERE fy.company_id = NEW.company_id
-      AND NEW.voucher_date BETWEEN fy.start_date AND fy.end_date
-    ORDER BY fy.start_date DESC
-    LIMIT 1;
+      AND NEW.voucher_date BETWEEN fy.start_date AND fy.end_date;
 
-    IF matched_id IS NULL THEN
+    IF matched_count = 0 THEN
       RAISE EXCEPTION 'No financial year covers voucher date % for company %',
+        NEW.voucher_date, NEW.company_id;
+    ELSIF matched_count > 1 THEN
+      RAISE EXCEPTION 'Multiple financial years cover voucher date % for company %',
         NEW.voucher_date, NEW.company_id;
     END IF;
 
