@@ -75,7 +75,7 @@ function ReturnDetail() {
     mutationFn: async () => {
       const { error } = await sb
         .from("gst_returns")
-        .update({ status: "filed", filed_at: new Date().toISOString() })
+        .update({ status: "filed" })
         .eq("id", id);
       if (error) throw error;
     },
