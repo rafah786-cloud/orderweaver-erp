@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type AllowedRole = "admin" | "sales" | "production" | "accountant" | "hr";
 
-export const DEPARTMENTS = ["Sales", "Accounts", "Purchase", "Warehouse", "Management"] as const;
+export const DEPARTMENTS = ["Sales", "Production", "Accounts", "Purchase", "Warehouse", "Management"] as const;
 export type Department = (typeof DEPARTMENTS)[number];
 
 export const STAFF_EVENTS = [
@@ -90,7 +90,7 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
 
     const { data: emps } = await supabaseAdmin
       .from("employees")
-      .select("id, full_name, phone, department, is_active, company_id")
+      .select("id, user_id, full_name, phone, department, is_active, company_id")
       .eq("company_id", companyId)
       .in("department", depts)
       .eq("is_active", true);
@@ -197,6 +197,31 @@ export const notifyStaffEvent = createServerFn({ method: "POST" })
     }
 
     // 3. Resolve template
+    // Web Push is account/device-aware: one ERP user may have multiple
+    // subscribed devices, and the notification engine fans out to each active device.
+    const { dispatchNotificationEvent } = await import("./notifications/engine.server");
+    const pushUserIds = Array.from(
+      new Set(
+        (emps ?? [])
+          .map((emp) => (emp as any).user_id)
+          .filter((id): id is string => typeof id === "string" && id.length > 0),
+      ),
+    );
+    if (pushUserIds.length > 0) {
+      await dispatchNotificationEvent({
+        eventKey: data.event,
+        recipients: { userIds: pushUserIds },
+        variables: enrichedVars,
+        context: {
+          party_kind: "staff",
+          party_id: null,
+          ref_table: expectedRefTable[data.event],
+          ref_id: data.ref_id,
+          payload: { source: "staff-notification" },
+        },
+      });
+    }
+
     const { data: tpl } = await supabaseAdmin
       .from("whatsapp_templates")
       .select("template_name, language_code, variables, is_active")
