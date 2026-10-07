@@ -153,6 +153,45 @@ describe("Tally import — stable Alter IDs", () => {
     expect(p.vouchers[0].alter_id).toBe("303");
     expect(p.ledgerEntries[0].alter_id).toBe("303");
   });
+
+  it("preserves voucher inventory and batch allocation details", () => {
+    const xml = `<?xml version="1.0"?><ENVELOPE><BODY><DATA>
+      <TALLYMESSAGE>
+        <VOUCHER VCHTYPE="Sales" REMOTEID="inv-voucher-1">
+          <DATE>20261007</DATE><GUID>inv-voucher-1</GUID><ALTERID>304</ALTERID>
+          <ALLLEDGERENTRIES.LIST>
+            <LEDGERNAME>Alter Customer</LEDGERNAME>
+            <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-1180</AMOUNT>
+          </ALLLEDGERENTRIES.LIST>
+          <ALLINVENTORYENTRIES.LIST>
+            <STOCKITEMNAME>Mattress 72x36</STOCKITEMNAME>
+            <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+            <RATE>1000/nos</RATE><AMOUNT>1000</AMOUNT>
+            <ACTUALQTY>1 nos</ACTUALQTY><BILLEDQTY>1 nos</BILLEDQTY>
+            <BATCHALLOCATIONS.LIST>
+              <GODOWNNAME>Factory</GODOWNNAME><BATCHNAME>Primary Batch</BATCHNAME>
+              <ACTUALQTY>1 nos</ACTUALQTY><BILLEDQTY>1 nos</BILLEDQTY><AMOUNT>1000</AMOUNT>
+            </BATCHALLOCATIONS.LIST>
+          </ALLINVENTORYENTRIES.LIST>
+        </VOUCHER>
+      </TALLYMESSAGE>
+    </DATA></BODY></ENVELOPE>`;
+    const p = parseTallyMasters(xml, groups);
+    expect(p.vouchers[0].inventory_entries).toEqual([
+      {
+        stock_item_name: "Mattress 72x36",
+        actual_qty: 1,
+        billed_qty: 1,
+        unit: "nos",
+        rate: 1000,
+        amount: 1000,
+        is_deemed_positive: false,
+        godown_name: "Factory",
+        batch_name: "Primary Batch",
+      },
+    ]);
+  });
+  });
 });
 
 describe("Tally import — TallyPrime 4/5 format", () => {
