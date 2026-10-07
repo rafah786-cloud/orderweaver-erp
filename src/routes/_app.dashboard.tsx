@@ -829,7 +829,7 @@ function ProductionPanels() {
 /* ------------------------------ HR ------------------------------ */
 
 function HRPanels() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIndia();
   const { data: empCount = 0 } = useQuery({
     queryKey: ["hr-dash-emp"],
     queryFn: async () => {

@@ -61,7 +61,7 @@ function PrintSupplierLedger() {
         ["Supplier", sup.name],
         [
           "Period",
-          `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(new Date().toISOString().slice(0, 10))}`,
+          `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(todayIndia())}`,
         ],
         ["Closing Balance", inr(sup.current_balance ?? running)],
       ]}

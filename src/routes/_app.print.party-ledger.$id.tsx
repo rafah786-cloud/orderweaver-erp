@@ -67,7 +67,7 @@ function PrintPartyLedger() {
         ["Party", party.name],
         [
           "Period",
-          `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(new Date().toISOString().slice(0, 10))}`,
+          `${from ? formatDate(from) : "Inception"} → ${to ? formatDate(to) : formatDate(todayIndia())}`,
         ],
         ["Closing Balance", inr(party.current_balance ?? running)],
       ]}

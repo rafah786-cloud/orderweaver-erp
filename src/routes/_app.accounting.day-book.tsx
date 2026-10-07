@@ -44,8 +44,8 @@ const ALL_TYPES: (VoucherType | "all")[] = [
 
 function DayBookPage() {
   const today = todayIndia();
-  const monthStart = new Date();
-  monthStart.setDate(1);
+  const monthStart = new Date(`${today}T00:00:00Z`);
+  monthStart.setUTCDate(1);
   const [from, setFrom] = useState(monthStart.toISOString().slice(0, 10));
   const [to, setTo] = useState(today);
   const [type, setType] = useState<VoucherType | "all">("all");
