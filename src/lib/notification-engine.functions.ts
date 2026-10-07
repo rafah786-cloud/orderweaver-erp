@@ -116,6 +116,18 @@ export const listMyInAppNotifications = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const getMyUnreadNotificationCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { count, error } = await context.supabase
+      .from("in_app_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId)
+      .is("read_at", null);
+    if (error) throw error;
+    return { count: count ?? 0 };
+  });
+
 export const markInAppRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
