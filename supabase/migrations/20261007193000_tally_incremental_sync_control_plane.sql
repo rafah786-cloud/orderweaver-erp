@@ -98,20 +98,20 @@ DROP POLICY IF EXISTS "tally sync sources company scope" ON public.tally_sync_so
 CREATE POLICY "tally sync sources company scope"
   ON public.tally_sync_sources AS RESTRICTIVE
   FOR ALL TO authenticated
-  USING (company_id=public.current_company_id() AND public.has_company_access(company_id))
-  WITH CHECK (company_id=public.current_company_id() AND public.has_company_access(company_id));
+  USING (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id))
+  WITH CHECK (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id));
 
 DROP POLICY IF EXISTS "tally sync watermarks company scope" ON public.tally_sync_watermarks;
 CREATE POLICY "tally sync watermarks company scope"
   ON public.tally_sync_watermarks AS RESTRICTIVE
   FOR ALL TO authenticated
-  USING (EXISTS (
+  USING (public.has_role('admin', auth.uid()) AND EXISTS (
     SELECT 1 FROM public.tally_sync_sources s
     WHERE s.id=source_id
       AND s.company_id=public.current_company_id()
       AND public.has_company_access(s.company_id)
   ))
-  WITH CHECK (EXISTS (
+  WITH CHECK (public.has_role('admin', auth.uid()) AND EXISTS (
     SELECT 1 FROM public.tally_sync_sources s
     WHERE s.id=source_id
       AND s.company_id=public.current_company_id()
@@ -122,22 +122,22 @@ DROP POLICY IF EXISTS "tally sync batches company scope" ON public.tally_sync_ba
 CREATE POLICY "tally sync batches company scope"
   ON public.tally_sync_batches AS RESTRICTIVE
   FOR ALL TO authenticated
-  USING (company_id=public.current_company_id() AND public.has_company_access(company_id))
-  WITH CHECK (company_id=public.current_company_id() AND public.has_company_access(company_id));
+  USING (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id))
+  WITH CHECK (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id));
 
 DROP POLICY IF EXISTS "tally sync rows company scope" ON public.tally_sync_rows;
 CREATE POLICY "tally sync rows company scope"
   ON public.tally_sync_rows AS RESTRICTIVE
   FOR ALL TO authenticated
-  USING (company_id=public.current_company_id() AND public.has_company_access(company_id))
-  WITH CHECK (company_id=public.current_company_id() AND public.has_company_access(company_id));
+  USING (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id))
+  WITH CHECK (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id));
 
 DROP POLICY IF EXISTS "tally sync dead letters company scope" ON public.tally_sync_dead_letters;
 CREATE POLICY "tally sync dead letters company scope"
   ON public.tally_sync_dead_letters AS RESTRICTIVE
   FOR ALL TO authenticated
-  USING (company_id=public.current_company_id() AND public.has_company_access(company_id))
-  WITH CHECK (company_id=public.current_company_id() AND public.has_company_access(company_id));
+  USING (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id))
+  WITH CHECK (public.has_role('admin', auth.uid()) AND company_id=public.current_company_id() AND public.has_company_access(company_id));
 
 CREATE OR REPLACE FUNCTION public.accept_tally_sync_batch(
   p_source_id uuid,
@@ -173,6 +173,9 @@ BEGIN
 
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
+  END IF;
+  IF NOT public.has_role('admin', auth.uid()) THEN
+    RAISE EXCEPTION 'Admin only';
   END IF;
   IF p_record_type IS NULL OR btrim(p_record_type)='' THEN
     RAISE EXCEPTION 'record_type is required';
