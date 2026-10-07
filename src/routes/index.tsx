@@ -334,23 +334,6 @@ function CorporateHome() {
                       Talk to us
                     </a>
                   </div>
-                  <div className="mt-10 grid max-w-xl grid-cols-3 gap-0 border-t border-[#d6dde1] pt-6">
-                    {[
-                      ["20,000", "sq ft production area"],
-                      ["1,500", "mattresses / month"],
-                      ["South India", "manufacturing & supply"],
-                    ].map(([value, label], index) => (
-                      <div
-                        key={label}
-                        className={index === 0 ? "pr-4" : "border-l border-[#d6dde1] px-4"}
-                      >
-                        <div className="text-xl font-semibold tracking-[-0.03em] text-[#17324d]">
-                          {value}
-                        </div>
-                        <div className="mt-1 text-[11px] leading-5 text-[#6e7b88]">{label}</div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
               <div className="absolute bottom-5 right-6 hidden max-w-xs text-right text-sm font-medium text-white drop-shadow-lg sm:block">
