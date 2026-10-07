@@ -255,7 +255,8 @@ export const webPushFactory: ProviderFactory = (record: ProviderRecord): Notific
   isConfigured: configured,
   async sendTemplate(msg: TemplateMessage): Promise<SendResult> {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: subscription, error } = await supabaseAdmin
+    const db = supabaseAdmin as any;
+    const { data: subscription, error } = await db
       .from("web_push_subscriptions")
       .select("id, endpoint, p256dh, auth")
       .eq("id", msg.to)
