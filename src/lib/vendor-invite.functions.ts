@@ -156,7 +156,7 @@ export const claimVendorInvite = createServerFn({ method: "POST" })
     // Mark invite accepted.
     const { error: inviteErr } = await supabaseAdmin
       .from("vendor_invites")
-      .update({ accepted_at: true as any })
+      .update({ invited_by: row.invited_by })
       .eq("id", row.id)
       .is("accepted_at", null);
     if (inviteErr) throw new Error(inviteErr.message);
