@@ -90,6 +90,34 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
       .single();
     if (runError || !run) throw new Error(runError?.message || "Could not create migration run");
 
+    // Reject structurally duplicate source rows before the first database write.
+    // This prevents a malformed export from becoming an ambiguous staged run.
+    const seenSourceKeys = new Set<string>();
+    const seenAlterIds = new Set<string>();
+    for (const row of data.rows) {
+      const sourceIdentity = row.record_type + "\\u0000" + row.source_key;
+      if (seenSourceKeys.has(sourceIdentity)) {
+        await supabase.from("tally_migration_runs").update({
+          status: "failed",
+          notes: "Rejected before staging: duplicate record_type/source_key in source payload.",
+        }).eq("id", run.id).eq("company_id", data.companyId);
+        throw new Error("Duplicate Tally source row: record_type/source_key");
+      }
+      seenSourceKeys.add(sourceIdentity);
+
+      if (row.alter_id) {
+        const alterIdentity = row.record_type + "\\u0000" + row.alter_id;
+        if (seenAlterIds.has(alterIdentity)) {
+          await supabase.from("tally_migration_runs").update({
+            status: "failed",
+            notes: "Rejected before staging: duplicate record_type/alter_id in source payload.",
+          }).eq("id", run.id).eq("company_id", data.companyId);
+          throw new Error("Duplicate Tally source row: record_type/alter_id");
+        }
+        seenAlterIds.add(alterIdentity);
+      }
+    }
+
     const rows = data.rows.map((r) => ({
       run_id: run.id,
       company_id: data.companyId,
@@ -103,9 +131,19 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
       parent_source_key: r.parent_source_key ?? null,
     }));
 
-    for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await supabase.from("tally_migration_rows").insert(rows.slice(i, i + 500));
-      if (error) throw new Error("Could not stage migration rows: " + error.message);
+    try {
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error } = await supabase.from("tally_migration_rows").insert(rows.slice(i, i + 500));
+        if (error) throw new Error("Could not stage migration rows: " + error.message);
+      }
+    } catch (error) {
+      // Keep a failed run visible for auditability, but never present a
+      // partially staged run as usable migration input.
+      await supabase.from("tally_migration_runs").update({
+        status: "failed",
+        notes: "Row staging failed; this run must not be validated or approved.",
+      }).eq("id", run.id).eq("company_id", data.companyId);
+      throw error;
     }
 
     return { runId: run.id, rowCount: rows.length, checksum: data.sourceChecksum };
