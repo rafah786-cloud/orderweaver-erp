@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.enforce_vendor_invite_accepted_at()
 RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
 BEGIN
-  IF TG_OP='UPDATE' AND OLD.accepted_at IS NULL AND NEW.accepted_at IS NOT NULL THEN NEW.accepted_at:=now(); END IF;
+  IF TG_OP='UPDATE' AND OLD.accepted_at IS NULL THEN NEW.accepted_at:=now(); END IF;
   RETURN NEW;
 END $$;
 
