@@ -2,7 +2,11 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { sb, type BankAccount, type BankTransaction } from "@/lib/banking";
 import { useServerFn } from "@tanstack/react-start";
-import { addBankStatementLine, unreconcileBankLine } from "@/lib/banking-admin.functions";
+import {
+  addBankStatementLine,
+  matchBankLines,
+  unreconcileBankLine,
+} from "@/lib/banking-admin.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +39,7 @@ function Reconcile() {
   const [stmtSel, setStmtSel] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const addStatementLineFn = useServerFn(addBankStatementLine);
+  const matchBankLinesFn = useServerFn(matchBankLines);
   const unreconcileBankLineFn = useServerFn(unreconcileBankLine);
   const [stmt, setStmt] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
@@ -87,10 +92,10 @@ function Reconcile() {
       toast.error("Amounts don't match");
       return;
     }
-    const now = new Date().toISOString();
-    const { error } = await sb.rpc("match_bank_lines", { p_book: b.id, p_statement: s.id });
-    if (error) {
-      toast.error(error.message);
+    try {
+      await matchBankLinesFn({ data: { book_id: b.id, statement_id: s.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to reconcile");
       return;
     }
     toast.success("Reconciled");
