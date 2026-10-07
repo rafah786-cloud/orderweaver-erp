@@ -42,7 +42,7 @@ function Reconcile() {
   const matchBankLinesFn = useServerFn(matchBankLines);
   const unreconcileBankLineFn = useServerFn(unreconcileBankLine);
   const [stmt, setStmt] = useState({
-    txn_date: new Date().toISOString().slice(0, 10),
+    txn_date: todayIndia(),
     description: "",
     reference: "",
     debit: 0,
