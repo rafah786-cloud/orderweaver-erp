@@ -148,7 +148,10 @@ function ReturnDetail() {
               <B2csTable data={periodInvoicesQ.data} />
             </TabsContent>
             <TabsContent value="hsn">
-              <HsnTable data={periodInvoicesQ.data} supplierStateCode={ret.gstin.trim().slice(0, 2)} />
+              <HsnTable
+                data={periodInvoicesQ.data}
+                supplierStateCode={ret.gstin.trim().slice(0, 2)}
+              />
             </TabsContent>
             <TabsContent value="raw">
               <Card>

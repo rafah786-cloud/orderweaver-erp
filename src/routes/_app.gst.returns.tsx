@@ -56,11 +56,14 @@ function ReturnsPage() {
   });
 
   const generate = useMutation({
-    mutationFn: () => generateReturn({
-      type, year, month,
-      gstin: activeCompany?.gstin ?? "",
-      supplierStateCode: activeCompany?.gstin?.trim().slice(0, 2) ?? "",
-    }),
+    mutationFn: () =>
+      generateReturn({
+        type,
+        year,
+        month,
+        gstin: activeCompany?.gstin ?? "",
+        supplierStateCode: activeCompany?.gstin?.trim().slice(0, 2) ?? "",
+      }),
     onSuccess: ({ id }) => {
       toast.success(`${type} ${MONTH_NAMES[month - 1]} ${year} generated`);
       qc.invalidateQueries({ queryKey: ["gst_returns"] });

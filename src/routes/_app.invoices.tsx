@@ -681,7 +681,10 @@ function InvoicesPage() {
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    setItems([...items, { description: "", quantity: 1, unit_price: 0, hsn_code: "", tax_rate: 18 }])
+                    setItems([
+                      ...items,
+                      { description: "", quantity: 1, unit_price: 0, hsn_code: "", tax_rate: 18 },
+                    ])
                   }
                 >
                   <Plus className="h-3 w-3 mr-1" />

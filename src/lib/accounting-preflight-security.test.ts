@@ -10,13 +10,19 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth:
 import { accountingPreflight } from "./accounting-preflight.functions";
 
 function client(fail: boolean, admin = true) {
-  const diagnostic = "column private_secret missing at internal.database.local; SELECT secret FROM internal";
+  const diagnostic =
+    "column private_secret missing at internal.database.local; SELECT secret FROM internal";
   return {
     rpc: vi.fn().mockResolvedValue({ data: "company", error: null }),
     from: vi.fn((table: string) => {
-      const result = table === "user_roles"
-        ? { data: admin ? { role: "admin" } : null, error: null }
-        : { data: fail ? null : [], count: fail ? null : 0, error: fail ? { message: diagnostic, details: diagnostic, hint: diagnostic } : null };
+      const result =
+        table === "user_roles"
+          ? { data: admin ? { role: "admin" } : null, error: null }
+          : {
+              data: fail ? null : [],
+              count: fail ? null : 0,
+              error: fail ? { message: diagnostic, details: diagnostic, hint: diagnostic } : null,
+            };
       const chain: Record<string, unknown> = {};
       for (const method of ["select", "eq", "limit", "range", "order", "maybeSingle"]) {
         chain[method] = vi.fn(() => chain);
@@ -27,20 +33,42 @@ function client(fail: boolean, admin = true) {
   };
 }
 
-const run = accountingPreflight as unknown as (input: { context: { supabase: ReturnType<typeof client>; userId: string } }) => Promise<Record<string, any>>;
+const run = accountingPreflight as unknown as (input: {
+  context: { supabase: ReturnType<typeof client>; userId: string };
+}) => Promise<Record<string, any>>;
 
 describe("accounting preflight safe responses", () => {
   it("redacts every failed probe, count, sum and reconciliation query", async () => {
     const result = await run({ context: { supabase: client(true), userId: "admin" } });
     const safe = "Check unavailable. Contact your administrator for assistance.";
-    for (const field of ["billColumns", "billAllocationColumns", "stockMovementColumns", "voucherSeriesError", "financialYearError"]) {
+    for (const field of [
+      "billColumns",
+      "billAllocationColumns",
+      "stockMovementColumns",
+      "voucherSeriesError",
+      "financialYearError",
+    ]) {
       expect(result[field]).toBe(safe);
     }
-    for (const field of ["vouchers", "entries", "bills", "billAllocations", "purchases", "stockMovements", "customerOutstanding", "supplierOutstanding", "invoicePaid", "invoiceTotal", "rawMaterialStockQuantity"]) {
+    for (const field of [
+      "vouchers",
+      "entries",
+      "bills",
+      "billAllocations",
+      "purchases",
+      "stockMovements",
+      "customerOutstanding",
+      "supplierOutstanding",
+      "invoicePaid",
+      "invoiceTotal",
+      "rawMaterialStockQuantity",
+    ]) {
       expect(result[field].error).toBe(safe);
     }
     expect(result.invoiceOutstanding).toBeNull();
-    expect(JSON.stringify(result)).not.toMatch(/private_secret|internal\.database|SELECT|details|hint/);
+    expect(JSON.stringify(result)).not.toMatch(
+      /private_secret|internal\.database|SELECT|details|hint/,
+    );
   });
 
   it("preserves successful read-only results", async () => {

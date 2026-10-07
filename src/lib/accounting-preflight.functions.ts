@@ -111,8 +111,14 @@ export const accountingPreflight = createServerFn({ method: "GET" })
     const invoicePaid = await sumColumn(db, "invoices", "paid_amount");
     const invoiceTotal = await sumColumn(db, "invoices", "total_amount");
     return {
-      vouchers: { count: vouchers.data?.length ?? 0, error: vouchers.error ? CHECK_UNAVAILABLE : null },
-      entries: { count: entries.data?.length ?? 0, error: entries.error ? CHECK_UNAVAILABLE : null },
+      vouchers: {
+        count: vouchers.data?.length ?? 0,
+        error: vouchers.error ? CHECK_UNAVAILABLE : null,
+      },
+      entries: {
+        count: entries.data?.length ?? 0,
+        error: entries.error ? CHECK_UNAVAILABLE : null,
+      },
       debit,
       credit,
       unbalancedVouchers: unbalanced,
