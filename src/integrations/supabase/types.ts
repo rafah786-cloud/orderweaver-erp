@@ -4685,6 +4685,33 @@ export type Database = {
           invoice_number: string;
         }[];
       };
+      create_sales_order_atomic: {
+        Args: {
+          p_expected_delivery: string | null;
+          p_idempotency_key: string;
+          p_lines: Json;
+          p_notes: string | null;
+          p_order_date: string;
+          p_party_id: string;
+        };
+        Returns: {
+          id: string;
+          order_number: string;
+        }[];
+      };
+      create_purchase_bill_atomic: {
+        Args: {
+          p_bill_date: string;
+          p_bill_number: string;
+          p_cgst: number;
+          p_igst: number;
+          p_lines: Json;
+          p_notes: string | null;
+          p_sgst: number;
+          p_supplier_id: string | null;
+        };
+        Returns: string;
+      };
       advance_production_order_atomic: {
         Args: {
           p_order: string;
