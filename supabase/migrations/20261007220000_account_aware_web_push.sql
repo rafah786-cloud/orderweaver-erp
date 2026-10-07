@@ -92,7 +92,7 @@ ON CONFLICT (event_key) DO NOTHING;
 
 -- Ensure push/in-app routing rows exist. Transactional events are enabled for
 -- push; actual delivery remains safely skipped until VAPID secrets are configured.
-INSERT INTO public.notification_event_channels(event_key,channel,is_enabled)
+-- Production is an operational recipient of newly created sales orders.\nINSERT INTO public.employee_notification_subscriptions(company_id,department,event_key,is_active)\nSELECT c.id,'Production','staff.sales_order.created',true\nFROM public.companies c\nWHERE c.code IN ('ABOOD','ABRAZ','ABOOD_MGMT','ABRAZ_MGMT')\nON CONFLICT (company_id,department,event_key) DO NOTHING;\n\nINSERT INTO public.notification_event_channels(event_key,channel,is_enabled)
 SELECT e.event_key,'push',true
 FROM public.notification_events e
 WHERE e.event_key IN (
