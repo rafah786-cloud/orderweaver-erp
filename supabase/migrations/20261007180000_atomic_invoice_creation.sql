@@ -110,10 +110,11 @@ BEGIN
     igst := tax;
   END IF;
 
-  SELECT COALESCE(po.outstanding,0)
-  INTO outstanding
-  FROM public.party_outstanding po
-  WHERE po.party_id=p_party_id;
+  SELECT COALESCE(
+    (SELECT po.outstanding FROM public.party_outstanding po WHERE po.party_id=p_party_id),
+    0
+  )
+  INTO outstanding;
 
   credit_limit := COALESCE(party.credit_limit,150000);
 
