@@ -6,6 +6,7 @@ import { Bell, Search, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider, useCompany } from "@/lib/company-context";
 import { AccountMenu } from "@/components/AccountMenu";
+import { FirstLaunchPermissionSetup } from "@/components/FirstLaunchPermissionSetup";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 
 export const Route = createFileRoute("/_app")({
@@ -50,7 +51,7 @@ function AppLayout() {
 
   return (
     <CompanyProvider>
-      <AppFrame denied={denied} roles={roles} />
+      <AppFrame denied={denied} roles={roles} userId={session.user.id} />
     </CompanyProvider>
   );
 }
@@ -58,9 +59,11 @@ function AppLayout() {
 function AppFrame({
   denied,
   roles,
+  userId,
 }: {
   denied: boolean;
   roles: import("@/lib/permissions").AppRole[];
+  userId: string;
 }) {
   const { profile, hasAnyRole } = useAuth();
   const { activeCompany } = useCompany();
@@ -69,6 +72,7 @@ function AppFrame({
 
   return (
     <div className="app-shell relative flex h-dvh overflow-hidden">
+      <FirstLaunchPermissionSetup userId={userId} />
       <div className="app-shell-sidebar">
         <AppSidebar />
       </div>
