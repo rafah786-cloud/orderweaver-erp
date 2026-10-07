@@ -49,7 +49,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
 import { toast } from "sonner";
-import { inr, formatDate } from "@/lib/format";
+import { inr, formatDate, todayIndia } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
 import { createVendorInvite } from "@/lib/vendor-invite.functions";
 import { notifyVendorPurchaseBill } from "@/lib/whatsapp.functions";
@@ -595,7 +595,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
   const [open, setOpen] = useState(false);
   const [billNumber, setBillNumber] = useState("");
   const [supplierId, setSupplierId] = useState("");
-  const [billDate, setBillDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [billDate, setBillDate] = useState(() => todayIndia());
   const [notes, setNotes] = useState("");
   const [cgstAmount, setCgstAmount] = useState(0);
   const [sgstAmount, setSgstAmount] = useState(0);
@@ -667,7 +667,7 @@ function BillsTab({ canEdit, onPreview }: { canEdit: boolean; onPreview: (url: s
   const resetForm = () => {
     setBillNumber("");
     setSupplierId("");
-    setBillDate(new Date().toISOString().slice(0, 10));
+    setBillDate(todayIndia());
     setNotes("");
     setCgstAmount(0);
     setSgstAmount(0);
