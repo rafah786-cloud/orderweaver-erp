@@ -119,7 +119,7 @@ function DeviceCard() {
                 )}
                 {d.last_seen_at && (
                   <span className="ml-2 text-muted-foreground">
-                    Last seen {new Date(d.last_seen_at).toLocaleString()}
+                    Last seen {formatDateTime(d.last_seen_at, { seconds: true })}
                   </span>
                 )}
               </div>
