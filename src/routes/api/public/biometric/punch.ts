@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/biometric/punch")({
 
         await supabaseAdmin
           .from("device_settings")
-          .update({ last_seen_at: new Date().toISOString() })
+          .update({})
           .eq("device_id", device_id);
 
         return Response.json({ ok: true, employee_matched: !!emp });
