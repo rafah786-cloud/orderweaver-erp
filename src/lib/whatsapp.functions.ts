@@ -233,6 +233,28 @@ export const notifyVendorPurchaseBill = createServerFn({ method: "POST" })
       });
       return { ok: false, reason: "no_phone" };
     }
+    if (sup.user_id) {
+      const { dispatchNotificationEvent } = await import("./notifications/engine.server");
+      await dispatchNotificationEvent({
+        eventKey,
+        recipients: { userIds: [sup.user_id] },
+        variables: {
+          vendor_name: sup.name,
+          po_number: bill.bill_number,
+          po_date: bill.bill_date,
+          po_value: Number(bill.total_amount ?? 0).toFixed(2),
+          po_url,
+        },
+        context: {
+          party_kind: "vendor",
+          party_id: sup.id,
+          ref_table: "purchase_bills",
+          ref_id: bill.id,
+          payload: { source: "vendor-notification" },
+        },
+      });
+    }
+
     const po_url = `${APP_ORIGIN}/print/purchase/${bill.id}`;
     const result = await sendForEvent({
       db: context.supabase,
