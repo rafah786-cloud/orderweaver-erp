@@ -58,7 +58,8 @@ export const registerWebPushSubscription = createServerFn({ method: "POST" })
       await context.supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 
-    const { error } = await context.supabase
+    const db = context.supabase as any;
+    const { error } = await db
       .from("web_push_subscriptions")
       .upsert(
         {
