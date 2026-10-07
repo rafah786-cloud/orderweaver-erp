@@ -351,7 +351,7 @@ export async function generateReturn(opts: {
       month: opts.month,
       invoices,
       parties: [...parties.values()],
-      supplierStateCode: COMPANY.stateCode,
+      supplierStateCode: supplierState,
     });
     summary = summariseGstr1(invoices, parties, supplierState);
   } else if (opts.type === "GSTR-3B") {

@@ -25,6 +25,7 @@ import { generateReturn, type GstReturn, type ReturnType, MONTH_NAMES } from "@/
 import { inr, formatDate } from "@/lib/format";
 import { ExternalLink, Play, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { useCompany } from "@/lib/company-context";
 
 export const Route = createFileRoute("/_app/gst/returns")({
   component: ReturnsPage,
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_app/gst/returns")({
 const TYPES: ReturnType[] = ["GSTR-1", "GSTR-3B", "GSTR-9"];
 
 function ReturnsPage() {
+  const { activeCompany } = useCompany();
   const qc = useQueryClient();
   const now = new Date();
   const [type, setType] = useState<ReturnType>("GSTR-1");
@@ -54,7 +56,11 @@ function ReturnsPage() {
   });
 
   const generate = useMutation({
-    mutationFn: () => generateReturn({ type, year, month }),
+    mutationFn: () => generateReturn({
+      type, year, month,
+      gstin: activeCompany?.gstin ?? "",
+      supplierStateCode: activeCompany?.gstin?.trim().slice(0, 2) ?? "",
+    }),
     onSuccess: ({ id }) => {
       toast.success(`${type} ${MONTH_NAMES[month - 1]} ${year} generated`);
       qc.invalidateQueries({ queryKey: ["gst_returns"] });

@@ -62,6 +62,7 @@ function ReturnDetail() {
         year: ret!.period_year,
         month: ret!.period_month ?? 1,
         gstin: ret!.gstin,
+        supplierStateCode: ret!.gstin.trim().slice(0, 2),
       }),
     onSuccess: () => {
       toast.success("Re-generated");
@@ -147,7 +148,7 @@ function ReturnDetail() {
               <B2csTable data={periodInvoicesQ.data} />
             </TabsContent>
             <TabsContent value="hsn">
-              <HsnTable data={periodInvoicesQ.data} />
+              <HsnTable data={periodInvoicesQ.data} supplierStateCode={ret.gstin.trim().slice(0, 2)} />
             </TabsContent>
             <TabsContent value="raw">
               <Card>
@@ -346,7 +347,9 @@ function B2csTable({
 
 function HsnTable({
   data,
+  supplierStateCode,
 }: {
+  supplierStateCode: string;
   data:
     | {
         invs: Awaited<ReturnType<typeof fetchPeriodInvoices>>;
@@ -363,7 +366,7 @@ function HsnTable({
         <CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent>
       </Card>
     );
-  const rows = buildHsnSummary(data.invs, data.parties);
+  const rows = buildHsnSummary(data.invs, data.parties, supplierStateCode);
   return (
     <Card>
       <CardContent className="p-0">

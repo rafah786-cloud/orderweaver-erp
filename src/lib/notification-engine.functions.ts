@@ -210,6 +210,11 @@ export const dispatchTestEvent = createServerFn({ method: "POST" })
         email: data.email || null,
         userIds: data.user_ids ?? [],
       },
-      variables: data.variables ?? {},
+      variables: Object.fromEntries(
+        Object.entries(data.variables ?? {}).map(([key, value]) => [
+          key,
+          typeof value === "boolean" ? String(value) : value,
+        ]),
+      ),
     });
   });
