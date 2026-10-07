@@ -17,6 +17,7 @@ import {
 } from "./erp-data.server";
 import { describeEntities, runControlledQuery } from "./query-layer.server";
 import { semanticSearch } from "./documents.server";
+import { todayIndia } from "@/lib/format";
 
 /**
  * "Ask Mattress Maestro" — a retrieval-first assistant.
@@ -64,7 +65,7 @@ async function planTools(question: string): Promise<PlanStep[]> {
       },
       {
         role: "user",
-        content: `Today is ${new Date().toISOString().slice(0, 10)}. Question: ${question}`,
+        content: `Today is ${todayIndia()}. Question: ${question}`,
       },
     ],
     { model: AI_MODELS.fast, maxTokens: 500, temperature: 0 },
