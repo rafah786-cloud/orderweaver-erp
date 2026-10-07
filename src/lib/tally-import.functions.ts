@@ -374,9 +374,11 @@ export const importTallyMasters = createServerFn({ method: "POST" })
 
       for (const f of data.finishedGoods) {
         const existingId = byName.get(norm(f.name));
+        // Tally OPENINGRATE is an inventory valuation rate, not the ERP's
+        // selling/default price. Never overwrite a sales price from a Tally
+        // stock opening valuation.
         const row = {
           name: f.name,
-          default_price: f.opening_rate,
           notes: f.group ? `Tally group: ${f.group}` : null,
         };
         if (existingId) {
@@ -389,7 +391,7 @@ export const importTallyMasters = createServerFn({ method: "POST" })
             result.errors.push(`Finished good ${f.name}: update failed`);
           } else result.finishedGoods.updated++;
         } else {
-          const { error: iErr } = await supabase.from("product_models").insert(row);
+          const { error: iErr } = await supabase.from("product_models").insert({ ...row, default_price: 0 });
           if (iErr) {
             console.error("[tally-import] finished insert", iErr);
             result.errors.push(`Finished good ${f.name}: insert failed`);
