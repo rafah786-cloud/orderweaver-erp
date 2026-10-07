@@ -1,6 +1,8 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { sb, type BankAccount, type BankTransaction } from "@/lib/banking";
+import { useServerFn } from "@tanstack/react-start";
+import { addBankStatementLine, unreconcileBankLine } from "@/lib/banking-admin.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,8 @@ function Reconcile() {
   const [stmtSel, setStmtSel] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [stmt, setStmt] = useState({
+  const addStatementLineFn = useServerFn(addBankStatementLine);
+  const unreconcileBankLineFn = useServerFn(unreconcileBankLine);
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
     reference: "",
@@ -60,11 +64,10 @@ function Reconcile() {
   const statement = useMemo(() => txns.filter((t) => t.source === "statement"), [txns]);
 
   async function addStatementLine() {
-    const { error } = await sb
-      .from("bank_transactions")
-      .insert({ ...stmt, bank_account_id: id, source: "statement", bank_date: stmt.txn_date });
-    if (error) {
-      toast.error(error.message);
+    try {
+      await addStatementLineFn({ data: { ...stmt, bank_account_id: id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add statement line");
       return;
     }
     toast.success("Statement line added");
@@ -97,11 +100,12 @@ function Reconcile() {
   }
 
   async function unreconcile(t: BankTransaction) {
-    await sb
-      .from("bank_transactions")
-      .update({ reconciled_at: null, reconciled_with: null })
-      .in("id", [t.id, t.reconciled_with].filter(Boolean));
-    load();
+    try {
+      await unreconcileBankLineFn({ data: { id: t.id, reconciled_with: t.reconciled_with } });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to unreconcile");
+    }
   }
 
   const bookBalance = book.reduce(
