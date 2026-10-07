@@ -27,8 +27,8 @@ export const Route = createFileRoute("/_app/accounting/balance-sheet")({
 });
 
 function BalanceSheetPage() {
-  const today = new Date();
-  const fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  const today = new Date(`${todayIndia()}T00:00:00Z`);
+  const fyStartYear = today.getUTCMonth() >= 3 ? today.getUTCFullYear() : today.getUTCFullYear() - 1;
   const [startDate, setStartDate] = useState(`${fyStartYear}-04-01`);
   const [endDate, setEndDate] = useState(todayIndia());
   const balQ = useQuery({
