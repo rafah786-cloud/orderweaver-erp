@@ -220,7 +220,7 @@ function AttendancePage() {
                     <div>
                       <div className="font-medium">{name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(p.punch_time).toLocaleString()}
+                        {formatDateTime(p.punch_time, { seconds: true })}
                       </div>
                     </div>
                     <Badge
