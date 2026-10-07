@@ -12,6 +12,7 @@ import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
+import { advanceProductionOrder } from "@/lib/production-admin.functions";
 
 type Status = "received" | "in_production" | "qc" | "ready" | "dispatched";
 const STAGES: { key: Status; label: string }[] = [
@@ -54,6 +55,7 @@ function ProductionPage() {
   const qc = useQueryClient();
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
+  const advanceProductionOrderFn = useServerFn(advanceProductionOrder);
 
   const { data = [] } = useQuery({
     queryKey: ["production-orders"],
@@ -121,14 +123,11 @@ function ProductionPage() {
         if (error && !uninstalledAccountingFunction(error)) throw error;
       }
 
-      const patch = {
-        status: next,
-        ...(col ? { [col]: new Date().toISOString() } : {}),
-        ...(tracking !== null ? { tracking_number: tracking || null } : {}),
-        ...(transporter !== null ? { transporter_name: transporter || null } : {}),
-      };
-      const { error } = await supabase.from("production_orders").update(patch).eq("id", o.id);
-      if (error) throw error;
+      await advanceProductionOrderFn({ data: {
+        id: o.id, status: next,
+        tracking_number: tracking || null,
+        transporter_name: transporter || null,
+      }});
       return { next, order: { ...o, tracking_number: tracking, transporter_name: transporter } };
     },
     onSuccess: async (res) => {
