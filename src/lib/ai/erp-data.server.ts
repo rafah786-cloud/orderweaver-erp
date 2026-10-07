@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { todayIndia } from "@/lib/format";
 
 /**
  * Deterministic ERP metrics (server-only).
@@ -21,11 +22,13 @@ export interface Period {
 const DAY = 86_400_000;
 
 export function iso(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return todayIndia(d);
 }
 
 export function daysAgo(n: number): string {
-  return iso(new Date(Date.now() - n * DAY));
+  const base = new Date(todayIndia() + "T00:00:00Z");
+  base.setUTCDate(base.getUTCDate() - n);
+  return base.toISOString().slice(0, 10);
 }
 
 export function defaultPeriod(days = 90): Period {
