@@ -60,7 +60,7 @@ import { inr, formatDate, daysBetween } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { useCompany } from "@/lib/company-context";
-import { createInvoice } from "@/lib/invoices-admin.functions";
+import { createInvoice, recordInvoiceReceipt, reverseInvoice } from "@/lib/invoices-admin.functions";
 
 export const Route = createFileRoute("/_app/invoices")({
   component: InvoicesPage,
@@ -231,6 +231,8 @@ function InvoicesPage() {
   };
 
   const createInvoiceFn = useServerFn(createInvoice);
+  const recordInvoiceReceiptFn = useServerFn(recordInvoiceReceipt);
+  const reverseInvoiceFn = useServerFn(reverseInvoice);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const create = useMutation({
     mutationFn: async () => {
@@ -290,12 +292,13 @@ function InvoicesPage() {
         throw new Error("Payment exceeds invoice total");
       const status: InvoiceRow["status"] =
         newPaid >= Number(payInv.total_amount) - 0.01 ? "paid" : "partial";
-      const { error } = await supabase.rpc("record_invoice_receipt", {
-        p_invoice: payInv.id,
-        p_amount: amt,
-        p_idempotency: `receipt:${payInv.id}:${newPaid}`,
+      await recordInvoiceReceiptFn({
+        data: {
+          invoiceId: payInv.id,
+          amount: amt,
+          idempotencyKey: `receipt:${payInv.id}:${newPaid}`,
+        },
       });
-      if (error) throw error;
       return { inv: payInv, amt, status };
     },
     onSuccess: async (res) => {
@@ -324,11 +327,9 @@ function InvoicesPage() {
 
   const cancelInvoice = useMutation({
     mutationFn: async (inv: InvoiceRow) => {
-      const { error } = await supabase.rpc("reverse_invoice", {
-        p_invoice: inv.id,
-        p_idempotency: `cancel:${inv.id}`,
+      await reverseInvoiceFn({
+        data: { invoiceId: inv.id, idempotencyKey: `cancel:${inv.id}` },
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Invoice cancelled");
