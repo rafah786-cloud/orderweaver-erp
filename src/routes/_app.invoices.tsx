@@ -57,7 +57,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { inr, formatDate, daysBetween } from "@/lib/format";
+import { inr, formatDate, daysBetween, todayIndia } from "@/lib/format";
 import { buildGstr1Json, downloadJson } from "@/lib/gstr1";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { useCompany } from "@/lib/company-context";
@@ -102,7 +102,7 @@ function InvoicesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [partyId, setPartyId] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [invoiceDate, setInvoiceDate] = useState(() => todayIndia());
   const [dueDate, setDueDate] = useState("");
   const [supply, setSupply] = useState<"" | "intra" | "inter">("");
   const [notes, setNotes] = useState("");
@@ -202,7 +202,7 @@ function InvoicesPage() {
 
   const resetForm = () => {
     setPartyId("");
-    setInvoiceDate(new Date().toISOString().slice(0, 10));
+    setInvoiceDate(todayIndia());
     setDueDate("");
     setNotes("");
     setItems([{ description: "", quantity: 1, unit_price: 0, hsn_code: "", tax_rate: 18 }]);

@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { sb, type Voucher, type VoucherType, VOUCHER_TYPE_LABEL } from "@/lib/accounting";
-import { inr, formatDate } from "@/lib/format";
+import { inr, formatDate, todayIndia } from "@/lib/format";
 import { Plus, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_app/accounting/day-book")({
@@ -43,7 +43,7 @@ const ALL_TYPES: (VoucherType | "all")[] = [
 ];
 
 function DayBookPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIndia();
   const monthStart = new Date();
   monthStart.setDate(1);
   const [from, setFrom] = useState(monthStart.toISOString().slice(0, 10));

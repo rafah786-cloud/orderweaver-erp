@@ -53,7 +53,7 @@ function Cheques() {
     direction: "issued",
     bank_account_id: "",
     cheque_number: "",
-    cheque_date: new Date().toISOString().slice(0, 10),
+    cheque_date: todayIndia(),
     amount: 0,
     party_name: "",
     bank_name: "",

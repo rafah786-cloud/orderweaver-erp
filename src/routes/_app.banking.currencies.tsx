@@ -30,7 +30,7 @@ function Currencies() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [form, setForm] = useState({
     currency_code: "USD",
-    rate_date: new Date().toISOString().slice(0, 10),
+    rate_date: todayIndia(),
     rate: 0,
   });
 

@@ -57,7 +57,7 @@ function AttendancePage() {
   const { hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "hr"]);
   const qc = useQueryClient();
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => todayIndia());
   const [feed, setFeed] = useState<Punch[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editEmpId, setEditEmpId] = useState<string | null>(null);
@@ -220,7 +220,7 @@ function AttendancePage() {
                     <div>
                       <div className="font-medium">{name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(p.punch_time).toLocaleString()}
+                        {formatDateTime(p.punch_time, { seconds: true })}
                       </div>
                     </div>
                     <Badge

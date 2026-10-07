@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database, Json } from "@/integrations/supabase/types";
+import { todayIndia } from "@/lib/format";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -432,7 +433,7 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
           },
           {
             role: "user",
-            content: `Today is ${new Date().toISOString().slice(0, 10)}. Request: ${data.question}`,
+            content: `Today is ${todayIndia()}. Request: ${data.question}`,
           },
         ],
         { model: AI_MODELS.fast, maxTokens: 400, temperature: 0 },

@@ -23,7 +23,7 @@ function PaymentAdvice() {
   const [adv, setAdv] = useState({
     supplier_id: "",
     bank_account_id: "",
-    advice_date: new Date().toISOString().slice(0, 10),
+    advice_date: todayIndia(),
     amount: 0,
     payment_mode: "NEFT",
     reference: "",

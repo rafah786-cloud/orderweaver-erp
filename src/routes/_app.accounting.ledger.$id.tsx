@@ -22,7 +22,7 @@ import {
   type LedgerBalance,
   VOUCHER_TYPE_LABEL,
 } from "@/lib/accounting";
-import { inr, formatDate } from "@/lib/format";
+import { inr, formatDate, todayIndia } from "@/lib/format";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_app/accounting/ledger/$id")({
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_app/accounting/ledger/$id")({
 
 function LedgerStatementPage() {
   const { id } = Route.useParams();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIndia();
   const fyStart = "2025-04-01";
   const [from, setFrom] = useState(fyStart);
   const [to, setTo] = useState(today);

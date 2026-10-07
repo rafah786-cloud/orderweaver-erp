@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { useRef, useState } from "react";
 import { sb, type LedgerAccount, type VoucherType, VOUCHER_TYPE_LABEL } from "@/lib/accounting";
-import { inr } from "@/lib/format";
+import { inr, todayIndia } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -66,7 +66,7 @@ function NewVoucherPage() {
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
   const [type, setType] = useState<VoucherType>("journal");
-  const [voucherDate, setVoucherDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [voucherDate, setVoucherDate] = useState(() => todayIndia());
   const [narration, setNarration] = useState("");
   const [reference, setReference] = useState("");
   const [lines, setLines] = useState<Line[]>([

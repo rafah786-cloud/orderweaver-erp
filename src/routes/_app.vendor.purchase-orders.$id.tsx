@@ -188,7 +188,7 @@ function VendorPODetail() {
               <Badge variant="secondary" className="mr-2">
                 {bill.vendor_ack_status}
               </Badge>
-              on {bill.vendor_ack_at ? new Date(bill.vendor_ack_at).toLocaleString("en-IN") : "—"}
+              on {bill.vendor_ack_at ? formatDateTime(bill.vendor_ack_at) : "—"}
               {bill.vendor_ack_note && (
                 <p className="text-muted-foreground mt-2">Note: {bill.vendor_ack_note}</p>
               )}

@@ -31,7 +31,7 @@ type Line = {
 
 function JournalsPage() {
   const navigate = useNavigate();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayIndia());
   const [narration, setNarration] = useState("");
   const [lines, setLines] = useState<Line[]>([
     {

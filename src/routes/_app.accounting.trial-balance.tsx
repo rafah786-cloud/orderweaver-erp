@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { sb, type LedgerBalance } from "@/lib/accounting";
-import { inr } from "@/lib/format";
+import { inr, todayIndia } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/accounting/trial-balance")({
   head: () => ({
@@ -28,7 +28,7 @@ function TrialBalancePage() {
   const today = new Date();
   const fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
   const [startDate, setStartDate] = useState(`${fyStartYear}-04-01`);
-  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(todayIndia());
   const q = useQuery({
     queryKey: ["trial_balance", startDate, endDate],
     queryFn: async () => {

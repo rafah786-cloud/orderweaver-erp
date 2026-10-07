@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { inr, formatDate } from "@/lib/format";
+import { inr, formatDate, todayIndia } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { createSalesOrder } from "@/lib/sales-orders-admin.functions";
@@ -78,7 +78,7 @@ function SalesOrdersPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [partyId, setPartyId] = useState("");
-  const [orderDate, setOrderDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [orderDate, setOrderDate] = useState(() => todayIndia());
   const [expectedDelivery, setExpectedDelivery] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Item[]>([
@@ -128,7 +128,7 @@ function SalesOrdersPage() {
 
   const resetForm = () => {
     setPartyId("");
-    setOrderDate(new Date().toISOString().slice(0, 10));
+    setOrderDate(todayIndia());
     setExpectedDelivery("");
     setNotes("");
     setItems([{ model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 }]);

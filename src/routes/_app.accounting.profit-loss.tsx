@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { sb, type LedgerBalance } from "@/lib/accounting";
-import { inr } from "@/lib/format";
+import { inr, todayIndia } from "@/lib/format";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/_app/accounting/profit-loss")({
@@ -30,7 +30,7 @@ function ProfitLossPage() {
   const today = new Date();
   const fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
   const [startDate, setStartDate] = useState(`${fyStartYear}-04-01`);
-  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(todayIndia());
   const q = useQuery({
     queryKey: ["pnl", startDate, endDate],
     queryFn: async () => {
