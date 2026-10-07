@@ -142,8 +142,8 @@ CREATE POLICY "tally sync dead letters company scope"
 CREATE OR REPLACE FUNCTION public.accept_tally_sync_batch(
   p_source_id uuid,
   p_record_type text,
-  p_previous_alter_id bigint,
-  p_new_alter_id bigint,
+  p_previous_alter_id text,
+  p_new_alter_id text,
   p_payload_hash text,
   p_rows jsonb
 )
@@ -165,14 +165,19 @@ DECLARE
   payload_hash text;
   seen jsonb := '{}'::jsonb;
   row_count integer;
+  previous_aid bigint;
+  new_aid bigint;
 BEGIN
+  previous_aid := NULLIF(btrim(p_previous_alter_id),'')::bigint;
+  new_aid := NULLIF(btrim(p_new_alter_id),'')::bigint;
+
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
   IF p_record_type IS NULL OR btrim(p_record_type)='' THEN
     RAISE EXCEPTION 'record_type is required';
   END IF;
-  IF p_previous_alter_id < 0 OR p_new_alter_id < p_previous_alter_id THEN
+  IF previous_aid IS NULL OR new_aid IS NULL OR previous_aid < 0 OR new_aid < previous_aid THEN
     RAISE EXCEPTION 'Invalid Alter ID range';
   END IF;
   IF p_payload_hash IS NULL OR length(btrim(p_payload_hash)) < 16 THEN
@@ -216,7 +221,7 @@ BEGIN
       p_previous_alter_id, wm.last_alter_id;
   END IF;
 
-  IF p_new_alter_id <= p_previous_alter_id THEN
+  IF new_aid <= previous_aid THEN
     RAISE EXCEPTION 'New Alter ID must advance the watermark';
   END IF;
 
@@ -240,7 +245,7 @@ BEGIN
     payload := item->'payload';
     payload_hash := NULLIF(btrim(item->>'payload_hash'),'');
 
-    IF aid IS NULL OR aid <= p_previous_alter_id OR aid > p_new_alter_id THEN
+    IF aid IS NULL OR aid <= previous_aid OR aid > new_aid THEN
       RAISE EXCEPTION 'Row Alter ID % is outside accepted range', item->>'alter_id';
     END IF;
     IF source_key IS NULL OR source_key='' THEN
@@ -269,7 +274,7 @@ BEGIN
     row_count,payload_hash,status
   )
   VALUES(
-    p_source_id,src.company_id,p_record_type,p_previous_alter_id,p_new_alter_id,
+    p_source_id,src.company_id,p_record_type,previous_aid,new_aid,
     row_count,p_payload_hash,'accepted'
   )
   RETURNING id INTO batch_id;
@@ -291,7 +296,7 @@ BEGIN
   END LOOP;
 
   UPDATE public.tally_sync_watermarks
-  SET last_alter_id=p_new_alter_id, updated_at=now()
+  SET last_alter_id=new_aid, updated_at=now()
   WHERE id=wm.id;
 
   UPDATE public.tally_sync_sources
@@ -305,8 +310,8 @@ EXCEPTION
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.accept_tally_sync_batch(uuid,text,bigint,bigint,text,jsonb) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.accept_tally_sync_batch(uuid,text,bigint,bigint,text,jsonb) FROM anon;
-GRANT EXECUTE ON FUNCTION public.accept_tally_sync_batch(uuid,text,bigint,bigint,text,jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.accept_tally_sync_batch(uuid,text,text,text,text,jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.accept_tally_sync_batch(uuid,text,text,text,text,jsonb) FROM anon;
+GRANT EXECUTE ON FUNCTION public.accept_tally_sync_batch(uuid,text,text,text,text,jsonb) TO authenticated;
 
 COMMIT;
