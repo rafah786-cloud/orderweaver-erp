@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,6 +145,7 @@ function SalesOrdersPage() {
   };
 
   const createSalesOrderFn = useServerFn(createSalesOrder);
+  const createIdempotencyKey = useRef(`sales-order:${crypto.randomUUID()}`);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
   const confirmOrder = useMutation({
@@ -180,6 +181,7 @@ function SalesOrdersPage() {
           order_date: orderDate,
           expected_delivery: expectedDelivery || null,
           notes: notes || null,
+          idempotencyKey: createIdempotencyKey.current,
           lines: items.map((i) => ({
             model_id: i.model_id,
             product_name: i.product_name,
