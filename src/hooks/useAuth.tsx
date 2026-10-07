@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (td) {
       supabase
         .from("trusted_devices")
-        .update({})
+        .update({ device_name: getDeviceName() })
         .eq("id", (td as { id: string }).id)
         .then(() => undefined);
     }
