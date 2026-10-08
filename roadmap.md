@@ -80,3 +80,19 @@
 
 - [x] Tally Import now requires an explicit administrator-selected target company for every XML staging run, reducing the risk of cross-company data mixing.
 - [x] Four-book setup is aligned for separate imports: ABOOD TRADINGS, ABRAZ SLEEPING SOLUTIONS, and two clearly labeled management/internal books.
+
+## 2026-10-08 global ERP capability audit
+
+- [x] Audited current navigation, permissions, public database tables/functions and major ERP domains against SAP S/4HANA, Microsoft Dynamics 365, Oracle NetSuite, Odoo 19 and ERPNext.
+- [x] Documented missing first-class domains and cross-module requirements in `docs/GLOBAL_ERP_CAPABILITY_GAP_AUDIT_2026-10-08.md`.
+- [ ] Manufacturing MPS/MRP, capacity, routing, scheduling and shop-floor execution.
+- [ ] Quality management and CAPA.
+- [ ] Maintenance and asset management.
+- [ ] Engineering PLM/ECO/BOM revision control.
+- [ ] Advanced warehouse execution and landed cost.
+- [ ] Full sourcing/RFQ/supplier-performance/3-way-match procurement.
+- [ ] CRM, quotations, returns/RMA and logistics/fulfilment.
+- [ ] Fixed assets, budgeting, cash-flow forecasting and month-end close management.
+- [ ] HR expansion and project/contract management.
+- [ ] AI 2.0: freshness, evidence drill-down, proactive intelligence, contextual assistance and governed actions.
+- [ ] Platform workflow engine, master-data governance, observability, API/webhooks and disaster-recovery verification.
