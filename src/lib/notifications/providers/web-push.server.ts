@@ -14,7 +14,7 @@ type StoredSubscription = {
   auth: string;
 };
 
-function base64UrlToBytes(value: string): Uint8Array {
+function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
   const binary = atob(normalized);
   return Uint8Array.from(binary, (c) => c.charCodeAt(0));
@@ -26,7 +26,7 @@ function bytesToBase64Url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function concat(...parts: Uint8Array[]): Uint8Array {
+function concat(...parts: Uint8Array[]): Uint8Array<ArrayBuffer> {
   const length = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(length);
   let offset = 0;
@@ -37,11 +37,11 @@ function concat(...parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
-function u32be(value: number): Uint8Array {
+function u32be(value: number): Uint8Array<ArrayBuffer> {
   return new Uint8Array([(value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff]);
 }
 
-async function hmac(keyBytes: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
+async function hmac(keyBytes: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   const key = await crypto.subtle.importKey(
     "raw",
     keyBytes,
@@ -52,7 +52,7 @@ async function hmac(keyBytes: Uint8Array, data: Uint8Array): Promise<Uint8Array>
   return new Uint8Array(await crypto.subtle.sign("HMAC", key, data));
 }
 
-async function hkdfExpand(prk: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
+async function hkdfExpand(prk: Uint8Array<ArrayBuffer>, info: Uint8Array<ArrayBuffer>, length: number): Promise<Uint8Array<ArrayBuffer>> {
   const output: Uint8Array[] = [];
   let previous = new Uint8Array();
   for (let i = 1; output.reduce((n, p) => n + p.length, 0) < length; i++) {
@@ -64,8 +64,8 @@ async function hkdfExpand(prk: Uint8Array, info: Uint8Array, length: number): Pr
 
 async function encryptWebPushPayload(
   subscription: StoredSubscription,
-  plaintext: Uint8Array,
-): Promise<Uint8Array> {
+  plaintext: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
   const uaPublic = base64UrlToBytes(subscription.p256dh);
   const authSecret = base64UrlToBytes(subscription.auth);
 
@@ -206,7 +206,7 @@ async function send(subscription: StoredSubscription, body: Record<string, unkno
 
     if (response.status === 404 || response.status === 410) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from("web_push_subscriptions")
         .update({ is_active: false, last_failure_at: new Date().toISOString() })
         .eq("id", subscription.id);
@@ -216,7 +216,7 @@ async function send(subscription: StoredSubscription, body: Record<string, unkno
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 500);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from("web_push_subscriptions")
         .update({ last_failure_at: new Date().toISOString() })
         .eq("id", subscription.id);
@@ -224,7 +224,7 @@ async function send(subscription: StoredSubscription, body: Record<string, unkno
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
+    await (supabaseAdmin as any)
       .from("web_push_subscriptions")
       .update({ is_active: true, last_success_at: new Date().toISOString(), last_failure_at: null })
       .eq("id", subscription.id);
@@ -277,7 +277,7 @@ export const webPushFactory: ProviderFactory = (record: ProviderRecord): Notific
   },
   async sendFreeform(msg: FreeformMessage): Promise<SendResult> {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: subscription, error } = await supabaseAdmin
+    const { data: subscription, error } = await (supabaseAdmin as any)
       .from("web_push_subscriptions")
       .select("id, endpoint, p256dh, auth")
       .eq("id", msg.to)

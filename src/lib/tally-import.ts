@@ -29,6 +29,7 @@ export type TallyStockItem = {
 };
 
 export type TallyLedgerEntry = {
+  alter_id?: string | null;
   /** Tally ledger name this entry belongs to (party/vendor). */
   party_name: string;
   entry_date: string; // ISO yyyy-mm-dd
@@ -72,6 +73,7 @@ export type TallyGodown = {
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 export type TallyCostCentre = {
+  alter_id?: string | null;
   name: string;
   parent: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
