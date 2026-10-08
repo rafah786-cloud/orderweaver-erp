@@ -196,7 +196,7 @@ create table if not exists public.engineering_change_order_lines(
 create table if not exists public.rfqs(
  id uuid primary key default gen_random_uuid(), company_id uuid not null references public.companies(id) on delete cascade,
  rfq_number text not null, title text not null, status text not null default 'draft' check(status in('draft','sent','quoted','evaluating','awarded','closed','cancelled')),
- issue_date date not null default current_date, response_due_date date, buyer_id uuid, currency_id uuid references public.currencies(id), notes text,
+ issue_date date not null default current_date, response_due_date date, buyer_id uuid, currency_code text, notes text,
  created_at timestamptz not null default now(), unique(company_id,rfq_number)
 );
 create table if not exists public.rfq_lines(
@@ -279,7 +279,7 @@ create table if not exists public.budgets(
  id uuid primary key default gen_random_uuid(), company_id uuid not null references public.companies(id) on delete cascade,
  budget_code text not null, name text not null, fiscal_year_id uuid references public.financial_years(id),
  status text not null default 'draft' check(status in('draft','submitted','approved','locked','closed')), version integer not null default 1,
- currency_id uuid references public.currencies(id), approved_by uuid, approved_at timestamptz, created_at timestamptz not null default now(),
+ currency_code text, approved_by uuid, approved_at timestamptz, created_at timestamptz not null default now(),
  unique(company_id,budget_code,version)
 );
 create table if not exists public.budget_lines(
