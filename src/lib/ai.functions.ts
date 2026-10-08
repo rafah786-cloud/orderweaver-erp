@@ -43,10 +43,11 @@ function errorMessage(e: unknown): string {
 export const getAiStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { isAiConfigured, AI_MODELS } = await import("@/lib/ai/nvidia.server");
+    const { isAiConfigured, AI_MODELS, AI_PROVIDER } = await import("@/lib/ai/nvidia.server");
     const roles = await rolesOf(context.supabase);
     return {
       configured: isAiConfigured(),
+      provider: AI_PROVIDER,
       models: { chat: AI_MODELS.chat, vision: AI_MODELS.vision, embedding: AI_MODELS.embedding },
       canUseAi: roles.some((r) => ANALYST_ROLES.includes(r)),
     };
