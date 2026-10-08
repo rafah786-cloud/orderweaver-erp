@@ -1,5 +1,8 @@
 ## Open tasks
 
+- [ ] Verify and publish Ask your data history, retrieval failure and company-attribution safeguards with regression tests
+- [ ] Review wider AI/ERP audit evidence and implement independently safe high-impact fixes
+
 - [x] Add OAuth-protected agent integrations with read-only account and recent-invoice tools; republish to activate the new connection catalog
 - [x] Add Tally Connect as an admin-only dashboard action linking to its separate signed-in app
 - [x] Resolve the reported publishing build failure: latest build signal is OK; preview responds successfully

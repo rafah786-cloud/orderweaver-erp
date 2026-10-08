@@ -49,7 +49,12 @@ export interface PlanStep {
   args?: Record<string, unknown>;
 }
 
-async function planTools(question: string): Promise<PlanStep[]> {
+export class AiRetrievalError extends Error {}
+
+async function planTools(
+  question: string,
+  history: { role: "user" | "assistant"; content: string }[],
+): Promise<PlanStep[]> {
   const plan = await aiChatJson<{ steps?: PlanStep[] }>(
     [
       {
@@ -63,16 +68,19 @@ async function planTools(question: string): Promise<PlanStep[]> {
           `Operators: eq, neq, gt, gte, lt, lte, ilike, in, is_null, not_null. Dates are ISO yyyy-mm-dd.\n` +
           'Reply as JSON: {"steps":[{"tool":"...","args":{...}}]}',
       },
+      ...history,
       {
         role: "user",
         content: `Today is ${todayIndia()}. Question: ${question}`,
       },
     ],
     { model: AI_MODELS.fast, maxTokens: 500, temperature: 0 },
-  ).catch(() => ({ steps: [] as PlanStep[] }));
+  );
 
-  const steps = (plan.steps ?? []).slice(0, 3);
-  return steps.length ? steps : [{ tool: "business_snapshot" }];
+  if (!Array.isArray(plan?.steps) || !plan.steps.length || plan.steps.length > 3) {
+    throw new AiRetrievalError("The AI could not select reliable data for this question. Please try again.");
+  }
+  return plan.steps;
 }
 
 function num(args: Record<string, unknown> | undefined, key: string, fallback: number): number {
@@ -119,8 +127,9 @@ export async function runRetriever(
     case "document_search":
       return { tool: step.tool, data: await semanticSearch(db, String(a?.["query"] ?? ""), 6) };
     case "business_snapshot":
-    default:
       return { tool: "business_snapshot", data: await businessSnapshot(db) };
+    default:
+      throw new AiRetrievalError("The AI selected an unsupported data source. No answer was generated.");
   }
 }
 
@@ -136,16 +145,13 @@ export async function askMaestro(
   question: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
 ): Promise<AskResult> {
-  const steps = await planTools(question);
+  const steps = await planTools(question, history);
   const results: { tool: string; data: unknown }[] = [];
   for (const step of steps) {
     try {
       results.push(await runRetriever(db, step));
-    } catch (e) {
-      results.push({
-        tool: step.tool,
-        data: { error: e instanceof Error ? e.message : "retrieval failed" },
-      });
+    } catch {
+      throw new AiRetrievalError("The requested ERP data could not be retrieved. No answer was generated.");
     }
   }
 
@@ -165,7 +171,7 @@ export async function askMaestro(
           "Label anything predictive as a forecast and anything interpretive as your reading of the data. " +
           "Use short markdown: bold labels, bullet lists, small tables. Never claim to have changed anything in the ERP.",
       },
-      ...history.slice(-6).map((m) => ({ role: m.role, content: m.content }) as const),
+      ...history.map((m) => ({ role: m.role, content: m.content }) as const),
       {
         role: "user",
         content: `Question: ${question}\n\nERP DATA (authoritative):\n${serialised}`,
@@ -198,11 +204,9 @@ export async function contextualAnalysis(
     suppliers: [{ tool: "supplier_pricing", args: { days: 365 } }],
   };
 
-  const results = await Promise.all(
-    map[topic].map((s) =>
-      runRetriever(db, s).catch((e) => ({ tool: s.tool, data: { error: String(e) } })),
-    ),
-  );
+  const results = await Promise.all(map[topic].map((s) => runRetriever(db, s))).catch(() => {
+    throw new AiRetrievalError("The requested ERP data could not be retrieved. No answer was generated.");
+  });
   const evidence = Object.fromEntries(results.map((r) => [r.tool, r.data]));
 
   const { text, model } = await aiChat(
