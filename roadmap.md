@@ -1,7 +1,13 @@
 ## Open tasks
 
-- [ ] Verify and publish Ask your data history, retrieval failure and company-attribution safeguards with regression tests
-- [ ] Review wider AI/ERP audit evidence and implement independently safe high-impact fixes
+- [x] Verify and publish Ask your data history, retrieval failure and company-attribution safeguards with regression tests
+- [x] Review wider AI/ERP audit evidence and implement independently safe high-impact fixes
+  - [x] Company-isolate AI conversation history with active-company RLS and server-side company binding
+  - [x] Harden document extraction against prompt injection by treating document content as untrusted data
+  - [x] Route enterprise workbench mutations through authenticated server-side authorization
+  - [x] Make enterprise-domain audit logging atomic with database triggers
+  - [x] Allow AI mattress recommendations to use released PLM BOM revisions when legacy model_boq is absent
+  - [x] Add regression coverage for the above safeguards
 
 - [x] Add OAuth-protected agent integrations with read-only account and recent-invoice tools; republish to activate the new connection catalog
 - [x] Add Tally Connect as an admin-only dashboard action linking to its separate signed-in app
@@ -9,8 +15,8 @@
 - [x] Make Tally accounting uploads fail closed and display voucher-line control totals and integrity issues without saving incomplete accounting data
 - [x] Canonical bill-wise model implemented in repository with invoice-linked bills, party-ledger resolution, receipt allocation, reversal and idempotency paths
 - [x] AI layer: routes, sidebar/permissions, contextual buttons, working NVIDIA models, verified Ask Maestro + document extraction against live data
-- [~] Tally full accounting migration: safe staging control plane, lifecycle preservation, validation and reconciliation UI are implemented; canonical historical commit still requires the real Tally export/source identifiers and final accountant-approved control totals
-- [ ] Execute the audited TallyPrime-retirement remediation and cutover plan
+- [~] Tally full accounting migration: safe staging control plane, lifecycle preservation, validation and reconciliation UI are implemented; canonical historical commit still requires the real Tally export/source identifiers and final accountant-approved control totals. Repository-side hardening is complete; the remaining gate is source/accountant dependent.
+- [~] Execute the audited TallyPrime-retirement remediation and cutover plan — all repository-side/database-control phases are hardened; the final historical cutover remains gated on source-supported opening valuation, financial-year mapping, accountant-approved reconciliation and live operational dress rehearsal.
   - [x] Phase 1 Accounting Foundation implemented as an isolated migration and fixture suite
   - [x] PostgreSQL integration/concurrency tests completed in disposable isolated database with synthetic fixtures
   - [x] Durable fail-closed Phase 1 database harness, fixtures, preflight, direct-write audit, and managed-security checks committed
