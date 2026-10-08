@@ -8,6 +8,7 @@ export interface MattressBudgetRecommendationInput {
   limit?: number;
   stockOnly?: boolean;
   preferInStock?: boolean;
+  preference?: "cheaper" | "premium" | "balanced";
 }
 
 export interface MattressRecommendationCandidate {
@@ -277,9 +278,16 @@ export async function mattressBudgetRecommendations(
     // Prefer closer-to-budget products, then complete stock readiness, then
     // lower material cost. This is deterministic and transparent.
     const budgetFit = budget > 0 ? model.default_price / budget : 0;
+    const preference = input.preference ?? "balanced";
+    const preferenceScore =
+      preference === "cheaper"
+        ? Math.max(0, 55 - budgetFit * 55)
+        : preference === "premium"
+          ? Math.min(55, budgetFit * 55)
+          : Math.max(0, 40 - Math.abs(1 - budgetFit) * 40);
     const score =
       (input.preferInStock || input.stockOnly ? (stockReady ? 100 : 0) : stockReady ? 35 : 0) +
-      Math.max(0, 40 - Math.abs(1 - budgetFit) * 40) +
+      preferenceScore +
       Math.max(0, 25 - Math.min(25, materialCost / Math.max(1, budget) * 25));
 
     candidates.push({
