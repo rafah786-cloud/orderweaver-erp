@@ -18,6 +18,7 @@ import {
 import { describeEntities, runControlledQuery } from "./query-layer.server";
 import { semanticSearch } from "./documents.server";
 import { todayIndia } from "@/lib/format";
+import { mattressBudgetRecommendations } from "./mattress-recommendation.server";
 
 /**
  * "Ask Mattress Maestro" — a retrieval-first assistant.
@@ -42,6 +43,7 @@ const TOOL_CATALOGUE = `
 - business_snapshot(): everything above condensed — use for broad "what should I look at" questions.
 - erp_query(spec): look up individual records through the controlled query layer.
 - document_search(query): semantic search over uploaded business documents.
+- mattress_budget_recommendations(budget, limit, stockOnly, preferInStock): recommend existing mattress product models under a customer budget using real ERP BOQs, current raw-material stock and recorded purchase/standard costs. Never invent a model, BOM, quantity or cost.
 `;
 
 export interface PlanStep {
@@ -81,6 +83,31 @@ async function planTools(
     throw new AiRetrievalError("The AI could not select reliable data for this question. Please try again.");
   }
   return plan.steps;
+}
+
+function extractMoney(raw: string): number | null {
+  const cleaned = raw.replace(/,/g, "");
+  const matches = cleaned.match(/(?:₹|rs\.?|inr\s*)\s*(\d+(?:\.\d+)?)/gi) ?? [];
+  for (const match of matches) {
+    const n = Number(match.replace(/[^0-9.]/g, ""));
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+
+function extractBudgetFromQuestion(
+  question: string,
+  history: { role: "user" | "assistant"; content: string }[],
+): number | null {
+  const current = extractMoney(question);
+  if (current != null) return current;
+  const budgetWords = /budget|under|within|below|upto|up to|less than|cheaper|cost/i.test(question);
+  if (!budgetWords) return null;
+  for (const message of [...history].reverse().filter((m) => m.role === "user")) {
+    const value = extractMoney(message.content);
+    if (value != null) return value;
+  }
+  return null;
 }
 
 function num(args: Record<string, unknown> | undefined, key: string, fallback: number): number {
@@ -126,6 +153,22 @@ export async function runRetriever(
       return { tool: step.tool, data: await runControlledQuery(db, a?.["spec"] ?? a) };
     case "document_search":
       return { tool: step.tool, data: await semanticSearch(db, String(a?.["query"] ?? ""), 6) };
+    case "mattress_budget_recommendations": {
+      const budget = typeof a?.["budget"] === "number" ? a["budget"] : Number(a?.["budget"] ?? 0);
+      if (!Number.isFinite(budget) || budget <= 0) {
+        throw new AiRetrievalError("A valid mattress customer budget is required.");
+      }
+      return {
+        tool: step.tool,
+        data: await mattressBudgetRecommendations(db, {
+          budget,
+          limit: typeof a?.["limit"] === "number" ? a["limit"] : Number(a?.["limit"] ?? 5),
+          stockOnly: a?.["stockOnly"] === true,
+          preferInStock: a?.["preferInStock"] !== false,
+          preference: a?.["preference"] === "cheaper" || a?.["preference"] === "premium" ? a["preference"] : "balanced",
+        }),
+      };
+    }
     case "business_snapshot":
       return { tool: "business_snapshot", data: await businessSnapshot(db) };
     default:
@@ -146,7 +189,32 @@ export async function askMaestro(
   question: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
 ): Promise<AskResult> {
-  const steps = await planTools(question, history);
+  const inferredBudget = extractBudgetFromQuestion(question, history);
+  const isMattressBudgetRequest =
+    inferredBudget != null &&
+    /mattress|specification|specs|bom|boq|customer budget|under|within|upto|up to|cheaper/i.test(question);
+
+  let steps: PlanStep[];
+  if (isMattressBudgetRequest) {
+    steps = [
+      {
+        tool: "mattress_budget_recommendations",
+        args: {
+          budget: inferredBudget,
+          limit: 5,
+          stockOnly: /in[ -]?stock only|only.*stock|available.*stock/i.test(question),
+          preferInStock: true,
+          preference: /cheaper|lower.?priced|budget.?friendly/i.test(question)
+            ? "cheaper"
+            : /premium|higher.?end|best.?quality/i.test(question)
+              ? "premium"
+              : "balanced",
+        },
+      },
+    ];
+  } else {
+    steps = await planTools(question, history);
+  }
   const results: { tool: string; data: unknown }[] = [];
   for (const step of steps) {
     try {
@@ -180,6 +248,7 @@ export async function askMaestro(
           "Be concise and specific: lead with the direct answer, then the supporting numbers, then at most three recommendations. " +
           "Label anything predictive as a forecast and anything interpretive as your reading of the data. " +
           "If EVIDENCE_STATUS is partial, explicitly say the answer is based on incomplete evidence and do not call it authoritative. " +
+          "For mattress_budget_recommendations, show every defensible candidate supplied by the ERP (normally at least five), with product/model name, configured selling price, product specs, BOM components with quantities, estimated material cost, cost basis, and stock readiness. If fewer than five are supplied, explicitly say that the ERP data does not support five and do not manufacture alternatives. " +
           "Use short markdown: bold labels, bullet lists, small tables. Never claim to have changed anything in the ERP.",
       },
       ...history.map((m) => ({ role: m.role, content: m.content }) as const),
