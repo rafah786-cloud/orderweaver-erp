@@ -53,4 +53,15 @@ describe("AI retrieval safeguards", () => {
     await expect(contextualAnalysis(db, "receivables")).rejects.toThrow("No answer was generated");
     expect(aiChat).not.toHaveBeenCalled();
   });
+  it("marks evidence incomplete instead of silently hard-truncating it", async () => {
+    vi.mocked(aiChatJson).mockResolvedValue({ steps: [{ tool: "business_snapshot" }] });
+    vi.mocked(businessSnapshot).mockResolvedValue({ payload: "x".repeat(20_000) } as never);
+    vi.mocked(aiChat).mockResolvedValue({ text: "partial answer", model: "existing-model", usage: null });
+    const result = await askMaestro(db, "Give me the business snapshot");
+    expect(result.evidenceMeta.complete).toBe(false);
+    expect(result.evidenceMeta.truncatedSources).toContain("business_snapshot");
+    expect(result.evidenceMeta.answerState).toBe("insufficient-data");
+    expect(String(vi.mocked(aiChat).mock.calls[0]?.[0]?.at(-1)?.content)).toContain("EVIDENCE_STATUS=partial");
+  });
+
 });
