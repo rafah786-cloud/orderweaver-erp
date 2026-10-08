@@ -30,6 +30,8 @@
   - [x] Phase 3 accounting integration: canonical posting functions installed and live-tested without rewriting historical records
   - [x] Managed/live database integration tests and security/grant verification
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
+- [x] Public Zizz homepage redesign: ecommerce-first navigation, sleep-discovery sections, custom mattress journey, brand portfolio and mobile-first conversion layout
+- [x] Ecommerce-ready storefront shell: product discovery, search/cart/wishlist affordances and catalog-safe placeholders without inventing product prices or stock
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
 
 ## 2026-10-04 direct-repository hardening
