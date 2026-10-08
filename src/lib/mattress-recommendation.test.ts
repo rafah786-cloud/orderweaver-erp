@@ -3,6 +3,7 @@ import { mattressBudgetRecommendations } from "./ai/mattress-recommendation.serv
 
 function fakeDb(dataset: Record<string, unknown[]>) {
   const db = {
+    rpc: async () => ({ data: "company-1", error: null }),
     from(table: string) {
       const state = { data: dataset[table] ?? [], error: null };
       const query = {
@@ -14,6 +15,7 @@ function fakeDb(dataset: Record<string, unknown[]>) {
         in: () => query,
         not: () => query,
         gte: () => query,
+        eq: () => query,
         then: (resolve: (value: unknown) => unknown) => Promise.resolve(state).then(resolve),
       };
       return query;
