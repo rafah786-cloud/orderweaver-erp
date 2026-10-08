@@ -87,7 +87,7 @@ async function planTools(
 
 function extractMoney(raw: string): number | null {
   const cleaned = raw.replace(/,/g, "");
-  const matches = cleaned.match(/(?:₹|rs\\.?|inr\\s*)\\s*(\\d+(?:\\.\\d+)?)/gi) ?? [];
+  const matches = cleaned.match(/(?:₹|rs\.?|inr\s*)\s*(\d+(?:\.\d+)?)/gi) ?? [];
   for (const match of matches) {
     const n = Number(match.replace(/[^0-9.]/g, ""));
     if (Number.isFinite(n) && n > 0) return n;
@@ -153,6 +153,21 @@ export async function runRetriever(
       return { tool: step.tool, data: await runControlledQuery(db, a?.["spec"] ?? a) };
     case "document_search":
       return { tool: step.tool, data: await semanticSearch(db, String(a?.["query"] ?? ""), 6) };
+    case "mattress_budget_recommendations": {
+      const budget = typeof a?.["budget"] === "number" ? a["budget"] : Number(a?.["budget"] ?? 0);
+      if (!Number.isFinite(budget) || budget <= 0) {
+        throw new AiRetrievalError("A valid mattress customer budget is required.");
+      }
+      return {
+        tool: step.tool,
+        data: await mattressBudgetRecommendations(db, {
+          budget,
+          limit: typeof a?.["limit"] === "number" ? a["limit"] : Number(a?.["limit"] ?? 5),
+          stockOnly: a?.["stockOnly"] === true,
+          preferInStock: a?.["preferInStock"] !== false,
+        }),
+      };
+    }
     case "business_snapshot":
       return { tool: "business_snapshot", data: await businessSnapshot(db) };
     default:
@@ -173,24 +188,21 @@ export async function askMaestro(
   question: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
 ): Promise<AskResult> {
-  let steps = await planTools(question, history);
   const inferredBudget = extractBudgetFromQuestion(question, history);
-  if (
+  const isMattressBudgetRequest =
     inferredBudget != null &&
-    /mattress|specification|specs|bom|boq|customer budget|under|within|upto|up to/i.test(question)
-  ) {
-    const existing = steps.find((s) => s.tool === "mattress_budget_recommendations");
+    /mattress|specification|specs|bom|boq|customer budget|under|within|upto|up to|cheaper/i.test(question);
+
+  let steps: PlanStep[];
+  if (isMattressBudgetRequest) {
     steps = [
       {
         tool: "mattress_budget_recommendations",
-        args: {
-          budget: inferredBudget,
-          limit: existing?.args?.["limit"] ?? 5,
-          stockOnly: existing?.args?.["stockOnly"] === true,
-          preferInStock: existing?.args?.["preferInStock"] !== false,
-        },
+        args: { budget: inferredBudget, limit: 5, preferInStock: true },
       },
     ];
+  } else {
+    steps = await planTools(question, history);
   }
   const results: { tool: string; data: unknown }[] = [];
   for (const step of steps) {
