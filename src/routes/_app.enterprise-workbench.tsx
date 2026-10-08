@@ -235,7 +235,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
   };
   const openEdit = (row: Record<string, unknown>) => {
     setEditing(row);
-    setForm(Object.fromEntries(config.fields.map(f => [f.key, row[f.key] == null ? "" : typeof row[f.key] === "object" ? JSON.stringify(row[f.key]) : String(row[f.key]))]));
+    setForm(Object.fromEntries(config.fields.map(f => [f.key, row[f.key] == null ? "" : typeof row[f.key] === "object" ? JSON.stringify(row[f.key]) : String(row[f.key])])))
     setOpen(true);
   };
 
