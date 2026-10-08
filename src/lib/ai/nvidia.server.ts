@@ -7,11 +7,16 @@ import process from "node:process";
  * key, model selection, timeouts, retries and error shaping. The key is read
  * from the server environment at call time and never leaves the server.
  *
- * NVIDIA's hosted NIM endpoints are OpenAI-compatible, so the same wire
- * format can later be pointed at another provider by changing BASE_URL.
+ * The gateway uses the OpenAI-compatible chat/embedding wire format. NVIDIA is
+ * the default provider, while AI_BASE_URL / AI_API_KEY / AI_*_MODEL allow an
+ * administrator to point the same gateway at another compatible provider.
+ * Embeddings remain constrained to the existing 2048-dimension ERP vector schema.
  */
 
-const BASE_URL = (process.env["NVIDIA_BASE_URL"] || "https://integrate.api.nvidia.com/v1").replace(
+export const AI_PROVIDER = process.env["AI_PROVIDER"] || "nvidia";
+
+/** OpenAI-compatible AI gateway. NVIDIA remains the default so existing deployments are unchanged. */
+const BASE_URL = (process.env["AI_BASE_URL"] || process.env["NVIDIA_BASE_URL"] || "https://integrate.api.nvidia.com/v1").replace(
   /\/+$/,
   "",
 );
@@ -26,13 +31,13 @@ function cleanSecret(v: string | undefined): string {
 
 export const AI_MODELS = {
   /** General reasoning / business analysis. */
-  chat: process.env["NVIDIA_CHAT_MODEL"] || "nvidia/nemotron-3-super-120b-a12b",
+  chat: process.env["AI_CHAT_MODEL"] || process.env["NVIDIA_CHAT_MODEL"] || "nvidia/nemotron-3-super-120b-a12b",
   /** Cheaper/faster model for short classification + extraction jobs. */
-  fast: process.env["NVIDIA_FAST_MODEL"] || "nvidia/nemotron-3.5-lightning-30b-a3b",
+  fast: process.env["AI_FAST_MODEL"] || process.env["NVIDIA_FAST_MODEL"] || "nvidia/nemotron-3.5-lightning-30b-a3b",
   /** Vision model for scanned invoices / photographed documents. */
-  vision: process.env["NVIDIA_VISION_MODEL"] || "meta/llama-3.2-11b-vision-instruct",
+  vision: process.env["AI_VISION_MODEL"] || process.env["NVIDIA_VISION_MODEL"] || "meta/llama-3.2-11b-vision-instruct",
   /** Retrieval embeddings (2048 dimensions — matches ai_document_chunks). */
-  embedding: process.env["NVIDIA_EMBED_MODEL"] || "nvidia/nemotron-3-embed-1b",
+  embedding: process.env["AI_EMBED_MODEL"] || process.env["NVIDIA_EMBED_MODEL"] || "nvidia/nemotron-3-embed-1b",
 } as const;
 
 export const EMBEDDING_DIMENSIONS = 2048;
@@ -46,10 +51,10 @@ export function isAiConfigured(): boolean {
 }
 
 function apiKey(): string {
-  const key = cleanSecret(process.env["NVIDIA_API_KEY"]);
+  const key = cleanSecret(process.env["AI_API_KEY"] || process.env["NVIDIA_API_KEY"]);
   if (!key) {
     throw new AiUnavailableError(
-      "AI is not configured yet. Add the NVIDIA_API_KEY secret to enable AI features. The rest of the ERP is unaffected.",
+      "AI is not configured yet. Add the AI_API_KEY secret (or keep NVIDIA_API_KEY for the default NVIDIA gateway) to enable AI features. The rest of the ERP is unaffected.",
     );
   }
   return key;
