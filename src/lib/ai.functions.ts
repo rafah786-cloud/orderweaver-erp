@@ -182,10 +182,13 @@ export const listAiConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertRole(context.supabase);
+    const { data: activeCompanyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !activeCompanyId) throw new Error("No active company selected.");
     const { data } = await context.supabase
       .from("ai_conversations")
       .select("id, title, updated_at")
       .eq("user_id", context.userId)
+      .eq("company_id", activeCompanyId)
       .order("updated_at", { ascending: false })
       .limit(25);
     return data ?? [];
@@ -196,11 +199,14 @@ export const getAiConversation = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertRole(context.supabase);
+    const { data: activeCompanyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !activeCompanyId) throw new Error("No active company selected.");
     const { data: ownedConversation, error: ownershipError } = await context.supabase
       .from("ai_conversations")
       .select("id")
       .eq("id", data.conversationId)
       .eq("user_id", context.userId)
+      .eq("company_id", activeCompanyId)
       .maybeSingle();
     if (ownershipError || !ownedConversation)
       throw new Error("Conversation is not available to this account");
