@@ -127,7 +127,7 @@ export async function mattressBudgetRecommendations(
 
   const modelIds = modelRows.map((m) => m.id);
 
-  const [{ data: boqRows, error: boqError }, { data: materials, error: materialError }, { data: stockItems, error: stockError }] =
+  const [{ data: boqRows, error: boqError }, { data: materials, error: materialError }, { data: stockItems, error: stockError }, releasedBomResult] =
     await Promise.all([
       db
         .from("model_boq")
@@ -145,11 +145,19 @@ export async function mattressBudgetRecommendations(
         .not("mapped_raw_material_id", "is", null)
         .eq("company_id", companyId)
         .limit(5000),
+      (db as any)
+        .from("bom_revisions")
+        .select("id, model_id, status, effective_from, effective_to, bom_revision_lines(raw_material_id, quantity_per_unit, scrap_pct)")
+        .eq("company_id", companyId)
+        .eq("status", "released")
+        .in("model_id", modelIds)
+        .limit(1000),
     ]);
 
   if (boqError) throw new Error(boqError.message);
   if (materialError) throw new Error(materialError.message);
   if (stockError) throw new Error(stockError.message);
+  if (releasedBomResult.error) throw new Error(releasedBomResult.error.message);
 
   const bomByModel = new Map<string, Array<{ raw_material_id: string; quantity_per_unit: number }>>();
   for (const row of boqRows ?? []) {
@@ -158,6 +166,22 @@ export async function mattressBudgetRecommendations(
     const list = bomByModel.get(row.model_id) ?? [];
     list.push({ raw_material_id: row.raw_material_id, quantity_per_unit: quantity });
     bomByModel.set(row.model_id, list);
+  }
+
+  // Prefer the released PLM BOM when the legacy model_boq table has no BOM
+  // for a model. This keeps recommendations tied to controlled BOM release.
+  for (const revision of (releasedBomResult.data ?? []) as any[]) {
+    const lines = Array.isArray(revision.bom_revision_lines) ? revision.bom_revision_lines : [];
+    if (bomByModel.has(revision.model_id)) continue;
+    const valid = lines
+      .map((line: any) => {
+        const qty = numberOrNull(line.quantity_per_unit);
+        const scrap = numberOrNull(line.scrap_pct) ?? 0;
+        if (!line.raw_material_id || qty == null || qty <= 0) return null;
+        return { raw_material_id: line.raw_material_id, quantity_per_unit: qty * (1 + Math.max(0, scrap) / 100) };
+      })
+      .filter(Boolean) as Array<{ raw_material_id: string; quantity_per_unit: number }>;
+    if (valid.length) bomByModel.set(revision.model_id, valid);
   }
 
   const materialById = new Map(
