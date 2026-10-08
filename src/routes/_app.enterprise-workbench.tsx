@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/lib/company-context";
+import { enterpriseWorkbenchMutation } from "@/lib/enterprise-workbench.functions";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -173,6 +175,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [form, setForm] = useState<Record<string,string>>(() => Object.fromEntries(config.fields.map(f => [f.key, f.defaultValue ?? ""])));
   const db = supabase as any;
+  const mutateWorkbench = useServerFn(enterpriseWorkbenchMutation);
 
   const { data = [], isFetching } = useQuery({
     queryKey: ["enterprise-workbench", companyId, config.table],
@@ -197,9 +200,15 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
           try { payload[field.key] = JSON.parse(raw); } catch { throw new Error(field.label + " must be valid JSON."); }
         } else payload[field.key] = raw;
       }
-      const query = editing ? db.from(config.table).update(payload).eq("id", editing.id).eq("company_id", companyId) : db.from(config.table).insert(payload);
-      const { error } = await query;
-      if (error) throw error;
+      const result = await mutateWorkbench({
+        data: {
+          table: config.table,
+          action: editing ? "update" : "create",
+          id: editing ? String(editing.id) : null,
+          payload,
+        },
+      });
+      if (!result.ok) throw new Error("The enterprise mutation failed.");
     },
     onSuccess: () => {
       toast.success(editing ? "Record updated." : "Record created.");
@@ -212,8 +221,9 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await db.from(config.table).delete().eq("id", id).eq("company_id", companyId);
-      if (error) throw error;
+      await mutateWorkbench({
+        data: { table: config.table, action: "delete", id, payload: {} },
+      });
     },
     onSuccess: () => { toast.success("Record deleted."); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
     onError: (e: Error) => toast.error(e.message),
@@ -222,8 +232,9 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       if (!config.statusField) return;
-      const { error } = await db.from(config.table).update({ [config.statusField]: status }).eq("id", id).eq("company_id", companyId);
-      if (error) throw error;
+      await mutateWorkbench({
+        data: { table: config.table, action: "status", id, payload: { [config.statusField]: status } },
+      });
     },
     onSuccess: () => { toast.success("Lifecycle status updated."); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
     onError: (e: Error) => toast.error(e.message),
