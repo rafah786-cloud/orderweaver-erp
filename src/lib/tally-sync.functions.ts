@@ -103,7 +103,7 @@ export const getTallySyncWatermark = createServerFn({ method: "GET" })
       throw new Error("Sync source is outside the active company");
     }
 
-    const { data: watermark, error } = await supabase
+    const { data: watermark, error } = await (supabase as any)
       .from("tally_sync_watermarks")
       .select("last_alter_id,updated_at")
       .eq("source_id", data.sourceId)
@@ -134,7 +134,7 @@ export const acceptTallySyncBatch = createServerFn({ method: "POST" })
       throw new Error("Tally sync batch hash mismatch");
     }
 
-    const { data: batchId, error } = await supabase.rpc("accept_tally_sync_batch", {
+    const { data: batchId, error } = await (supabase as any).rpc("accept_tally_sync_batch", {
       p_source_id: data.sourceId,
       p_record_type: data.recordType,
       p_previous_alter_id: validated.previousAlterId,
