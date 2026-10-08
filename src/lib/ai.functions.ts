@@ -127,7 +127,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
             user_id: context.userId,
             role: "assistant",
             content: result.answer,
-            data: { retrievers: result.usedRetrievers } as never,
+            data: { retrievers: result.usedRetrievers, evidenceMeta: result.evidenceMeta } as never,
           },
         ]);
         if (saveError) throw new Error("The answer could not be saved to this conversation. Please try again.");
@@ -139,7 +139,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
         model: result.model,
         promptSummary: data.question,
         durationMs: Date.now() - started,
-        meta: { retrievers: result.usedRetrievers },
+        meta: { retrievers: result.usedRetrievers, evidenceMeta: result.evidenceMeta },
       });
 
       return {

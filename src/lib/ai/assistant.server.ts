@@ -137,6 +137,7 @@ export interface AskResult {
   answer: string;
   usedRetrievers: string[];
   evidence: Record<string, unknown>;
+  evidenceMeta: { complete: boolean; truncatedSources: string[]; answerState: "exact" | "calculated" | "forecast" | "interpretation" | "insufficient-data" };
   model: string;
 }
 
@@ -156,7 +157,16 @@ export async function askMaestro(
   }
 
   const evidence = Object.fromEntries(results.map((r) => [r.tool, r.data]));
-  const serialised = JSON.stringify(evidence).slice(0, 60_000);
+  const truncatedSources: string[] = [];
+  const serialisedParts = results.map((r) => {
+    const raw = JSON.stringify(r.data);
+    if (raw.length <= 18_000) return `[${r.tool}] ${raw}`;
+    truncatedSources.push(r.tool);
+    return `[${r.tool}] ${raw.slice(0, 17_500)}\n[TRUNCATED: source payload exceeds the safe model context budget; do not present omitted records as complete]`;
+  });
+  const evidenceComplete = truncatedSources.length === 0;
+  const evidenceStatus = evidenceComplete ? "complete" : "partial";
+  const serialised = `EVIDENCE_STATUS=${evidenceStatus}\n${serialisedParts.join("\n\n")}`;
 
   const { text, model } = await aiChat(
     [
@@ -169,6 +179,7 @@ export async function askMaestro(
           "Amounts are Indian rupees — format them with the ₹ symbol and Indian digit grouping. " +
           "Be concise and specific: lead with the direct answer, then the supporting numbers, then at most three recommendations. " +
           "Label anything predictive as a forecast and anything interpretive as your reading of the data. " +
+          "If EVIDENCE_STATUS is partial, explicitly say the answer is based on incomplete evidence and do not call it authoritative. " +
           "Use short markdown: bold labels, bullet lists, small tables. Never claim to have changed anything in the ERP.",
       },
       ...history.map((m) => ({ role: m.role, content: m.content }) as const),
@@ -180,7 +191,19 @@ export async function askMaestro(
     { maxTokens: 1400, temperature: 0.15 },
   );
 
-  return { answer: text, usedRetrievers: results.map((r) => r.tool), evidence, model };
+  const answerState =
+    truncatedSources.length > 0
+      ? "insufficient-data"
+      : results.some((r) => r.tool === "forecasts") ? "forecast"
+      : results.some((r) => r.tool === "erp_query" || r.tool === "sales_summary" || r.tool === "receivables") ? "exact"
+      : "calculated";
+  return {
+    answer: text,
+    usedRetrievers: results.map((r) => r.tool),
+    evidence,
+    evidenceMeta: { complete: evidenceComplete, truncatedSources, answerState },
+    model,
+  };
 }
 
 /** Focused analysis used by the contextual AI buttons inside ERP screens. */
@@ -226,5 +249,11 @@ export async function contextualAnalysis(
     { maxTokens: 900, temperature: 0.2 },
   );
 
-  return { answer: text, usedRetrievers: results.map((r) => r.tool), evidence, model };
+  return {
+    answer: text,
+    usedRetrievers: results.map((r) => r.tool),
+    evidence,
+    evidenceMeta: { complete: true, truncatedSources: [], answerState: topic === "profitability" ? "calculated" : "interpretation" },
+    model,
+  };
 }
