@@ -85,23 +85,24 @@ export const askMaestroFn = createServerFn({ method: "POST" })
       }
     }
     if (!conversationId) {
-      const { data: conv } = await context.supabase
+      const { data: conv, error: createError } = await context.supabase
         .from("ai_conversations")
         .insert({ user_id: context.userId, title: data.question.slice(0, 80) })
         .select("id")
         .single();
-      conversationId = conv?.id ?? null;
+      if (createError || !conv) throw new Error("Could not create the conversation. No answer was generated.");
+      conversationId = conv.id;
     }
 
-    const { data: prior } = conversationId
+    const { data: prior, error: historyError } = conversationId
       ? await context.supabase
           .from("ai_messages")
           .select("role, content")
           .eq("conversation_id", conversationId)
           .eq("user_id", context.userId)
           .order("created_at")
-          .limit(8)
-      : { data: [] };
+      : { data: [], error: null };
+    if (historyError) throw new Error("Conversation history could not be loaded. No answer was generated.");
 
     try {
       const result = await askMaestro(
@@ -114,7 +115,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
       );
 
       if (conversationId) {
-        await context.supabase.from("ai_messages").insert([
+        const { error: saveError } = await context.supabase.from("ai_messages").insert([
           {
             conversation_id: conversationId,
             user_id: context.userId,
@@ -129,9 +130,10 @@ export const askMaestroFn = createServerFn({ method: "POST" })
             data: { retrievers: result.usedRetrievers } as never,
           },
         ]);
+        if (saveError) throw new Error("The answer could not be saved to this conversation. Please try again.");
       }
 
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "ask_maestro",
         model: result.model,
@@ -148,7 +150,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
         error: null as string | null,
       };
     } catch (e) {
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "ask_maestro",
         status: "error",
@@ -338,7 +340,7 @@ export const getBusinessBrief = createServerFn({ method: "POST" })
       { onConflict: "kind,scope_key,company_id" },
     );
 
-    await logAiUsage({
+    await logAiUsage(context.supabase, {
       userId: context.userId,
       feature: "business_brief",
       model,
@@ -378,7 +380,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
     const { logAiUsage } = await import("@/lib/ai/audit.server");
     try {
       const result = await contextualAnalysis(context.supabase, data.topic, data.focus);
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: `contextual_${data.topic}`,
         model: result.model,
@@ -392,7 +394,7 @@ export const getContextualInsight = createServerFn({ method: "POST" })
         error: null as string | null,
       };
     } catch (e) {
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: `contextual_${data.topic}`,
         status: "error",
@@ -440,7 +442,7 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
       );
 
       const result = await runControlledQuery(context.supabase, spec);
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "nl_search",
         model: AI_MODELS.fast,
@@ -456,7 +458,7 @@ export const naturalLanguageSearch = createServerFn({ method: "POST" })
         error: null as string | null,
       };
     } catch (e) {
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "nl_search",
         status: "error",
@@ -576,7 +578,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         chunks = 0;
       }
 
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "document_reader",
         action: "extract",
@@ -601,7 +603,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         .from("ai_documents")
         .update({ extraction_status: "failed", extraction_error: message })
         .eq("id", created.id);
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "document_reader",
         action: "extract",
@@ -729,7 +731,7 @@ export const compareQuotationDocuments = createServerFn({ method: "POST" })
 
     try {
       const comparison = await compareQuotations(context.supabase, quotes);
-      await logAiUsage({
+      await logAiUsage(context.supabase, {
         userId: context.userId,
         feature: "quotation_comparison",
         durationMs: Date.now() - started,
@@ -793,7 +795,7 @@ export const createAiProposal = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     const { logAiUsage } = await import("@/lib/ai/audit.server");
-    await logAiUsage({
+    await logAiUsage(context.supabase, {
       userId: context.userId,
       feature: "proposal",
       action: "create",
@@ -852,7 +854,7 @@ export const reviewAiProposal = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     const { logAiUsage } = await import("@/lib/ai/audit.server");
-    await logAiUsage({
+    await logAiUsage(context.supabase, {
       userId: context.userId,
       feature: "proposal",
       action: data.decision,
