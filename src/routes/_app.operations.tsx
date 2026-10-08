@@ -3,18 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark,
-  Users, Truck, BriefcaseBusiness, Workflow, Sparkles, ShieldCheck, Database,
-} from "lucide-react";
+import { Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, ShieldCheck, Database } from "lucide-react";
 
 export const Route = createFileRoute("/_app/operations")({
-  head: () => ({
-    meta: [
-      { title: "Enterprise Operations | Mattress Maestro ERP" },
-      { name: "description", content: "Global ERP capability center for planning, quality, maintenance, PLM, procurement, finance, CRM, logistics and governance." },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Enterprise Operations | Mattress Maestro ERP" },
+    { name: "description", content: "Global ERP capability center for planning, quality, maintenance, PLM, procurement, finance, CRM, logistics and governance." },
+  ] }),
   component: EnterpriseOperations,
 });
 
@@ -47,13 +42,11 @@ function EnterpriseOperations() {
     queryKey: ["enterprise-capability-counts"],
     queryFn: async () => {
       const entries = await Promise.all(
-        MODULES.flatMap((module) =>
-          module.tables.map(async (table) => {
-            const { count, error } = await supabase.from(table).select("id", { count: "exact", head: true });
-            if (error) throw error;
-            return [table, count ?? 0] as const;
-          }),
-        ),
+        MODULES.flatMap((module) => module.tables.map(async (table) => {
+          const { count, error } = await supabase.from(table as never).select("id", { count: "exact", head: true });
+          if (error) throw error;
+          return [table, count ?? 0] as const;
+        })),
       );
       return Object.fromEntries(entries) as Record<string, number>;
     },
@@ -62,55 +55,35 @@ function EnterpriseOperations() {
 
   return (
     <>
-      <PageHeader
-        title="Enterprise Operations"
-        description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative."
-      />
+      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." />
       <PageBody>
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5" /><div><div className="text-sm font-medium">Governed foundation</div><div className="text-xs text-muted-foreground">Company-scoped RLS on every new domain</div></div></CardContent></Card>
           <Card><CardContent className="flex items-center gap-3 p-5"><Database className="h-5 w-5" /><div><div className="text-sm font-medium">Additive architecture</div><div className="text-xs text-muted-foreground">No replacement of canonical accounting or stock ledgers</div></div></CardContent></Card>
           <Card><CardContent className="flex items-center gap-3 p-5"><Sparkles className="h-5 w-5" /><div><div className="text-sm font-medium">AI-ready</div><div className="text-xs text-muted-foreground">Freshness and evidence state are first-class controls</div></div></CardContent></Card>
         </div>
-
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {MODULES.map((module) => {
             const Icon = module.Icon;
             const records = module.tables.reduce((sum, table) => sum + (counts[table] ?? 0), 0);
             return (
               <Card key={module.key} className="h-full transition-shadow hover:shadow-md">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl btn-gold"><Icon className="h-5 w-5" /></div>
-                      <CardTitle className="text-base">{module.title}</CardTitle>
-                    </div>
-                    <span className="rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {isLoading ? "Checking" : records > 0 ? "Active data" : "Ready"}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{module.description}</p>
-                  <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{isLoading ? "…" : \`\${records} records in foundation\`}</span>
-                    {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>}
-                  </div>
-                </CardContent>
+                <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl btn-gold"><Icon className="h-5 w-5" /></div><CardTitle className="text-base">{module.title}</CardTitle></div>
+                  <span className="rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{isLoading ? "Checking" : records > 0 ? "Active data" : "Ready"}</span>
+                </div></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground">{module.description}</p><div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{isLoading ? "…" : String(records) + " records in foundation"}</span>
+                  {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>}
+                </div></CardContent>
               </Card>
             );
           })}
         </div>
-
-        <Card className="mt-6">
-          <CardContent className="p-5">
-            <div className="text-sm font-semibold">Production-safety rule</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Planning, workflow, quality and analytics records are deliberately separated from posted financial and inventory transactions.
-              Nothing in this capability foundation silently changes a posted voucher, stock movement, invoice, purchase bill or Tally migration result.
-            </p>
-          </CardContent>
-        </Card>
+        <Card className="mt-6"><CardContent className="p-5">
+          <div className="text-sm font-semibold">Production-safety rule</div>
+          <p className="mt-1 text-sm text-muted-foreground">Planning, workflow, quality and analytics records are deliberately separated from posted financial and inventory transactions. Nothing in this capability foundation silently changes a posted voucher, stock movement, invoice, purchase bill or Tally migration result.</p>
+        </CardContent></Card>
       </PageBody>
     </>
   );
