@@ -133,18 +133,7 @@ export const enterpriseWorkbenchMutation = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const { error: auditError } = await db.from("erp_domain_audit_log").insert({
-      company_id: companyId,
-      module: "enterprise_workbench",
-      entity_type: data.table,
-      entity_id: data.id ?? result?.id ?? null,
-      action: data.action,
-      before_data: before,
-      after_data: result,
-      reason: data.action === "status" ? `Lifecycle status changed to ${String(payload.status)}` : "Enterprise workbench mutation",
-      actor_id: context.userId,
-    });
-    if (auditError) throw new Error("The record changed but the audit record could not be written. The operation was not safely completed.");
+
 
     return { ok: true as const, companyId, record: result };
   });
