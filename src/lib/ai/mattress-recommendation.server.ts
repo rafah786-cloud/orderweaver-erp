@@ -85,9 +85,13 @@ export async function mattressBudgetRecommendations(
     throw new Error("A positive customer budget is required.");
   }
 
+  const { data: companyId, error: companyError } = await db.rpc("current_company_id");
+  if (companyError || !companyId) throw new Error("No active company selected.");
+
   const { data: models, error: modelError } = await db
     .from("product_models")
     .select("id, code, name, size, thickness, cover_fabric, foam_density, default_price, extra_specs")
+    .eq("company_id", companyId)
     .gt("default_price", 0)
     .lte("default_price", budget)
     .order("default_price", { ascending: true })
@@ -127,15 +131,18 @@ export async function mattressBudgetRecommendations(
       db
         .from("model_boq")
         .select("model_id, raw_material_id, quantity_per_unit")
+        .eq("company_id", companyId)
         .in("model_id", modelIds),
       db
         .from("raw_materials")
         .select("id, code, name, unit, current_stock")
+        .eq("company_id", companyId)
         .limit(5000),
       db
         .from("stock_items")
         .select("id, mapped_raw_material_id, standard_price")
         .not("mapped_raw_material_id", "is", null)
+        .eq("company_id", companyId)
         .limit(5000),
     ]);
 
@@ -175,6 +182,7 @@ export async function mattressBudgetRecommendations(
   const { data: purchaseRows, error: purchaseError } = await db
     .from("purchase_bill_items")
     .select("raw_material_id, quantity, unit_price, purchase_bills!inner(bill_date)")
+    .eq("company_id", companyId)
     .gte("purchase_bills.bill_date", new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10))
     .limit(20_000);
 
