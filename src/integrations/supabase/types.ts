@@ -119,6 +119,7 @@ export type Database = {
       }
       ai_conversations: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           title: string
@@ -126,6 +127,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           title?: string
@@ -133,6 +135,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           title?: string
