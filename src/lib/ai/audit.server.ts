@@ -1,9 +1,12 @@
 async function resolveAuditCompany(
-  supabaseAdmin: any,
+  caller: any,
   userId: string | null,
   refTable?: string | null,
   refId?: string | null,
 ): Promise<string | null> {
+  if (!userId) return null;
+  const { data: companyId, error: companyError } = await caller.rpc("current_company_id");
+  if (companyError || typeof companyId !== "string" || !companyId) return null;
   const sourceTables = new Set([
     "invoices",
     "sales_orders",
@@ -17,34 +20,20 @@ async function resolveAuditCompany(
   ]);
 
   if (refTable && refId && sourceTables.has(refTable)) {
-    const { data } = await supabaseAdmin
+    const { data, error } = await caller
       .from(refTable)
       .select("company_id")
       .eq("id", refId)
       .maybeSingle();
-    if (data?.company_id) return data.company_id as string;
+    if (error || data?.company_id !== companyId) return null;
   }
 
-  if (userId) {
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("active_company_id")
-      .eq("id", userId)
-      .maybeSingle();
-    if (data?.active_company_id) return data.active_company_id as string;
-  }
-
-  const { data: abood } = await supabaseAdmin
-    .from("companies")
-    .select("id")
-    .eq("code", "ABOOD")
-    .eq("is_active", true)
-    .maybeSingle();
-  return (abood?.id as string | undefined) ?? null;
+  if ((refTable || refId) && (!refTable || !refId || !sourceTables.has(refTable))) return null;
+  return companyId;
 }
 
 /** Audit trail for every AI request (server-only, best effort — never throws). */
-export async function logAiUsage(entry: {
+export async function logAiUsage(caller: any, entry: {
   userId: string | null;
   feature: string;
   action?: string;
@@ -58,14 +47,14 @@ export async function logAiUsage(entry: {
   meta?: Record<string, unknown> | null;
 }): Promise<void> {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const companyId = await resolveAuditCompany(
-      supabaseAdmin,
+      caller,
       entry.userId,
       entry.refTable,
       entry.refId,
     );
     if (!companyId) return;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     await supabaseAdmin.from("ai_audit_log").insert({
       company_id: companyId,
