@@ -83,7 +83,7 @@ function AskPage() {
 
       {status && !status.configured && (
         <div className="mx-4 mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-          The AI service is not configured yet. Add the <code>NVIDIA_API_KEY</code> secret to enable
+          The AI service is not configured yet. Add the <code>AI_API_KEY</code> secret (or keep <code>NVIDIA_API_KEY</code> for the default NVIDIA gateway) to enable
           answers. The rest of the ERP works normally.
         </div>
       )}
