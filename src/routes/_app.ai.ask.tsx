@@ -26,6 +26,11 @@ interface Turn {
   role: "user" | "assistant";
   content: string;
   retrievers?: string[];
+  evidenceMeta?: {
+    complete: boolean;
+    truncatedSources: string[];
+    answerState: "exact" | "calculated" | "forecast" | "interpretation" | "insufficient-data";
+  };
 }
 
 function AskPage() {
@@ -48,6 +53,7 @@ function AskPage() {
           role: "assistant",
           content: res.ok ? res.answer : `**AI unavailable.** ${res.error}`,
           retrievers: res.usedRetrievers,
+          evidenceMeta: res.ok ? res.evidenceMeta : undefined,
         },
       ]);
     },
@@ -114,6 +120,21 @@ function AskPage() {
                         {r}
                       </Badge>
                     ))}
+                  </div>
+                )}
+                {turn.evidenceMeta && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <Badge variant={turn.evidenceMeta.complete ? "secondary" : "destructive"} className="text-[10px]">
+                      Evidence: {turn.evidenceMeta.complete ? "complete" : "partial"}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {turn.evidenceMeta.answerState}
+                    </Badge>
+                    {!turn.evidenceMeta.complete && (
+                      <span className="text-[10px] text-destructive">
+                        Some source data was incomplete; treat this answer as non-authoritative.
+                      </span>
+                    )}
                   </div>
                 )}
               </CardContent>
