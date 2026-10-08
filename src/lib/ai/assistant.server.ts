@@ -162,11 +162,11 @@ export async function askMaestro(
     const raw = JSON.stringify(r.data);
     if (raw.length <= 18_000) return `[${r.tool}] ${raw}`;
     truncatedSources.push(r.tool);
-    return `[${r.tool}] ${raw.slice(0, 17_500)}\\n[TRUNCATED: source payload exceeds the safe model context budget; do not present omitted records as complete]`;
+    return `[${r.tool}] ${raw.slice(0, 17_500)}\n[TRUNCATED: source payload exceeds the safe model context budget; do not present omitted records as complete]`;
   });
   const evidenceComplete = truncatedSources.length === 0;
   const evidenceStatus = evidenceComplete ? "complete" : "partial";
-  const serialised = `EVIDENCE_STATUS=${evidenceStatus}\\n${serialisedParts.join("\\n\\n")}`;
+  const serialised = `EVIDENCE_STATUS=${evidenceStatus}\n${serialisedParts.join("\n\n")}`;
 
   const { text, model } = await aiChat(
     [
