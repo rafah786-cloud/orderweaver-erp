@@ -1,6 +1,6 @@
 import { getWebPushConfig, registerWebPushSubscription, unregisterWebPushSubscription } from "@/lib/push.functions";
 
-function base64UrlToUint8Array(value: string): Uint8Array {
+function base64UrlToUint8Array(value: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(base64);

@@ -58,7 +58,7 @@ export const registerTallySyncSource = createServerFn({ method: "POST" })
       .maybeSingle();
     if (accessError || !access) throw new Error("No access to selected company");
 
-    const { data: source, error } = await supabase
+    const { data: source, error } = await (supabase as any)
       .from("tally_sync_sources")
       .upsert(
         {
@@ -90,7 +90,7 @@ export const getTallySyncWatermark = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await requireAdmin(supabase, userId);
 
-    const { data: source, error: sourceError } = await supabase
+    const { data: source, error: sourceError } = await (supabase as any)
       .from("tally_sync_sources")
       .select("company_id")
       .eq("id", data.sourceId)

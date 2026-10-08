@@ -20,7 +20,7 @@ function vapidPublicKey(): string | null {
     const jwk = JSON.parse(raw);
     if (jwk?.kty !== "EC" || jwk?.crv !== "P-256" || !jwk.x || !jwk.y) return null;
     return bytesToBase64Url(
-      concat(new Uint8Array([4]), base64UrlToBytes(jwk.x), base64UrlToBytes(jwk.y)),
+      new Uint8Array([4, ...base64UrlToBytes(jwk.x), ...base64UrlToBytes(jwk.y)]),
     );
   } catch {
     return null;
