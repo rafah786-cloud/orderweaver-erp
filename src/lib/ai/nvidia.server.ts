@@ -47,7 +47,7 @@ export class AiUnavailableError extends Error {
 }
 
 export function isAiConfigured(): boolean {
-  return Boolean(cleanSecret(process.env["NVIDIA_API_KEY"]));
+  return Boolean(cleanSecret(process.env["AI_API_KEY"] || process.env["NVIDIA_API_KEY"]));
 }
 
 function apiKey(): string {
