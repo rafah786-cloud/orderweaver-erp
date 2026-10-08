@@ -82,6 +82,27 @@ export function linearForecast(
   return { forecast, slope: round(slope), r2: round(r2, 3) };
 }
 
+/** Holdout backtest for the same linear forecasting method used in production. */
+export function backtestLinearForecast(
+  series: number[],
+  holdout = 3,
+): { holdout: number; mae: number | null; mapePct: number | null } {
+  if (series.length < holdout + 5) return { holdout: 0, mae: null, mapePct: null };
+  const train = series.slice(0, -holdout);
+  const actual = series.slice(-holdout);
+  const predicted = linearForecast(train, holdout).forecast;
+  const errors = actual.map((v, i) => Math.abs(v - (predicted[i] ?? 0)));
+  const nonZero = actual.filter((v) => v !== 0);
+  const mapeValues = actual
+    .map((v, i) => (v === 0 ? null : Math.abs((v - (predicted[i] ?? 0)) / v) * 100))
+    .filter((v): v is number => v !== null && Number.isFinite(v));
+  return {
+    holdout,
+    mae: errors.length ? round(sum(errors) / errors.length) : null,
+    mapePct: mapeValues.length ? round(sum(mapeValues) / mapeValues.length, 1) : null,
+  };
+}
+
 /** Population z-score of the last point against its history. */
 export function zScore(series: number[]): { z: number; mean: number; stdev: number } {
   if (series.length < 4) return { z: 0, mean: 0, stdev: 0 };
@@ -179,32 +200,38 @@ async function supplierNames(db: Db, ids: string[]): Promise<Map<string, string>
 /* Product & customer profitability                                    */
 /* ------------------------------------------------------------------ */
 
-/** Latest known purchase rate per raw material (falls back to the average). */
-async function materialCostMap(db: Db): Promise<Map<string, number>> {
+/** Weighted-average purchase rate per raw material as of a period end date. */
+async function materialCostMap(db: Db, asOf: string): Promise<Map<string, number>> {
   const { data } = await db
     .from("purchase_bill_items")
-    .select("raw_material_id, unit_price, purchase_bills(bill_date)")
-    .order("id", { ascending: false })
-    .limit(4000);
-  const latest = new Map<string, { rate: number; date: string }>();
+    .select("raw_material_id, quantity, unit_price, purchase_bills!inner(bill_date)")
+    .lte("purchase_bills.bill_date", asOf)
+    .limit(10000);
+  const totals = new Map<string, { qty: number; value: number }>();
   for (const row of (data ?? []) as unknown as {
     raw_material_id: string;
+    quantity: number | null;
     unit_price: number | null;
-    purchase_bills: { bill_date: string } | null;
   }[]) {
-    const date = row.purchase_bills?.bill_date ?? "";
-    const prior = latest.get(row.raw_material_id);
-    if (!prior || date > prior.date)
-      latest.set(row.raw_material_id, { rate: Number(row.unit_price ?? 0), date });
+    const qty = Number(row.quantity ?? 0);
+    const value = qty * Number(row.unit_price ?? 0);
+    const prior = totals.get(row.raw_material_id) ?? { qty: 0, value: 0 };
+    prior.qty += qty;
+    prior.value += value;
+    totals.set(row.raw_material_id, prior);
   }
-  return new Map([...latest.entries()].map(([k, v]) => [k, v.rate]));
+  return new Map(
+    [...totals.entries()]
+      .filter(([, v]) => v.qty > 0)
+      .map(([k, v]) => [k, v.value / v.qty]),
+  );
 }
 
 /** Material cost of one unit of each product model, from its BOQ. */
-async function modelCostMap(db: Db): Promise<Map<string, number>> {
+async function modelCostMap(db: Db, asOf: string): Promise<Map<string, number>> {
   const [{ data: boq }, costs] = await Promise.all([
     db.from("model_boq").select("model_id, raw_material_id, quantity_per_unit"),
-    materialCostMap(db),
+    materialCostMap(db, asOf),
   ]);
   const out = new Map<string, number>();
   for (const line of boq ?? []) {
@@ -223,7 +250,7 @@ export async function productProfitability(db: Db, period: Period) {
       )
       .gte("sales_orders.order_date", period.from)
       .lte("sales_orders.order_date", period.to),
-    modelCostMap(db),
+    modelCostMap(db, period.to),
     db.from("product_models").select("id, name, code, size, default_price"),
   ]);
 
@@ -280,14 +307,14 @@ export async function productProfitability(db: Db, period: Period) {
         materialCost: p.hasCost ? round(p.materialCost) : null,
         grossMargin: margin == null ? null : round(margin),
         grossMarginPct: margin == null || !p.revenue ? null : round((margin / p.revenue) * 100, 1),
-        costBasis: p.hasCost ? ("boq_latest_purchase_rate" as const) : ("unavailable" as const),
+        costBasis: p.hasCost ? ("boq_weighted_average_purchase_rate_as_of_period_end" as const) : ("unavailable" as const),
       };
     })
     .sort((a, b) => b.revenue - a.revenue);
 
   return {
     period,
-    note: "Margins use BOQ material cost valued at the latest purchase rate. Labour and overhead are excluded unless captured in the BOQ.",
+    note: "Margins use BOQ material cost valued at weighted-average purchase rates through the period end. This is a period-end calculated margin, not transaction-level actual costing; labour and overhead are excluded unless captured in the BOQ.",
     products: products.slice(0, 40),
     totals: {
       revenue: round(sum(products.map((p) => p.revenue))),
@@ -305,7 +332,7 @@ export async function customerProfitability(db: Db, period: Period) {
     .gte("order_date", period.from)
     .lte("order_date", period.to);
 
-  const modelCosts = await modelCostMap(db);
+  const modelCosts = await modelCostMap(db, period.to);
   const byParty = new Map<string, { revenue: number; cost: number; orders: number }>();
   for (const o of (orders ?? []) as unknown as {
     party_id: string;
@@ -745,11 +772,14 @@ export async function forecasts(db: Db, monthsAhead = 3) {
 
   const revFc = linearForecast(revenue, monthsAhead);
   const profitFc = linearForecast(profit, monthsAhead);
+  const revenueBacktest = backtestLinearForecast(revenue, Math.min(3, Math.max(1, Math.floor(revenue.length / 4))));
+  const profitBacktest = backtestLinearForecast(profit, Math.min(3, Math.max(1, Math.floor(profit.length / 4))));
 
   return {
     basis: {
       monthsOfHistory: usable.length,
       method: "ordinary least squares trend on monthly totals",
+      backtest: { revenue: revenueBacktest, grossProfit: profitBacktest },
     },
     sufficientData: usable.length >= 4,
     history: usable,
