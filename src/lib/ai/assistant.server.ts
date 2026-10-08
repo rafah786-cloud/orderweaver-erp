@@ -103,7 +103,7 @@ function extractBudgetFromQuestion(
   if (current != null) return current;
   const budgetWords = /budget|under|within|below|upto|up to|less than|cheaper|cost/i.test(question);
   if (!budgetWords) return null;
-  for (const message of [...history].reverse()) {
+  for (const message of [...history].reverse().filter((m) => m.role === "user")) {
     const value = extractMoney(message.content);
     if (value != null) return value;
   }
@@ -165,6 +165,7 @@ export async function runRetriever(
           limit: typeof a?.["limit"] === "number" ? a["limit"] : Number(a?.["limit"] ?? 5),
           stockOnly: a?.["stockOnly"] === true,
           preferInStock: a?.["preferInStock"] !== false,
+          preference: a?.["preference"] === "cheaper" || a?.["preference"] === "premium" ? a["preference"] : "balanced",
         }),
       };
     }
@@ -198,7 +199,17 @@ export async function askMaestro(
     steps = [
       {
         tool: "mattress_budget_recommendations",
-        args: { budget: inferredBudget, limit: 5, preferInStock: true },
+        args: {
+          budget: inferredBudget,
+          limit: 5,
+          stockOnly: /in[ -]?stock only|only.*stock|available.*stock/i.test(question),
+          preferInStock: true,
+          preference: /cheaper|lower.?priced|budget.?friendly/i.test(question)
+            ? "cheaper"
+            : /premium|higher.?end|best.?quality/i.test(question)
+              ? "premium"
+              : "balanced",
+        },
       },
     ];
   } else {
