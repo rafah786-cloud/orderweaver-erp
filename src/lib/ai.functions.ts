@@ -73,6 +73,12 @@ export const askMaestroFn = createServerFn({ method: "POST" })
     const { askMaestro } = await import("@/lib/ai/assistant.server");
     const { logAiUsage } = await import("@/lib/ai/audit.server");
 
+    const { data: activeCompanyId, error: activeCompanyError } =
+      await context.supabase.rpc("current_company_id");
+    if (activeCompanyError || !activeCompanyId) {
+      throw new Error("No active company selected. Conversation history is unavailable.");
+    }
+
     let conversationId = data.conversationId ?? null;
     if (conversationId) {
       const { data: ownedConversation, error: ownershipError } = await context.supabase
@@ -80,6 +86,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
         .select("id")
         .eq("id", conversationId)
         .eq("user_id", context.userId)
+        .eq("company_id", activeCompanyId)
         .maybeSingle();
       if (ownershipError || !ownedConversation) {
         throw new Error("Conversation is not available to this account");
@@ -88,7 +95,7 @@ export const askMaestroFn = createServerFn({ method: "POST" })
     if (!conversationId) {
       const { data: conv, error: createError } = await context.supabase
         .from("ai_conversations")
-        .insert({ user_id: context.userId, title: data.question.slice(0, 80) })
+        .insert({ user_id: context.userId, company_id: activeCompanyId, title: data.question.slice(0, 80) })
         .select("id")
         .single();
       if (createError || !conv) throw new Error("Could not create the conversation. No answer was generated.");
