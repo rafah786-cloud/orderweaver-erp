@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   enableWebPushNotifications,
   webPushSupported,
-} from "@/lib/push.client";
+} from "@/lib/push";
 
 const STORAGE_PREFIX = "mattress-maestro:first-launch-permissions:";
 

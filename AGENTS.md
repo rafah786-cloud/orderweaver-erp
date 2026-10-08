@@ -8,3 +8,4 @@
 - Customer alerts, purchase notices and supplier-name enrichment in staff alerts must read targeted business records through the caller's authenticated client and existing RLS; privileged delivery must not widen record visibility.
 - Promotional broadcasts use a single resolved active template and saved recipient variables, never caller-written content or freeform fallback; template changes must not reopen arbitrary-message delivery.
 - Accounting preflight responses use fixed safe failure messages rather than database diagnostics, so read-only admin checks never expose internal error details.
+- Shared components access web push through an isomorphic facade that dynamically loads browser-only subscription code on the client, so SSR never imports client-only modules.
