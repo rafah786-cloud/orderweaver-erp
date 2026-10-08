@@ -95,6 +95,31 @@ describe("mattress budget recommendations", () => {
     expect(result.limitations.some((x) => x.includes("does not support five"))).toBe(true);
   });
 
+  it("falls back to a released PLM BOM when the legacy model BOQ is empty", async () => {
+    const result = await mattressBudgetRecommendations(
+      fakeDb({
+        product_models: models.slice(0, 1),
+        raw_materials: materials.slice(0, 1),
+        model_boq: [],
+        bom_revisions: [{
+          model_id: models[0].id,
+          status: "released",
+          bom_revision_lines: [{
+            raw_material_id: materials[0].id,
+            quantity_per_unit: 2,
+            scrap_pct: 0,
+          }],
+        }],
+        stock_items: [],
+        purchase_bill_items: purchaseLines.slice(0, 1),
+      }),
+      { budget: 10000 },
+    );
+
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.components[0]?.rawMaterialId).toBe(materials[0].id);
+  });
+
   it("uses recorded purchase rates and stock readiness instead of invented costs", async () => {
     const result = await mattressBudgetRecommendations(
       fakeDb({
