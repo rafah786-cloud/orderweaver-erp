@@ -28,9 +28,11 @@ import { Route as AppBoqRouteImport } from './routes/_app.boq'
 import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
+import { Route as AppEnterpriseWorkbenchRouteImport } from './routes/_app.enterprise-workbench'
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
@@ -192,6 +194,11 @@ const AppEmployeesRoute = AppEmployeesRouteImport.update({
   path: '/employees',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEnterpriseWorkbenchRoute = AppEnterpriseWorkbenchRouteImport.update({
+  id: '/enterprise-workbench',
+  path: '/enterprise-workbench',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGstRoute = AppGstRouteImport.update({
   id: '/gst',
   path: '/gst',
@@ -205,6 +212,11 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
 const AppInvoicesRoute = AppInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOperationsRoute = AppOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPartiesRoute = AppPartiesRouteImport.update({
@@ -563,9 +575,11 @@ export interface FileRoutesByFullPath {
   '/communications': typeof AppCommunicationsRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
+  '/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
   '/gst': typeof AppGstRouteWithChildren
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
+  '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
   '/production': typeof AppProductionRoute
@@ -649,9 +663,11 @@ export interface FileRoutesByTo {
   '/boq': typeof AppBoqRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
+  '/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
   '/gst': typeof AppGstRouteWithChildren
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
+  '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
   '/production': typeof AppProductionRoute
@@ -738,9 +754,11 @@ export interface FileRoutesById {
   '/_app/communications': typeof AppCommunicationsRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
+  '/_app/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
   '/_app/gst': typeof AppGstRouteWithChildren
   '/_app/inventory': typeof AppInventoryRouteWithChildren
   '/_app/invoices': typeof AppInvoicesRoute
+  '/_app/operations': typeof AppOperationsRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/production': typeof AppProductionRoute
@@ -828,9 +846,11 @@ export interface FileRouteTypes {
     | '/communications'
     | '/dashboard'
     | '/employees'
+    | '/enterprise-workbench'
     | '/gst'
     | '/inventory'
     | '/invoices'
+    | '/operations'
     | '/parties'
     | '/payslips'
     | '/production'
@@ -914,9 +934,11 @@ export interface FileRouteTypes {
     | '/boq'
     | '/dashboard'
     | '/employees'
+    | '/enterprise-workbench'
     | '/gst'
     | '/inventory'
     | '/invoices'
+    | '/operations'
     | '/parties'
     | '/payslips'
     | '/production'
@@ -1002,9 +1024,11 @@ export interface FileRouteTypes {
     | '/_app/communications'
     | '/_app/dashboard'
     | '/_app/employees'
+    | '/_app/enterprise-workbench'
     | '/_app/gst'
     | '/_app/inventory'
     | '/_app/invoices'
+    | '/_app/operations'
     | '/_app/parties'
     | '/_app/payslips'
     | '/_app/production'
@@ -1223,6 +1247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEmployeesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/enterprise-workbench': {
+      id: '/_app/enterprise-workbench'
+      path: '/enterprise-workbench'
+      fullPath: '/enterprise-workbench'
+      preLoaderRoute: typeof AppEnterpriseWorkbenchRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/gst': {
       id: '/_app/gst'
       path: '/gst'
@@ -1242,6 +1273,13 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/invoices'
       preLoaderRoute: typeof AppInvoicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/operations': {
+      id: '/_app/operations'
+      path: '/operations'
+      fullPath: '/operations'
+      preLoaderRoute: typeof AppOperationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/parties': {
@@ -1908,9 +1946,11 @@ interface AppRouteChildren {
   AppCommunicationsRoute: typeof AppCommunicationsRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
+  AppEnterpriseWorkbenchRoute: typeof AppEnterpriseWorkbenchRoute
   AppGstRoute: typeof AppGstRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppInvoicesRoute: typeof AppInvoicesRoute
+  AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProductionRoute: typeof AppProductionRoute
@@ -1936,9 +1976,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppCommunicationsRoute: AppCommunicationsRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
+  AppEnterpriseWorkbenchRoute: AppEnterpriseWorkbenchRoute,
   AppGstRoute: AppGstRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppInvoicesRoute: AppInvoicesRoute,
+  AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProductionRoute: AppProductionRoute,
