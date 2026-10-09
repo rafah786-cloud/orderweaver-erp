@@ -32,6 +32,7 @@ import { Route as AppEnterpriseWorkbenchRouteImport } from './routes/_app.enterp
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppLocalTallyAccountsRouteImport } from './routes/_app.local-tally-accounts'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
@@ -212,6 +213,11 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
 const AppInvoicesRoute = AppInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLocalTallyAccountsRoute = AppLocalTallyAccountsRouteImport.update({
+  id: '/local-tally-accounts',
+  path: '/local-tally-accounts',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -579,6 +585,7 @@ export interface FileRoutesByFullPath {
   '/gst': typeof AppGstRouteWithChildren
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
+  '/local-tally-accounts': typeof AppLocalTallyAccountsRoute
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -667,6 +674,7 @@ export interface FileRoutesByTo {
   '/gst': typeof AppGstRouteWithChildren
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
+  '/local-tally-accounts': typeof AppLocalTallyAccountsRoute
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -758,6 +766,7 @@ export interface FileRoutesById {
   '/_app/gst': typeof AppGstRouteWithChildren
   '/_app/inventory': typeof AppInventoryRouteWithChildren
   '/_app/invoices': typeof AppInvoicesRoute
+  '/_app/local-tally-accounts': typeof AppLocalTallyAccountsRoute
   '/_app/operations': typeof AppOperationsRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
@@ -850,6 +859,7 @@ export interface FileRouteTypes {
     | '/gst'
     | '/inventory'
     | '/invoices'
+    | '/local-tally-accounts'
     | '/operations'
     | '/parties'
     | '/payslips'
@@ -938,6 +948,7 @@ export interface FileRouteTypes {
     | '/gst'
     | '/inventory'
     | '/invoices'
+    | '/local-tally-accounts'
     | '/operations'
     | '/parties'
     | '/payslips'
@@ -1028,6 +1039,7 @@ export interface FileRouteTypes {
     | '/_app/gst'
     | '/_app/inventory'
     | '/_app/invoices'
+    | '/_app/local-tally-accounts'
     | '/_app/operations'
     | '/_app/parties'
     | '/_app/payslips'
@@ -1273,6 +1285,13 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/invoices'
       preLoaderRoute: typeof AppInvoicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/local-tally-accounts': {
+      id: '/_app/local-tally-accounts'
+      path: '/local-tally-accounts'
+      fullPath: '/local-tally-accounts'
+      preLoaderRoute: typeof AppLocalTallyAccountsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/operations': {
@@ -1950,6 +1969,7 @@ interface AppRouteChildren {
   AppGstRoute: typeof AppGstRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppInvoicesRoute: typeof AppInvoicesRoute
+  AppLocalTallyAccountsRoute: typeof AppLocalTallyAccountsRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -1980,6 +2000,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGstRoute: AppGstRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppInvoicesRoute: AppInvoicesRoute,
+  AppLocalTallyAccountsRoute: AppLocalTallyAccountsRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
