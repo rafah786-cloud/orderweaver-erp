@@ -18,6 +18,7 @@ export function inspectTallyAccounting(data: TallyParsed): TallyIntegrity {
     if (!voucher.has_stable_id) errors.push(`${label}: stable Tally GUID/REMOTEID missing`);
     if (seen.has(voucher.source_id)) errors.push(`${label}: duplicate source identifier`);
     seen.add(voucher.source_id);
+    if (voucher.lifecycle_state !== "posted") continue;
     if (voucher.entries.length < 2) errors.push(`${label}: fewer than two ledger lines`);
     const dr = voucher.entries.reduce((sum, entry) => sum + entry.debit, 0);
     const cr = voucher.entries.reduce((sum, entry) => sum + entry.credit, 0);
