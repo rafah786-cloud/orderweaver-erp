@@ -31,6 +31,7 @@
   - [x] Managed/live database integration tests and security/grant verification
 - [x] Premium ERP UI redesign: flagship Zizz homepage, brand portfolio, shared shell/components, responsive verification
 - [x] Public Zizz homepage redesign: ecommerce-first navigation, sleep-discovery sections, custom mattress journey, brand portfolio and mobile-first conversion layout
+- [x] Reverse mattress specification costing: ERP-matched raw materials and rates, fixed internal labour/profit policy, no displayed calculation breakdown, refusal on missing/ambiguous quantities, units or prices
 - [x] Ecommerce-ready storefront shell: product discovery, search/cart/wishlist affordances and catalog-safe placeholders without inventing product prices or stock
 - [x] Default invoice print layout based on the supplied Abood Tradings tax invoice reference
 
