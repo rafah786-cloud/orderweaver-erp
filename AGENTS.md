@@ -11,3 +11,4 @@
 - Shared components access web push through an isomorphic facade that dynamically loads browser-only subscription code on the client, so SSR never imports client-only modules.
 - AI planning and answering receive the same complete conversation history; retrieval failures abort generation rather than substituting unrelated business snapshots.
 - AI audit company attribution is resolved through the caller's authenticated client and current company; unverifiable attribution is skipped rather than assigned a default tenant.
+- CRM, shipping, budgets, asset registers and bank reconciliation table policies enforce approved callers and active-company CRUD membership permissions; child records also require same-company parents to prevent tenant bypass.
