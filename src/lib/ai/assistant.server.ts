@@ -19,6 +19,7 @@ import { describeEntities, runControlledQuery } from "./query-layer.server";
 import { semanticSearch } from "./documents.server";
 import { todayIndia } from "@/lib/format";
 import { mattressBudgetRecommendations } from "./mattress-recommendation.server";
+import { costMattressSpecification, type MattressSpecComponent } from "./mattress-spec-costing.server";
 
 /**
  * "Ask Mattress Maestro" — a retrieval-first assistant.
@@ -190,12 +191,41 @@ export async function askMaestro(
   history: { role: "user" | "assistant"; content: string }[] = [],
 ): Promise<AskResult> {
   const inferredBudget = extractBudgetFromQuestion(question, history);
+  const isMattressCostingRequest =
+    /mattress/i.test(question) &&
+    /cost|costing|production price|manufacturing price|how much|price estimate|quote/i.test(question) &&
+    /\d+\s*(?:mm|cm|inch|inches|")|foam|coir|latex|spring|fabric|specification|specs/i.test(question) &&
+    !/budget|under|within|cheaper|suggest|recommend/i.test(question);
   const isMattressBudgetRequest =
     inferredBudget != null &&
     /mattress|specification|specs|bom|boq|customer budget|under|within|upto|up to|cheaper/i.test(question);
 
   let steps: PlanStep[];
-  if (isMattressBudgetRequest) {
+  if (isMattressCostingRequest) {
+    const parsed = await aiChatJson<{ components?: Array<{ materialName?: string; quantity?: number | null; unit?: string | null }> }>(
+      [
+        {
+          role: "system",
+          content: "Extract the raw-material components of the mattress specification into JSON. Return {components:[{materialName,quantity,unit}]}. Never invent a material, quantity, unit, conversion, or cost. Only provide quantity and unit when explicitly stated or mathematically unambiguous from the user's text. A layer thickness alone is NOT a material quantity. If quantity or unit is missing, set it to null. Use the exact material description supplied by the user.",
+        },
+        ...history,
+        { role: "user", content: question },
+      ],
+      { model: AI_MODELS.fast, maxTokens: 600, temperature: 0 },
+    );
+    const rawComponents = Array.isArray(parsed?.components) ? parsed.components : [];
+    const incomplete = rawComponents.some((c) => !c.materialName?.trim() || typeof c.quantity !== "number" || !Number.isFinite(c.quantity) || c.quantity <= 0 || !c.unit?.trim());
+    if (!rawComponents.length || incomplete) {
+      return {
+        answer: "I can estimate this mattress using current ERP material prices, but I need the quantity and unit for each raw material (or a confirmed BOM). Layer thickness alone is not enough to calculate material consumption reliably. Please provide the mattress dimensions and the material consumption/units per mattress, or select an existing ERP model with a BOM.",
+        usedRetrievers: [],
+        evidence: { costingStatus: "insufficient-input", extractedComponents: rawComponents },
+        evidenceMeta: { complete: false, truncatedSources: [], answerState: "insufficient-data" },
+        model: AI_MODELS.fast,
+      };
+    }
+    steps = [{ tool: "mattress_spec_costing", args: { components: rawComponents } }];
+  } else if (isMattressBudgetRequest) {
     steps = [
       {
         tool: "mattress_budget_recommendations",
@@ -249,6 +279,7 @@ export async function askMaestro(
           "Label anything predictive as a forecast and anything interpretive as your reading of the data. " +
           "If EVIDENCE_STATUS is partial, explicitly say the answer is based on incomplete evidence and do not call it authoritative. " +
           "For mattress_budget_recommendations, show every defensible candidate supplied by the ERP (normally at least five), with product/model name, configured selling price, product specs, BOM components with quantities, estimated material cost, cost basis, and stock readiness. If fewer than five are supplied, explicitly say that the ERP data does not support five and do not manufacture alternatives. " +
+          "For mattress_spec_costing, show only the final estimated price/production quote and a brief note that it is based on ERP material prices. NEVER show labour percentage, profit margin percentage, intermediate arithmetic, line-item material costs or the calculation formula. If data is insufficient, say which inputs or ERP matches are missing and do not invent them. " +
           "Use short markdown: bold labels, bullet lists, small tables. Never claim to have changed anything in the ERP.",
       },
       ...history.map((m) => ({ role: m.role, content: m.content }) as const),
