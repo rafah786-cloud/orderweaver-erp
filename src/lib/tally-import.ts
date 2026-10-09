@@ -1,6 +1,8 @@
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 
-export type TallyParty = {
+export type TallySourceIdentity = { source_guid?: string | null; master_id?: string | null };
+
+export type TallyParty = TallySourceIdentity & {
   name: string;
   gstin?: string | null;
   phone?: string | null;
@@ -18,7 +20,7 @@ export type TallyParty = {
   closing_balance: number;
 };
 
-export type TallyStockItem = {
+export type TallyStockItem = TallySourceIdentity & {
   name: string;
   unit: string;
   opening_qty: number;
@@ -43,7 +45,7 @@ export type TallyLedgerEntry = {
 };
 
 /** A Tally account group (Chart of Accounts node). */
-export type TallyGroup = {
+export type TallyGroup = TallySourceIdentity & {
   name: string;
   parent: string | null;
   nature: "assets" | "liabilities" | "income" | "expenses";
@@ -53,7 +55,7 @@ export type TallyGroup = {
 };
 
 /** Any Tally ledger master, regardless of group. */
-export type TallyLedgerMaster = {
+export type TallyLedgerMaster = TallySourceIdentity & {
   name: string;
   parent: string;
   gstin: string | null;
@@ -65,14 +67,14 @@ export type TallyLedgerMaster = {
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
 
-export type TallyGodown = {
+export type TallyGodown = TallySourceIdentity & {
   name: string;
   parent: string | null;
   address: string | null;
   alter_id?: string | null;
   lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
 };
-export type TallyCostCentre = {
+export type TallyCostCentre = TallySourceIdentity & {
   alter_id?: string | null;
   name: string;
   parent: string | null;
@@ -130,6 +132,8 @@ export type TallyParsed = {
   costCentres: TallyCostCentre[];
   bills: TallyBill[];
   vouchers: TallyVoucher[];
+  units?: Array<TallySourceIdentity & { name: string; alter_id: string | null }>;
+  sourceCompanies?: Array<{ name: string; guid: string }>;
 };
 
 const parser = new XMLParser({
@@ -189,6 +193,11 @@ function parentMatches(parent: string, patterns: string[]): boolean {
   return patterns.some((pat) => p.includes(pat.toLowerCase()));
 }
 
+const identityOf = (node: Record<string, unknown>): TallySourceIdentity => ({
+  source_guid: text(node.GUID ?? node.REMOTEID ?? node["@_REMOTEID"]) || null,
+  master_id: text(node.MASTERID) || null,
+});
+
 const alterIdOf = (node: Record<string, unknown>): string | null =>
   text(node.ALTERID ?? node["@_ALTERID"]) || null;
 
@@ -236,6 +245,14 @@ export function parseTallyMasters(
     );
   }
   xml = stripped;
+  if (new TextEncoder().encode(xml).length > 20 * 1024 * 1024)
+    throw new TallyXmlError("XML exceeds the 20 MB limit. Export smaller date ranges.");
+  if (/<!DOCTYPE|<!ENTITY/i.test(xml))
+    throw new TallyXmlError("XML document types and entities are not accepted.");
+  if (/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(xml))
+    throw new TallyXmlError("XML contains invalid control characters. Re-export from Tally.");
+  if (XMLValidator.validate(xml) !== true)
+    throw new TallyXmlError("The XML file is malformed or incomplete. Re-export from Tally.");
 
   let json: Record<string, unknown>;
   try {
@@ -284,6 +301,8 @@ export function parseTallyMasters(
     );
   }
 
+  const sourceCompanies: Array<{ name: string; guid: string }> = [];
+  const units: NonNullable<TallyParsed["units"]> = [];
   const customers: TallyParty[] = [];
   const vendors: TallyParty[] = [];
   const rawMaterials: TallyStockItem[] = [];
@@ -405,6 +424,12 @@ export function parseTallyMasters(
   };
 
   for (const msg of messages) {
+    for (const c of arr<Record<string, unknown>>(msg.COMPANY as never)) {
+      sourceCompanies.push({ name: text(c["@_NAME"] ?? c.NAME), guid: text(c.GUID) });
+    }
+    for (const u of arr<Record<string, unknown>>(msg.UNIT as never)) {
+      units.push({ ...identityOf(u), name: text(u["@_NAME"] ?? u.NAME), alter_id: alterIdOf(u) });
+    }
     /* ---------------- GROUP masters (Chart of Accounts) ---------------- */
     for (const g of arr<Record<string, unknown>>(msg.GROUP as never)) {
       if (!preserveLifecycle && lifecycleState(g) !== "posted") continue;
@@ -414,6 +439,7 @@ export function parseTallyMasters(
       const nature = natureOf(name, parent);
       groupNature.set(name.toLowerCase(), nature);
       groups.push({
+        ...identityOf(g),
         name,
         parent: parent || null,
         nature,
@@ -429,6 +455,7 @@ export function parseTallyMasters(
       const name = text(g["@_NAME"] ?? g.NAME);
       if (!name) continue;
       godowns.push({
+        ...identityOf(g),
         name,
         parent: text(g.PARENT) || null,
         address: flattenAddress(g["ADDRESS.LIST"]) || null,
@@ -443,6 +470,7 @@ export function parseTallyMasters(
       const name = text(c["@_NAME"] ?? c.NAME);
       if (!name) continue;
       costCentres.push({
+        ...identityOf(c),
         name,
         parent: text(c.PARENT) || null,
         alter_id: alterIdOf(c),
@@ -467,6 +495,7 @@ export function parseTallyMasters(
 
       // Every ledger — of any group — becomes a chart-of-accounts entry.
       ledgersOut.push({
+        ...identityOf(l),
         name,
         parent: parentRaw || "Primary",
         gstin: extractGstin(l),
@@ -484,6 +513,7 @@ export function parseTallyMasters(
       collectBills(name, l);
 
       const party: TallyParty = {
+        ...identityOf(l),
         name,
         gstin: extractGstin(l),
         phone: text(l.LEDGERPHONE ?? l.LEDGERMOBILE ?? l.LEDGERCONTACT) || null,
@@ -516,6 +546,7 @@ export function parseTallyMasters(
       const rate = parseRate(text(it.OPENINGRATE));
 
       const stock: TallyStockItem = {
+        ...identityOf(it),
         name,
         unit: baseUnit,
         opening_qty: qty,
@@ -545,12 +576,12 @@ export function parseTallyMasters(
       if (!preserveLifecycle && lifecycleState(v) !== "posted") continue;
       const dateRaw = text(v.DATE ?? v["@_DATE"]);
       const entry_date = parseTallyDate(dateRaw);
-      if (!entry_date) continue;
+      if (!entry_date && !preserveLifecycle) continue;
       const voucher_type = text(v.VOUCHERTYPENAME ?? v["@_VCHTYPE"]) || null;
       const voucher_number = text(v.VOUCHERNUMBER) || null;
       const narration = text(v.NARRATION) || null;
       const guid =
-        text(v.GUID ?? v["@_REMOTEID"]) ||
+        text(v.GUID ?? v.REMOTEID ?? v["@_REMOTEID"]) ||
         `${voucher_type ?? ""}|${voucher_number ?? ""}|${entry_date}`;
       // Prime uses PARTYLEDGERNAME for the bill-to party on Sales/Purchase;
       // some voucher lines only carry the offsetting account (e.g. Sales A/c).
@@ -566,15 +597,15 @@ export function parseTallyMasters(
         v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined,
       );
       const lines = [...ledgerLines, ...altLines];
+      const accountingLines = [...lines];
 
       const inventoryEntries: TallyVoucher["inventory_entries"] = [];
-      const rawInventoryEntries = arr<Record<string, unknown>>(
-        v["ALLINVENTORYENTRIES.LIST"] as
-          | Record<string, unknown>
-          | Record<string, unknown>[]
-          | undefined,
-      );
+      const rawInventoryEntries = [
+        ...arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never),
+        ...arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never),
+      ];
       for (const inv of rawInventoryEntries) {
+        accountingLines.push(...arr<Record<string, unknown>>(inv["ACCOUNTINGALLOCATIONS.LIST"] as never));
         const actual = parseQtyUnit(text(inv.ACTUALQTY));
         const billed = parseQtyUnit(text(inv.BILLEDQTY));
         const batches = arr<Record<string, unknown>>(
@@ -617,11 +648,11 @@ export function parseTallyMasters(
       vouchersOut.push({
         source_id: guid,
         alter_id: alterIdOf(v),
-        has_stable_id: !!text(v.GUID ?? v["@_REMOTEID"]),
+        has_stable_id: !!text(v.GUID ?? v.REMOTEID ?? v["@_REMOTEID"]),
         voucher_type,
         voucher_number,
         voucher_date: entry_date,
-        entries: lines.map((line) => {
+        entries: accountingLines.map((line) => {
           const amount = num(line.AMOUNT);
           const debit = isYes(line.ISDEEMEDPOSITIVE) ? Math.abs(amount) : 0;
           return {
@@ -634,10 +665,9 @@ export function parseTallyMasters(
         lifecycle_state: lifecycleState(v),
       });
 
-      for (const line of lines) {
+      for (const line of accountingLines) {
         const ledgerName = text(line.LEDGERNAME);
-        if (ledgerName && partyType.has(ledgerName.toLowerCase()))
-          collectBills(ledgerName, line, guid);
+        collectBills(ledgerName, line, guid);
       }
 
       // First pass: emit entries for lines that directly reference a known party.
@@ -709,6 +739,7 @@ export function parseTallyMasters(
     finishedGoods.length === 0 &&
     ledgerEntries.length === 0 &&
     vouchersOut.length === 0 &&
+    units.length === 0 &&
     groups.length === 0 &&
     ledgersOut.length === 0 &&
     godowns.length === 0 &&
@@ -732,5 +763,7 @@ export function parseTallyMasters(
     costCentres,
     bills,
     vouchers: vouchersOut,
+    units,
+    sourceCompanies,
   };
 }

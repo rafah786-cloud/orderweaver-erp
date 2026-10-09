@@ -15,6 +15,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/payslips": Receipt, "/approvals": ShieldCheck, "/whatsapp": MessageCircle, "/communications": MessageCircle,
   "/tally-import": Database, "/accounting": BookOpen, "/gst": FileSpreadsheet, "/inventory": Boxes, "/banking": Landmark,
   "/ai": Sparkles, "/vendor": Truck, "/settings": Settings,
+  "/local-tally-accounts": Database,
 };
 const LABELS: Record<string, string> = {
   "/dashboard": "Dashboard", "/parties": "Parties", "/invoices": "Invoices", "/sales-orders": "Sales Orders", "/boq": "BOQ",
@@ -22,6 +23,7 @@ const LABELS: Record<string, string> = {
   "/attendance": "Attendance", "/payslips": "Payslips", "/approvals": "User Approvals", "/whatsapp": "WhatsApp",
   "/communications": "Communications", "/tally-import": "Tally Import", "/accounting": "Accounting", "/gst": "GST",
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
+  "/local-tally-accounts": "Tally Data Import",
 };
 const NAV = ROUTE_ROLES.map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
@@ -30,7 +32,7 @@ const GROUPS = [
   { label: "Sales & Customers", prefixes: ["/parties", "/sales-orders", "/invoices"] },
   { label: "Purchasing & Inventory", prefixes: ["/purchases", "/inventory", "/boq"] },
   { label: "Production", prefixes: ["/production", "/operations"] },
-  { label: "Finance", prefixes: ["/accounting", "/banking", "/gst"] },
+  { label: "Finance", prefixes: ["/accounting", "/banking", "/gst", "/local-tally-accounts"] },
   { label: "People", prefixes: ["/employees", "/attendance", "/payslips"] },
   { label: "Automation & Admin", prefixes: ["/ai", "/whatsapp", "/communications", "/approvals", "/tally-import", "/vendor", "/settings"] },
 ];

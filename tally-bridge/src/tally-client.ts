@@ -1,4 +1,4 @@
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 
 export type TallyRequestOptions = {
   company: string;
@@ -109,12 +109,13 @@ export class TallyClient {
       throw new Error("Tally HTTP " + response.status + ": " + responseXml.slice(0, 500));
     }
 
-    let status = 1;
-    try {
-      const parsed = parser.parse(responseXml) as Record<string, any>;
-      status = Number(parsed?.ENVELOPE?.HEADER?.STATUS ?? 1);
-    } catch {}
-    if (status < 0) {
+    if (/<!DOCTYPE|<!ENTITY/i.test(responseXml) || XMLValidator.validate(responseXml) !== true) {
+      throw new Error("Tally returned malformed XML or unsupported document entities");
+    }
+    const parsed = parser.parse(responseXml) as Record<string, any>;
+    if (!parsed?.ENVELOPE) throw new Error("Tally response has no ENVELOPE");
+    const status = Number(parsed.ENVELOPE.HEADER?.STATUS ?? 1);
+    if (!Number.isFinite(status) || status <= 0 || /<LINEERROR[\s>]/i.test(responseXml)) {
       throw new Error("Tally request " + requestName + " returned STATUS=" + status);
     }
 

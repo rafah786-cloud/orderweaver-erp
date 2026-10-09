@@ -3,6 +3,8 @@
 - Keep Phase 1 and Phase 2 accounting migrations unapplied until a verified restorable recovery point exists; the current shared database has no proven isolated restore.
 - Keep accounting imports separate from the legacy Tally master importer; it cannot atomically retain every voucher leg or bill allocation, so uploaded accounting data must fail closed rather than appear imported.
 - Run Tally source integrity checks as pure read-only parsing before any accounting import; unresolved source identifiers and imbalances must be reported, not repaired or guessed.
+- Local Tally browser access uses a loopback-only paired read-only agent with exact-origin authorization; native data files and arbitrary filesystem paths are never accepted.
+- Local accounts previews preserve source GUIDs, lifecycle and inventory accounting allocations; canonical imports remain disabled until a verified transactional commit and recovery gate exist.
 - Expose ERP agent tools through OAuth with the caller's verified token and RLS, and check approved account roles for business reads, so external assistants never inherit privileged access.
 - Notification event activation and delivery configuration require a server-verified admin role through the caller's authenticated client; the communications settings are admin-only.
 - Customer alerts, purchase notices and supplier-name enrichment in staff alerts must read targeted business records through the caller's authenticated client and existing RLS; privileged delivery must not widen record visibility.

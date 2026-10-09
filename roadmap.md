@@ -105,3 +105,9 @@
 - [ ] HR expansion and project/contract management.
 - [ ] AI 2.0: freshness, evidence drill-down, proactive intelligence, contextual assistance and governed actions.
 - [ ] Platform workflow engine, master-data governance, observability, API/webhooks and disaster-recovery verification.
+
+## Local Tally accounts facility
+- [ ] Add Accounting Tally Data Import entry and safe local connection/file preview workflow
+- [ ] Preserve inventory accounting allocations, source identities and lifecycle in validation
+- [ ] Add loopback-only, origin-restricted read-only bridge endpoints with tests and setup
+- [ ] Verify tests and preview; report canonical commit/recovery/source verification blockers explicitly
