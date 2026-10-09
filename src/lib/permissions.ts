@@ -22,6 +22,7 @@ export const ROUTE_ROLES: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/whatsapp", roles: ["admin", "accountant", "sales", "production", "hr", "employee", "customer", "vendor"] },
   { prefix: "/communications", roles: ["admin"] },
   { prefix: "/tally-import", roles: ["admin"] },
+  { prefix: "/local-tally-accounts", roles: ["admin"] },
   { prefix: "/accounting", roles: ["admin", "accountant"] },
   { prefix: "/gst", roles: ["admin", "accountant"] },
   { prefix: "/inventory", roles: ["admin", "accountant", "production", "sales"] },

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import {
   BookOpen,
   ListTree,
@@ -15,6 +16,13 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/accounting")({
+  head: () => ({ meta: [
+    { title: "Accounting | Mattress Maestro" },
+    { name: "description", content: "Mattress Maestro accounting, ledgers and financial reports." },
+    { property: "og:title", content: "Accounting | Mattress Maestro" },
+    { property: "og:description", content: "Company accounting and financial reporting." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: AccountingHome,
 });
 
@@ -71,6 +79,7 @@ const TILES = [
 ] as const;
 
 function AccountingHome() {
+  const { hasRole } = useAuth();
   return (
     <>
       <PageHeader
@@ -78,6 +87,7 @@ function AccountingHome() {
         description="Double-entry general ledger. Every invoice, bill, and payslip posts here automatically."
       />
       <PageBody>
+        {hasRole("admin") && <Link to="/local-tally-accounts" className="mb-5 flex items-center gap-3 border-b pb-4 font-medium"><BookOpen className="h-5 w-5" />Tally Data Import</Link>}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {TILES.map(({ to, label, desc, Icon }) => (
             <Link key={to} to={to} className="group">
