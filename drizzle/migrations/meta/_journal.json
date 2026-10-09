@@ -15,6 +15,13 @@
       "when": 1791292144543,
       "tag": "0001_harden_function_privileges",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791530411944,
+      "tag": "0002_protect_selected_crm_finance_shipping_tables",
+      "breakpoints": true
     }
   ]
 }
