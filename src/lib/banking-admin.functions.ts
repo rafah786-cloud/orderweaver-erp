@@ -40,7 +40,19 @@ export const createBankAccount = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase
       .from("bank_accounts")
-      .insert({ ...data, company_id: companyId })
+      .insert({
+        name: data.name,
+        bank_name: data.bank_name,
+        account_number: data.account_number,
+        ifsc_code: data.ifsc_code,
+        branch: data.branch,
+        account_type: data.account_type,
+        currency_code: data.currency_code,
+        opening_balance: data.opening_balance,
+        opening_balance_date: data.opening_balance_date,
+        ledger_account_id: data.ledger_account_id,
+        company_id: companyId,
+      })
       .select("id")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to create bank account");
