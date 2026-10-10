@@ -46,6 +46,7 @@ function nextDay(date: string): string {
 
 /** Tally can emit XML 1.0-invalid control bytes in otherwise valid exports. */
 export function sanitizeTallyXml(xml: string): string {
+  // eslint-disable-next-line no-control-regex -- remove invalid XML 1.0 control bytes from Tally output
   return xml.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
 }
 
