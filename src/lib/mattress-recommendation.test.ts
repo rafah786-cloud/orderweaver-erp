@@ -120,6 +120,53 @@ describe("mattress budget recommendations", () => {
     expect(result.candidates[0]?.components[0]?.rawMaterialId).toBe(materials[0].id);
   });
 
+  it("selects the current released BOM and ignores expired or future revisions", async () => {
+    const future = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
+    const expired = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+    const result = await mattressBudgetRecommendations(
+      fakeDb({
+        product_models: models.slice(0, 1),
+        raw_materials: materials.slice(0, 1),
+        model_boq: [],
+        bom_revisions: [
+          {
+            id: "expired",
+            model_id: models[0].id,
+            status: "released",
+            effective_from: "2025-01-01",
+            effective_to: expired,
+            bom_revision_lines: [{ raw_material_id: materials[0].id, quantity_per_unit: 9, scrap_pct: 0 }],
+          },
+          {
+            id: "current",
+            model_id: models[0].id,
+            status: "released",
+            effective_from: "2026-01-01",
+            effective_to: null,
+            bom_revision_lines: [{ raw_material_id: materials[0].id, quantity_per_unit: 2, scrap_pct: 0 }],
+          },
+          {
+            id: "future",
+            model_id: models[0].id,
+            status: "released",
+            effective_from: future,
+            effective_to: null,
+            bom_revision_lines: [{ raw_material_id: materials[0].id, quantity_per_unit: 7, scrap_pct: 0 }],
+          },
+        ],
+        stock_items: [],
+        purchase_bill_items: purchaseLines.slice(0, 1),
+      }),
+      { budget: 10000 },
+    );
+
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.components[0]?.quantityPerUnit).toBe(2);
+    expect(result.candidates[0]?.components[0]?.quantityPerUnit).not.toBe(7);
+    expect(result.candidates[0]?.components[0]?.quantityPerUnit).not.toBe(9);
+    expect(today).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/);
+  });
+
   it("uses recorded purchase rates and stock readiness instead of invented costs", async () => {
     const result = await mattressBudgetRecommendations(
       fakeDb({

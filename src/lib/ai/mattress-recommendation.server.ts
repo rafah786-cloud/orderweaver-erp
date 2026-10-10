@@ -168,11 +168,30 @@ export async function mattressBudgetRecommendations(
     bomByModel.set(row.model_id, list);
   }
 
-  // Prefer the released PLM BOM when the legacy model_boq table has no BOM
-  // for a model. This keeps recommendations tied to controlled BOM release.
+  // Prefer a currently effective released PLM BOM when the legacy model_boq
+  // table has no BOM. Never let an expired or future revision win just because
+  // the database returned it first.
+  const today = new Date().toISOString().slice(0, 10);
+  const revisionsByModel = new Map<string, any[]>();
   for (const revision of (releasedBomResult.data ?? []) as any[]) {
-    const lines = Array.isArray(revision.bom_revision_lines) ? revision.bom_revision_lines : [];
     if (bomByModel.has(revision.model_id)) continue;
+    const effectiveFrom = typeof revision.effective_from === "string" ? revision.effective_from : null;
+    const effectiveTo = typeof revision.effective_to === "string" ? revision.effective_to : null;
+    if (effectiveFrom && effectiveFrom > today) continue;
+    if (effectiveTo && effectiveTo < today) continue;
+    const list = revisionsByModel.get(revision.model_id) ?? [];
+    list.push(revision);
+    revisionsByModel.set(revision.model_id, list);
+  }
+
+  for (const [modelId, revisions] of revisionsByModel) {
+    revisions.sort((a, b) => {
+      const aFrom = typeof a.effective_from === "string" ? a.effective_from : "";
+      const bFrom = typeof b.effective_from === "string" ? b.effective_from : "";
+      return bFrom.localeCompare(aFrom) || String(b.id ?? "").localeCompare(String(a.id ?? ""));
+    });
+    const revision = revisions[0];
+    const lines = Array.isArray(revision?.bom_revision_lines) ? revision.bom_revision_lines : [];
     const valid = lines
       .map((line: any) => {
         const qty = numberOrNull(line.quantity_per_unit);
@@ -181,7 +200,7 @@ export async function mattressBudgetRecommendations(
         return { raw_material_id: line.raw_material_id, quantity_per_unit: qty * (1 + Math.max(0, scrap) / 100) };
       })
       .filter(Boolean) as Array<{ raw_material_id: string; quantity_per_unit: number }>;
-    if (valid.length) bomByModel.set(revision.model_id, valid);
+    if (valid.length) bomByModel.set(modelId, valid);
   }
 
   const materialById = new Map(
@@ -340,7 +359,7 @@ export async function mattressBudgetRecommendations(
   const limitations: string[] = [];
   if (selected.length < 5) {
     limitations.push(
-      `Only ${selected.length} defensible existing ERP product models met the budget and data-quality rules; the AI will not invent additional mattresses.`,
+      `Only ${selected.length} defensible existing ERP product models met the budget and data-quality rules; current ERP data does not support five recommendations, and the AI will not invent additional mattresses.`,
     );
   }
   if (selected.some((c) => c.costBasis === "standard_stock_price")) {

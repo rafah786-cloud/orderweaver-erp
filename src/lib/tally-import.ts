@@ -249,6 +249,8 @@ export function parseTallyMasters(
     throw new TallyXmlError("XML exceeds the 20 MB limit. Export smaller date ranges.");
   if (/<!DOCTYPE|<!ENTITY/i.test(xml))
     throw new TallyXmlError("XML document types and entities are not accepted.");
+  // This explicit control-character guard is intentional for untrusted XML input.
+  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(xml))
     throw new TallyXmlError("XML contains invalid control characters. Re-export from Tally.");
   if (XMLValidator.validate(xml) !== true)
