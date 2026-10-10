@@ -63,9 +63,15 @@ export function validateCollectionResponse(
     throw new Error(collection + ": Tally export status was " + (status ?? "missing") + ".");
   }
   const expectedTag = EXPECTED_RECORD_TAG[collection];
-  const recordCount = (xml.match(new RegExp("<" + expectedTag + "(?=\\s|>)", "gi")) ?? []).length;
-  if (recordCount === 0 && (collection === "List of Groups" || collection === "List of Ledgers")) {
-    throw new Error(collection + ": no <" + expectedTag + "> records were returned; refusing to save a misleading export.");
+  // Count named master objects only. Tally's CMPINFO contains scalar tags
+  // such as <LEDGER>0</LEDGER>; those totals are not actual ledger records.
+  const recordPattern = new RegExp("<" + expectedTag + "\\b(?=[^>]*\\bNAME\\s*=)[^>]*>", "gi");
+  const recordCount = (xml.match(recordPattern) ?? []).length;
+  const knownMasterTags = ["GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE", "UNIT"];
+  const hasOtherMasterRecords = knownMasterTags.some((tag) => tag !== expectedTag &&
+    new RegExp("<" + tag + "\\b(?=[^>]*\\bNAME\\s*=)[^>]*>", "i").test(xml));
+  if (recordCount === 0 && (collection === "List of Groups" || collection === "List of Ledgers" || hasOtherMasterRecords)) {
+    throw new Error(collection + ": no named <" + expectedTag + "> master records were returned; refusing to save a misleading export.");
   }
   return { xml, recordCount };
 }
