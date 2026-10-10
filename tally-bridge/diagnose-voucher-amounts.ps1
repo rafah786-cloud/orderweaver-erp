@@ -13,7 +13,11 @@ function Get-ChildValue($element, [string]$name) {
 }
 
 function Remove-IllegalXmlCharacters([string]$raw) {
-    return [regex]::Replace($raw, '[\x00-\x08\x0B\x0C\x0E-\x1F]', '')
+    # Tally exports can contain both literal XML 1.0 control characters and
+    # numeric character references to those same forbidden code points.
+    $clean = [regex]::Replace($raw, '[\x00-\x08\x0B\x0C\x0E-\x1F]', '')
+    $clean = [regex]::Replace($clean, '(?i)&#(?:x0*[0-8bcef]|0*(?:[0-8]|1[1-2]|1[4-9]|2[0-9]|3[01]));', '')
+    return $clean
 }
 
 $reader = [System.IO.StreamReader]::new((Resolve-Path $path))
