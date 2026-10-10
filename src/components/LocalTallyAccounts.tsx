@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LOCAL_TALLY_URL, previewLocalTally, readLocalTallyFile, validAccountingDate, type LocalTallyPreview, type LocalTallyCompany } from "@/lib/local-tally";
+import { TallyArchiveUploader } from "@/components/TallyArchiveUploader";
 
 export function LocalTallyAccounts() {
   const [source, setSource] = useState("xml");
@@ -77,6 +78,7 @@ export function LocalTallyAccounts() {
     finally { if (sequence.current === current) setBusy(false); }
   };
   return <div className="space-y-6">
+    <TallyArchiveUploader />
     <Tabs value={source} onValueChange={(value) => { reset(); setSource(value); }}>
       <TabsList><TabsTrigger value="xml"><FileUp className="mr-2 h-4 w-4" />Exported XML</TabsTrigger><TabsTrigger value="bridge"><Cable className="mr-2 h-4 w-4" />Live local bridge</TabsTrigger></TabsList>
       <TabsContent value="xml" className="space-y-3 pt-4">
