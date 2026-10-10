@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS idx_tally_archive_uploads_owner_created
 
 ALTER TABLE public.tally_archive_uploads ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.tally_archive_uploads FROM anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.tally_archive_uploads TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.tally_archive_uploads TO authenticated;
 GRANT ALL ON public.tally_archive_uploads TO service_role;
 
 DROP POLICY IF EXISTS "tally archive uploads owner read" ON public.tally_archive_uploads;
@@ -37,16 +37,5 @@ DROP POLICY IF EXISTS "tally archive uploads owner delete" ON public.tally_archi
 CREATE POLICY "tally archive uploads owner delete"
   ON public.tally_archive_uploads FOR DELETE TO authenticated
   USING (user_id = auth.uid());
-
-DROP POLICY IF EXISTS "tally archive uploads owner update" ON public.tally_archive_uploads;
-CREATE POLICY "tally archive uploads owner update"
-  ON public.tally_archive_uploads FOR UPDATE TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
-
-DROP TRIGGER IF EXISTS trg_tally_archive_uploads_updated ON public.tally_archive_uploads;
-CREATE TRIGGER trg_tally_archive_uploads_updated
-  BEFORE UPDATE ON public.tally_archive_uploads
-  FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
 COMMIT;
