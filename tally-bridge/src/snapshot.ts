@@ -13,6 +13,7 @@ export const MASTER_COLLECTIONS = [
   "List of Stock Items",
   "List of Godowns",
   "List of Cost Centres",
+  "List of Units",
 ] as const;
 
 const EXPECTED_RECORD_TAG: Record<(typeof MASTER_COLLECTIONS)[number], string> = {
@@ -21,6 +22,7 @@ const EXPECTED_RECORD_TAG: Record<(typeof MASTER_COLLECTIONS)[number], string> =
   "List of Stock Items": "STOCKITEM",
   "List of Godowns": "GODOWN",
   "List of Cost Centres": "COSTCENTRE",
+  "List of Units": "UNIT",
 };
 
 export type SnapshotOptions = TallyRequestOptions & {
