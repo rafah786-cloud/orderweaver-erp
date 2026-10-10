@@ -19,7 +19,10 @@ function Remove-IllegalXmlCharacters([string]$raw) {
 $reader = [System.IO.StreamReader]::new((Resolve-Path $path))
 $buffer = [System.Text.StringBuilder]::new()
 $inside = $false
+$matchedStarts = 0
 $processed = 0
+$parseErrors = 0
+$firstParseError = ""
 $nonZero = 0
 $bothEntryKinds = 0
 $shown = 0
@@ -33,6 +36,7 @@ try {
             if (-not $inside) {
                 $start = [regex]::Match($line.Substring($position), '<VOUCHER\b[^>]*>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
                 if (-not $start.Success) { break }
+                $matchedStarts++
                 $position += $start.Index
                 [void]$buffer.Clear()
                 $inside = $true
@@ -93,7 +97,9 @@ try {
                         }
                     }
                 } catch {
-                    Write-Warning ("Skipping one unparsable voucher during diagnostic: " + $_.Exception.Message)
+                    $parseErrors++
+                    if (-not $firstParseError) { $firstParseError = $_.Exception.Message }
+                    if ($parseErrors -le 5) { Write-Warning ("Unparsable voucher #{0}: {1}" -f $parseErrors, $_.Exception.Message) }
                 }
                 [void]$buffer.Clear()
             } else {
@@ -110,9 +116,12 @@ try {
 
 Write-Host ""
 Write-Host "========== DIAGNOSTIC SUMMARY ==========" -ForegroundColor Cyan
-Write-Host ("Voucher records parsed: {0}" -f $processed)
+Write-Host ("Voucher opening tags matched: {0}" -f $matchedStarts)
+Write-Host ("Voucher records parsed successfully: {0}" -f $processed)
+Write-Host ("Voucher parse errors: {0}" -f $parseErrors)
+if ($firstParseError) { Write-Host ("First parse error: {0}" -f $firstParseError) }
 Write-Host ("Vouchers with non-zero raw AMOUNT sum: {0}" -f $nonZero)
 Write-Host ("Vouchers containing BOTH ledger-entry tag types: {0}" -f $bothEntryKinds)
 Write-Host ("Unclosed voucher at end of file: {0}" -f $unclosedAtEof)
-Write-Host "Compare parsed voucher count with the validator's 39203 before interpreting any amount totals."
+Write-Host "Compare opening-tag count, parsed count, and parse errors before interpreting any amount totals."
 Write-Host "Diagnostic only: raw sums and sign fields are shown for inspection; no accounting verdict is made."
