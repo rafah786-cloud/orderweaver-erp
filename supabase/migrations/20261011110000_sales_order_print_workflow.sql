@@ -609,8 +609,8 @@ BEGIN
   WHERE j.id = p_job_id AND j.company_id = v_company
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Print job not found'; END IF;
-  IF v_job.status = 'needs_review' AND NOT p_force_review THEN
-    RAISE EXCEPTION 'Job needs a duplicate-output check before it can be reprinted';
+  IF v_job.status IN ('needs_review', 'spooled') AND NOT p_force_review THEN
+    RAISE EXCEPTION 'This job may already have printed; inspect physical output before reprinting';
   END IF;
   IF v_job.status NOT IN ('failed', 'needs_review', 'spooled') THEN
     RAISE EXCEPTION 'Only failed, review-required, or explicitly selected completed jobs can be reprinted';
