@@ -186,10 +186,14 @@ async function processOneJob() {
       console.error("Could not acknowledge spooled job; local ledger will suppress duplicate output:", error.message);
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Windows print spooler submission failed";
-    ledger[job.id] = { state: "failed", updatedAt: new Date().toISOString(), lastError: message };
+    // Once submission has been attempted, a thrown OS/spooler error does not
+    // reliably prove that no paper was produced. Mark it ambiguous and require
+    // operator inspection; automatic retry could print a duplicate receipt.
+    const message = (error instanceof Error ? error.message : "Windows print spooler submission failed") +
+      " Submission outcome is uncertain; inspect the Windows queue and physical output before reprinting.";
+    ledger[job.id] = { state: "needs_review", updatedAt: new Date().toISOString(), lastError: message };
     await persistLedger();
-    await acknowledge(job.id, "failed", message);
+    await acknowledge(job.id, "needs_review", message);
   }
   return true;
 }
