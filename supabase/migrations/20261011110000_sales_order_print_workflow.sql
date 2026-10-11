@@ -481,7 +481,7 @@ BEGIN
   INSERT INTO public.in_app_notifications (
     user_id, event_key, title, body, ref_table, ref_id, link, payload
   )
-  SELECT DISTINCT ur.user_id, 'staff.sales_order.created', 'New Sales Order',
+  SELECT DISTINCT targets.user_id, 'staff.sales_order.created', 'New Sales Order',
     'Sales Order ' || v_order.order_number || ' is ready for production. Receipt queued.',
     'sales_orders', v_order.id, '/production',
     jsonb_build_object('order_number', v_order.order_number)
@@ -530,7 +530,7 @@ BEGIN
   INSERT INTO public.in_app_notifications (
     user_id, event_key, title, body, ref_table, ref_id, link, payload
   )
-  SELECT DISTINCT ur.user_id, 'staff.sales_order_request.created', 'New Customer Order Request',
+  SELECT DISTINCT targets.user_id, 'staff.sales_order_request.created', 'New Customer Order Request',
     'Request ' || NEW.request_number || ' from ' || v_customer || ' is waiting for Accounts.',
     'sales_order_requests', NEW.id, '/order-requests',
     jsonb_build_object('request_number', NEW.request_number, 'customer_name', v_customer)
