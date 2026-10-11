@@ -103,7 +103,10 @@ function PrintBridgePage() {
 
   const manualRetry = (job: PrintJob) => {
     const uncertain = job.status === "needs_review" || job.status === "spooled" || job.status === "claimed";
-    if (uncertain && !window.confirm("This job may already have printed. Inspect the physical printer and Windows queue first. Create a separate reprint job anyway?")) return;
+    const message = uncertain
+      ? "This job may already have printed. Inspect the physical printer and Windows queue first. Create a separate reprint job anyway?"
+      : "The agent reported a print failure. Check the Windows queue and the paper output before retrying, to avoid a duplicate slip. Create a new print job?";
+    if (!window.confirm(message)) return;
     retry.mutate({ job_id: job.id, force_review: uncertain });
   };
 
