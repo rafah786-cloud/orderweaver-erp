@@ -553,9 +553,9 @@ BEGIN
   WHERE d.id = p_device_id AND d.token_hash = p_token_hash AND d.is_active = true;
   IF v_company IS NULL THEN RETURN; END IF;
 
-  UPDATE public.production_print_devices
+  UPDATE public.production_print_devices AS device_row
   SET last_seen_at = now()
-  WHERE id = p_device_id AND company_id = v_company;
+  WHERE device_row.id = p_device_id AND device_row.company_id = v_company;
 
   RETURN QUERY
   WITH candidate AS (
