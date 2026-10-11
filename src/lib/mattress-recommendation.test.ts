@@ -92,7 +92,7 @@ describe("mattress budget recommendations", () => {
 
     expect(result.candidates).toHaveLength(3);
     expect(result.dataSufficientForFive).toBe(false);
-    expect(result.limitations.some((x) => x.includes("does not support five"))).toBe(true);
+    expect(result.limitations.some((x) => x.includes("will not invent additional mattresses"))).toBe(true);
   });
 
   it("falls back to a released PLM BOM when the legacy model BOQ is empty", async () => {

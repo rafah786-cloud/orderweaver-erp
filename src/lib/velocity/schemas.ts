@@ -19,7 +19,7 @@ const dimensions = {
   origin_pincode: pincode, destination_pincode: pincode,
   dead_weight: positive, length: positive, width: positive, height: positive,
 };
-export const ratesInput = z.discriminatedUnion("journey_type", [
+export const ratesInput = z.union([
   z.object({ ...dimensions, journey_type: z.literal("forward"), payment_method: z.literal("prepaid") }).strict(),
   z.object({ ...dimensions, journey_type: z.literal("forward"), payment_method: z.literal("cod"), shipment_value: positive }).strict(),
   z.object({ ...dimensions, journey_type: z.literal("return"), qc_applicable: z.boolean().optional() }).strict(),
