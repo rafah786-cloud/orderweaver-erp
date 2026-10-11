@@ -29,3 +29,5 @@ Existing Vite/TanStack configuration and bearer middleware are preserved. CI is 
 
 ## Changed files
 `src/lib/velocity/types.ts`, `http.server.ts`, `client.server.ts`, `schemas.ts`, `auth.server.ts`, `warehouse.server.ts`, `velocity.test.ts`; `src/lib/velocity.functions.ts`; `src/components/settings/VelocityShippingCard.tsx`; `src/routes/_app.settings.tsx`; `AGENTS.md`; `roadmap.md`; this document.
+
+The timeout regression test's mocked fetch now returns `Promise<Response>` explicitly so its type matches the platform `fetch` contract. This change is isolated to test typing; CI must still verify the full test suite and build.
