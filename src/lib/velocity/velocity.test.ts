@@ -25,9 +25,11 @@ describe("Velocity transport boundaries", () => {
     expect(safeVelocityFailure(new Error("private"))).toEqual({ code: "PROVIDER_ERROR", message: "Velocity could not complete the request.", status: null, retryable: false });
   });
   it("times out stalled responses", async () => {
-    const fetcher: typeof fetch = vi.fn((_input, init) => new Promise((_resolve, reject) => {
-      init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));
-    }));
+    const fetcher: typeof fetch = vi.fn(
+      (_input, init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+      }),
+    );
     await expect(velocityHttp("/custom/api/v1/rates", {}, { fetcher, timeoutMs: 5 })).rejects.toMatchObject({ code: "TIMEOUT" });
   });
   it("rejects invalid JSON and oversized responses", async () => {
