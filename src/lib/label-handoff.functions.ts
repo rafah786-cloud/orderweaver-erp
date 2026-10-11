@@ -84,7 +84,7 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin: any = supabaseAdmin;
     const { data: existing, error: existingError } = await admin.from("label_handoff_jobs")
-      .select("id,expires_at,consumed_at")
+      .select("id,expires_at,consumed_at,token_hash")
       .eq("company_id", companyId)
       .eq("sales_order_id", order.id)
       .maybeSingle();
@@ -110,6 +110,7 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
         .update({ token_hash: tokenHash, payload: handoffPayload, expires_at: expiresAt, created_by: context.userId })
         .eq("id", existing.id)
         .eq("company_id", companyId)
+        .eq("token_hash", existing.token_hash)
         .is("consumed_at", null)
         .select("id")
         .maybeSingle();
