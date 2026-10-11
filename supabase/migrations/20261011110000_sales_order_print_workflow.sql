@@ -485,11 +485,22 @@ BEGIN
     'Sales Order ' || v_order.order_number || ' is ready for production. Receipt queued.',
     'sales_orders', v_order.id, '/production',
     jsonb_build_object('order_number', v_order.order_number)
-  FROM public.user_roles ur
-  JOIN public.profiles pr ON pr.id = ur.user_id AND pr.status = 'approved'
-  JOIN public.user_company_access uca ON uca.user_id = ur.user_id
+  FROM (
+    SELECT ur.user_id
+    FROM public.user_roles ur
+    WHERE ur.role::text IN ('admin', 'production')
+    UNION
+    SELECT e.user_id
+    FROM public.employees e
+    WHERE e.company_id = v_order.company_id
+      AND e.is_active = true
+      AND e.department IN ('Production', 'Management')
+      AND e.user_id IS NOT NULL
+  ) AS targets
+  JOIN public.profiles pr ON pr.id = targets.user_id AND pr.status = 'approved'
+  JOIN public.user_company_access uca ON uca.user_id = targets.user_id
     AND uca.company_id = v_order.company_id AND uca.can_view = true
-  WHERE ur.role::text IN ('admin', 'production');
+  WHERE true;
 
   RETURN NEW;
 END;
@@ -523,11 +534,22 @@ BEGIN
     'Request ' || NEW.request_number || ' from ' || v_customer || ' is waiting for Accounts.',
     'sales_order_requests', NEW.id, '/order-requests',
     jsonb_build_object('request_number', NEW.request_number, 'customer_name', v_customer)
-  FROM public.user_roles ur
-  JOIN public.profiles pr ON pr.id = ur.user_id AND pr.status = 'approved'
-  JOIN public.user_company_access uca ON uca.user_id = ur.user_id
+  FROM (
+    SELECT ur.user_id
+    FROM public.user_roles ur
+    WHERE ur.role::text IN ('admin', 'accountant')
+    UNION
+    SELECT e.user_id
+    FROM public.employees e
+    WHERE e.company_id = NEW.company_id
+      AND e.is_active = true
+      AND e.department IN ('Accounts', 'Management')
+      AND e.user_id IS NOT NULL
+  ) AS targets
+  JOIN public.profiles pr ON pr.id = targets.user_id AND pr.status = 'approved'
+  JOIN public.user_company_access uca ON uca.user_id = targets.user_id
     AND uca.company_id = NEW.company_id AND uca.can_view = true
-  WHERE ur.role::text IN ('admin', 'accountant');
+  WHERE true;
 
   RETURN NEW;
 END;
