@@ -404,7 +404,7 @@ CREATE INDEX IF NOT EXISTS production_print_jobs_queue_idx
   ON public.production_print_jobs(company_id, status, created_at)
   WHERE status = 'queued';
 ALTER TABLE public.production_print_jobs ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.production_print_jobs FROM PUBLIC, anon;
+REVOKE ALL ON public.production_print_jobs FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.production_print_jobs TO authenticated;
 
 DROP POLICY IF EXISTS production_print_jobs_company_read ON public.production_print_jobs;
