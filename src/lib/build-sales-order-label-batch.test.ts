@@ -20,10 +20,29 @@ describe("Sales Order label batch", () => {
     expect(result.records).toHaveLength(2);
     expect(result.excludedLines).toBe(2);
     expect(result.records.map((row) => row.ProductName)).toEqual(["Zizz Ortho", "Zizz Ortho"]);
+    expect(result.records.map((row) => row.Model)).toEqual(["Zizz Ortho", "Zizz Ortho"]);
+    expect(result.records.map((row) => row.Type)).toEqual(["MATTRESS", "MATTRESS"]);
+    expect(result.records.map((row) => row.SizeIn)).toEqual(["78 x 72 x 6", "78 x 72 x 6"]);
+    expect(result.records.every((row) => row.MRP === "")).toBe(true);
     expect(result.records.map((row) => row.Quantity)).toEqual(["1", "1"]);
     expect(result.records.map((row) => row.SKU)).toEqual(["ZZ-ORTHO", "ZZ-ORTHO"]);
     expect(result.records.map((row) => row.Price)).toEqual(["8500.00", "8500.00"]);
     expect(new Set(result.records.map((row) => row.Barcode)).size).toBe(2);
+  });
+
+  it("maps approved model metadata to the existing mattress template aliases without inventing MRP or manufacturing date", () => {
+    const result = buildSalesOrderLabelBatch(order, [lines[0]!], [{
+      ...models[0]!,
+      extra_specs: { Type: "FOAM MATTRESS", SizeCm: "198 x 183 x 15", Brand: "ZIZZ" },
+    }]);
+    expect(result.records[0]).toMatchObject({
+      Model: "Zizz Ortho",
+      Type: "FOAM MATTRESS",
+      SizeCm: "198 x 183 x 15",
+      Brand: "ZIZZ",
+      MfgDate: "",
+      MRP: "",
+    });
   });
 
   it("fails closed when every line is non-mattress or unclassified", () => {

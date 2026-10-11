@@ -11,6 +11,10 @@ export interface LabelProductModel {
   id: string;
   code: string | null;
   label_product_kind: string | null;
+  extra_specs?: Record<string, unknown> | null;
+  thickness?: string | null;
+  cover_fabric?: string | null;
+  foam_density?: string | null;
 }
 
 export interface SalesOrderLabelHeader {
@@ -36,7 +40,14 @@ export function buildSalesOrderLabelBatch(
 
   const byModel = new Map(models.map((model) => [
     model.id,
-    { code: model.code ?? null, kind: model.label_product_kind ?? "unclassified" },
+    {
+      code: model.code ?? null,
+      kind: model.label_product_kind ?? "unclassified",
+      extra: model.extra_specs && typeof model.extra_specs === "object" ? model.extra_specs : {},
+      thickness: model.thickness ?? null,
+      coverFabric: model.cover_fabric ?? null,
+      foamDensity: model.foam_density ?? null,
+    },
   ]));
   const mattressLines = lines.filter(
     (line) => !!line.model_id && byModel.get(line.model_id)?.kind === "mattress",
@@ -71,21 +82,41 @@ export function buildSalesOrderLabelBatch(
     const qty = Number(line.quantity);
     const model = byModel.get(line.model_id!)!;
     const sku = (model.code || line.model_id!.replace(/-/g, "").slice(0, 12)).slice(0, 40);
+    const extra = model.extra;
+    const extraString = (...keys: string[]) => {
+      for (const key of keys) {
+        const value = extra[key];
+        if (typeof value === "string" || typeof value === "number") {
+          const text = String(value).trim();
+          if (text) return text;
+        }
+      }
+      return "";
+    };
+    const type = extraString("Type", "type", "MattressType", "mattress_type") || "MATTRESS";
+    const mfgDate = extraString("ManufacturingDate", "manufacturing_date", "MfgDate", "mfg_date");
     for (let unit = 1; unit <= qty; unit += 1) {
       const serial = "ZIZZ-" + order.order_number.replace(/[^A-Za-z0-9]/g, "") +
         "-" + line.id.replace(/-/g, "").slice(0, 12).toUpperCase() +
         "-" + String(unit).padStart(3, "0");
       records.push({
         ProductName: line.product_name,
+        Model: line.product_name,
+        ModelSub: extraString("ModelSub", "model_sub"),
+        Type: type,
+        Size: line.size ?? "",
+        SizeIn: line.size ?? "",
+        SizeCm: extraString("SizeCm", "size_cm", "SizeCM"),
+        Brand: extraString("Brand", "brand"),
         Barcode: serial,
         SKU: sku,
         Price: Number(line.unit_price).toFixed(2),
-        MRP: "",
+        MRP: extraString("MRP", "mrp", "MaximumRetailPrice", "maximum_retail_price"),
         Batch: order.order_number,
         Serial: serial,
-        ManufacturingDate: "",
-        ExpiryDate: "",
-        Size: line.size ?? "",
+        ManufacturingDate: mfgDate,
+        MfgDate: mfgDate,
+        ExpiryDate: extraString("ExpiryDate", "expiry_date"),
         OrderNumber: order.order_number,
         OrderDate: order.order_date ?? "",
         UnitNumber: String(unit),

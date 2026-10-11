@@ -44,6 +44,10 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
         id: model.id,
         code: model.code ?? null,
         label_product_kind: model.label_product_kind ?? "unclassified",
+        extra_specs: model.extra_specs ?? {},
+        thickness: model.thickness ?? null,
+        cover_fabric: model.cover_fabric ?? null,
+        foam_density: model.foam_density ?? null,
       })),
     );
     const { records, labelCount, excludedLines } = batch;
