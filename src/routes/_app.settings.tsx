@@ -25,7 +25,17 @@ import { VelocityShippingCard } from "@/components/settings/VelocityShippingCard
 import { Trash2, KeyRound, Copy } from "lucide-react";
 import { saveShiftSettings } from "@/lib/settings-admin.functions";
 
-export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
+export const Route = createFileRoute("/_app/settings")({
+  head: () => ({ meta: [
+    { title: "Settings & Velocity Diagnostics | Mattress Maestro" },
+    { name: "description", content: "Administrator settings and live Velocity shipping diagnostics for Mattress Maestro ERP." },
+    { property: "og:title", content: "Mattress Maestro Administrator Settings" },
+    { property: "og:description", content: "Manage ERP settings and check Velocity serviceability and shipping rates." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
+  component: SettingsPage,
+});
 
 function SettingsPage() {
   const { hasRole } = useAuth();

@@ -1,5 +1,12 @@
 ## Open tasks
 
+## Velocity safe integration increment
+- [ ] Inspect official API documentation, existing schema and deployment configuration
+- [ ] Add server-only timed requests, redacted failures and bounded 401 recovery
+- [ ] Add admin-only connection diagnostics and regression coverage
+- [ ] Run tests/lint and verify preview build; do not deploy
+- [ ] Enable additional shipping endpoints only with verified official schemas
+
 - [x] Verify and publish Ask your data history, retrieval failure and company-attribution safeguards with regression tests
 - [x] Review wider AI/ERP audit evidence and implement independently safe high-impact fixes
   - [x] Company-isolate AI conversation history with active-company RLS and server-side company binding
