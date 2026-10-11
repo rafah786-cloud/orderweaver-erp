@@ -33,7 +33,7 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
     const lines = rawLines as SavedSalesOrderLine[];
     const modelIds = Array.from(new Set(lines.map((line) => line.model_id).filter(Boolean))) as string[];
     const { data: models, error: modelError } = await db.from("product_models")
-      .select("id,code,label_product_kind")
+      .select("id,code,label_product_kind,extra_specs,thickness,cover_fabric,foam_density")
       .in("id", modelIds).eq("company_id", companyId);
     if (modelError) throw new Error("Product label classifications could not be read.");
 
@@ -63,7 +63,7 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
 
     const handoffPayload = {
       orderNumber: order.order_number,
-      columns: ["ProductName", "Barcode", "SKU", "Price", "MRP", "Batch", "Serial", "ManufacturingDate", "ExpiryDate", "Size", "OrderNumber", "OrderDate", "UnitNumber", "Quantity"],
+      columns: ["ProductName", "Model", "ModelSub", "Type", "Size", "SizeIn", "SizeCm", "Brand", "Barcode", "SKU", "Price", "MRP", "Batch", "Serial", "ManufacturingDate", "MfgDate", "ExpiryDate", "OrderNumber", "OrderDate", "UnitNumber", "Quantity"],
       rows: records, labelCount, excludedLines,
     };
 
