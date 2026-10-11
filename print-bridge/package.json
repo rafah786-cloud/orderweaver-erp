@@ -1,0 +1,12 @@
+{
+  "name": "mattress-maestro-print-bridge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/agent.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

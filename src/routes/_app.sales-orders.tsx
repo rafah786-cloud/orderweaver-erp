@@ -41,6 +41,7 @@ import { inr, formatDate, todayIndia } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { createSalesOrder } from "@/lib/sales-orders-admin.functions";
+import { createLabelHandoff } from "@/lib/label-handoff.functions";
 
 export const Route = createFileRoute("/_app/sales-orders")({
   head: () => ({
@@ -77,6 +78,9 @@ function SalesOrdersPage() {
   const canCreate = hasAnyRole(["admin", "sales"]);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [labelPrompt, setLabelPrompt] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [labelLink, setLabelLink] = useState<{ url: string; count: number; excluded: number } | null>(null);
   const [partyId, setPartyId] = useState("");
   const [orderDate, setOrderDate] = useState(() => todayIndia());
   const [expectedDelivery, setExpectedDelivery] = useState("");
@@ -152,6 +156,7 @@ function SalesOrdersPage() {
   };
 
   const createSalesOrderFn = useServerFn(createSalesOrder);
+  const createLabelHandoffFn = useServerFn(createLabelHandoff);
   const createIdempotencyKey = useRef(`sales-order:${crypto.randomUUID()}`);
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
@@ -206,6 +211,8 @@ function SalesOrdersPage() {
       setOpen(false);
       const savedParty = partyId;
       resetForm();
+      setLabelLink(null);
+      setLabelPrompt({ id: res.id, orderNumber: res.orderNumber });
       try {
         const r = await notifyCustomer({ data: { party_id: savedParty, event: "sales_order.created", ref_id: res.id } });
         if (r?.ok) toast.success("Customer notified via WhatsApp");
@@ -214,6 +221,24 @@ function SalesOrdersPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const openLabelHandoff = async () => {
+    if (!labelPrompt) return;
+    setLabelBusy(true);
+    setLabelLink(null);
+    const popup = window.open("about:blank", "_blank");
+    try {
+      const result = await createLabelHandoffFn({ data: { sales_order_id: labelPrompt.id } });
+      setLabelLink({ url: result.url, count: result.label_count, excluded: result.excluded_lines });
+      if (popup) popup.location.replace(result.url);
+      else toast.info("Label batch prepared", { description: "Use the Open Smart Label Creator link in this dialog; the browser blocked the pop-up." });
+    } catch (error) {
+      popup?.close();
+      toast.error(error instanceof Error ? error.message : "Could not prepare label data.");
+    } finally {
+      setLabelBusy(false);
+    }
+  };
 
   return (
     <>
@@ -468,6 +493,39 @@ function SalesOrdersPage() {
             </Button>
             <Button onClick={() => create.mutate()} disabled={create.isPending}>
               {create.isPending ? "Creating…" : "Create Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!labelPrompt}
+        onOpenChange={(value) => { if (!value) { setLabelPrompt(null); setLabelLink(null); } }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Print Barcode labels for this Order!?</DialogTitle>
+            <DialogDescription>
+              Sales Order {labelPrompt?.orderNumber} is already saved. No or Cancel will not undo it.
+              Only models explicitly classified as Mattress are sent to Smart Label Creator.
+            </DialogDescription>
+          </DialogHeader>
+          {labelLink && (
+            <div className="rounded-md border p-3 text-sm">
+              <div className="font-medium">Label batch prepared: {labelLink.count} label(s)</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {labelLink.excluded} non-mattress or unclassified order line(s) excluded.
+              </div>
+              <a className="mt-2 inline-block underline" href={labelLink.url} target="_blank" rel="noreferrer">
+                Open Smart Label Creator
+              </a>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" disabled={labelBusy} onClick={() => { setLabelPrompt(null); setLabelLink(null); }}>Cancel</Button>
+            <Button variant="outline" disabled={labelBusy} onClick={() => { setLabelPrompt(null); setLabelLink(null); toast.info("Barcode label preparation skipped."); }}>No</Button>
+            <Button disabled={labelBusy || !!labelLink} onClick={() => void openLabelHandoff()}>
+              {labelBusy ? "Preparing…" : labelLink ? "Prepared" : "Yes"}
             </Button>
           </DialogFooter>
         </DialogContent>

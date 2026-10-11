@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, ClipboardList, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -10,7 +10,7 @@ import { CompanySwitcher } from "@/components/CompanySwitcher";
 import { AccountMenu } from "@/components/AccountMenu";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  "/dashboard": LayoutDashboard, "/parties": Users, "/invoices": FileText, "/sales-orders": ShoppingCart, "/boq": Package,
+  "/dashboard": LayoutDashboard, "/parties": Users, "/invoices": FileText, "/sales-orders": ShoppingCart, "/order-requests": ClipboardList, "/print-bridge": Printer, "/boq": Package,
   "/purchases": Truck, "/production": Factory, "/operations": Network, "/employees": UserCog, "/attendance": CalendarCheck,
   "/payslips": Receipt, "/approvals": ShieldCheck, "/whatsapp": MessageCircle, "/communications": MessageCircle,
   "/tally-import": Database, "/accounting": BookOpen, "/gst": FileSpreadsheet, "/inventory": Boxes, "/banking": Landmark,
@@ -18,7 +18,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/local-tally-accounts": Database,
 };
 const LABELS: Record<string, string> = {
-  "/dashboard": "Dashboard", "/parties": "Parties", "/invoices": "Invoices", "/sales-orders": "Sales Orders", "/boq": "BOQ",
+  "/dashboard": "Dashboard", "/parties": "Parties", "/invoices": "Invoices", "/sales-orders": "Sales Orders", "/order-requests": "Customer Order Requests", "/print-bridge": "Factory Print Bridge", "/boq": "BOQ",
   "/purchases": "Purchases", "/production": "Production", "/operations": "Enterprise Operations", "/employees": "Employees",
   "/attendance": "Attendance", "/payslips": "Payslips", "/approvals": "User Approvals", "/whatsapp": "WhatsApp",
   "/communications": "Communications", "/tally-import": "Tally Import", "/accounting": "Accounting", "/gst": "GST",
@@ -29,9 +29,9 @@ const NAV = ROUTE_ROLES.map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
-  { label: "Sales & Customers", prefixes: ["/parties", "/sales-orders", "/invoices"] },
+  { label: "Sales & Customers", prefixes: ["/parties", "/sales-orders", "/order-requests", "/invoices"] },
   { label: "Purchasing & Inventory", prefixes: ["/purchases", "/inventory", "/boq"] },
-  { label: "Production", prefixes: ["/production", "/operations"] },
+  { label: "Production", prefixes: ["/production", "/print-bridge", "/operations"] },
   { label: "Finance", prefixes: ["/accounting", "/banking", "/gst", "/local-tally-accounts"] },
   { label: "People", prefixes: ["/employees", "/attendance", "/payslips"] },
   { label: "Automation & Admin", prefixes: ["/ai", "/whatsapp", "/communications", "/approvals", "/tally-import", "/vendor", "/settings"] },
