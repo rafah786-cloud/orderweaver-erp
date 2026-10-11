@@ -251,7 +251,7 @@ export function parseTallyMasters(
     throw new TallyXmlError("XML document types and entities are not accepted.");
   if ([...xml].some((character) => {
     const code = character.charCodeAt(0);
-    return code <= 0x08 || code === 0x0b || code === 0x0c || (code >= 0x0e && code <= 0x1f);
+    return code <= 0x08 || (code >= 0x0b && code <= 0x0c) || (code >= 0x0e && code <= 0x1f);
   }))
     throw new TallyXmlError("XML contains invalid control characters. Re-export from Tally.");
   if (XMLValidator.validate(xml) !== true)
