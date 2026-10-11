@@ -340,7 +340,7 @@ export async function mattressBudgetRecommendations(
   const limitations: string[] = [];
   if (selected.length < 5) {
     limitations.push(
-      `Only ${selected.length} defensible existing ERP product models met the budget and data-quality rules; the AI will not invent additional mattresses.`,
+      `ERP data does not support five defensible recommendations: only ${selected.length} existing product models met the budget and data-quality rules. The AI will not invent additional mattresses.`,
     );
   }
   if (selected.some((c) => c.costBasis === "standard_stock_price")) {
