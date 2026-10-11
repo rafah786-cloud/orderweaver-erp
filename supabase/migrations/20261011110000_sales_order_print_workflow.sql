@@ -426,7 +426,8 @@ CREATE TABLE IF NOT EXISTS public.label_handoff_jobs (
   expires_at timestamptz NOT NULL,
   consumed_at timestamptz,
   created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (company_id, sales_order_id)
 );
 CREATE INDEX IF NOT EXISTS label_handoff_jobs_expiry_idx ON public.label_handoff_jobs(expires_at);
 ALTER TABLE public.label_handoff_jobs ENABLE ROW LEVEL SECURITY;
