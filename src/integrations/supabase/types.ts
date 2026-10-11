@@ -4900,6 +4900,7 @@ export type Database = {
           extra_specs: Json
           foam_density: string | null
           id: string
+          label_product_kind: "mattress" | "non_mattress" | "unclassified"
           name: string
           notes: string | null
           size: string | null
@@ -4917,6 +4918,7 @@ export type Database = {
           extra_specs?: Json
           foam_density?: string | null
           id?: string
+          label_product_kind?: "mattress" | "non_mattress" | "unclassified"
           name: string
           notes?: string | null
           size?: string | null
@@ -4934,6 +4936,7 @@ export type Database = {
           extra_specs?: Json
           foam_density?: string | null
           id?: string
+          label_product_kind?: "mattress" | "non_mattress" | "unclassified"
           name?: string
           notes?: string | null
           size?: string | null

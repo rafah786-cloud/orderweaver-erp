@@ -36,7 +36,7 @@ async function assertHasAnyRole(db: any, userId: string, roles: AllowedRole[]) {
 }
 
 const EVENT_ROLES: Record<StaffEvent, AllowedRole[]> = {
-  "staff.sales_order.created": ["admin", "sales"],
+  "staff.sales_order.created": ["admin", "sales", "accountant"],
   "staff.purchase_request.created": ["admin", "production"],
   "staff.approval.pending": ["admin", "accountant"],
   "staff.invoice.overdue": ["admin", "accountant"],

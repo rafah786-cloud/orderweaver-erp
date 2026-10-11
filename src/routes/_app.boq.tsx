@@ -55,6 +55,7 @@ type ProductModel = {
   code: string | null;
   name: string;
   size: string | null;
+  label_product_kind: "mattress" | "non_mattress" | "unclassified";
   thickness: string | null;
   cover_fabric: string | null;
   foam_density: string | null;
@@ -344,6 +345,7 @@ function ModelsTab({ canEdit }: { canEdit: boolean }) {
               <TableHead>Size</TableHead>
               <TableHead>Thickness</TableHead>
               <TableHead>Fabric</TableHead>
+              <TableHead>Label classification</TableHead>
               <TableHead className="text-right">Price</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -369,6 +371,7 @@ function ModelsTab({ canEdit }: { canEdit: boolean }) {
                   <TableCell>{m.size ?? "—"}</TableCell>
                   <TableCell>{m.thickness ?? "—"}</TableCell>
                   <TableCell>{m.cover_fabric ?? "—"}</TableCell>
+                  <TableCell><span className="text-xs capitalize">{(m.label_product_kind ?? "unclassified").replace("_", " ")}</span></TableCell>
                   <TableCell className="text-right">{inr(m.default_price)}</TableCell>
                   <TableCell className="text-right">
                     {canEdit && (
@@ -420,6 +423,7 @@ function ModelEditor({
     code: "",
     name: "",
     size: "",
+    label_product_kind: "unclassified" as "mattress" | "non_mattress" | "unclassified",
     thickness: "",
     cover_fabric: "",
     foam_density: "",
@@ -467,6 +471,7 @@ function ModelEditor({
           code: model.code ?? "",
           name: model.name,
           size: model.size ?? "",
+          label_product_kind: model.label_product_kind ?? "unclassified",
           thickness: model.thickness ?? "",
           cover_fabric: model.cover_fabric ?? "",
           foam_density: model.foam_density ?? "",
@@ -480,6 +485,7 @@ function ModelEditor({
           code: "",
           name: "",
           size: "",
+          label_product_kind: "unclassified",
           thickness: "",
           cover_fabric: "",
           foam_density: "",
@@ -515,6 +521,7 @@ function ModelEditor({
           code: form.code || null,
           name: form.name,
           size: form.size || null,
+          label_product_kind: form.label_product_kind,
           thickness: form.thickness || null,
           cover_fabric: form.cover_fabric || null,
           foam_density: form.foam_density || null,
@@ -573,6 +580,23 @@ function ModelEditor({
           </div>
 
           <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Label product classification</Label>
+              <Select
+                value={form.label_product_kind}
+                onValueChange={(value: "mattress" | "non_mattress" | "unclassified") =>
+                  setForm({ ...form, label_product_kind: value })
+                }
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unclassified">Unclassified — excluded from labels</SelectItem>
+                  <SelectItem value="mattress">Mattress — eligible for unit labels</SelectItem>
+                  <SelectItem value="non_mattress">Non-mattress — excluded from labels</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Only products explicitly marked Mattress are expanded into one label per saved unit. Existing products default to Unclassified until reviewed.</p>
+            </div>
             <div>
               <Label className="text-xs text-muted-foreground">Size</Label>
               <Input
