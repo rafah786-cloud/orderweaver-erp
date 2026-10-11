@@ -483,7 +483,7 @@ BEGIN
   )
   SELECT DISTINCT targets.user_id, 'staff.sales_order.created', 'New Sales Order',
     'Sales Order ' || v_order.order_number || ' is ready for production. Receipt queued.',
-    'sales_orders', v_order.id, '/production',
+    'sales_orders', v_order.id, '/print-bridge',
     jsonb_build_object('order_number', v_order.order_number)
   FROM (
     SELECT ur.user_id
