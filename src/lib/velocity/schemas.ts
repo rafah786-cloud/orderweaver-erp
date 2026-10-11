@@ -19,6 +19,8 @@ const dimensions = {
   origin_pincode: pincode, destination_pincode: pincode,
   dead_weight: positive, length: positive, width: positive, height: positive,
 };
+// Zod discriminated unions require unique discriminator values; forward prepaid/COD
+// are distinguished by payment_method, so use a regular union for these strict branches.
 export const ratesInput = z.union([
   z.object({ ...dimensions, journey_type: z.literal("forward"), payment_method: z.literal("prepaid") }).strict(),
   z.object({ ...dimensions, journey_type: z.literal("forward"), payment_method: z.literal("cod"), shipment_value: positive }).strict(),
