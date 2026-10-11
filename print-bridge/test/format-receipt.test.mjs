@@ -18,8 +18,7 @@ test("strips control characters and line injection from names", () => {
     customerName: "ABC\r\nINJECTED",
     items: [{ item: "Mattress\nOTHER DATA", quantity: 1 }],
   });
-  assert.equal(output.includes("INJECTED\r\n"), false);
-  assert.equal(output.includes("OTHER DATA\r\nQty"), false);
+  assert.equal(output, "Customer: ABC INJECTED\r\n\r\nMattress OTHER DATA\r\nQty: 1\r\n");
 });
 
 test("fails closed on invalid quantities and missing customer", () => {
