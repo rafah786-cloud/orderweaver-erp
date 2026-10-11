@@ -558,6 +558,17 @@ BEGIN
   SET last_seen_at = now()
   WHERE device_row.id = p_device_id AND device_row.company_id = v_company;
 
+  -- A crashed or disconnected agent must not leave a job claimed forever.
+  -- Expired claims move to manual inspection, never directly back to queued,
+  -- because the OS may have accepted the slip just before the agent stopped.
+  UPDATE public.production_print_jobs
+  SET status = 'needs_review',
+      last_error = 'The printer agent did not acknowledge this claim within five minutes. Inspect the Windows queue and physical output before reprinting.',
+      updated_at = now()
+  WHERE company_id = v_company
+    AND status = 'claimed'
+    AND claimed_at < now() - interval '5 minutes';
+
   RETURN QUERY
   WITH candidate AS (
     SELECT j.id
