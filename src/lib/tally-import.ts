@@ -249,7 +249,10 @@ export function parseTallyMasters(
     throw new TallyXmlError("XML exceeds the 20 MB limit. Export smaller date ranges.");
   if (/<!DOCTYPE|<!ENTITY/i.test(xml))
     throw new TallyXmlError("XML document types and entities are not accepted.");
-  if (/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(xml))
+  if ([...xml].some((character) => {
+    const code = character.charCodeAt(0);
+    return code <= 0x08 || (code >= 0x0b && code <= 0x0c) || (code >= 0x0e && code <= 0x1f);
+  }))
     throw new TallyXmlError("XML contains invalid control characters. Re-export from Tally.");
   if (XMLValidator.validate(xml) !== true)
     throw new TallyXmlError("The XML file is malformed or incomplete. Re-export from Tally.");
