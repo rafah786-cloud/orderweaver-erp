@@ -80,19 +80,49 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
     const { randomBytes, createHash } = await import("node:crypto");
     const token = randomBytes(32).toString("hex");
     const tokenHash = createHash("sha256").update(token, "utf8").digest("hex");
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin: any = supabaseAdmin;
-    const { error: insertError } = await admin.from("label_handoff_jobs").insert({
-      company_id: companyId, sales_order_id: order.id, token_hash: tokenHash,
-      payload: {
-        orderNumber: order.order_number,
-        columns: ["ProductName", "Barcode", "SKU", "Price", "MRP", "Batch", "Serial", "ManufacturingDate", "ExpiryDate", "Size", "OrderNumber", "OrderDate", "UnitNumber", "Quantity"],
-        rows: records, labelCount, excludedLines,
-      },
-      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-      created_by: context.userId,
-    });
-    if (insertError) throw new Error("The temporary label handoff could not be created. The Sales Order is still saved.");
+    const { data: existing, error: existingError } = await admin.from("label_handoff_jobs")
+      .select("id,expires_at,consumed_at")
+      .eq("company_id", companyId)
+      .eq("sales_order_id", order.id)
+      .maybeSingle();
+    if (existingError) throw new Error("Could not check the order's existing label handoff.");
+
+    const handoffPayload = {
+      orderNumber: order.order_number,
+      columns: ["ProductName", "Barcode", "SKU", "Price", "MRP", "Batch", "Serial", "ManufacturingDate", "ExpiryDate", "Size", "OrderNumber", "OrderDate", "UnitNumber", "Quantity"],
+      rows: records, labelCount, excludedLines,
+    };
+
+    if (existing?.consumed_at) {
+      throw new Error("This Sales Order's initial label batch was already opened in Smart Label Creator. To avoid duplicate labels, use the existing dataset and deliberately reprint there instead of creating a second batch.");
+    }
+    if (existing && new Date(existing.expires_at).getTime() > Date.now()) {
+      throw new Error("A label handoff for this order is already active. No duplicate batch was created. Open the existing Smart Label Creator tab, or wait for its 10-minute token to expire if it was never opened.");
+    }
+
+    if (existing) {
+      // An expired, never-consumed handoff can safely be refreshed in place.
+      // Its previous token immediately becomes invalid; the unique per-order row remains.
+      const { data: updated, error: updateError } = await admin.from("label_handoff_jobs")
+        .update({ token_hash: tokenHash, payload: handoffPayload, expires_at: expiresAt, created_by: context.userId })
+        .eq("id", existing.id)
+        .eq("company_id", companyId)
+        .is("consumed_at", null)
+        .select("id")
+        .maybeSingle();
+      if (updateError || !updated) {
+        throw new Error("The expired label handoff could not be refreshed safely. The Sales Order remains saved.");
+      }
+    } else {
+      const { error: insertError } = await admin.from("label_handoff_jobs").insert({
+        company_id: companyId, sales_order_id: order.id, token_hash: tokenHash,
+        payload: handoffPayload, expires_at: expiresAt, created_by: context.userId,
+      });
+      if (insertError) throw new Error("The temporary label handoff could not be created. The Sales Order is still saved.");
+    }
 
     return {
       url: "https://printer-pixie-suite.lovable.app/data?handoff=" + token,
