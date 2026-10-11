@@ -97,7 +97,7 @@ export const createLabelHandoff = createServerFn({ method: "POST" })
     }
 
     return {
-      url: "https://printer-pixie-suite.lovable.app/data?handoff=" + token,
+      url: "https://printer-pixie-suite.lovable.app/data#handoff=" + token,
       order_number: order.order_number as string,
       label_count: labelCount,
       excluded_lines: excludedLines,
