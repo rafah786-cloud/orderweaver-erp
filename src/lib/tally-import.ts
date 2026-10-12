@@ -604,13 +604,15 @@ export function parseTallyMasters(
         if (t) {
           // Net the voucher: sum of non-party lines drives the party movement.
           let net = 0;
+          // Use all accounting legs, including nested inventory allocations, to
+          // infer the counterparty movement when PARTYLEDGERNAME is the only party hint.
           for (const line of lines) {
             const ln = text(line.LEDGERNAME);
             if (!ln || ln.toLowerCase() === partyLedgerName.toLowerCase()) continue;
             const amount = num(line.AMOUNT);
-            const isDeemedPositive = isYes(line.ISDEEMEDPOSITIVE);
-            // Opposite side from the party line
-            net += isDeemedPositive ? -Math.abs(amount) : Math.abs(amount);
+            // Signed Tally amount: negative debit, positive credit. Net is inverted
+            // to derive the missing party leg.
+            net += amount;
           }
           const debit = net > 0 ? net : 0;
           const credit = net < 0 ? -net : 0;
