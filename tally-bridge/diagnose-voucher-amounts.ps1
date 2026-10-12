@@ -33,6 +33,7 @@ $withoutNameAttribute = 0
 $withInventoryEntries = 0
 $withLedgerEntries = 0
 $firstUnnamed = ""
+$noLedgerDetails = ""
 $bothEntryKinds = 0
 $shown = 0
 $unclosedAtEof = $false
@@ -82,7 +83,13 @@ try {
                             $_.Name.LocalName -in @("ALLLEDGERENTRIES.LIST", "LEDGERENTRIES.LIST")
                         })
                         $allCount = @($entries | Where-Object { $_.Name.LocalName -eq "ALLLEDGERENTRIES.LIST" }).Count
-                        if ($entries.Count -gt 0) { $withLedgerEntries++ }
+                        if ($entries.Count -gt 0) { $withLedgerEntries++ } elseif (-not $noLedgerDetails) {
+                            $noLedgerDetails = ("Root={0}; Attributes={1}; Direct child elements={2}; Raw fragment start={3}" -f
+                                $v.Name.LocalName,
+                                (($v.Attributes() | ForEach-Object { $_.Name.LocalName + "=" + $_.Value }) -join "; "),
+                                (($v.Elements() | ForEach-Object { $_.Name.LocalName }) -join ","),
+                                $raw.Substring(0, [Math]::Min(700, $raw.Length)))
+                        }
                         $legacyCount = @($entries | Where-Object { $_.Name.LocalName -eq "LEDGERENTRIES.LIST" }).Count
                         if ($allCount -gt 0 -and $legacyCount -gt 0) { $bothEntryKinds++ }
 
@@ -151,6 +158,7 @@ Write-Host ("Vouchers without NAME attribute: {0}" -f $withoutNameAttribute)
 if ($firstUnnamed) { Write-Host ("First voucher without NAME: {0}" -f $firstUnnamed) }
 Write-Host ("Vouchers with inventory entries: {0}" -f $withInventoryEntries)
 Write-Host ("Vouchers with ledger entries: {0}" -f $withLedgerEntries)
+if ($noLedgerDetails) { Write-Host ("First element without ledger entries: {0}" -f $noLedgerDetails) }
 Write-Host ("Vouchers with non-zero raw AMOUNT sum: {0}" -f $nonZero)
 Write-Host ("Vouchers containing BOTH ledger-entry tag types: {0}" -f $bothEntryKinds)
 Write-Host ("Unclosed voucher at end of file: {0}" -f $unclosedAtEof)
