@@ -74,7 +74,7 @@ export function dataRequest(report: string, options: TallyRequestOptions): strin
 export class TallyClient {
   constructor(
     private readonly baseUrl = process.env.TALLY_URL || "http://127.0.0.1:9000",
-    private readonly defaultTimeoutMs = Number(process.env.TALLY_TIMEOUT_MS || 120000),
+    private readonly defaultTimeoutMs = Number(process.env.TALLY_TIMEOUT_MS || 600000),
   ) {}
 
   async ping(): Promise<void> {
@@ -95,16 +95,47 @@ export class TallyClient {
     xml: string,
     options: TallyRequestOptions,
   ): Promise<TallyResponse> {
-    const response = await fetch(this.baseUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/xml;charset=UTF-8",
-        "Cache-Control": "no-cache",
-      },
-      body: xml,
-      signal: AbortSignal.timeout(options.timeoutMs || this.defaultTimeoutMs),
-    });
-    const responseXml = await response.text();
+    const timeoutMs = options.timeoutMs || this.defaultTimeoutMs;
+    let response: Response | undefined;
+    let responseXml = "";
+    const maxAttempts = 3;
+
+    // Large Tally master collections can take several minutes. Retry only
+    // transient transport failures/timeouts; HTTP and Tally validation errors
+    // remain hard failures. Every attempt is read-only.
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        response = await fetch(this.baseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/xml;charset=UTF-8",
+            "Cache-Control": "no-cache",
+          },
+          body: xml,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        responseXml = await response.text();
+        break;
+      } catch (error) {
+        const err = error as Error;
+        const transient = err?.name === "TimeoutError" || err instanceof TypeError;
+        if (!transient || attempt === maxAttempts) {
+          throw new Error(
+            "Tally request " + requestName + " failed after " + attempt +
+            " attempt(s) (timeout " + timeoutMs + " ms): " + (err?.message || String(error)),
+            { cause: error },
+          );
+        }
+        const delayMs = attempt * 2000;
+        console.warn(
+          "[tally-bridge] " + requestName + " transport failure on attempt " +
+          attempt + "/" + maxAttempts + "; retrying in " + delayMs +
+          " ms (timeout " + timeoutMs + " ms).",
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    if (!response) throw new Error("Tally request " + requestName + " returned no response.");
     if (!response.ok) {
       throw new Error("Tally HTTP " + response.status + ": " + responseXml.slice(0, 500));
     }
