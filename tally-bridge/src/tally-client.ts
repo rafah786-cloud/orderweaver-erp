@@ -74,7 +74,7 @@ export function dataRequest(report: string, options: TallyRequestOptions): strin
 export class TallyClient {
   constructor(
     private readonly baseUrl = process.env.TALLY_URL || "http://127.0.0.1:9000",
-    private readonly defaultTimeoutMs = Number(process.env.TALLY_TIMEOUT_MS || 600000),
+    private readonly defaultTimeoutMs = Number(process.env.TALLY_TIMEOUT_MS || 1800000),
   ) {}
 
   async ping(): Promise<void> {
