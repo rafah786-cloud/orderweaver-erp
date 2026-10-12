@@ -534,7 +534,17 @@ export function parseTallyMasters(
       const altLines = arr<Record<string, unknown>>(
         v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined,
       );
-      const lines = [...ledgerLines, ...altLines];
+      // Sales/purchase account legs can be nested inside inventory entries rather
+      // than emitted as top-level ledger entries. Include those allocations in
+      // voucher-level reconciliation, but keep stock quantity/rate values separate.
+      const inventoryLines = [
+        ...arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never),
+        ...arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never),
+      ];
+      const allocationLines = inventoryLines.flatMap((inventory) =>
+        arr<Record<string, unknown>>(inventory["ACCOUNTINGALLOCATIONS.LIST"] as never),
+      );
+      const lines = [...ledgerLines, ...altLines, ...allocationLines];
 
       vouchersOut.push({
         source_id: guid,
@@ -542,13 +552,15 @@ export function parseTallyMasters(
         voucher_type,
         voucher_number,
         voucher_date: entry_date,
+        // In Tally's signed AMOUNT convention, negative amounts are debits and
+        // positive amounts are credits. ISDEEMEDPOSITIVE alone is insufficient
+        // for round-off and other sign-sensitive entries.
         entries: lines.map((line) => {
           const amount = num(line.AMOUNT);
-          const debit = isYes(line.ISDEEMEDPOSITIVE) ? Math.abs(amount) : 0;
           return {
             ledger_name: text(line.LEDGERNAME),
-            debit,
-            credit: debit ? 0 : Math.abs(amount),
+            debit: amount < 0 ? Math.abs(amount) : 0,
+            credit: amount > 0 ? amount : 0,
           };
         }),
         lifecycle_state: lifecycleState(v),
@@ -569,10 +581,9 @@ export function parseTallyMasters(
         if (!type) continue;
 
         const amount = num(line.AMOUNT);
-        const isDeemedPositive = isYes(line.ISDEEMEDPOSITIVE);
-        // ISDEEMEDPOSITIVE=Yes means the ledger is being debited on this line.
-        const debit = isDeemedPositive ? Math.abs(amount) : 0;
-        const credit = !isDeemedPositive ? Math.abs(amount) : 0;
+        // Preserve Tally's signed accounting amount: negative = debit, positive = credit.
+        const debit = amount < 0 ? Math.abs(amount) : 0;
+        const credit = amount > 0 ? amount : 0;
 
         ledgerEntries.push({
           party_name: ledgerName,
