@@ -28,6 +28,11 @@ $processed = 0
 $parseErrors = 0
 $firstParseError = ""
 $nonZero = 0
+$withNameAttribute = 0
+$withoutNameAttribute = 0
+$withInventoryEntries = 0
+$withLedgerEntries = 0
+$firstUnnamed = ""
 $bothEntryKinds = 0
 $shown = 0
 $unclosedAtEof = $false
@@ -57,10 +62,27 @@ try {
                     $doc = [System.Xml.Linq.XDocument]::Parse($raw)
                     $v = $doc.Root
                     if ($null -ne $v -and $v.Name.LocalName -eq "VOUCHER") {
+                        $nameAttribute = $v.Attribute("NAME")
+                        if ($null -ne $nameAttribute -and -not [string]::IsNullOrWhiteSpace($nameAttribute.Value)) {
+                            $withNameAttribute++
+                        } else {
+                            $withoutNameAttribute++
+                            if (-not $firstUnnamed) {
+                                $firstUnnamed = ("Date={0}; Type={1}; Number={2}; GUID={3}; Attributes={4}" -f
+                                    (Get-ChildValue $v "DATE"),
+                                    (Get-ChildValue $v "VOUCHERTYPENAME"),
+                                    (Get-ChildValue $v "VOUCHERNUMBER"),
+                                    (Get-ChildValue $v "GUID"),
+                                    (($v.Attributes() | ForEach-Object { $_.Name.LocalName + "=" + $_.Value }) -join "; "))
+                            }
+                        }
+                        $inventoryEntries = @($v.Descendants() | Where-Object { $_.Name.LocalName -eq "ALLINVENTORYENTRIES.LIST" -or $_.Name.LocalName -eq "INVENTORYENTRIES.LIST" })
+                        if ($inventoryEntries.Count -gt 0) { $withInventoryEntries++ }
                         $entries = @($v.Descendants() | Where-Object {
                             $_.Name.LocalName -in @("ALLLEDGERENTRIES.LIST", "LEDGERENTRIES.LIST")
                         })
                         $allCount = @($entries | Where-Object { $_.Name.LocalName -eq "ALLLEDGERENTRIES.LIST" }).Count
+                        if ($entries.Count -gt 0) { $withLedgerEntries++ }
                         $legacyCount = @($entries | Where-Object { $_.Name.LocalName -eq "LEDGERENTRIES.LIST" }).Count
                         if ($allCount -gt 0 -and $legacyCount -gt 0) { $bothEntryKinds++ }
 
@@ -124,6 +146,11 @@ Write-Host ("Voucher opening tags matched: {0}" -f $matchedStarts)
 Write-Host ("Voucher records parsed successfully: {0}" -f $processed)
 Write-Host ("Voucher parse errors: {0}" -f $parseErrors)
 if ($firstParseError) { Write-Host ("First parse error: {0}" -f $firstParseError) }
+Write-Host ("Vouchers with NAME attribute: {0}" -f $withNameAttribute)
+Write-Host ("Vouchers without NAME attribute: {0}" -f $withoutNameAttribute)
+if ($firstUnnamed) { Write-Host ("First voucher without NAME: {0}" -f $firstUnnamed) }
+Write-Host ("Vouchers with inventory entries: {0}" -f $withInventoryEntries)
+Write-Host ("Vouchers with ledger entries: {0}" -f $withLedgerEntries)
 Write-Host ("Vouchers with non-zero raw AMOUNT sum: {0}" -f $nonZero)
 Write-Host ("Vouchers containing BOTH ledger-entry tag types: {0}" -f $bothEntryKinds)
 Write-Host ("Unclosed voucher at end of file: {0}" -f $unclosedAtEof)
