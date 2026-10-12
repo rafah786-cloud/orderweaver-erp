@@ -7,13 +7,16 @@ import {
   type TallyRequestOptions,
 } from "./tally-client.js";
 
+// List of Units causes a TDL error in the user's current TallyPrime setup
+// ("Collection:List of Units — Could not find description!"). Unit metadata
+// remains available through stock-item master records, so do not issue this
+// separate request until a compatible collection definition is confirmed.
 export const MASTER_COLLECTIONS = [
   "List of Groups",
   "List of Ledgers",
   "List of Stock Items",
   "List of Godowns",
   "List of Cost Centres",
-  "List of Units",
 ] as const;
 
 const EXPECTED_RECORD_TAG: Record<(typeof MASTER_COLLECTIONS)[number], string> = {
@@ -22,7 +25,6 @@ const EXPECTED_RECORD_TAG: Record<(typeof MASTER_COLLECTIONS)[number], string> =
   "List of Stock Items": "STOCKITEM",
   "List of Godowns": "GODOWN",
   "List of Cost Centres": "COSTCENTRE",
-  "List of Units": "UNIT",
 };
 
 export type SnapshotOptions = TallyRequestOptions & {
@@ -68,7 +70,7 @@ export function validateCollectionResponse(
   // such as <LEDGER>0</LEDGER>; those totals are not actual ledger records.
   const recordPattern = new RegExp("<" + expectedTag + "\\b(?=[^>]*\\bNAME\\s*=)[^>]*>", "gi");
   const recordCount = (xml.match(recordPattern) ?? []).length;
-  const knownMasterTags = ["GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE", "UNIT"];
+  const knownMasterTags = ["GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE"];
   const hasOtherMasterRecords = knownMasterTags.some((tag) => tag !== expectedTag &&
     new RegExp("<" + tag + "\\b(?=[^>]*\\bNAME\\s*=)[^>]*>", "i").test(xml));
   if (recordCount === 0 && (collection === "List of Groups" || collection === "List of Ledgers" || hasOtherMasterRecords)) {
