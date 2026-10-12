@@ -38,7 +38,7 @@ try {
         $position = 0
         while ($position -lt $line.Length) {
             if (-not $inside) {
-                $start = [regex]::Match($line.Substring($position), '<VOUCHER\b(?=[^>]*\bNAME\s*=)[^>]*>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                $start = [regex]::Match($line.Substring($position), '<VOUCHER\b[^>]*>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
                 if (-not $start.Success) { break }
                 $matchedStarts++
                 $position += $start.Index
@@ -127,5 +127,5 @@ if ($firstParseError) { Write-Host ("First parse error: {0}" -f $firstParseError
 Write-Host ("Vouchers with non-zero raw AMOUNT sum: {0}" -f $nonZero)
 Write-Host ("Vouchers containing BOTH ledger-entry tag types: {0}" -f $bothEntryKinds)
 Write-Host ("Unclosed voucher at end of file: {0}" -f $unclosedAtEof)
-Write-Host "Only VOUCHER elements with a NAME attribute are counted as records; wrapper tags are excluded."
+Write-Host "Opening-tag count includes every matched VOUCHER element; reconcile the one-record difference against the validator before accounting conclusions."
 Write-Host "Diagnostic only: raw sums and sign fields are shown for inspection; no accounting verdict is made."
