@@ -38,7 +38,7 @@ try {
         $position = 0
         while ($position -lt $line.Length) {
             if (-not $inside) {
-                $start = [regex]::Match($line.Substring($position), '<VOUCHER\b[^>]*>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                                $start = [regex]::Match($line.Substring($position), '<VOUCHER\\b[^>]*>', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
                 if (-not $start.Success) { break }
                 $matchedStarts++
                 $position += $start.Index
