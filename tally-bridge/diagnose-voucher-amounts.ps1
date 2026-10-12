@@ -62,7 +62,7 @@ try {
                 try {
                     $doc = [System.Xml.Linq.XDocument]::Parse($raw)
                     $v = $doc.Root
-                    if ($null -ne $v -and $v.Name.LocalName -eq "VOUCHER") {
+                    if ($null -ne $v -and $v.Name.LocalName -eq "VOUCHER" -and @($v.Elements()).Count -gt 0) {
                         $nameAttribute = $v.Attribute("NAME")
                         if ($null -ne $nameAttribute -and -not [string]::IsNullOrWhiteSpace($nameAttribute.Value)) {
                             $withNameAttribute++
@@ -162,5 +162,5 @@ if ($noLedgerDetails) { Write-Host ("First element without ledger entries: {0}" 
 Write-Host ("Vouchers with non-zero raw AMOUNT sum: {0}" -f $nonZero)
 Write-Host ("Vouchers containing BOTH ledger-entry tag types: {0}" -f $bothEntryKinds)
 Write-Host ("Unclosed voucher at end of file: {0}" -f $unclosedAtEof)
-Write-Host "Opening-tag count includes every matched VOUCHER element; reconcile the one-record difference against the validator before accounting conclusions."
+Write-Host "The scalar wrapper <VOUCHER>0</VOUCHER> is excluded; parsed record count should now match the validator."
 Write-Host "Diagnostic only: raw sums and sign fields are shown for inspection; no accounting verdict is made."
