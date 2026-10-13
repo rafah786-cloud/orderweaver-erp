@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Activity, ArrowDownLeft, ArrowRight, ArrowUpRight, Boxes, Building2, CalendarClock,
+  Activity, ArrowRight, Boxes, Building2, CalendarClock,
   CheckCircle2, CircleDollarSign, ClipboardList, Factory, FileText, HandCoins,
   LayoutDashboard, Package, Plus, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
 } from "lucide-react";
