@@ -332,7 +332,7 @@ function DeviceCard() {
 function ShiftCard() {
   const saveShift = useServerFn(saveShiftSettings);
   const qc = useQueryClient();
-  const { data: shift } = useQuery({
+  const { data: shift, isLoading: shiftLoading, isError: shiftError, refetch: refetchShift } = useQuery({
     queryKey: ["shift"],
     queryFn: async () => {
       const { data: companyId } = await supabase.rpc("current_company_id");
@@ -347,6 +347,7 @@ function ShiftCard() {
     },
   });
   const [form, setForm] = useState<Record<string, string | number>>({});
+  const [savingShift, setSavingShift] = useState(false);
   const v = (k: string, d: string | number) =>
     (form[k] ?? shift?.[k as keyof typeof shift] ?? d) as string | number;
 
@@ -356,6 +357,16 @@ function ShiftCard() {
         <CardTitle>Shift & Payroll Rules</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {shiftLoading && <p role="status" className="text-sm text-muted-foreground">Loading company shift rules…</p>}
+        {shiftError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 text-sm text-destructive">
+            <span>Shift rules could not be loaded. Saving is disabled to avoid overwriting settings with defaults.</span>
+            <Button size="sm" variant="outline" onClick={() => void refetchShift()}>Retry</Button>
+          </div>
+        )}
+        {!shiftLoading && !shiftError && !shift && (
+          <p role="status" className="text-sm text-muted-foreground">No shift rules exist for this company yet. Save these values to create the initial rules.</p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Shift Start</Label>
@@ -415,29 +426,42 @@ function ShiftCard() {
           </div>
         </div>
         <Button
+          disabled={shiftLoading || shiftError || savingShift}
           onClick={async () => {
-            if (!shift) return;
+            const values = {
+              shift_start: String(v("shift_start", "09:00")),
+              shift_end: String(v("shift_end", "18:00")),
+              late_grace_minutes: Number(v("late_grace_minutes", 10)),
+              half_day_hours: Number(v("half_day_hours", 4)),
+              late_deduction_pct: Number(v("late_deduction_pct", 0)),
+              half_day_deduction_pct: Number(v("half_day_deduction_pct", 50)),
+              working_days_per_month: Number(v("working_days_per_month", 26)),
+            };
+            if (!/^\d{2}:\d{2}$/.test(values.shift_start) || !/^\d{2}:\d{2}$/.test(values.shift_end)) {
+              toast.error("Enter valid shift start and end times.");
+              return;
+            }
+            if (!Number.isInteger(values.late_grace_minutes) || values.late_grace_minutes < 0 || values.late_grace_minutes > 240 ||
+                !Number.isFinite(values.half_day_hours) || values.half_day_hours < 0 || values.half_day_hours > 24 ||
+                !Number.isFinite(values.late_deduction_pct) || values.late_deduction_pct < 0 || values.late_deduction_pct > 100 ||
+                !Number.isFinite(values.half_day_deduction_pct) || values.half_day_deduction_pct < 0 || values.half_day_deduction_pct > 100 ||
+                !Number.isInteger(values.working_days_per_month) || values.working_days_per_month < 1 || values.working_days_per_month > 31) {
+              toast.error("Check the shift and deduction values. All entries must be within the allowed ranges.");
+              return;
+            }
+            setSavingShift(true);
             try {
-              await saveShift({
-                data: {
-                  id: shift.id,
-                  shift_start: String(v("shift_start", "09:00")),
-                  shift_end: String(v("shift_end", "18:00")),
-                  late_grace_minutes: Number(v("late_grace_minutes", 10)),
-                  half_day_hours: Number(v("half_day_hours", 4)),
-                  late_deduction_pct: Number(v("late_deduction_pct", 0)),
-                  half_day_deduction_pct: Number(v("half_day_deduction_pct", 50)),
-                  working_days_per_month: Number(v("working_days_per_month", 26)),
-                },
-              });
-              toast.success("Saved");
-              qc.invalidateQueries({ queryKey: ["shift"] });
+              const result = await saveShift({ data: { ...(shift?.id ? { id: shift.id } : {}), ...values } });
+              toast.success(result.created ? "Initial company shift rules created." : "Shift rules saved.");
+              await qc.invalidateQueries({ queryKey: ["shift"] });
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Failed to save settings");
+            } finally {
+              setSavingShift(false);
             }
           }}
         >
-          Save
+          {savingShift ? "Saving…" : shift ? "Save" : "Create shift rules"}
         </Button>
       </CardContent>
     </Card>
