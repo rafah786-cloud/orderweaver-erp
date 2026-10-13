@@ -24,7 +24,7 @@ import {
 } from "@/lib/gst";
 import { downloadJson } from "@/lib/gstr1";
 import { inr, formatDate } from "@/lib/format";
-import { Download, RefreshCw, CheckCircle, ExternalLink } from "lucide-react";
+import { Download, RefreshCw, ExternalLink, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/gst/returns/$id")({
@@ -70,20 +70,6 @@ function ReturnDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const markFiled = useMutation({
-    mutationFn: async () => {
-      const { error } = await sb
-        .from("gst_returns")
-        .update({ status: "filed", filed_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Marked as filed");
-      qc.invalidateQueries({ queryKey: ["gst_return", id] });
-    },
-  });
-
   if (rq.isLoading || !ret)
     return (
       <PageBody>
@@ -115,15 +101,22 @@ function ReturnDetail() {
             >
               <Download className="h-4 w-4 mr-1" /> Export JSON
             </Button>
-            {ret.status !== "filed" && (
-              <Button onClick={() => markFiled.mutate()}>
-                <CheckCircle className="h-4 w-4 mr-1" /> Mark Filed
-              </Button>
-            )}
+            <Button variant="outline" onClick={() => window.open("https://www.gst.gov.in/", "_blank", "noopener,noreferrer")}>
+              <ExternalLink className="h-4 w-4 mr-1" /> Open GST Portal
+            </Button>
           </div>
         }
       />
       <PageBody>
+        <Card className="mb-4 border-amber-300 bg-amber-50/70">
+          <CardContent className="flex gap-3 p-4 text-sm">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
+            <div className="space-y-1">
+              <p className="font-semibold text-amber-950">Prepared in ERP — not filed with GSTN</p>
+              <p className="text-amber-900">This screen prepares and exports return data. A verified GSTN/GSP/IRP connection and a confirmed portal acknowledgement are not currently established here. Opening the portal or exporting JSON does not file a return; do not mark this return as filed based only on this ERP screen.</p>
+            </div>
+          </CardContent>
+        </Card>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           <Stat label="Invoices" value={String(ret.summary?.invoice_count ?? "—")} />
           <Stat label="Taxable Value" value={inr(ret.summary?.taxable_value ?? 0)} />
