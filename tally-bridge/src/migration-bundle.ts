@@ -53,16 +53,16 @@ function addRows(
   rows: StagingRow[],
   recordType: string,
   list: Array<Record<string, any>>,
-  key: (x: Record<string, any>) => string,
+  key: (x: Record<string, any>, index: number) => string,
   id?: (x: Record<string, any>) => string | null,
   parent?: (x: Record<string, any>) => string | null,
   alter?: (x: Record<string, any>) => string | null,
 ): void {
-  for (const item of list) rows.push({
+  for (const [index, item] of list.entries()) rows.push({
     record_type: recordType,
     source_id: id?.(item) ?? null,
     alter_id: alter?.(item) ?? null,
-    source_key: key(item),
+    source_key: key(item, index),
     lifecycle_state: item.lifecycle_state ?? "posted",
     parent_source_key: parent?.(item) ?? null,
     payload: item,
