@@ -9,7 +9,7 @@ import {
 describe("enterprise workbench guard helpers", () => {
   it("normalizes search input and removes PostgREST filter syntax", () => {
     expect(normalizeWorkbenchSearch('  Queen,(King) "Memory Foam" %_  '))
-      .toBe("Queen King Memory Foam _");
+      .toBe("Queen King Memory Foam");
   });
 
   it("caps query length to avoid oversized filter strings", () => {
