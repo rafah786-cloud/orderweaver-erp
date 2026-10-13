@@ -110,8 +110,8 @@ function ReturnDetail() {
         description={`GSTIN ${ret.gstin} · status: ${ret.status}`}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => regen.mutate()} disabled={regen.isPending}>
-              <RefreshCw className="h-4 w-4 mr-1" /> Re-generate
+            <Button variant="outline" onClick={() => regen.mutate()} disabled={regen.isPending || ret.return_type === "GSTR-9"}>
+              <RefreshCw className="h-4 w-4 mr-1" /> {ret.return_type === "GSTR-9" ? "Annual generation unavailable" : "Re-generate"}
             </Button>
             <Button
               variant="outline"
