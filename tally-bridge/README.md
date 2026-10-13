@@ -50,7 +50,7 @@ recovery remain required before live import. No successful sync is fabricated.
 Convert a completed read-only snapshot into per-period JSON packages for the ERP migration control plane:
 
 ```powershell
-npm run bundle -- ".\tally-voucher-register-april\ABOOD_TRADINGS\manifest.json" ".\erp-staging-abood-april"
+bun ..\scripts\tally-staging-bundle.ts ".\tally-voucher-register-april\ABOOD_TRADINGS\manifest.json" ".\erp-staging-abood-april"
 ```
 
 The tool creates one bundle per date segment. The first bundle carries masters and opening balances; subsequent bundles carry only that period's vouchers, normalized inventory lines, ledger entries, and voucher-linked bill allocations. Original parsed voucher payloads, source GUIDs, Alter IDs, checksums and control totals are retained for validation. In Mattress Maestro, open **Import from Tally → Migration control plane**, upload a staging-bundle JSON file, select the matching official company, and stage it. Large bundles are submitted in bounded chunks and validated only after all chunks succeed.
