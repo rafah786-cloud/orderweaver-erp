@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BellRing, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -7,6 +7,29 @@ import { enableWebPushNotifications, disableWebPushNotifications, webPushSupport
 export function PushNotificationSetup() {
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(false);
+
+  // Reflect the browser's persisted subscription after refresh/remount instead of
+  // always showing "Enable push" when the device is already subscribed.
+  useEffect(() => {
+    if (!webPushSupported()) return;
+
+    let cancelled = false;
+    async function syncSubscriptionState() {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration("/");
+        const subscription = await registration?.pushManager.getSubscription();
+        if (!cancelled) setEnabled(Boolean(subscription));
+      } catch {
+        // Keep the control usable if the browser cannot inspect its subscription.
+        if (!cancelled) setEnabled(false);
+      }
+    }
+
+    void syncSubscriptionState();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!webPushSupported()) return null;
 
