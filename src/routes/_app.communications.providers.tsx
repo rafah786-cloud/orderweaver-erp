@@ -168,7 +168,7 @@ function ProvidersPage() {
     <>
       <PageHeader
         title="Notification Providers"
-        description="Configure notification providers. WhatsApp and In-App are currently implemented; SMS, Email and Push remain unavailable until a real provider is registered."
+        description="Configure notification providers. WhatsApp, Web Push and In-App are implemented; SMS and Email remain unavailable until a real provider is registered."
         actions={
           <Button onClick={openNew}>
             <Plus className="h-4 w-4 mr-1" />
