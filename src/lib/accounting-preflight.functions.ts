@@ -58,29 +58,71 @@ export const accountingPreflight = createServerFn({ method: "GET" })
     await assertAdmin(db, context.userId);
     const { data: companyId, error: companyError } = await db.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
-    const vouchers = await db
-      .from("vouchers")
-      .select("id, voucher_number, voucher_type")
-      .eq("company_id", companyId);
-    const entries = await db.from("voucher_entries").select("voucher_id, debit, credit");
+    // Page through every voucher and its entries. REST responses are capped,
+    // and entries must be restricted to this company's voucher IDs rather than
+    // summing an unscoped voucher_entries table.
+    const voucherRows: { id: string; voucher_number: string; voucher_type: string }[] = [];
+    let voucherOffset = 0;
+    let voucherReadError = false;
+    for (;;) {
+      const page = await db
+        .from("vouchers")
+        .select("id, voucher_number, voucher_type")
+        .eq("company_id", companyId)
+        .range(voucherOffset, voucherOffset + 499);
+      if (page.error) {
+        voucherReadError = true;
+        break;
+      }
+      const batch = page.data ?? [];
+      voucherRows.push(...batch);
+      if (batch.length < 500) break;
+      voucherOffset += 500;
+    }
+
     const byVoucher = new Map<string, { debit: number; credit: number }>();
     let debit = 0;
     let credit = 0;
-    for (const row of entries.data ?? []) {
-      const d = Number(row.debit ?? 0);
-      const c = Number(row.credit ?? 0);
-      debit += d;
-      credit += c;
-      const current = byVoucher.get(row.voucher_id) ?? { debit: 0, credit: 0 };
-      current.debit += d;
-      current.credit += c;
-      byVoucher.set(row.voucher_id, current);
+    let entryCount = 0;
+    let entryReadError = false;
+    for (let i = 0; i < voucherRows.length && !voucherReadError; i += 200) {
+      const ids = voucherRows.slice(i, i + 200).map((voucher) => voucher.id);
+      let entryOffset = 0;
+      for (;;) {
+        const page = await db
+          .from("voucher_entries")
+          .select("voucher_id, debit, credit")
+          .in("voucher_id", ids)
+          .range(entryOffset, entryOffset + 499);
+        if (page.error) {
+          entryReadError = true;
+          break;
+        }
+        const batch = page.data ?? [];
+        for (const row of batch) {
+          const d = Number(row.debit ?? 0);
+          const c = Number(row.credit ?? 0);
+          debit += d;
+          credit += c;
+          entryCount += 1;
+          const current = byVoucher.get(row.voucher_id) ?? { debit: 0, credit: 0 };
+          current.debit += d;
+          current.credit += c;
+          byVoucher.set(row.voucher_id, current);
+        }
+        if (batch.length < 500) break;
+        entryOffset += 500;
+      }
+      if (entryReadError) break;
     }
-    const unbalanced = [...byVoucher.entries()].filter(
-      ([, v]) => Math.abs(v.debit - v.credit) > 0.009,
-    ).length;
+    const unbalanced = voucherReadError || entryReadError
+      ? null
+      : [...voucherRows].filter((voucher) => {
+          const totals = byVoucher.get(voucher.id) ?? { debit: 0, credit: 0 };
+          return Math.abs(totals.debit - totals.credit) > 0.009;
+        }).length;
     const numbers = new Map<string, number>();
-    for (const row of vouchers.data ?? []) {
+    for (const row of voucherRows) {
       const key = `${row.voucher_type}:${row.voucher_number}`;
       numbers.set(key, (numbers.get(key) ?? 0) + 1);
     }
@@ -112,15 +154,15 @@ export const accountingPreflight = createServerFn({ method: "GET" })
     const invoiceTotal = await sumColumn(db, "invoices", "total_amount");
     return {
       vouchers: {
-        count: vouchers.data?.length ?? 0,
-        error: vouchers.error ? CHECK_UNAVAILABLE : null,
+        count: voucherRows.length,
+        error: voucherReadError ? CHECK_UNAVAILABLE : null,
       },
       entries: {
-        count: entries.data?.length ?? 0,
-        error: entries.error ? CHECK_UNAVAILABLE : null,
+        count: entryCount,
+        error: entryReadError || voucherReadError ? CHECK_UNAVAILABLE : null,
       },
-      debit,
-      credit,
+      debit: entryReadError || voucherReadError ? null : debit,
+      credit: entryReadError || voucherReadError ? null : credit,
       unbalancedVouchers: unbalanced,
       duplicateVoucherNumbers: duplicateNumbers,
       voucherSeries: series.data ?? [],
