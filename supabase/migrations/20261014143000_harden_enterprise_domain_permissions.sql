@@ -7,12 +7,24 @@ do $migration$
 declare
   t record;
   p record;
+  affected_tables text[];
+  table_name text;
 begin
-  for t in
-    select distinct tablename
-    from pg_policies
-    where schemaname = 'public' and policyname like 'company_scope%'
+  select array_agg(distinct tablename order by tablename)
+    into affected_tables
+  from pg_policies
+  where schemaname = 'public'
+    and policyname like 'company_scope%'
+    and exists (
+      select 1 from information_schema.columns c
+      where c.table_schema = 'public'
+        and c.table_name = pg_policies.tablename
+        and c.column_name = 'company_id'
+    );
+
+  foreach table_name in array coalesce(affected_tables, array[]::text[])
   loop
+    t.tablename := table_name;
     -- PostgreSQL ORs permissive policies together, so remove every old broad policy.
     for p in
       select policyname from pg_policies
