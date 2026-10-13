@@ -22,6 +22,8 @@ describe("enterprise workbench guard helpers", () => {
       { key: "status", type: "select", options: ["draft", "released"] },
       { key: "active", type: "select", options: ["true", "false"] },
       { key: "quantity", type: "number" },
+      { key: "party_id", type: "text" },
+      { key: "entity_id", type: "text" },
       { key: "notes", type: "textarea" },
       { key: "defaultText" },
       { key: "code", type: "text" },
