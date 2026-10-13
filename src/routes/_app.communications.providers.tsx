@@ -233,7 +233,7 @@ function ProvidersPage() {
                             ) : (
                               <Badge variant="secondary" className="gap-1">
                                 <AlertCircle className="h-3 w-3" />
-                                {!p.has_implementation ? "no code" : "needs secrets"}
+                                {!p.has_implementation ? "no code" : p.missing_env.length > 0 ? "needs secrets" : "invalid configuration"}
                               </Badge>
                             )}
                           </div>
