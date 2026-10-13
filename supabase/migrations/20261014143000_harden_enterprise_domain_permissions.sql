@@ -5,10 +5,9 @@
 
 do $migration$
 declare
-  t record;
   p record;
   affected_tables text[];
-  table_name text;
+  v_table text;
 begin
   select array_agg(distinct tablename order by tablename)
     into affected_tables
@@ -22,29 +21,28 @@ begin
         and c.column_name = 'company_id'
     );
 
-  foreach table_name in array coalesce(affected_tables, array[]::text[])
+  foreach v_table in array coalesce(affected_tables, array[]::text[])
   loop
-    t.tablename := table_name;
     -- PostgreSQL ORs permissive policies together, so remove every old broad policy.
     for p in
       select policyname from pg_policies
       where schemaname = 'public'
-        and tablename = t.tablename
+        and tablename = v_table
         and policyname like 'company_scope%'
     loop
-      execute format('drop policy if exists %I on public.%I', p.policyname, t.tablename);
+      execute format('drop policy if exists %I on public.%I', p.policyname, v_table);
     end loop;
 
-    execute format('drop policy if exists company_permission_select on public.%I', t.tablename);
-    execute format('drop policy if exists company_permission_insert on public.%I', t.tablename);
-    execute format('drop policy if exists company_permission_update on public.%I', t.tablename);
-    execute format('drop policy if exists company_permission_delete on public.%I', t.tablename);
+    execute format('drop policy if exists company_permission_select on public.%I', v_table);
+    execute format('drop policy if exists company_permission_insert on public.%I', v_table);
+    execute format('drop policy if exists company_permission_update on public.%I', v_table);
+    execute format('drop policy if exists company_permission_delete on public.%I', v_table);
 
-    if t.tablename = 'erp_domain_audit_log' then
+    if v_table = 'erp_domain_audit_log' then
       -- SECURITY DEFINER audit triggers write events; clients get read-only access.
       execute format(
         'create policy company_permission_select on public.%I for select using (public.is_approved(auth.uid()) and company_id = public.current_company_id() and public.has_company_access(company_id))',
-        t.tablename
+        v_table
       );
     else
       execute format(
