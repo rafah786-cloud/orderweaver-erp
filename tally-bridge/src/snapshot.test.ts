@@ -123,3 +123,17 @@ test("marks missing ledger amounts as incomplete instead of balanced", () => {
   assert.equal(row.status, "incomplete");
   assert.equal(row.combinedCandidateNet, null);
 });
+
+
+test("does not count nested bill allocation amounts as separate ledger postings", () => {
+  const xml = envelope(`
+    <VOUCHER><DATE>20220402</DATE><GUID>bill-guid</GUID><VOUCHERNUMBER>BILL-1</VOUCHERNUMBER>
+      <ALLLEDGERENTRIES.LIST><LEDGERNAME>Debtor</LEDGERNAME><AMOUNT>-100.00</AMOUNT>
+        <BILLALLOCATIONS.LIST><NAME>INV-1</NAME><AMOUNT>-100.00</AMOUNT></BILLALLOCATIONS.LIST>
+      </ALLLEDGERENTRIES.LIST>
+      <ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><AMOUNT>100.00</AMOUNT></ALLLEDGERENTRIES.LIST>
+    </VOUCHER>`);
+  const [row] = auditVoucherXml(xml);
+  assert.equal(row.ledgerNet, 0);
+  assert.equal(row.status, "candidate-balanced");
+});
