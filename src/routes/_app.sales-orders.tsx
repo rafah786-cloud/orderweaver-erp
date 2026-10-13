@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
-import { TableState } from "@/components/ui/table-state";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,7 +85,7 @@ function SalesOrdersPage() {
     { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 },
   ]);
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: orders = [], isLoading, isError, error: ordersError } = useQuery({
     queryKey: ["sales-orders"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -271,7 +270,13 @@ function SalesOrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isError ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center text-destructive">
+                      Could not load sales orders: {ordersError instanceof Error ? ordersError.message : "Unexpected error"}
+                    </TableCell>
+                  </TableRow>
+                ) : isLoading ? (
                   <TableRow>
                     <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                       Loading…
