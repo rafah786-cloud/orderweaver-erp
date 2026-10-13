@@ -83,13 +83,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
       const list = (data ?? []) as Company[];
       const active = list.find((c) => c.id === profileRow?.active_company_id) ?? list[0] ?? null;
+      if (active && active.id !== profileRow?.active_company_id) {
+        const { error: switchError } = await db.rpc("set_active_company", { _company_id: active.id });
+        if (switchError) throw switchError;
+      }
       setCompanies(list);
       setActiveCompany(active);
-
-      const fallback = list[0];
-      if (fallback && fallback.id !== profileRow?.active_company_id) {
-        await db.rpc("set_active_company", { _company_id: fallback.id });
-      }
     } catch (error) {
       console.error("Company context load failed", error);
       toast.error("Could not load your company access. Please refresh.");
