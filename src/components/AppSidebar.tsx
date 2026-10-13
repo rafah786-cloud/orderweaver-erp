@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,7 +15,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/payslips": Receipt, "/approvals": ShieldCheck, "/whatsapp": MessageCircle, "/communications": MessageCircle,
   "/tally-import": Database, "/accounting": BookOpen, "/gst": FileSpreadsheet, "/inventory": Boxes, "/banking": Landmark,
   "/ai": Sparkles, "/vendor": Truck, "/settings": Settings,
-  "/local-tally-accounts": Database,
+  "/local-tally-accounts": Database, "/print": Printer,
 };
 const LABELS: Record<string, string> = {
   "/dashboard": "Dashboard", "/parties": "Parties", "/invoices": "Invoices", "/sales-orders": "Sales Orders", "/boq": "BOQ",
@@ -23,12 +23,13 @@ const LABELS: Record<string, string> = {
   "/attendance": "Attendance", "/payslips": "Payslips", "/approvals": "User Approvals", "/whatsapp": "WhatsApp",
   "/communications": "Communications", "/tally-import": "Tally Import", "/accounting": "Accounting", "/gst": "GST",
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
-  "/local-tally-accounts": "Tally Data Import",
+  "/local-tally-accounts": "Tally Data Import", "/print": "Print & Labels",
 };
 const NAV = ROUTE_ROLES.map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
+  { label: "Documents & Tools", prefixes: ["/print"] },
   { label: "Sales & Customers", prefixes: ["/parties", "/sales-orders", "/invoices"] },
   { label: "Purchasing & Inventory", prefixes: ["/purchases", "/inventory", "/boq"] },
   { label: "Production", prefixes: ["/production", "/operations"] },
@@ -57,6 +58,7 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
       <Link
         to={item.to}
         onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
         className={
           "group relative flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out " +
           (collapsed ? "justify-center px-2 " : "gap-3 ") +
