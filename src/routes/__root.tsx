@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
+import { APP_RELEASE_CHECKPOINT } from "@/lib/release-checkpoint";
 
 import appCss from "../styles.css?url";
 import corporateCss from "../corporate.css?url";
@@ -88,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Zizz Mattress | House of Abood Tradings" },
+      { name: "erp-release-checkpoint", content: APP_RELEASE_CHECKPOINT },
       {
         name: "description",
         content: "Premium sleep and comfort solutions from House of Abood Tradings, led by Zizz.",
