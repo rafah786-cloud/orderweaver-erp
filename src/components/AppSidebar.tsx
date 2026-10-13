@@ -143,6 +143,7 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
       <Link
         to={item.to}
         onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
         className={`group relative flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out ${collapsed ? "justify-center px-2" : "gap-3"} ${active ? "bg-sidebar-active text-sidebar-active-foreground shadow-sm" : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}
       >
         {active && !collapsed && (
