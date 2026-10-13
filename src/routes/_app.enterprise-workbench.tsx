@@ -30,6 +30,8 @@ type Field = {
   options?: string[];
   placeholder?: string;
   defaultValue?: string;
+  min?: number;
+  max?: number;
 };
 
 type EntityConfig = {
@@ -56,23 +58,23 @@ const F = (key: string, label: string, type: Field["type"] = "text", extra: Part
 const MODULES: ModuleConfig[] = [
   {
     key: "manufacturing", title: "Manufacturing Planning", icon: Factory, entities: [
-      { key: "work-centers", table: "work_centers", title: "Work Centres", description: "Capacity, efficiency and utilization master data.", fields: [F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("department","Department"),F("work_center_type","Type","select",{options:["machine","labor","mixed"],defaultValue:"machine"}),F("capacity_minutes_per_day","Capacity minutes/day","number",{defaultValue:"480"}),F("efficiency_pct","Efficiency %","number",{defaultValue:"100"})], columns:["code","name","department","work_center_type","capacity_minutes_per_day","efficiency_pct"], orderBy:"code" },
+      { key: "work-centers", table: "work_centers", title: "Work Centres", description: "Capacity, efficiency and utilization master data.", fields: [F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("department","Department"),F("work_center_type","Type","select",{options:["machine","labor","mixed"],defaultValue:"machine"}),F("capacity_minutes_per_day","Capacity minutes/day","number",{defaultValue:"480",min:0}),F("efficiency_pct","Efficiency %","number",{defaultValue:"100",min:0,max:100})], columns:["code","name","department","work_center_type","capacity_minutes_per_day","efficiency_pct"], orderBy:"code" },
       { key: "mps-plans", table: "mps_plans", title: "MPS Plans", description: "Master production schedules with controlled lifecycle.", fields: [F("plan_number","Plan number","text",{required:true}),F("name","Name","text",{required:true}),F("horizon_start","Start","date",{required:true}),F("horizon_end","End","date",{required:true}),F("planning_policy","Policy","select",{options:["make_to_stock","make_to_order","mixed"],defaultValue:"make_to_stock"}),F("status","Status","select",{options:["draft","approved","released","closed","cancelled"],defaultValue:"draft"}),F("notes","Notes","textarea")], columns:["plan_number","name","horizon_start","horizon_end","status","planning_policy"], statusField:"status", statusOptions:["draft","approved","released","closed","cancelled"], orderBy:"created_at" },
       { key: "routings", table: "routings", title: "Routings", description: "Manufacturing route revisions and effective dates.", fields: [F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("model_id","Product model ID"),F("revision","Revision","text",{defaultValue:"1"}),F("status","Status","select",{options:["draft","approved","obsolete"],defaultValue:"draft"}),F("effective_from","Effective from","date"),F("effective_to","Effective to","date"),F("notes","Notes","textarea")], columns:["code","name","revision","status","effective_from","effective_to"], statusField:"status", statusOptions:["draft","approved","obsolete"], orderBy:"code" },
       { key: "mrp-runs", table: "mrp_runs", title: "MRP Runs", description: "Planning snapshots and exception control; no direct ledger posting.", fields: [F("run_number","Run number","text",{required:true}),F("plan_id","MPS plan ID"),F("horizon_start","Start","date",{required:true}),F("horizon_end","End","date",{required:true}),F("status","Status","select",{options:["running","completed","failed","cancelled"],defaultValue:"running"}),F("planning_parameters","Planning parameters (JSON)","textarea",{defaultValue:"{}"})], columns:["run_number","horizon_start","horizon_end","status","run_at"], statusField:"status", statusOptions:["running","completed","failed","cancelled"], orderBy:"run_at" },
-      { key: "production-operations", table: "production_operations", title: "Production Operations", description: "Operation-level WIP, good output, scrap, rework and downtime.", fields: [F("production_order_id","Production order ID","text",{required:true}),F("sequence_no","Sequence","number",{required:true,defaultValue:"10"}),F("status","Status","select",{options:["pending","ready","running","paused","completed","blocked","cancelled"],defaultValue:"pending"}),F("planned_qty","Planned qty","number",{defaultValue:"0"}),F("good_qty","Good qty","number",{defaultValue:"0"}),F("scrap_qty","Scrap qty","number",{defaultValue:"0"}),F("rework_qty","Rework qty","number",{defaultValue:"0"}),F("downtime_minutes","Downtime minutes","number",{defaultValue:"0"}),F("notes","Notes","textarea")], columns:["sequence_no","status","planned_qty","good_qty","scrap_qty","rework_qty","downtime_minutes"], statusField:"status", statusOptions:["pending","ready","running","paused","completed","blocked","cancelled"], orderBy:"sequence_no" },
+      { key: "production-operations", table: "production_operations", title: "Production Operations", description: "Operation-level WIP, good output, scrap, rework and downtime.", fields: [F("production_order_id","Production order ID","text",{required:true}),F("sequence_no","Sequence","number",{required:true,defaultValue:"10",min:0}),F("status","Status","select",{options:["pending","ready","running","paused","completed","blocked","cancelled"],defaultValue:"pending"}),F("planned_qty","Planned qty","number",{defaultValue:"0",min:0}),F("good_qty","Good qty","number",{defaultValue:"0",min:0}),F("scrap_qty","Scrap qty","number",{defaultValue:"0",min:0}),F("rework_qty","Rework qty","number",{defaultValue:"0",min:0}),F("downtime_minutes","Downtime minutes","number",{defaultValue:"0",min:0}),F("notes","Notes","textarea")], columns:["sequence_no","status","planned_qty","good_qty","scrap_qty","rework_qty","downtime_minutes"], statusField:"status", statusOptions:["pending","ready","running","paused","completed","blocked","cancelled"], orderBy:"sequence_no" },
     ],
   },
   {
     key: "quality", title: "Quality", icon: ClipboardCheck, entities: [
       { key: "quality-plans", table:"quality_plans", title:"Inspection Plans", description:"Controlled inspection plans and acceptance rules.", fields:[F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("model_id","Product model ID"),F("revision","Revision","text",{defaultValue:"1"}),F("status","Status","select",{options:["draft","approved","obsolete"],defaultValue:"draft"}),F("sampling_method","Sampling","select",{options:["100_percent","aql","skip_lot","first_article"],defaultValue:"100_percent"}),F("acceptance_rule","Acceptance rule (JSON)","textarea",{defaultValue:"{}"})], columns:["code","name","revision","status","sampling_method"], statusField:"status", statusOptions:["draft","approved","obsolete"], orderBy:"code" },
-      { key:"quality-inspections",table:"quality_inspections",title:"Inspections",description:"In-process, incoming and final inspection records.",fields:[F("inspection_number","Inspection number","text",{required:true}),F("quality_plan_id","Quality plan ID"),F("production_order_id","Production order ID"),F("purchase_bill_id","Purchase bill ID"),F("stage","Stage","text",{required:true,placeholder:"incoming / in-process / final"}),F("quantity_inspected","Inspected qty","number",{defaultValue:"0"}),F("quantity_accepted","Accepted qty","number",{defaultValue:"0"}),F("quantity_rejected","Rejected qty","number",{defaultValue:"0"}),F("status","Status","select",{options:["open","passed","failed","conditional","cancelled"],defaultValue:"open"}),F("notes","Notes","textarea")],columns:["inspection_number","stage","quantity_inspected","quantity_accepted","quantity_rejected","status"],statusField:"status",statusOptions:["open","passed","failed","conditional","cancelled"],orderBy:"inspected_at"},
+      { key:"quality-inspections",table:"quality_inspections",title:"Inspections",description:"In-process, incoming and final inspection records.",fields:[F("inspection_number","Inspection number","text",{required:true}),F("quality_plan_id","Quality plan ID"),F("production_order_id","Production order ID"),F("purchase_bill_id","Purchase bill ID"),F("stage","Stage","text",{required:true,placeholder:"incoming / in-process / final"}),F("quantity_inspected","Inspected qty","number",{defaultValue:"0",min:0}),F("quantity_accepted","Accepted qty","number",{defaultValue:"0",min:0}),F("quantity_rejected","Rejected qty","number",{defaultValue:"0",min:0}),F("status","Status","select",{options:["open","passed","failed","conditional","cancelled"],defaultValue:"open"}),F("notes","Notes","textarea")],columns:["inspection_number","stage","quantity_inspected","quantity_accepted","quantity_rejected","status"],statusField:"status",statusOptions:["open","passed","failed","conditional","cancelled"],orderBy:"inspected_at"},
       { key:"quality-nc",table:"quality_nonconformances",title:"Nonconformances / CAPA",description:"Defect containment, disposition and root-cause control.",fields:[F("nc_number","NC number","text",{required:true}),F("inspection_id","Inspection ID"),F("production_order_id","Production order ID"),F("supplier_id","Supplier ID"),F("severity","Severity","select",{options:["minor","major","critical"],defaultValue:"minor"}),F("defect_code","Defect code","text",{required:true}),F("description","Description","textarea",{required:true}),F("disposition","Disposition","select",{options:["use_as_is","rework","scrap","return_to_supplier","hold","concession"]}),F("status","Status","select",{options:["open","investigating","dispositioned","closed"],defaultValue:"open"}),F("root_cause","Root cause","textarea"),F("containment_action","Containment","textarea")],columns:["nc_number","severity","defect_code","disposition","status","created_at"],statusField:"status",statusOptions:["open","investigating","dispositioned","closed"],orderBy:"created_at"},
     ],
   },
   {
     key:"maintenance",title:"Maintenance & Assets",icon:Wrench,entities:[
-      {key:"assets",table:"maintenance_assets",title:"Maintenance Assets",description:"Machine/asset register with criticality and service state.",fields:[F("asset_code","Asset code","text",{required:true}),F("asset_name","Asset name","text",{required:true}),F("asset_type","Asset type","text",{required:true}),F("serial_number","Serial number"),F("manufacturer","Manufacturer"),F("model_number","Model"),F("work_center_id","Work centre ID"),F("criticality","Criticality","select",{options:["low","medium","high","critical"],defaultValue:"medium"}),F("status","Status","select",{options:["active","inactive","under_maintenance","retired"],defaultValue:"active"}),F("acquisition_cost","Acquisition cost","number",{defaultValue:"0"}),F("next_service_at","Next service","datetime")],columns:["asset_code","asset_name","asset_type","criticality","status","next_service_at"],statusField:"status",statusOptions:["active","inactive","under_maintenance","retired"],orderBy:"asset_code"},
+      {key:"assets",table:"maintenance_assets",title:"Maintenance Assets",description:"Machine/asset register with criticality and service state.",fields:[F("asset_code","Asset code","text",{required:true}),F("asset_name","Asset name","text",{required:true}),F("asset_type","Asset type","text",{required:true}),F("serial_number","Serial number"),F("manufacturer","Manufacturer"),F("model_number","Model"),F("work_center_id","Work centre ID"),F("criticality","Criticality","select",{options:["low","medium","high","critical"],defaultValue:"medium"}),F("status","Status","select",{options:["active","inactive","under_maintenance","retired"],defaultValue:"active"}),F("acquisition_cost","Acquisition cost","number",{defaultValue:"0",min:0}),F("next_service_at","Next service","datetime")],columns:["asset_code","asset_name","asset_type","criticality","status","next_service_at"],statusField:"status",statusOptions:["active","inactive","under_maintenance","retired"],orderBy:"asset_code"},
       {key:"maintenance-plans",table:"maintenance_plans",title:"Preventive Maintenance Plans",description:"Calendar, meter or condition-based maintenance schedules.",fields:[F("asset_id","Asset ID","text",{required:true}),F("code","Plan code","text",{required:true}),F("name","Name","text",{required:true}),F("frequency_type","Frequency","select",{options:["calendar","meter","condition"],defaultValue:"calendar"}),F("frequency_value","Frequency value","number"),F("frequency_unit","Unit","text"),F("next_due_at","Next due","datetime"),F("active","Active","select",{options:["true","false"],defaultValue:"true"}),F("checklist","Checklist (JSON)","textarea",{defaultValue:"[]"})],columns:["code","name","frequency_type","frequency_value","frequency_unit","next_due_at","active"],orderBy:"code"},
       {key:"maintenance-wo",table:"maintenance_work_orders",title:"Maintenance Work Orders",description:"Breakdown, preventive and corrective work with downtime/cost capture.",fields:[F("work_order_number","Work order","text",{required:true}),F("asset_id","Asset ID","text",{required:true}),F("maintenance_type","Type","select",{options:["preventive","breakdown","corrective","inspection","calibration"],defaultValue:"breakdown"}),F("priority","Priority","select",{options:["low","medium","high","emergency"],defaultValue:"medium"}),F("status","Status","select",{options:["open","assigned","in_progress","waiting_parts","completed","cancelled"],defaultValue:"open"}),F("assigned_to","Assigned employee ID"),F("failure_code","Failure code"),F("root_cause","Root cause","textarea"),F("resolution","Resolution","textarea"),F("downtime_minutes","Downtime minutes","number",{defaultValue:"0"}),F("labor_cost","Labour cost","number",{defaultValue:"0"}),F("parts_cost","Parts cost","number",{defaultValue:"0"}),F("other_cost","Other cost","number",{defaultValue:"0"})],columns:["work_order_number","maintenance_type","priority","status","downtime_minutes","labor_cost","parts_cost"],statusField:"status",statusOptions:["open","assigned","in_progress","waiting_parts","completed","cancelled"],orderBy:"reported_at"},
     ],
@@ -189,13 +191,29 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
       const payload: Record<string, unknown> = { company_id: companyId };
       for (const field of config.fields) {
         const raw = form[field.key] ?? "";
-        if (!raw && field.required) throw new Error(field.label + " is required.");
-        if (!raw) continue;
-        if (field.type === "number") payload[field.key] = Number(raw);
+        if (!raw.trim() && field.required) throw new Error(field.label + " is required.");
+        if (!raw.trim()) continue;
+        if (field.type === "number") {
+          const numericValue = Number(raw);
+          if (!Number.isFinite(numericValue)) throw new Error(field.label + " must be a valid number.");
+          if (field.min !== undefined && numericValue < field.min) throw new Error(field.label + " must be at least " + field.min + ".");
+          if (field.max !== undefined && numericValue > field.max) throw new Error(field.label + " must be no more than " + field.max + ".");
+          payload[field.key] = numericValue;
+        } else if (field.type === "date" || field.type === "datetime") {
+          if (Number.isNaN(Date.parse(raw))) throw new Error(field.label + " must be a valid date/time.");
+          payload[field.key] = raw;
         else if (field.type === "select" && (raw === "true" || raw === "false")) payload[field.key] = raw === "true";
         else if ((field.key === "planning_parameters" || field.key === "acceptance_rule" || field.key === "checklist" || field.key === "definition" || field.key === "details") && raw) {
           try { payload[field.key] = JSON.parse(raw); } catch { throw new Error(field.label + " must be valid JSON."); }
         } else payload[field.key] = raw;
+      }
+      for (const [startKey, endKey, startLabel, endLabel] of [
+        ["horizon_start", "horizon_end", "Planning start", "Planning end"],
+        ["effective_from", "effective_to", "Effective from", "Effective to"],
+      ] as const) {
+        const start = form[startKey]?.trim();
+        const end = form[endKey]?.trim();
+        if (start && end && start > end) throw new Error(startLabel + " cannot be after " + endLabel.toLowerCase() + ".");
       }
       const query = editing ? db.from(config.table).update(payload).eq("id", editing.id).eq("company_id", companyId) : db.from(config.table).insert(payload);
       const { error } = await query;
@@ -235,7 +253,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
   };
   const openEdit = (row: Record<string, unknown>) => {
     setEditing(row);
-    setForm(Object.fromEntries(config.fields.map(f => [f.key, row[f.key] == null ? "" : typeof row[f.key] === "object" ? JSON.stringify(row[f.key]) : String(row[f.key])])))
+    setForm(Object.fromEntries(config.fields.map(f => [f.key, fieldInputValue(f, row[f.key])])));
     setOpen(true);
   };
 
@@ -254,6 +272,20 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
 function FieldEditor({ field, value, onChange }: { field: Field; value: string; onChange: (v:string)=>void }) {
   const id = "field-" + field.key;
   return <div className={field.type==="textarea" ? "md:col-span-2 lg:col-span-3" : ""}><Label htmlFor={id} className="text-xs">{field.label}{field.required ? " *" : ""}</Label>{field.type==="textarea" ? <Textarea id={id} value={value} placeholder={field.placeholder} onChange={e=>onChange(e.target.value)} rows={3}/> : field.type==="select" ? <Select value={value} onValueChange={onChange}><SelectTrigger id={id}><SelectValue placeholder={field.placeholder ?? "Select"} /></SelectTrigger><SelectContent>{(field.options ?? []).map(o=><SelectItem key={o} value={o}>{o.replaceAll("_"," ")}</SelectItem>)}</SelectContent></Select> : <Input id={id} type={field.type==="number" ? "number" : field.type==="date" ? "date" : field.type==="datetime" ? "datetime-local" : "text"} value={value} placeholder={field.placeholder} onChange={e=>onChange(e.target.value)}/>}</div>;
+}
+
+function fieldInputValue(field: Field, value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  const text = String(value);
+  if (field.type === "date") return text.slice(0, 10);
+  if (field.type === "datetime") {
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return "";
+    const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 16);
+  }
+  return text;
 }
 
 function formatCell(value: unknown): string {
