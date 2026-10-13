@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, ShieldCheck, Database } from "lucide-react";
+import { Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, ShieldCheck, Database, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/operations")({
   head: () => ({ meta: [
@@ -41,24 +42,39 @@ const MODULES: Module[] = [
 function EnterpriseOperations() {
   const { hasRole } = useAuth();
   const isAdmin = hasRole("admin");
-  const { data: counts = {}, isLoading } = useQuery({
+  const {
+    data: counts = {},
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["enterprise-capability-counts"],
     queryFn: async () => {
+      // Keep each module's health independent: one missing permission/table must not
+      // make every other module look empty or "Ready".
       const entries = await Promise.all(
-        MODULES.flatMap((module) => module.tables.map(async (table) => {
-          const { count, error } = await supabase.from(table as never).select("id", { count: "exact", head: true });
-          if (error) throw error;
-          return [table, count ?? 0] as const;
-        })),
+        MODULES.flatMap((module) =>
+          module.tables.map(async (table) => {
+            try {
+              const { count, error } = await supabase
+                .from(table as never)
+                .select("id", { count: "exact", head: true });
+              if (error) return [table, { count: 0, error: true }] as const;
+              return [table, { count: count ?? 0, error: false }] as const;
+            } catch {
+              return [table, { count: 0, error: true }] as const;
+            }
+          }),
+        ),
       );
-      return Object.fromEntries(entries) as Record<string, number>;
+      return Object.fromEntries(entries) as Record<string, { count: number; error: boolean }>;
     },
     staleTime: 30_000,
   });
 
   return (
     <>
-      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={isAdmin ? <Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link> : undefined} />
+      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={<div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}><RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin motion-reduce:animate-none" : ""}`} />Refresh status</Button>{isAdmin && <Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link>}</div>} />
       <PageBody>
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5" /><div><div className="text-sm font-medium">Governed foundation</div><div className="text-xs text-muted-foreground">Company-scoped RLS on every new domain</div></div></CardContent></Card>
@@ -68,15 +84,24 @@ function EnterpriseOperations() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {MODULES.map((module) => {
             const Icon = module.Icon;
-            const records = module.tables.reduce((sum, table) => sum + (counts[table] ?? 0), 0);
+            const records = module.tables.reduce((sum, table) => sum + (counts[table]?.count ?? 0), 0);
+            const unavailable = module.tables.filter((table) => counts[table]?.error).length;
+            const checked = module.tables.filter((table) => counts[table] !== undefined).length;
+            const status = isLoading
+              ? "Checking"
+              : unavailable > 0
+                ? "Check access"
+                : records > 0
+                  ? "Active data"
+                  : "No records yet";
             return (
               <Card key={module.key} className="h-full transition-shadow hover:shadow-md">
                 <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl btn-gold"><Icon className="h-5 w-5" /></div><CardTitle className="text-base">{module.title}</CardTitle></div>
-                  <span className="rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{isLoading ? "Checking" : records > 0 ? "Active data" : "Ready"}</span>
+                  <span className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide ${unavailable > 0 ? "border-amber-500/50 text-amber-700" : "text-muted-foreground"}`}>{status}</span>
                 </div></CardHeader>
                 <CardContent><p className="text-sm text-muted-foreground">{module.description}</p><div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{isLoading ? "…" : String(records) + " records in foundation"}</span>
+                  <span>{isLoading ? "Checking source tables…" : unavailable > 0 ? `${unavailable} of ${module.tables.length} source tables could not be checked` : `${records} records in foundation`}</span>
                   {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>} {!module.existingPath && isAdmin && <Link to="/enterprise-workbench" className="font-medium text-primary hover:underline">Open workbench →</Link>}
                 </div></CardContent>
               </Card>
