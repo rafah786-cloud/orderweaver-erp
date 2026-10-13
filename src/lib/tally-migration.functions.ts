@@ -31,13 +31,14 @@ const inputSchema = z.object({
   sourceCompanyGuid: z.string().max(255).nullable().optional(),
   sourceChecksum: z.string().min(16).max(128),
   controlTotals: z.record(z.string(), jsonSchema),
-  rows: z.array(rowSchema).max(50000),
+  runId: z.string().uuid().optional(),
+  rows: z.array(rowSchema).max(20000),
 });
 
 async function assertMigrationRunAccess(db: any, userId: string, runId: string) {
   const { data, error } = await db
     .from("tally_migration_runs")
-    .select("id, company_id")
+    .select("id, company_id, status")
     .eq("id", runId)
     .maybeSingle();
   if (error || !data) throw new Error("Migration run is not visible in the active company");
@@ -75,20 +76,37 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!access) throw new Error("No access to selected company");
 
-    const { data: run, error: runError } = await supabase
-      .from("tally_migration_runs")
-      .insert({
-        company_id: data.companyId,
-        source_company_name: data.sourceCompanyName ?? null,
-        source_company_guid: data.sourceCompanyGuid ?? null,
-        source_checksum: data.sourceChecksum,
-        control_totals: data.controlTotals,
-        created_by: userId,
-        status: "staged",
-      })
-      .select("id")
-      .single();
-    if (runError || !run) throw new Error(runError?.message || "Could not create migration run");
+    let run: { id: string };
+    if (data.runId) {
+      const existing = await assertMigrationRunAccess(supabase, userId, data.runId);
+      const { data: activeCompanyId, error: activeCompanyError } = await supabase.rpc("current_company_id");
+      if (activeCompanyError || !activeCompanyId || existing.company_id !== activeCompanyId || existing.company_id !== data.companyId) {
+        throw new Error("Migration chunk is outside the active company");
+      }
+      if (existing.status !== "staged") throw new Error("Only a staged migration run can receive more rows");
+      const { data: metadata, error: metadataError } = await supabase
+        .from("tally_migration_runs").select("source_checksum").eq("id", data.runId).single();
+      if (metadataError || metadata?.source_checksum !== data.sourceChecksum) {
+        throw new Error("Migration chunk checksum does not match the existing run");
+      }
+      run = { id: data.runId };
+    } else {
+      const { data: created, error: runError } = await supabase
+        .from("tally_migration_runs")
+        .insert({
+          company_id: data.companyId,
+          source_company_name: data.sourceCompanyName ?? null,
+          source_company_guid: data.sourceCompanyGuid ?? null,
+          source_checksum: data.sourceChecksum,
+          control_totals: data.controlTotals,
+          created_by: userId,
+          status: "staged",
+        })
+        .select("id")
+        .single();
+      if (runError || !created) throw new Error(runError?.message || "Could not create migration run");
+      run = { id: created.id };
+    }
 
     // Reject structurally duplicate source rows before the first database write.
     // This prevents a malformed export from becoming an ambiguous staged run.
@@ -115,6 +133,40 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
           throw new Error("Duplicate Tally source row: record_type/alter_id");
         }
         seenAlterIds.add(alterIdentity);
+      }
+    }
+
+    if (data.runId) {
+      const failDuplicate = async (message: string) => {
+        await supabase.from("tally_migration_runs").update({
+          status: "failed",
+          notes: message,
+        }).eq("id", run.id).eq("company_id", data.companyId);
+        throw new Error(message);
+      };
+      const keyChunks = Array.from({ length: Math.ceil(data.rows.length / 400) }, (_, i) => data.rows.slice(i * 400, (i + 1) * 400));
+      for (const keyChunk of keyChunks) {
+        const keys = keyChunk.map((row) => row.source_key);
+        const { data: existingRows, error: existingError } = await supabase
+          .from("tally_migration_rows").select("record_type, source_key")
+          .eq("run_id", run.id).eq("company_id", data.companyId).in("source_key", keys);
+        if (existingError) await failDuplicate("Could not verify source keys across staging chunks; run failed.");
+        const existingKeys = new Set((existingRows ?? []).map((row: {record_type:string;source_key:string}) => row.record_type + "\\u0000" + row.source_key));
+        if (keyChunk.some((row) => existingKeys.has(row.record_type + "\\u0000" + row.source_key))) {
+          await failDuplicate("Duplicate Tally source key across staging chunks; run failed.");
+        }
+      }
+      const alterChunks = Array.from({ length: Math.ceil(data.rows.filter((row) => !!row.alter_id).length / 400) }, (_, i) => data.rows.filter((row) => !!row.alter_id).slice(i * 400, (i + 1) * 400));
+      for (const alterChunk of alterChunks) {
+        const ids = alterChunk.map((row) => row.alter_id as string);
+        const { data: existingRows, error: existingError } = await supabase
+          .from("tally_migration_rows").select("record_type, alter_id")
+          .eq("run_id", run.id).eq("company_id", data.companyId).in("alter_id", ids);
+        if (existingError) await failDuplicate("Could not verify Alter IDs across staging chunks; run failed.");
+        const existingIds = new Set((existingRows ?? []).map((row: {record_type:string;alter_id:string}) => row.record_type + "\\u0000" + row.alter_id));
+        if (alterChunk.some((row) => existingIds.has(row.record_type + "\\u0000" + row.alter_id))) {
+          await failDuplicate("Duplicate Tally Alter ID across staging chunks; run failed.");
+        }
       }
     }
 
