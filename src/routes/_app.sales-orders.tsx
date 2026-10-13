@@ -70,6 +70,7 @@ type Order = {
   total_amount: number;
   notes: string | null;
   fulfillment_status: "draft" | "confirmed" | "dispatched" | "cancelled";
+  ordered_qty: number;
 };
 
 function SalesOrdersPage() {
@@ -95,7 +96,23 @@ function SalesOrdersPage() {
         )
         .order("order_date", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Order[];
+      const rows = (data ?? []) as Omit<Order, "ordered_qty">[];
+      if (rows.length === 0) return [];
+
+      // Quantities are read from the order lines; order value remains a separate monetary field.
+      const { data: lines, error: linesError } = await supabase
+        .from("sales_order_items")
+        .select("sales_order_id, quantity")
+        .in("sales_order_id", rows.map((row) => row.id));
+      if (linesError) throw linesError;
+      const quantityByOrder = new Map<string, number>();
+      for (const line of lines ?? []) {
+        quantityByOrder.set(
+          line.sales_order_id,
+          (quantityByOrder.get(line.sales_order_id) ?? 0) + Number(line.quantity ?? 0),
+        );
+      }
+      return rows.map((row) => ({ ...row, ordered_qty: quantityByOrder.get(row.id) ?? 0 }));
     },
   });
 
@@ -248,9 +265,8 @@ function SalesOrdersPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>Expected</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ordered</TableHead>
-                  <TableHead className="text-right">Reserved</TableHead>
-                  <TableHead className="text-right">Dispatched</TableHead>
+                  <TableHead className="text-right">Ordered Qty</TableHead>
+                  <TableHead className="text-right">Order Value</TableHead>
                   <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
@@ -287,11 +303,12 @@ function SalesOrdersPage() {
                                 : "Draft"}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {o.ordered_qty.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
                         {inr(o.total_amount)}
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">—</TableCell>
-                      <TableCell className="text-right text-muted-foreground">—</TableCell>
                       <TableCell>
                         {o.fulfillment_status === "draft" && canCreate && (
                           <Button
