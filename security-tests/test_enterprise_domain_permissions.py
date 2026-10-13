@@ -12,8 +12,10 @@ def test_enterprise_crud_policies_use_individual_permission_flags():
     assert "public.current_company_id()" in SQL
 
 
-def test_audit_log_is_read_only_to_authenticated_clients():
-    branch = SQL.split("if v_table = 'erp_domain_audit_log' then", 1)[1].split("else", 1)[0]
+def test_system_managed_records_are_read_only_to_authenticated_clients():
+    branch = SQL.split("if v_table = any (array[", 1)[1].split("else", 1)[0]
+    for table in ("ai_data_freshness", "backup_verification_runs", "erp_domain_audit_log", "integration_health", "integration_runs", "mrp_runs", "workflow_definitions", "workflow_instances", "workflow_tasks"):
+        assert f"'{table}'" in branch
     assert "for select" in branch
     assert "for insert" not in branch
     assert "for update" not in branch
