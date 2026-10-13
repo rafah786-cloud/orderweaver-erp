@@ -225,8 +225,13 @@ function SalesOrdersPage() {
       try {
         const r = await notifyCustomer({ data: { party_id: savedParty, event: "sales_order.created", ref_id: res.id } });
         if (r?.ok) toast.success("Customer notified via WhatsApp");
-      } catch {}
-      notifyStaff({ data: { event: "staff.sales_order.created", ref_id: res.id } }).catch(() => {});
+        else toast.warning("Sales order saved, but the customer notification was not delivered.");
+      } catch {
+        toast.warning("Sales order saved, but the customer notification could not be sent.");
+      }
+      notifyStaff({ data: { event: "staff.sales_order.created", ref_id: res.id } }).catch(() => {
+        toast.warning("Sales order saved, but the staff notification could not be sent.");
+      });
     },
     onError: (e: Error) => toast.error(e.message),
   });
