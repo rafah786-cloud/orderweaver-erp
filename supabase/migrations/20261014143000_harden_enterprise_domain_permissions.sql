@@ -55,8 +55,8 @@ begin
     execute format('drop policy if exists company_permission_update on public.%I', v_table);
     execute format('drop policy if exists company_permission_delete on public.%I', v_table);
 
-    if v_table = 'erp_domain_audit_log' then
-      -- SECURITY DEFINER audit triggers write events; clients get read-only access.
+    if v_table = any (array['ai_data_freshness', 'backup_verification_runs', 'erp_domain_audit_log', 'integration_health', 'integration_runs', 'mrp_runs', 'workflow_definitions', 'workflow_instances', 'workflow_tasks']::text[]) then
+      -- System-owned evidence and workflow records are read-only to browser clients. SECURITY DEFINER audit triggers continue writing audit events.
       execute format(
         'create policy company_permission_select on public.%I for select using (public.is_approved(auth.uid()) and company_id = public.current_company_id() and public.has_company_access(company_id))',
         v_table
