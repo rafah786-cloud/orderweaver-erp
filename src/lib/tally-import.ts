@@ -87,6 +87,8 @@ export type TallyBill = {
 /** Complete source voucher for pre-import reconciliation; never inferred from party balances. */
 export type TallyVoucher = {
   source_id: string;
+  /** Tally's monotonic ALTERID, preserved separately from the stable GUID. */
+  alter_id?: string | null;
   has_stable_id: boolean;
   voucher_type: string | null;
   voucher_number: string | null;
@@ -548,6 +550,7 @@ export function parseTallyMasters(
 
       vouchersOut.push({
         source_id: guid,
+        ...(text(v.ALTERID) ? { alter_id: text(v.ALTERID) } : {}),
         has_stable_id: !!text(v.GUID ?? v["@_REMOTEID"]),
         voucher_type,
         voucher_number,
