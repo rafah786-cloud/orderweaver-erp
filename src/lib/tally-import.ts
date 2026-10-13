@@ -611,10 +611,12 @@ export function parseTallyMasters(
       const accountingLines = [...lines];
 
       const inventoryEntries: TallyVoucher["inventory_entries"] = [];
-      const rawInventoryEntries = [
-        ...arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never),
-        ...arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never),
-      ];
+      const allInventoryEntries = arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never)
+        .filter((entry) => !!text(entry.STOCKITEMNAME));
+      const regularInventoryEntries = arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never)
+        .filter((entry) => !!text(entry.STOCKITEMNAME));
+      // Tally may serialize equivalent inventory aliases. Never count both families.
+      const rawInventoryEntries = allInventoryEntries.length ? allInventoryEntries : regularInventoryEntries;
       for (const inv of rawInventoryEntries) {
         if (!text(inv.STOCKITEMNAME)) continue; // ignore empty XML list containers
         accountingLines.push(...arr<Record<string, unknown>>(inv["ACCOUNTINGALLOCATIONS.LIST"] as never));
