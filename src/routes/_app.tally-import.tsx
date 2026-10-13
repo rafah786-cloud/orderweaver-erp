@@ -356,20 +356,42 @@ function TallyImportPage() {
         costCentres: migrationParsed.costCentres.length,
         bills: migrationParsed.bills.length,
       };
-      const res = await stageMigration({
-        data: {
-          companyId: targetCompany.id,
-          sourceCompanyName: targetCompany.display_name,
-          sourceCompanyGuid: null,
-          sourceChecksum: checksum,
-          controlTotals,
-          rows,
-        },
-      });
-      const validation = await validateMigration({ data: { runId: res.runId } });
+      if (rows.length === 0) throw new Error("No source records were parsed; refusing to create an empty migration run.");
+
+      // Keep each server request bounded while preserving one atomic-to-validate
+      // migration run across large histories. Validation happens only after all
+      // chunks have been staged successfully.
+      const STAGING_CHUNK = 20000;
+      let runId: string | undefined;
+      let stagedRows = 0;
+      const chunkCount = Math.ceil(rows.length / STAGING_CHUNK);
+      for (let offset = 0; offset < rows.length; offset += STAGING_CHUNK) {
+        const chunk = rows.slice(offset, offset + STAGING_CHUNK);
+        const res = await stageMigration({
+          data: {
+            companyId: targetCompany.id,
+            sourceCompanyName: targetCompany.display_name,
+            sourceCompanyGuid: null,
+            sourceChecksum: checksum,
+            controlTotals,
+            ...(runId ? { runId } : {}),
+            rows: chunk,
+          },
+        });
+        if (runId && res.runId !== runId) throw new Error("Server returned a different migration run while staging chunks.");
+        runId = res.runId;
+        stagedRows += res.rowCount;
+        setProgress({
+          done: Math.min(offset + chunk.length, rows.length),
+          total: rows.length,
+          label: `Staging chunk ${Math.floor(offset / STAGING_CHUNK) + 1}/${chunkCount}`,
+        });
+      }
+      if (!runId || stagedRows !== rows.length) throw new Error(`Staged ${stagedRows} of ${rows.length} rows; refusing validation.`);
+      const validation = await validateMigration({ data: { runId } });
       setMigrationValidation(validation);
       toast.success(
-        `Migration run staged and validated: ${res.rowCount} source records. No ERP books were changed.`,
+        `Migration run staged and validated: ${stagedRows} source records. No ERP books were changed.`,
       );
       const runs = await listRuns();
       setMigrationRuns(runs);
