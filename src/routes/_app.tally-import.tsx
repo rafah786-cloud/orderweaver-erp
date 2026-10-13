@@ -363,7 +363,6 @@ function TallyImportPage() {
           voucher_guid: voucher.source_id,
           line_index: lineIndex,
           lifecycle_state: voucher.lifecycle_state,
-          source_payload: voucher.source_payload ?? voucher,
         })),
       );
       add(
