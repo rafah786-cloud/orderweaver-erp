@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedRolesFor, routePathMatches, ROUTE_ROLES } from "./permissions";
+import { allowedRolesFor, canAccessPath, routePathMatches, ROUTE_ROLES } from "./permissions";
 
 describe("ERP route security policy", () => {
   it("keeps financial administration restricted to finance roles", () => {
