@@ -46,6 +46,9 @@ export function defaultRouteForRoles(roles: AppRole[]): string {
 }
 
 export function allowedRolesFor(pathname: string): AppRole[] | null {
-  const match = ROUTE_ROLES.find((r) => pathname.startsWith(r.prefix));
+  // Match a registered route and its descendants, never a similarly prefixed sibling.
+  const match = ROUTE_ROLES.find(
+    (r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`),
+  );
   return match ? match.roles : null;
 }
