@@ -116,6 +116,28 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
     const result = parseTallyMasters(xml, { ...defaults, preserveLifecycle: true });
     mergeParsed(parsed, result);
   }
+  // Fail closed: collection XML can differ from the TALLYMESSAGE format expected by the ERP parser.
+  // Never emit a plausible-looking voucher-only bundle when master data was not parsed.
+  const collectionSegments = manifest.segments.filter((segment) => segment.kind === "collection");
+  if (collectionSegments.length > 0) {
+    const masterCounts = [
+      parsed.groups.length,
+      parsed.ledgers.length,
+      parsed.rawMaterials.length + parsed.finishedGoods.length,
+      parsed.godowns.length,
+      parsed.costCentres.length,
+    ];
+    const expectedMasterSegments = collectionSegments.filter((segment) =>
+      /List of Groups|List of Ledgers|List of Stock Items|List of Godowns|List of Cost Centres/i.test(segment.name),
+    );
+    if (expectedMasterSegments.length > 0 && masterCounts.every((count) => count === 0)) {
+      throw new Error(
+        "Master collections were present but parsed as zero records. Refusing to create an incomplete bundle. " +
+        "The direct collection XML format needs a dedicated parser before migration can continue.",
+      );
+    }
+  }
+
   const rows: StagingRow[] = [];
   addRows(rows, "group", parsed.groups as any, x => `group:${x.parent ?? ""}:${x.name}`, x => x.name);
   addRows(rows, "ledger", parsed.ledgers as any, x => `ledger:${x.name}`, x => x.name, x => x.parent ? `group::${x.parent}` : null);
