@@ -27,9 +27,10 @@ function amount(raw: string): number | null {
   const n = Number(s);
   return Number.isFinite(n) ? (parens ? -n : n) : null;
 }
-function sumAmounts(xml: string) {
-  const values = blocks(xml, "AMOUNT");
-  const parsed = values.map(amount);
+function sumEntryAmounts(entries: string[]) {
+  // Read the entry's own AMOUNT only. Scanning all descendant AMOUNT tags
+  // would double-count nested bill allocations or inventory accounting splits.
+  const parsed = entries.map(entry => amount(tag(entry, "AMOUNT")));
   return { count: parsed.filter(v => v !== null).length, missing: parsed.filter(v => v === null).length,
     sum: parsed.reduce<number>((s, v) => s + (v ?? 0), 0) };
 }
@@ -51,9 +52,9 @@ export function auditVoucherXml(xml: string): AuditRow[] {
     const regularInv = blocks(v, "INVENTORYENTRIES.LIST");
     const inventory = allInv.length ? allInv : regularInv;
     const allocations = inventory.flatMap(entry => blocks(entry, "ACCOUNTINGALLOCATIONS.LIST"));
-    const ledgerTotals = sumAmounts(ledgers.join("\n"));
-    const inventoryTotals = sumAmounts(inventory.join("\n"));
-    const allocationTotals = sumAmounts(allocations.join("\n"));
+    const ledgerTotals = sumEntryAmounts(ledgers);
+    const inventoryTotals = sumEntryAmounts(inventory);
+    const allocationTotals = sumEntryAmounts(allocations);
     const guid = tag(v, "GUID"), date = tag(v, "DATE"), number = tag(v, "VOUCHERNUMBER");
     const notes: string[] = [];
     if (!ledgers.length) notes.push("No ledger-entry blocks found.");
