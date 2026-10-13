@@ -1,1072 +1,268 @@
-import { AccountingPreflightButton } from "@/components/AccountingPreflightButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { PageBody } from "@/components/PageHeader";
+import { PageBody, PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { inr, daysBetween, formatDate, todayIndia } from "@/lib/format";
-import {
-  IndianRupee,
-  AlertTriangle,
-  Factory,
-  Users,
-  ShoppingCart,
-  ReceiptText,
-  CalendarCheck,
-  FileText,
-  TrendingUp,
-  Wallet,
-  Upload,
-  ArrowRight,
-  Package,
-  Gem,
-  ShieldCheck,
-  Leaf,
-  Heart,
+  Activity, ArrowDownLeft, ArrowRight, ArrowUpRight, Boxes, Building2, CalendarClock,
+  CheckCircle2, CircleDollarSign, ClipboardList, Factory, FileText, HandCoins,
+  LayoutDashboard, Package, Plus, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
 } from "lucide-react";
-import zizz from "@/assets/brands/zizz.png.asset.json";
-import softnights from "@/assets/brands/softnights.jpeg.asset.json";
-import mrcoir from "@/assets/brands/mrcoir.jpeg.asset.json";
-import byz from "@/assets/brands/byzbedding.jpeg.asset.json";
-import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
-import drspine from "@/assets/brands/drspine.jpeg.asset.json";
-import zizzBedroom from "@/assets/zizz-flagship-bedroom.jpg.asset.json";
+import { formatDate, inr } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/dashboard")({
-  head: () => ({
-    meta: [
-      { title: "Business Dashboard | Mattress Maestro" },
-      {
-        name: "description",
-        content:
-          "Live sales, production, inventory and financial overview for House of Abood Tradings.",
-      },
-      { property: "og:title", content: "Business Dashboard | Mattress Maestro" },
-      {
-        property: "og:description",
-        content:
-          "Live sales, production, inventory and financial overview for House of Abood Tradings.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Dashboard | Mattress Maestro ERP" }] }),
   component: DashboardPage,
 });
 
+type MetricResult = { value: number | null; error: boolean };
+async function countRows(table: string): Promise<MetricResult> {
+  try {
+    const result = await supabase.from(table as never).select("id", { count: "exact", head: true });
+    if (result.error) return { value: null, error: true };
+    return { value: result.count ?? 0, error: false };
+  } catch {
+    return { value: null, error: true };
+  }
+}
+
 function DashboardPage() {
-  const { profile, roles, hasAnyRole, hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
-  const isSales = hasAnyRole(["sales"]);
-  const isProduction = hasAnyRole(["production"]);
-  const isHR = hasAnyRole(["hr"]);
-  const isCustomer = hasAnyRole(["customer"]);
-  const isAccountant = hasAnyRole(["accountant"]);
-  const isEmployee = hasAnyRole(["employee"]) && !isAdmin && !isHR && !isAccountant;
+  const { profile, roles, hasRole, hasAnyRole } = useAuth();
+  const admin = hasRole("admin");
+  const sales = hasAnyRole(["sales"]);
+  const production = hasAnyRole(["production"]);
+  const accountant = hasAnyRole(["accountant"]);
+  const hr = hasAnyRole(["hr"]);
+  const employee = hasAnyRole(["employee"]) && !admin && !hr && !accountant;
+  const customer = hasAnyRole(["customer"]);
+  const name = profile?.full_name?.trim().split(/\s+/)[0] || "there";
 
-  return (
-    <>
-      <AccountingPreflightButton />
-      <PageBody className="dashboard-editorial space-y-8">
-        <HeroSection name={profile?.full_name?.split(" ")[0] ?? ""} roles={roles} />
-        <BrandShowcase />
-        <WhySection />
-        <QuickActions roles={roles} />
-        <section aria-labelledby="business-overview" className="hoa-panel space-y-5">
-          <div className="hoa-section-head">
-            <p className="hoa-kicker">Mattress Maestro ERP</p>
-            <h2 id="business-overview" className="hoa-title">
-              Business Overview. <em>Live and Accurate.</em>
-            </h2>
-            <p className="hoa-sub">
-              Operational intelligence across sales, production, inventory and finance.
-            </p>
-          </div>
-          {isAdmin && <AdminPanels />}
-          {isSales && !isAdmin && <SalesPanels />}
-          {isProduction && !isAdmin && <ProductionPanels />}
-          {isHR && !isAdmin && <HRPanels />}
-          {isAccountant && !isAdmin && <AccountsPanels />}
-          {isCustomer && !isAdmin && <CustomerPanels />}
-          {isEmployee && <EmployeePanels />}
-        </section>
-        <section className="hoa-band">
-          <div>
-            <span className="hoa-band-rule" aria-hidden="true" />
-            <h2>Premium Sleep. Healthier Lives.</h2>
-            <p>House of Abood Tradings</p>
-          </div>
-          <a
-            className="hoa-btn hoa-btn-light"
-            href="https://www.zizzmattress.com"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Contact Us <ArrowRight aria-hidden="true" />
-          </a>
-        </section>
-        <footer className="hoa-footer">
-          <strong>House of Abood Tradings</strong>
-          <span>© {new Date().getFullYear()} House of Abood Tradings. All rights reserved.</span>
-          <span>Mattress Maestro · Business Operations</span>
-        </footer>
-      </PageBody>
-    </>
-  );
-}
-
-const SISTER_BRANDS = [
-  { name: "Zizz Mattress", descriptor: "Sleep Redefined", asset: zizz, flagship: true },
-  { name: "OrthoMedic Rest", descriptor: "Orthopaedic Support", asset: ortho },
-  { name: "Dr. Spine", descriptor: "Spine Care", asset: drspine },
-  { name: "Mr. Coir", descriptor: "Natural Comfort", asset: mrcoir },
-  { name: "Soft Nights", descriptor: "Everyday Comfort", asset: softnights },
-  { name: "BYZ Bedding", descriptor: "Modern Living", asset: byz },
-];
-
-const TRUST = [
-  { icon: Gem, a: "Trusted", b: "Quality" },
-  { icon: ShieldCheck, a: "Comfort", b: "for Life" },
-  { icon: Users, a: "Families", b: "We Serve" },
-  { icon: Leaf, a: "A Healthier", b: "Tomorrow" },
-];
-
-function HeroSection({ name, roles }: { name: string; roles: string[] }) {
-  return (
-    <section className="hoa-hero" aria-labelledby="hoa-hero-title">
-      <img
-        src={zizzBedroom.url}
-        alt="A Zizz bedroom designed for premium sleep"
-        width={1600}
-        height={1000}
-        className="hoa-hero-img"
-      />
-      <div className="hoa-hero-veil" aria-hidden="true" />
-      <div className="hoa-hero-body">
-        <p className="hoa-kicker">Est. Premium Sleep &amp; Comfort</p>
-        <h1 id="hoa-hero-title">
-          Better Sleep
-          <br />
-          <em>Brighter Tomorrows</em>
-        </h1>
-        <p className="hoa-hero-lead">
-          {name ? `Welcome back, ${name}. ` : ""}Premium sleep &amp; comfort solutions for healthier
-          lives and happier homes.
-          {roles.length ? ` Signed in as ${roles.join(", ")}.` : ""}
-        </p>
-        <div className="hoa-hero-cta">
-          <a
-            className="hoa-btn hoa-btn-primary"
-            href="https://zizzmattress.com"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Explore Our Brands <ArrowRight aria-hidden="true" />
-          </a>
-          <Link className="hoa-btn hoa-btn-ghost" to="/inventory">
-            View Products
-          </Link>
-        </div>
-        <ul className="hoa-trust">
-          {TRUST.map(({ icon: Icon, a, b }) => (
-            <li key={a}>
-              <Icon aria-hidden="true" />
-              <span>
-                {a}
-                <br />
-                {b}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <p className="hoa-hero-quote" aria-hidden="true">
-        “Comfort today. A healthier tomorrow.”
-      </p>
-    </section>
-  );
-}
-
-function BrandShowcase() {
-  return (
-    <section aria-labelledby="our-brands" className="hoa-panel">
-      <div className="hoa-section-head hoa-center">
-        <p className="hoa-kicker">Our Specialized Brands</p>
-        <h2 id="our-brands" className="hoa-title">
-          Different Needs. <em>A Stronger Tomorrow.</em>
-        </h2>
-        <p className="hoa-sub">
-          A range of trusted brands, each designed to bring comfort, health and value to every home.
-        </p>
-      </div>
-      <div className="hoa-brand-grid">
-        {SISTER_BRANDS.map((brand) => (
-          <article
-            className={`hoa-brand-card${brand.flagship ? " is-flagship" : ""}`}
-            key={brand.name}
-          >
-            {brand.flagship && <span className="hoa-flag">Flagship</span>}
-            <div className="hoa-brand-mark">
-              <img src={brand.asset.url} alt={`${brand.name} logo`} loading="lazy" />
-            </div>
-            <h3>{brand.name}</h3>
-            <p>{brand.descriptor}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function WhySection() {
-  const stats = [
-    { icon: Users, big: "6", small: "Trusted Brands" },
-    { icon: Package, big: "Wide", small: "Product Range" },
-    { icon: ShieldCheck, big: "Reliable", small: "Supply & Support" },
-    { icon: Heart, big: "Committed", small: "to Better Living" },
-  ];
-  return (
-    <section className="hoa-panel hoa-why" aria-labelledby="hoa-why">
-      <div>
-        <p className="hoa-kicker">Why House of Abood Tradings</p>
-        <h2 id="hoa-why" className="hoa-title">
-          More Than Mattresses.
-          <br />
-          <em>A Healthier Tomorrow.</em>
-        </h2>
-        <p className="hoa-sub">
-          We bring together trusted brands, quality products and a commitment to better sleep for
-          every home and business.
-        </p>
-        <Link className="hoa-btn hoa-btn-primary" to="/parties">
-          Our Customers <ArrowRight aria-hidden="true" />
-        </Link>
-      </div>
-      <div className="hoa-stat-grid">
-        {stats.map((s) => (
-          <div className="hoa-stat" key={s.small}>
-            <s.icon aria-hidden="true" />
-            <strong>{s.big}</strong>
-            <span>{s.small}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function AccountsPanels() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {[
-        {
-          to: "/accounting/trial-balance",
-          title: "Trial Balance",
-          text: "Review ledger balances and posting integrity.",
-          icon: IndianRupee,
-        },
-        {
-          to: "/accounting/profit-loss",
-          title: "Profit & Loss",
-          text: "Review income, costs and period performance.",
-          icon: TrendingUp,
-        },
-        {
-          to: "/accounting/balance-sheet",
-          title: "Balance Sheet",
-          text: "Review assets, liabilities and equity.",
-          icon: Wallet,
-        },
-        {
-          to: "/gst",
-          title: "GST & Tax",
-          text: "Returns, HSN/SAC and e-invoice controls.",
-          icon: FileText,
-        },
-      ].map(({ to, title, text, icon: Icon }) => (
-        <Link
-          key={to}
-          to={to}
-          className="group rounded-lg border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:shadow-md"
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
-              <Icon className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="font-semibold text-sm text-foreground">{title}</div>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">{text}</p>
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function QuickActions({ roles }: { roles: string[] }) {
-  const isAdmin = roles.includes("admin");
-  const items = [
-    ...(isAdmin || roles.includes("sales")
-      ? [{ to: "/sales-orders" as const, label: "Create sales order", icon: ShoppingCart }]
-      : []),
-    ...(isAdmin || roles.includes("sales")
-      ? [{ to: "/invoices" as const, label: "Generate invoice", icon: ReceiptText }]
-      : []),
-    ...(isAdmin || roles.includes("production")
-      ? [{ to: "/production" as const, label: "Production status", icon: Factory }]
-      : []),
-    ...(isAdmin ||
-    roles.includes("accountant") ||
-    roles.includes("production") ||
-    roles.includes("sales")
-      ? [{ to: "/inventory" as const, label: "Review inventory", icon: Package }]
-      : []),
-  ];
-  if (items.length === 0) return null;
-  return (
-    <section aria-labelledby="quick-actions" className="hoa-panel">
-      <div className="hoa-section-head">
-        <p className="hoa-kicker">Work Faster</p>
-        <h2 id="quick-actions" className="hoa-title">
-          Quick <em>Actions</em>
-        </h2>
-      </div>
-      <div className="hoa-action-grid">
-        {items.map(({ to, label, icon: Icon }) => (
-          <Link key={to} to={to} className="hoa-action">
-            <Icon aria-hidden="true" />
-            <span>{label}</span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        ))}
-        {isAdmin && (
-          <a
-            className="hoa-action"
-            href="https://biz-tally-sync.lovable.app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Upload aria-hidden="true" />
-            <span>Tally Connect</span>
-            <ArrowRight aria-hidden="true" />
-          </a>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------ ADMIN ------------------------------ */
-
-function AdminPanels() {
-  const { data: outstanding } = useQuery({
-    queryKey: ["dash-outstanding"],
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ["role-dashboard-metrics", roles.slice().sort().join("|")],
     queryFn: async () => {
-      const { data, error } = await supabase.from("party_outstanding").select("*");
-      if (error) throw error;
-      return data ?? [];
+      const wanted = admin
+        ? ["sales_orders", "parties", "invoices", "purchases", "inventory_items"]
+        : sales
+          ? ["sales_orders", "parties", "invoices"]
+          : production
+            ? ["sales_orders", "inventory_items"]
+            : accountant
+              ? ["invoices", "purchases", "parties"]
+              : hr
+                ? ["employees", "attendance_records"]
+                : customer
+                  ? ["sales_orders", "invoices"]
+                  : ["attendance_records"];
+      const pairs = await Promise.all(wanted.map(async (table) => [table, await countRows(table)] as const));
+      return Object.fromEntries(pairs) as Record<string, MetricResult>;
     },
-  });
-  const { data: production } = useQuery({
-    queryKey: ["dash-production"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("production_orders").select("status");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const { data: storedBalance } = useQuery({
-    queryKey: ["dash-stored-balance"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("parties").select("current_balance");
-      if (error) throw error;
-      return (data ?? []).reduce((sum, row) => sum + Number(row.current_balance ?? 0), 0);
-    },
-  });
-  const { data: employees } = useQuery({
-    queryKey: ["dash-employees"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("employees")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
+    staleTime: 60_000,
   });
 
-  const totalOutstanding = (outstanding ?? []).reduce((s, p) => s + Number(p.outstanding ?? 0), 0);
-  const overdueCount = (outstanding ?? []).filter(
-    (p) =>
-      Number(p.outstanding ?? 0) >= 50000 &&
-      p.oldest_unpaid_date &&
-      daysBetween(p.oldest_unpaid_date) > 90,
-  ).length;
-
-  const pipeline = (production ?? []).reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const topCustomers = (outstanding ?? [])
-    .slice()
-    .sort((a, b) => Number(b.outstanding ?? 0) - Number(a.outstanding ?? 0))
-    .slice(0, 5);
-
-  return (
-    <>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <KpiCard label="Invoice outstanding" value={inr(totalOutstanding)} icon={IndianRupee} />
-        <KpiCard
-          label="Stored customer balance"
-          value={inr(storedBalance ?? 0)}
-          icon={IndianRupee}
-        />
-        <KpiCard
-          label="Overdue >90d"
-          value={String(overdueCount)}
-          icon={AlertTriangle}
-          accent="warning"
-        />
-        <KpiCard
-          label="In Production"
-          value={String(
-            (pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0),
-          )}
-          icon={Factory}
-        />
-        <KpiCard label="Active Employees" value={String(employees ?? 0)} icon={Users} />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ProductionPipelineCard pipeline={pipeline} />
-        <Card>
-          <CardHeader>
-            <CardTitle>Top customers by invoice outstanding</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topCustomers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No data yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {topCustomers.map((c) => (
-                  <div key={c.party_id} className="flex items-center justify-between text-sm">
-                    <span className="truncate">{c.name}</span>
-                    <span className="font-medium">{inr(Number(c.outstanding ?? 0))}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-4 w-4" /> Import Tally Master Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            Import customers, vendors, raw materials, finished goods and ledger entries from a Tally
-            XML export. Existing records are matched by GSTIN or name and updated in place.
-          </p>
-          <Link
-            to="/tally-import"
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
-          >
-            <Upload className="h-4 w-4" /> Open Importer
-          </Link>
-        </CardContent>
-      </Card>
-    </>
-  );
-}
-
-/* ------------------------------ SALES ------------------------------ */
-
-function SalesPanels() {
-  const { user } = useAuth();
-  const userId = user?.id ?? "";
-
-  const monthStart = `${todayIndia().slice(0, 7)}-01`;
-
-  // My sales orders (RLS already restricts to created_by = me)
-  const { data: myOrders = [] } = useQuery({
-    queryKey: ["sales-my-orders", userId],
-    enabled: !!userId,
+  const { data: recentOrders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ["role-dashboard-recent-orders"],
+    enabled: admin || sales || production || customer,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sales_orders")
-        .select("id, order_number, party_id, order_date, total_amount")
-        .order("order_date", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  // My invoices for collection KPIs
-  const { data: myInvoices = [] } = useQuery({
-    queryKey: ["sales-my-invoices", userId],
-    enabled: !!userId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invoices")
-        .select(
-          "id, invoice_number, party_id, invoice_date, due_date, total_amount, paid_amount, status, updated_at",
-        );
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  // Production status for my orders
-  const orderIds = myOrders.map((o) => o.id);
-  const { data: prodForMyOrders = [] } = useQuery({
-    queryKey: ["sales-prod-status", orderIds.join(",")],
-    enabled: orderIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("production_orders")
-        .select("sales_order_id, status, updated_at")
-        .in("sales_order_id", orderIds);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  // Party names
-  const partyIds = Array.from(
-    new Set([...myOrders.map((o) => o.party_id), ...myInvoices.map((i) => i.party_id)]),
-  );
-  const { data: partyMap = {} } = useQuery({
-    queryKey: ["sales-party-names", partyIds.join(",")],
-    enabled: partyIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("parties").select("id, name").in("id", partyIds);
-      if (error) throw error;
-      const map: Record<string, string> = {};
-      (data ?? []).forEach((p) => {
-        map[p.id] = p.name;
-      });
-      return map;
-    },
-  });
-
-  // Outstanding (RLS-scoped view); for customers we created
-  const { data: outstanding = [] } = useQuery({
-    queryKey: ["sales-outstanding"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("party_outstanding").select("*");
-      if (error) throw error;
-      return (data ?? []).filter((p) => Number(p.outstanding ?? 0) > 0);
-    },
-  });
-
-  // KPIs
-  const ordersThisMonth = myOrders.filter((o) => o.order_date >= monthStart);
-  const salesThisMonth = ordersThisMonth.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
-  const collectionsThisMonth = myInvoices
-    .filter((i) => i.updated_at >= monthStart)
-    .reduce((s, i) => s + Number(i.paid_amount ?? 0), 0);
-  const myOutstandingTotal = outstanding.reduce((s, p) => s + Number(p.outstanding ?? 0), 0);
-  const overdueCount = outstanding.filter(
-    (p) => p.oldest_unpaid_date && daysBetween(p.oldest_unpaid_date) > 30,
-  ).length;
-
-  const prodByOrder = new Map(prodForMyOrders.map((p) => [p.sales_order_id, p]));
-  const recentOrders = myOrders.slice(0, 8);
-
-  return (
-    <>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <KpiCard label="My Sales (this month)" value={inr(salesThisMonth)} icon={TrendingUp} />
-        <KpiCard
-          label="My Collections (this month)"
-          value={inr(collectionsThisMonth)}
-          icon={Wallet}
-        />
-        <KpiCard label="My Outstanding" value={inr(myOutstandingTotal)} icon={IndianRupee} />
-        <KpiCard
-          label="Overdue Customers"
-          value={String(overdueCount)}
-          icon={AlertTriangle}
-          accent="warning"
-        />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2 mb-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>My Order Status</span>
-              <Link to="/sales-orders" className="text-xs text-primary hover:underline">
-                View all
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Party</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Production</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                      No orders yet.{" "}
-                      <Link to="/sales-orders" className="text-primary hover:underline">
-                        Place one
-                      </Link>
-                      .
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  recentOrders.map((o) => {
-                    const p = prodByOrder.get(o.id);
-                    return (
-                      <TableRow key={o.id}>
-                        <TableCell className="font-medium">{o.order_number}</TableCell>
-                        <TableCell className="truncate max-w-[140px]">
-                          {partyMap[o.party_id] ?? "—"}
-                        </TableCell>
-                        <TableCell>{formatDate(o.order_date)}</TableCell>
-                        <TableCell>
-                          <StatusPill status={p?.status ?? "pending"} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {inr(Number(o.total_amount ?? 0))}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer Outstanding (Aging)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="text-right">Outstanding</TableHead>
-                  <TableHead className="text-right">Since Invoice</TableHead>
-                  <TableHead className="text-right">Past Due</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {outstanding.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                      No outstanding balances.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  outstanding
-                    .slice()
-                    .sort((a, b) => Number(b.outstanding ?? 0) - Number(a.outstanding ?? 0))
-                    .slice(0, 10)
-                    .map((c) => {
-                      const sinceInv = c.oldest_unpaid_date
-                        ? daysBetween(c.oldest_unpaid_date)
-                        : null;
-                      // Past due derived from earliest matching invoice's due_date (best effort)
-                      const inv = myInvoices
-                        .filter(
-                          (i) =>
-                            i.party_id === c.party_id &&
-                            (i.status === "unpaid" || i.status === "partial") &&
-                            Number(i.total_amount) - Number(i.paid_amount) > 0,
-                        )
-                        .sort((a, b) =>
-                          (a.due_date ?? a.invoice_date).localeCompare(
-                            b.due_date ?? b.invoice_date,
-                          ),
-                        )[0];
-                      const pastDue = inv?.due_date ? daysBetween(inv.due_date) : null;
-                      return (
-                        <TableRow key={c.party_id}>
-                          <TableCell className="truncate max-w-[160px]">{c.name}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {inr(Number(c.outstanding ?? 0))}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {sinceInv !== null ? `${sinceInv}d` : "—"}
-                          </TableCell>
-                          <TableCell
-                            className={`text-right ${pastDue !== null && pastDue > 0 ? "text-warning font-medium" : ""}`}
-                          >
-                            {pastDue === null ? "—" : pastDue > 0 ? `${pastDue}d` : "current"}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="rounded-xl glass-sm p-4 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">Ready to take a new order?</div>
-        <Link
-          to="/sales-orders"
-          className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-        >
-          <ShoppingCart className="h-4 w-4" /> New Sales Order
-        </Link>
-      </div>
-    </>
-  );
-}
-
-/* ------------------------------ PRODUCTION ------------------------------ */
-
-function ProductionPanels() {
-  const { data: production = [] } = useQuery({
-    queryKey: ["prod-dash-status"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("production_orders").select("status");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const { data: lowStock = [] } = useQuery({
-    queryKey: ["prod-dash-stock"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("raw_materials")
-        .select("id, name, reorder_level, unit");
-      if (error) throw error;
-      const rows = await Promise.all(
-        (data ?? []).map(async (m) => {
-          // @ts-expect-error This RPC requires the unapplied accounting migration.
-          const { data: onHand } = await supabase.rpc("material_on_hand", { p_material: m.id });
-          return { ...m, on_hand: Number(onHand ?? 0) };
-        }),
-      );
-      return rows.filter((m) => m.on_hand <= Number(m.reorder_level));
-    },
-  });
-
-  const pipeline = production.reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] ?? 0) + 1;
-    return acc;
-  }, {});
-  const wip = (pipeline.in_production ?? 0) + (pipeline.received ?? 0) + (pipeline.qc ?? 0);
-
-  return (
-    <>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <KpiCard label="WIP Orders" value={String(wip)} icon={Factory} />
-        <KpiCard
-          label="Ready to Dispatch"
-          value={String(pipeline.ready ?? 0)}
-          icon={ShoppingCart}
-        />
-        <KpiCard label="Dispatched" value={String(pipeline.dispatched ?? 0)} icon={ReceiptText} />
-        <KpiCard
-          label="Low Stock Items"
-          value={String(lowStock.length)}
-          icon={AlertTriangle}
-          accent="warning"
-        />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ProductionPipelineCard pipeline={pipeline} />
-        <Card>
-          <CardHeader>
-            <CardTitle>Low Stock Alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {lowStock.length === 0 ? (
-              <p className="text-sm text-muted-foreground">All stock levels are healthy.</p>
-            ) : (
-              <div className="space-y-2">
-                {lowStock.slice(0, 8).map((m) => (
-                  <div key={m.id} className="flex items-center justify-between text-sm">
-                    <span className="truncate">{m.name}</span>
-                    <span className="font-medium text-warning">
-                      {Number(m.on_hand)} {m.unit}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
-}
-
-/* ------------------------------ HR ------------------------------ */
-
-function HRPanels() {
-  const today = todayIndia();
-  const { data: empCount = 0 } = useQuery({
-    queryKey: ["hr-dash-emp"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("employees")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-  const { data: todayAtt = [] } = useQuery({
-    queryKey: ["hr-dash-att", today],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance")
-        .select("status, is_late")
-        .eq("attendance_date", today);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const present = todayAtt.length;
-  const late = todayAtt.filter((a) => a.is_late).length;
-
-  return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      <KpiCard label="Active Employees" value={String(empCount)} icon={Users} />
-      <KpiCard label="Present Today" value={String(present)} icon={CalendarCheck} />
-      <KpiCard label="Late Today" value={String(late)} icon={AlertTriangle} accent="warning" />
-      <KpiCard label="Absent" value={String(Math.max(0, empCount - present))} icon={Users} />
-    </div>
-  );
-}
-
-/* ------------------------------ CUSTOMER ------------------------------ */
-
-function CustomerPanels() {
-  const { data: orders = [] } = useQuery({
-    queryKey: ["cust-dash-orders"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
-        .select("id, order_number, order_date, total_amount")
+        .select("id, order_number, order_date, total_amount, fulfillment_status")
         .order("order_date", { ascending: false })
-        .limit(8);
+        .limit(6);
       if (error) throw error;
       return data ?? [];
     },
-  });
-  const { data: invoices = [] } = useQuery({
-    queryKey: ["cust-dash-inv"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invoices")
-        .select("id, invoice_number, total_amount, paid_amount, status, due_date, invoice_date")
-        .order("invoice_date", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
+    staleTime: 60_000,
   });
 
-  const outstanding = invoices
-    .filter((i) => i.status === "unpaid" || i.status === "partial")
-    .reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
+  const metric = (key: string) => metrics?.[key]?.value;
+  const metricError = (key: string) => metrics?.[key]?.error;
+  const metricLabel = (key: string) => metricError(key) ? "Unavailable" : isLoading ? "…" : (metric(key) ?? "—").toLocaleString("en-IN");
+  const title = admin ? "Business command centre" : sales ? "Sales workspace" : production ? "Production workspace" : accountant ? "Finance workspace" : hr ? "People workspace" : customer ? "Customer workspace" : "My workspace";
+  const subtitle = admin
+    ? "A clear, cross-department view of the business. Open a department to investigate the details."
+    : sales
+      ? "Your sales pipeline, customer activity and order follow-through in one place."
+      : production
+        ? "Keep production priorities, material availability and order progress in view."
+        : accountant
+          ? "Monitor financial documents and purchasing activity with your assigned access."
+          : hr
+            ? "People operations, attendance and workforce actions for your role."
+            : customer
+              ? "Follow your orders and documents from one simple workspace."
+              : "Your assigned work, key shortcuts and next actions.";
+
+  const quickLinks = admin
+    ? [
+        { label: "Sales & Orders", detail: "Orders, customers and invoices", to: "/sales-orders", icon: ShoppingCart },
+        { label: "Purchases", detail: "Supplier and procurement activity", to: "/purchases", icon: Truck },
+        { label: "Collections & Finance", detail: "Receivables, ledgers and banking", to: "/accounting", icon: HandCoins },
+        { label: "B2B Customers", detail: "Parties and trade relationships", to: "/parties", icon: Building2 },
+        { label: "B2C & Invoices", detail: "Customer documents and billing", to: "/invoices", icon: ShoppingBag },
+        { label: "Inventory", detail: "Stock and material visibility", to: "/inventory", icon: Boxes },
+        { label: "Production", detail: "Factory and order execution", to: "/production", icon: Factory },
+        { label: "Reports & Intelligence", detail: "Business insights and analysis", to: "/ai/insights", icon: Activity },
+      ]
+    : sales
+      ? [
+          { label: "Sales Orders", detail: "Create and follow up orders", to: "/sales-orders", icon: ShoppingCart },
+          { label: "Customers & Parties", detail: "Find customer records", to: "/parties", icon: Users },
+          { label: "Invoices", detail: "Billing and invoice status", to: "/invoices", icon: FileText },
+          { label: "Product & BOQ", detail: "Product details and quotations", to: "/boq", icon: Package },
+        ]
+      : production
+        ? [
+            { label: "Production", detail: "Factory work and execution", to: "/production", icon: Factory },
+            { label: "Inventory", detail: "Materials and available stock", to: "/inventory", icon: Boxes },
+            { label: "Sales Orders", detail: "Orders awaiting fulfilment", to: "/sales-orders", icon: ShoppingCart },
+            { label: "Operations", detail: "Operational workbench", to: "/operations", icon: ClipboardList },
+          ]
+        : accountant
+          ? [
+              { label: "Accounting", detail: "Ledgers, vouchers and reports", to: "/accounting", icon: CircleDollarSign },
+              { label: "Invoices", detail: "Billing and receivables", to: "/invoices", icon: FileText },
+              { label: "Purchases", detail: "Supplier documents", to: "/purchases", icon: Truck },
+              { label: "Banking", detail: "Accounts and reconciliation", to: "/banking", icon: Wallet },
+            ]
+          : hr
+            ? [
+                { label: "Employees", detail: "Employee records", to: "/employees", icon: Users },
+                { label: "Attendance", detail: "Attendance and shifts", to: "/attendance", icon: CalendarClock },
+                { label: "Payslips", detail: "Payroll documents", to: "/payslips", icon: FileText },
+              ]
+            : customer
+              ? [
+                  { label: "My Orders", detail: "Review order progress", to: "/sales-orders", icon: ShoppingCart },
+                  { label: "My Invoices", detail: "View billing documents", to: "/invoices", icon: FileText },
+                ]
+              : [
+                  { label: "My Attendance", detail: "Attendance and work records", to: "/attendance", icon: CalendarClock },
+                  { label: "My Payslips", detail: "Available payroll documents", to: "/payslips", icon: FileText },
+                ];
+
+  const metricsForRole = admin
+    ? [
+        { label: "Sales orders", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
+        { label: "Customers & parties", key: "parties", icon: Users, to: "/parties" },
+        { label: "Invoices", key: "invoices", icon: FileText, to: "/invoices" },
+        { label: "Purchase records", key: "purchases", icon: Truck, to: "/purchases" },
+        { label: "Inventory records", key: "inventory_items", icon: Boxes, to: "/inventory" },
+      ]
+    : sales
+      ? [
+          { label: "Sales orders", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
+          { label: "Customers", key: "parties", icon: Users, to: "/parties" },
+          { label: "Invoices", key: "invoices", icon: FileText, to: "/invoices" },
+        ]
+      : production
+        ? [
+            { label: "Sales orders", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
+            { label: "Inventory records", key: "inventory_items", icon: Boxes, to: "/inventory" },
+          ]
+        : accountant
+          ? [
+              { label: "Invoices", key: "invoices", icon: FileText, to: "/invoices" },
+              { label: "Purchase records", key: "purchases", icon: Truck, to: "/purchases" },
+              { label: "Parties", key: "parties", icon: Users, to: "/parties" },
+            ]
+          : hr
+            ? [
+                { label: "Employees", key: "employees", icon: Users, to: "/employees" },
+                { label: "Attendance records", key: "attendance_records", icon: CalendarClock, to: "/attendance" },
+              ]
+            : customer
+              ? [
+                  { label: "My order records", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
+                  { label: "Invoice records", key: "invoices", icon: FileText, to: "/invoices" },
+                ]
+              : [{ label: "Attendance records", key: "attendance_records", icon: CalendarClock, to: "/attendance" }];
 
   return (
-    <>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-6">
-        <KpiCard label="My Orders" value={String(orders.length)} icon={ShoppingCart} />
-        <KpiCard label="My Invoices" value={String(invoices.length)} icon={FileText} />
-        <KpiCard
-          label="Amount Due"
-          value={inr(outstanding)}
-          icon={IndianRupee}
-          accent={outstanding > 0 ? "warning" : undefined}
-        />
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order #</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
-                    No orders yet.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                orders.map((o) => (
-                  <TableRow key={o.id}>
-                    <TableCell className="font-medium">{o.order_number}</TableCell>
-                    <TableCell>{formatDate(o.order_date)}</TableCell>
-                    <TableCell className="text-right">{inr(Number(o.total_amount))}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </>
-  );
-}
-
-/* ------------------------------ EMPLOYEE ------------------------------ */
-
-function EmployeePanels() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
-  const { data: myAtt = [] } = useQuery({
-    queryKey: ["emp-dash-att"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance")
-        .select("attendance_date, status, hours_worked, is_late")
-        .gte("attendance_date", monthStart);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const { data: payslips = [] } = useQuery({
-    queryKey: ["emp-dash-pay"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payslips")
-        .select("period_month, period_year, net_salary")
-        .order("period_year", { ascending: false })
-        .order("period_month", { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const present = myAtt.length;
-  const late = myAtt.filter((a) => a.is_late).length;
-  const hours = myAtt.reduce((s, a) => s + Number(a.hours_worked ?? 0), 0);
-  const latest = payslips[0];
-
-  return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      <KpiCard label="Days Present (MTD)" value={String(present)} icon={CalendarCheck} />
-      <KpiCard
-        label="Late Days (MTD)"
-        value={String(late)}
-        icon={AlertTriangle}
-        accent={late > 0 ? "warning" : undefined}
-      />
-      <KpiCard label="Hours Worked (MTD)" value={hours.toFixed(1)} icon={TrendingUp} />
-      <KpiCard
-        label="Latest Payslip"
-        value={latest ? inr(Number(latest.net_salary)) : "—"}
-        icon={Wallet}
-      />
-    </div>
-  );
-}
-
-/* ------------------------------ shared ------------------------------ */
-
-function ProductionPipelineCard({ pipeline }: { pipeline: Record<string, number> }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Production Pipeline</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {["received", "in_production", "qc", "ready", "dispatched"].map((s) => (
-            <div key={s} className="flex items-center justify-between text-sm">
-              <span className="capitalize text-muted-foreground">{s.replace("_", " ")}</span>
-              <span className="font-medium">{pipeline[s] ?? 0}</span>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function StatusPill({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    received: "bg-muted text-muted-foreground",
-    in_production: "bg-primary/15 text-primary",
-    qc: "bg-warning/15 text-warning",
-    ready: "bg-emerald-500/15 text-emerald-500",
-    dispatched: "bg-emerald-600/20 text-emerald-600",
-    pending: "bg-muted text-muted-foreground",
-  };
-  return (
-    <span
-      className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${map[status] ?? "bg-muted text-muted-foreground"}`}
-    >
-      {status.replace("_", " ")}
-    </span>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent?: "warning";
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-sm text-muted-foreground">{label}</div>
-            <div
-              className={`text-2xl font-semibold mt-1 ${accent === "warning" ? "text-warning" : "text-foreground"}`}
-            >
-              {value}
-            </div>
+    <PageBody className="space-y-6 lg:space-y-7">
+      <PageHeader
+        title={`Good day, ${name}`}
+        description={`${title} · ${subtitle}`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {(admin || sales) && <Button asChild><Link to="/sales-orders"><Plus className="mr-2 h-4 w-4" />New sales order</Link></Button>}
+            <Button variant="outline" asChild><Link to="/ai/insights"><Activity className="mr-2 h-4 w-4" />Insights</Link></Button>
           </div>
-          <div
-            className={`h-9 w-9 rounded-md flex items-center justify-center ${accent === "warning" ? "bg-warning/15 text-warning" : "bg-primary/10 text-primary"}`}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        }
+      />
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Your key metrics">
+        {metricsForRole.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.key} to={item.to} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Card className="h-full border-border/80 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:shadow-md">
+                <CardContent className="flex items-start justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <p className="text-sm text-muted-foreground">{item.label}</p>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{metricLabel(item.key)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{metricError(item.key) ? "Data source not available" : "Current record count"}</p>
+                  </div>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"><Icon className="h-5 w-5" /></span>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.9fr)]">
+        <Card className="min-w-0 border-border/80">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <div><CardTitle className="text-base">Department shortcuts</CardTitle><p className="mt-1 text-sm text-muted-foreground">Only the areas relevant to your role are shown here.</p></div>
+            <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            {quickLinks.map((item) => {
+              const Icon = item.icon;
+              return <Link key={item.label} to={item.to} className="group flex min-w-0 items-start gap-3 rounded-lg border border-border/70 p-3.5 transition-colors hover:border-primary/30 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"><Icon className="h-5 w-5" /></span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{item.label}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{item.detail}</span></span>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </Link>;
+            })}
+          </CardContent>
+        </Card>
+
+        <Card className="min-w-0 border-border/80">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-base">{admin || sales || production || customer ? "Recent sales orders" : accountant ? "Finance workspace" : hr ? "People workspace" : "Your next actions"}</CardTitle>
+            <p className="text-sm text-muted-foreground">{admin ? "A quick look at the latest order activity." : "Shortcuts to continue your daily work."}</p>
+          </CardHeader>
+          <CardContent>
+            {(admin || sales || production || customer) ? (
+              ordersLoading ? <p className="py-5 text-sm text-muted-foreground">Loading recent orders…</p> :
+              recentOrders.length ? <div className="space-y-1">
+                {recentOrders.map((order) => <Link key={order.id} to="/sales-orders" className="flex items-center justify-between gap-3 rounded-md px-2 py-3 hover:bg-muted/60">
+                  <span className="min-w-0"><span className="block truncate text-sm font-medium">{order.order_number || "Sales order"}</span><span className="mt-1 block text-xs text-muted-foreground">{order.order_date ? formatDate(order.order_date) : "Date not recorded"}</span></span>
+                  <span className="shrink-0 text-right"><span className="block text-sm font-medium tabular-nums">{inr(Number(order.total_amount || 0))}</span><Badge variant={order.fulfillment_status === "dispatched" ? "default" : "secondary"} className="mt-1">{order.fulfillment_status || "Pending status"}</Badge></span>
+                </Link>)}
+                <Button variant="ghost" className="mt-2 w-full justify-between" asChild><Link to="/sales-orders">Open all sales orders <ArrowRight className="h-4 w-4" /></Link></Button>
+              </div> : <div className="rounded-lg border border-dashed p-5 text-center"><CheckCircle2 className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-2 text-sm font-medium">No recent orders to show</p><p className="mt-1 text-xs text-muted-foreground">New records will appear here when available.</p></div>
+            ) : (
+              <div className="space-y-3">
+                {quickLinks.slice(0, 3).map((item) => { const Icon = item.icon; return <Link key={item.label} to={item.to} className="flex items-center gap-3 rounded-lg border border-border/70 p-3 hover:bg-muted/50"><Icon className="h-5 w-5 text-primary" /><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{item.label}</span><span className="block text-xs text-muted-foreground">{item.detail}</span></span><ArrowRight className="h-4 w-4 text-muted-foreground" /></Link>; })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      {admin && <section className="rounded-xl border border-primary/15 bg-primary/[0.035] p-4 sm:p-5">
+        <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Activity className="h-5 w-5" /></span><div><h2 className="font-semibold">Management overview</h2><p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">Use the department shortcuts above to inspect sales, purchasing, collections, B2B/B2C billing, inventory and production. Financial totals and channel-specific performance should only be added when their source records and classification rules are verified; this dashboard intentionally avoids estimating or inventing those numbers.</p></div></div>
+      </section>}
+
+      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-4 text-xs text-muted-foreground">
+        <span>Mattress Maestro · House of Abood Tradings</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />Role-based workspace</span>
+      </footer>
+    </PageBody>
   );
 }
