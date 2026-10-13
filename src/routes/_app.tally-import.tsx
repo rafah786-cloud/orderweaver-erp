@@ -318,6 +318,13 @@ function TallyImportPage() {
         (x) => x.alter_id ?? null,
       );
       add(
+        "inventory_line",
+        migrationParsed.inventoryLines,
+        (x) => `inventory:${x.voucher_guid}:${x.line_index}`,
+        (x) => x.voucher_guid,
+        (x) => `voucher:${x.voucher_guid}`,
+      );
+      add(
         "ledger",
         migrationParsed.ledgerEntries,
         (x) => `ledger-entry:${x.external_ref}`,
@@ -348,6 +355,7 @@ function TallyImportPage() {
       );
       const controlTotals = {
         vouchers: migrationParsed.vouchers.length,
+        inventoryLines: migrationParsed.inventoryLines.length,
         voucherDebit: dr,
         voucherCredit: cr,
         customers: migrationParsed.customers.length,
