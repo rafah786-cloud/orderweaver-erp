@@ -25,7 +25,7 @@ const LABELS: Record<string, string> = {
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
   "/local-tally-accounts": "Tally Data Import",
 };
-const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/print").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
+const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/print" && r.prefix !== "/enterprise-workbench").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
