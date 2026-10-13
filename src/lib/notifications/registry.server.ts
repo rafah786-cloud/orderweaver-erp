@@ -82,6 +82,16 @@ export async function listProviders() {
     const record = toRecord(row);
     const implementation = PROVIDER_FACTORIES[`${record.channel}:${record.name}`];
     const missingEnv = record.secret_env_keys.filter((k) => !process.env[k]);
+    // Presence of named environment variables is not enough: credentials may be
+    // malformed or incomplete. Ask the provider implementation to validate itself.
+    let providerConfigured = false;
+    if (implementation && missingEnv.length === 0) {
+      try {
+        providerConfigured = implementation(record).isConfigured();
+      } catch {
+        providerConfigured = false;
+      }
+    }
     return {
       id: record.id,
       channel: record.channel,
@@ -92,7 +102,7 @@ export async function listProviders() {
       priority: record.priority,
       has_implementation: Boolean(implementation),
       missing_env: missingEnv,
-      ready: Boolean(implementation) && missingEnv.length === 0,
+      ready: Boolean(implementation) && missingEnv.length === 0 && providerConfigured,
       // Return only non-secret configuration needed for the admin settings screen.
       // Secrets themselves remain in project environment variables and are never exposed.
       config:
