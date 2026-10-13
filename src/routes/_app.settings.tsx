@@ -79,6 +79,8 @@ function DeviceCard() {
 
   const [open, setOpen] = useState(false);
   const [showKey, setShowKey] = useState<string | null>(null);
+  const [deviceActionId, setDeviceActionId] = useState<string | null>(null);
+  const [creatingDevice, setCreatingDevice] = useState(false);
   const [form, setForm] = useState({
     device_id: "",
     name: "",
@@ -87,7 +89,7 @@ function DeviceCard() {
     poll_interval_ms: 5000,
   });
 
-  const { data: devices } = useQuery({
+  const { data: devices, isLoading: devicesLoading, isError: devicesError, refetch: refetchDevices } = useQuery({
     queryKey: ["devices"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -101,6 +103,16 @@ function DeviceCard() {
     },
   });
 
+  const validDeviceForm =
+    /^[a-zA-Z0-9_-]{1,64}$/.test(form.device_id.trim()) &&
+    form.name.trim().length > 0 &&
+    form.name.trim().length <= 120 &&
+    form.ip_address.trim().length > 0 &&
+    Number.isInteger(form.port) &&
+    form.port >= 1 && form.port <= 65535 &&
+    Number.isInteger(form.poll_interval_ms) &&
+    form.poll_interval_ms >= 1000 && form.poll_interval_ms <= 600000;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -110,7 +122,14 @@ function DeviceCard() {
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
-        {(devices ?? []).length === 0 && (
+        {devicesLoading && <p role="status" className="text-sm text-muted-foreground">Loading device configuration…</p>}
+        {devicesError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 text-sm text-destructive">
+            <span>Device configuration could not be loaded. No settings have been changed.</span>
+            <Button size="sm" variant="outline" onClick={() => void refetchDevices()}>Retry</Button>
+          </div>
+        )}
+        {!devicesLoading && !devicesError && (devices ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No devices configured.</p>
         )}
         {(devices ?? []).map((d) => (
@@ -140,9 +159,20 @@ function DeviceCard() {
                 size="icon"
                 variant="ghost"
                 title="Rotate key"
+                aria-label={`Rotate API key for ${d.name}`}
+                disabled={deviceActionId !== null || creatingDevice}
                 onClick={async () => {
-                  const r = await rotate({ data: { id: d.id } });
-                  setShowKey(r.apiKey);
+                  if (!confirm("Rotate this device API key? The current sync service will stop authenticating until you update its DEVICE_API_KEY. Continue?")) return;
+                  setDeviceActionId(d.id);
+                  try {
+                    const r = await rotate({ data: { id: d.id } });
+                    setShowKey(r.apiKey);
+                    toast.success("Device key rotated. Update the sync service configuration now.");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Could not rotate the device key.");
+                  } finally {
+                    setDeviceActionId(null);
+                  }
                 }}
               >
                 <KeyRound className="h-4 w-4" />
@@ -151,10 +181,20 @@ function DeviceCard() {
                 size="icon"
                 variant="ghost"
                 title="Delete"
+                aria-label={`Delete biometric device ${d.name}`}
+                disabled={deviceActionId !== null || creatingDevice}
                 onClick={async () => {
-                  if (!confirm("Delete this device?")) return;
-                  await del({ data: { id: d.id } });
-                  qc.invalidateQueries({ queryKey: ["devices"] });
+                  if (!confirm(`Delete biometric device "${d.name}"? Its future sync requests will no longer be accepted.`)) return;
+                  setDeviceActionId(d.id);
+                  try {
+                    await del({ data: { id: d.id } });
+                    await qc.invalidateQueries({ queryKey: ["devices"] });
+                    toast.success("Biometric device deleted.");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Could not delete the device.");
+                  } finally {
+                    setDeviceActionId(null);
+                  }
                 }}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -171,16 +211,19 @@ function DeviceCard() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Device ID</Label>
+              <Label htmlFor="device-id">Device ID</Label>
               <Input
+                id="device-id"
+                autoComplete="off"
                 value={form.device_id}
                 onChange={(e) => setForm({ ...form, device_id: e.target.value })}
                 placeholder="biometric-01"
               />
             </div>
             <div>
-              <Label>Name</Label>
+              <Label htmlFor="device-name">Name</Label>
               <Input
+                id="device-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Main Entrance"
@@ -188,16 +231,21 @@ function DeviceCard() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>IP Address</Label>
+                <Label htmlFor="device-ip">IP Address / Host</Label>
                 <Input
+                  id="device-ip"
+                  autoComplete="off"
                   value={form.ip_address}
                   onChange={(e) => setForm({ ...form, ip_address: e.target.value })}
                   placeholder="192.168.1.201"
                 />
               </div>
               <div>
-                <Label>Port</Label>
+                <Label htmlFor="device-port">Port</Label>
                 <Input
+                  id="device-port"
+                  min={1}
+                  max={65535}
                   type="number"
                   value={form.port}
                   onChange={(e) => setForm({ ...form, port: Number(e.target.value) })}
@@ -205,8 +253,11 @@ function DeviceCard() {
               </div>
             </div>
             <div>
-              <Label>Poll Interval (ms)</Label>
+              <Label htmlFor="device-poll-interval">Poll Interval (ms)</Label>
               <Input
+                id="device-poll-interval"
+                min={1000}
+                max={600000}
                 type="number"
                 value={form.poll_interval_ms}
                 onChange={(e) => setForm({ ...form, poll_interval_ms: Number(e.target.value) })}
@@ -218,9 +269,11 @@ function DeviceCard() {
               Cancel
             </Button>
             <Button
+              disabled={!validDeviceForm || creatingDevice || deviceActionId !== null}
               onClick={async () => {
+                setCreatingDevice(true);
                 try {
-                  const r = await create({ data: { ...form, is_active: true } });
+                  const r = await create({ data: { ...form, device_id: form.device_id.trim(), name: form.name.trim(), ip_address: form.ip_address.trim(), is_active: true } });
                   setOpen(false);
                   setForm({
                     device_id: "",
@@ -232,11 +285,13 @@ function DeviceCard() {
                   qc.invalidateQueries({ queryKey: ["devices"] });
                   setShowKey(r.apiKey);
                 } catch (e) {
-                  toast.error((e as Error).message);
+                  toast.error(e instanceof Error ? e.message : "Could not create the device.");
+                } finally {
+                  setCreatingDevice(false);
                 }
               }}
             >
-              Create
+              {creatingDevice ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>
