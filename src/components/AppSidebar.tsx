@@ -4,7 +4,7 @@ import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, UserCog, Calen
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ROUTE_ROLES } from "@/lib/permissions";
+import { ROUTE_ROLES, routePathMatches } from "@/lib/permissions";
 import { useState, useEffect } from "react";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 import { AccountMenu } from "@/components/AccountMenu";
@@ -25,7 +25,7 @@ const LABELS: Record<string, string> = {
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
   "/local-tally-accounts": "Tally Data Import",
 };
-const NAV = ROUTE_ROLES.map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
+const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/print").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
@@ -37,9 +37,9 @@ const GROUPS = [
   { label: "Automation & Admin", prefixes: ["/ai", "/whatsapp", "/communications", "/approvals", "/tally-import", "/vendor", "/settings"] },
 ];
 
-interface SidebarBodyProps { collapsed: boolean; setCollapsed: (value: boolean) => void; onNavigate?: () => void; }
+interface SidebarBodyProps { collapsed: boolean; setCollapsed: (value: boolean) => void; onNavigate?: () => void; allowCollapse?: boolean; }
 
-function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) {
+function SidebarBody({ collapsed, setCollapsed, onNavigate, allowCollapse = true }: SidebarBodyProps) {
   const { profile, roles, signOut, hasAnyRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,12 +51,13 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
   const uncategorized = items.filter((item) => !GROUPS.some((group) => group.prefixes.includes(item.to)));
 
   const renderLink = (item: (typeof items)[number]) => {
-    const active = location.pathname.startsWith(item.to);
+    const active = routePathMatches(location.pathname, item.to);
     const Icon = item.icon;
     const link = (
       <Link
         to={item.to}
         onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
         className={
           "group relative flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out " +
           (collapsed ? "justify-center px-2 " : "gap-3 ") +
@@ -78,7 +79,7 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
       <div className={"flex items-center gap-3 border-b border-sidebar-border px-5 py-4 " + (collapsed ? "justify-center px-2" : "")}>
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md btn-gold"><Building2 className="h-5 w-5" /></div>
         {!collapsed && <div className="min-w-0 flex-1"><div className="truncate text-[1.05rem] font-semibold tracking-tight text-sidebar-foreground">Mattress Maestro</div><div className="mt-1 truncate text-[9px] uppercase tracking-[0.18em] text-sidebar-foreground/55">Zizz Business Suite</div></div>}
-        {!collapsed && <button onClick={() => setCollapsed(true)} className="ml-auto rounded-lg p-1.5 text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Collapse sidebar" title="Collapse sidebar"><PanelLeft className="h-4 w-4" /></button>}
+        {!collapsed && allowCollapse && <button onClick={() => setCollapsed(true)} className="ml-auto rounded-lg p-1.5 text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Collapse sidebar" title="Collapse sidebar"><PanelLeft className="h-4 w-4" /></button>}
       </div>
       <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
         {groups.map((group) => <section key={group.label} aria-label={group.label}>{!collapsed && <div className="mb-1.5 px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/40">{group.label}</div>}<div className="space-y-0.5">{group.items.map(renderLink)}</div></section>)}
@@ -116,7 +117,7 @@ export function MobileTopBar() {
     <header className="glass sticky top-0 z-20 flex items-center justify-between gap-2 rounded-none border-0 border-b px-3 py-2 md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
-        <SheetContent side="left" className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"><SheetTitle className="sr-only">Navigation</SheetTitle><SidebarBody collapsed={false} setCollapsed={() => {}} onNavigate={() => setOpen(false)} /></SheetContent>
+        <SheetContent side="left" className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"><SheetTitle className="sr-only">Navigation</SheetTitle><SidebarBody collapsed={false} setCollapsed={() => {}} onNavigate={() => setOpen(false)} allowCollapse={false} /></SheetContent>
       </Sheet>
       <CompanySwitcher /><AccountMenu mobile />
     </header>
