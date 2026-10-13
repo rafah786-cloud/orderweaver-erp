@@ -13,7 +13,8 @@ export type AuditRow = {
 };
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const blocks = (xml: string, tag: string) =>
-  [...xml.matchAll(new RegExp("<" + esc(tag) + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + esc(tag) + ">", "gi"))].map(m => m[1]);
+  [...xml.matchAll(new RegExp("<" + esc(tag) + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + esc(tag) + ">", "gi"))]
+    .map(m => m[1]).filter(body => body.trim().length > 0);
 const tag = (xml: string, name: string) => {
   const m = xml.match(new RegExp("<" + esc(name) + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + esc(name) + ">", "i"));
   return m ? m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").trim() : "";
