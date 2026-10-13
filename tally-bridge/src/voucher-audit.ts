@@ -83,7 +83,7 @@ export function auditVoucherXml(xml: string): AuditRow[] {
       inventoryNet: inventoryTotals.count ? rounded(inventoryTotals.sum) : null,
       inventoryAccountingAllocations: allocations.length, allocationAmountCount: allocationTotals.count,
       allocationNet: allocationTotals.count ? rounded(allocationTotals.sum) : null,
-      combinedCandidateNet: net === null ? null : rounded(net), status, notes
+      combinedCandidateNet: net === null ? null : (Math.abs(net) <= 0.00005 ? 0 : rounded(net)), status, notes
     };
   });
 }
