@@ -15,6 +15,8 @@ export const ROUTE_ROLES: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/purchases", roles: ["admin", "accountant", "production"] },
   { prefix: "/production", roles: ["admin", "production", "sales"] },
   { prefix: "/operations", roles: ["admin", "accountant", "sales", "production", "hr"] },
+  // Generic multi-domain data workbench includes mutation controls; restrict to administrators until granular policies exist.
+  { prefix: "/enterprise-workbench", roles: ["admin"] },
   { prefix: "/employees", roles: ["admin", "hr"] },
   { prefix: "/attendance", roles: ["admin", "hr", "employee"] },
   { prefix: "/payslips", roles: ["admin", "hr", "employee"] },
@@ -55,4 +57,10 @@ export function defaultRouteForRoles(roles: AppRole[]): string {
 export function allowedRolesFor(pathname: string): AppRole[] | null {
   const match = ROUTE_ROLES.find((r) => routePathMatches(pathname, r.prefix));
   return match ? match.roles : null;
+}
+
+/** Unknown app paths are denied by default; missing policy must never mean public access. */
+export function canAccessPath(pathname: string, userRoles: AppRole[]): boolean {
+  const allowed = allowedRolesFor(pathname);
+  return allowed !== null && allowed.some((role) => userRoles.includes(role));
 }
