@@ -77,13 +77,20 @@ function EventsPage() {
 
   const setChannelMut = useMutation({
     mutationFn: (v: any) => setFn({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notification-events"] }),
-    onError: (e: any) => toast.error(e?.message ?? "Failed to save"),
+    onSuccess: () => {
+      toast.success("Notification routing updated");
+      qc.invalidateQueries({ queryKey: ["notification-events"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to save notification routing"),
   });
 
   const toggleActiveMut = useMutation({
     mutationFn: (v: any) => toggleFn({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notification-events"] }),
+    onSuccess: () => {
+      toast.success("Event status updated");
+      qc.invalidateQueries({ queryKey: ["notification-events"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to update event status"),
   });
 
   return (
