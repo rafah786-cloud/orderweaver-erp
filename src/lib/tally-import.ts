@@ -584,7 +584,10 @@ export function parseTallyMasters(
       const allocationLines = voucherInventoryLines.flatMap((inventory) =>
         arr<Record<string, unknown>>(inventory["ACCOUNTINGALLOCATIONS.LIST"] as never),
       );
-      const lines = [...ledgerLines, ...altLines, ...allocationLines];
+      // Tally may expose the same ledger postings under both legacy and ALL* aliases.
+      // Select one family only; retaining both would double-count voucher legs.
+      const selectedLedgerLines = ledgerLines.length ? ledgerLines : altLines;
+      const lines = [...selectedLedgerLines, ...allocationLines];
 
       vouchersOut.push({
         source_id: guid,
