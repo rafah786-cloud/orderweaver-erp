@@ -180,7 +180,7 @@ function ReturnsPage() {
                       {formatDate(r.updated_at)}
                     </TableCell>
                     <TableCell>
-                      <Link to="/gst/returns/$id" params={{ id: r.id }}>
+                      <Link to="/gst/returns/$id" params={{ id: r.id }} aria-label={`Open ${r.return_type} for ${r.period_year}`} title="Open return details">
                         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                       </Link>
                     </TableCell>
