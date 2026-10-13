@@ -39,7 +39,7 @@ const CHANNELS = [
   { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare, implemented: true },
   { key: "sms", label: "SMS", Icon: Smartphone, implemented: false },
   { key: "email", label: "Email", Icon: Mail, implemented: false },
-  { key: "push", label: "Push", Icon: Bell, implemented: true },
+  { key: "push", label: "Push", Icon: Bell, implemented: false },
   { key: "in_app", label: "In-App", Icon: Bell, implemented: true },
 ] as const;
 
@@ -105,7 +105,7 @@ function EventsPage() {
             <div>
               <CardTitle>Event → Channel Routing</CardTitle>
               <CardDescription>
-                Admin controls. Disabled events skip dispatch entirely.
+                Admin controls. Disabled events skip dispatch entirely. SMS, Email and Push routing stay disabled until a real provider is configured and verified; enabling a route alone cannot deliver messages.
               </CardDescription>
             </div>
             <TestDispatchDialog
