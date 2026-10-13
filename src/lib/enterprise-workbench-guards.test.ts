@@ -19,7 +19,8 @@ describe("enterprise workbench guard helpers", () => {
   it("only searches scalar text and select fields", () => {
     expect(getWorkbenchSearchColumns([
       { key: "code", type: "text" },
-      { key: "status", type: "select" },
+      { key: "status", type: "select", options: ["draft", "released"] },
+      { key: "active", type: "select", options: ["true", "false"] },
       { key: "quantity", type: "number" },
       { key: "notes", type: "textarea" },
       { key: "defaultText" },
@@ -27,7 +28,7 @@ describe("enterprise workbench guard helpers", () => {
     ])).toEqual(["code", "status", "defaultText"]);
   });
 
-  it.each(["approved", "released", "posted", "dispatched", "completed", "closed", "locked", "paid"])(
+  it.each(["approved", "released", "posted", "dispatched", "completed", "closed", "locked", "paid", "passed", "failed", "conditional", "sent", "rejected", "returned"])(
     "recognizes %s as a governed state",
     (status) => expect(isGovernedWorkbenchStatus(status)).toBe(true),
   );
