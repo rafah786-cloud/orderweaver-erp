@@ -315,6 +315,22 @@ function TallyImportPage() {
         (x) => `voucher:${x.source_id}`,
         (x) => x.source_id,
       );
+      const inventoryRows = migrationParsed.vouchers.flatMap((voucher) =>
+        voucher.inventory_entries.map((entry, lineIndex) => ({
+          ...entry,
+          voucher_guid: voucher.source_id,
+          line_index: lineIndex,
+          lifecycle_state: voucher.lifecycle_state,
+          source_payload: voucher.source_payload ?? voucher,
+        })),
+      );
+      add(
+        "inventory_line",
+        inventoryRows,
+        (x) => `inventory:${x.voucher_guid}:${x.line_index}`,
+        (x) => x.voucher_guid,
+        (x) => `voucher:${x.voucher_guid}`,
+      );
       add(
         "ledger",
         migrationParsed.ledgerEntries,
@@ -322,7 +338,7 @@ function TallyImportPage() {
         (x) => x.external_ref,
       );
       add(
-        "bill_allocation",
+        "bill",
         migrationParsed.bills,
         (x) => `bill:${x.external_ref}`,
         (x) => x.external_ref,
@@ -346,6 +362,7 @@ function TallyImportPage() {
       );
       const controlTotals = {
         vouchers: migrationParsed.vouchers.length,
+        inventoryLines: inventoryRows.length,
         voucherDebit: dr,
         voucherCredit: cr,
         customers: migrationParsed.customers.length,
