@@ -27,7 +27,7 @@ function amount(raw: string): number | null {
   const n = Number(s);
   return Number.isFinite(n) ? (parens ? -n : n) : null;
 }
-function sumEntryAmounts(entries: string[]) {
+function rounded(value: number): number {\n  const n = Number(value.toFixed(4));\n  return Object.is(n, -0) || Math.abs(n) < 0.00005 ? 0 : n;\n}\nfunction sumEntryAmounts(entries: string[]) {
   // Read the entry's own AMOUNT only. Scanning all descendant AMOUNT tags
   // would double-count nested bill allocations or inventory accounting splits.
   const parsed = entries.map(entry => amount(tag(entry, "AMOUNT")));
@@ -72,12 +72,12 @@ export function auditVoucherXml(xml: string): AuditRow[] {
     return {
       voucherNumber: number, date, voucherType: tag(v, "VOUCHERTYPENAME"), guid,
       ledgerFamily: family, ledgerEntries: ledgers.length, ledgerAmountCount: ledgerTotals.count,
-      ledgerNet: ledgerTotals.count ? Number(ledgerTotals.sum.toFixed(4)) : null,
+      ledgerNet: ledgerTotals.count ? rounded(ledgerTotals.sum) : null,
       inventoryEntries: inventory.length, inventoryAmountCount: inventoryTotals.count,
-      inventoryNet: inventoryTotals.count ? Number(inventoryTotals.sum.toFixed(4)) : null,
+      inventoryNet: inventoryTotals.count ? rounded(inventoryTotals.sum) : null,
       inventoryAccountingAllocations: allocations.length, allocationAmountCount: allocationTotals.count,
-      allocationNet: allocationTotals.count ? Number(allocationTotals.sum.toFixed(4)) : null,
-      combinedCandidateNet: net === null ? null : Number(net.toFixed(4)), status, notes
+      allocationNet: allocationTotals.count ? rounded(allocationTotals.sum) : null,
+      combinedCandidateNet: net === null ? null : rounded(net), status, notes
     };
   });
 }
