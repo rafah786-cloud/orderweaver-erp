@@ -24,14 +24,17 @@ describe("enterprise-domain RLS hardening migration", () => {
     expect(selector).toContain("'production_operations'");
   });
 
-  it("only grants read policy on the enterprise domain audit log", () => {
-    const auditBranch = migration
-      .split("if v_table = 'erp_domain_audit_log' then", 2)[1]
+  it("keeps system-generated workflow, MRP, integration, and audit records client-read-only", () => {
+    const selectOnlyBranch = migration
+      .split("if v_table = any (array[", 2)[1]
       ?.split("else", 1)[0] ?? "";
-    expect(auditBranch).toContain("for select");
-    expect(auditBranch).not.toContain("for insert");
-    expect(auditBranch).not.toContain("for update");
-    expect(auditBranch).not.toContain("for delete");
+    for (const table of ["ai_data_freshness", "backup_verification_runs", "erp_domain_audit_log", "integration_health", "integration_runs", "mrp_runs", "workflow_definitions", "workflow_instances", "workflow_tasks"]) {
+      expect(selectOnlyBranch).toContain(`'${table}'`);
+    }
+    expect(selectOnlyBranch).toContain("for select");
+    expect(selectOnlyBranch).not.toContain("for insert");
+    expect(selectOnlyBranch).not.toContain("for update");
+    expect(selectOnlyBranch).not.toContain("for delete");
   });
 
   it("drops all prior broad policies before creating granular replacements", () => {
