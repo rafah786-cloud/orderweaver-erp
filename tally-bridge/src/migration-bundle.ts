@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseTallyMasters, type TallyParsed } from "../../src/lib/tally-import.js";
 
 type ManifestSegment = {
@@ -105,6 +106,9 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
     totalBytes += raw.byteLength;
     hash.update(segment.name).update("\0").update(raw).update("\0");
     const xml = raw.toString("utf8");
+    // An empty optional Tally collection may contain no TALLYMESSAGE at all.
+    // It is valid to skip that segment after its checksum has been verified.
+    if (!/<TALLYMESSAGE\\b/i.test(xml) && !/<IMPORTDATA\\b/i.test(xml)) continue;
     const result = parseTallyMasters(xml, { ...defaults, preserveLifecycle: true });
     mergeParsed(parsed, result);
   }
@@ -165,7 +169,7 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
   return bundle;
 }
 
-if (process.argv[1] && import.meta.url === new URL("file://" + path.resolve(process.argv[1])).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const manifestPath = process.argv[2];
   const outputPath = process.argv[3];
   if (!manifestPath || !outputPath) {
