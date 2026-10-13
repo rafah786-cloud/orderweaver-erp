@@ -18,6 +18,13 @@ const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
       <VOUCHERNUMBER>S/001</VOUCHERNUMBER>
       <GUID>voucher-guid-1</GUID>
       <ALTERID>987654</ALTERID>
+      <ALLINVENTORYENTRIES.LIST>
+        <STOCKITEMNAME>Foam Sheet</STOCKITEMNAME>
+        <ACTUALQTY>2 Nos</ACTUALQTY>
+        <BILLEDQTY>2 Nos</BILLEDQTY>
+        <RATE>100/Nos</RATE>
+        <AMOUNT>200.00</AMOUNT>
+      </ALLINVENTORYENTRIES.LIST>
       <ALLLEDGERENTRIES.LIST>
         <LEDGERNAME>Acme Traders</LEDGERNAME>
         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
@@ -87,6 +94,18 @@ describe("Tally import — idempotent re-import", () => {
     const b = parseTallyMasters(SAMPLE_XML, groups);
     expect(a.ledgerEntries).toHaveLength(2);
     expect(a.vouchers.find((v) => v.source_id === "voucher-guid-1")?.alter_id).toBe("987654");
+    expect(a.vouchers.find((v) => v.source_id === "voucher-guid-1")?.source_payload).toBeDefined();
+    expect(a.inventoryLines).toHaveLength(1);
+    expect(a.inventoryLines[0]).toMatchObject({
+      voucher_guid: "voucher-guid-1",
+      line_index: 0,
+      stock_item_name: "Foam Sheet",
+      actual_qty: 2,
+      billed_qty: 2,
+      unit: "Nos",
+      amount: 200,
+    });
+    expect(a.inventoryLines[0].source_payload["STOCKITEMNAME"]).toBe("Foam Sheet");
     expect(a.ledgerEntries.map((e) => e.external_ref).sort()).toEqual(
       b.ledgerEntries.map((e) => e.external_ref).sort(),
     );
