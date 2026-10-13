@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,8 @@ const MODULES: Module[] = [
 ];
 
 function EnterpriseOperations() {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const { data: counts = {}, isLoading } = useQuery({
     queryKey: ["enterprise-capability-counts"],
     queryFn: async () => {
@@ -55,7 +58,7 @@ function EnterpriseOperations() {
 
   return (
     <>
-      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={<Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link>} />
+      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={isAdmin ? <Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link> : undefined} />
       <PageBody>
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5" /><div><div className="text-sm font-medium">Governed foundation</div><div className="text-xs text-muted-foreground">Company-scoped RLS on every new domain</div></div></CardContent></Card>
@@ -74,7 +77,7 @@ function EnterpriseOperations() {
                 </div></CardHeader>
                 <CardContent><p className="text-sm text-muted-foreground">{module.description}</p><div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                   <span>{isLoading ? "…" : String(records) + " records in foundation"}</span>
-                  {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>} {!module.existingPath && <Link to="/enterprise-workbench" className="font-medium text-primary hover:underline">Open workbench →</Link>}
+                  {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>} {!module.existingPath && isAdmin && <Link to="/enterprise-workbench" className="font-medium text-primary hover:underline">Open workbench →</Link>}
                 </div></CardContent>
               </Card>
             );
