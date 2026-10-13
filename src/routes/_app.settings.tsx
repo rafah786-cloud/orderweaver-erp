@@ -310,9 +310,14 @@ function DeviceCard() {
             <Input readOnly value={showKey ?? ""} />
             <Button
               size="icon"
-              onClick={() => {
-                navigator.clipboard.writeText(showKey ?? "");
-                toast.success("Copied");
+              aria-label="Copy device API key"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(showKey ?? "");
+                  toast.success("Copied");
+                } catch {
+                  toast.error("Clipboard access failed. Select and copy the key manually.");
+                }
               }}
             >
               <Copy className="h-4 w-4" />
