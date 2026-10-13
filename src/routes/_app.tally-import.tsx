@@ -39,6 +39,8 @@ type TallyStagingBundle = {
   sourceCompanyName: string;
   sourceCompanyGuid: string | null;
   sourceChecksum: string;
+  bundleChecksum: string;
+  sourcePeriod: { fromDate: string | null; toDate: string | null };
   controlTotals: Record<string, any>;
   rows: Array<any>;
 };
@@ -191,10 +193,27 @@ function TallyImportPage() {
           typeof bundle.sourceCompanyName !== "string" ||
           typeof bundle.sourceChecksum !== "string" ||
           !/^[a-f0-9]{64}$/i.test(bundle.sourceChecksum) ||
+          typeof bundle.bundleChecksum !== "string" ||
+          !/^[a-f0-9]{64}$/i.test(bundle.bundleChecksum) ||
+          !bundle.sourcePeriod ||
           !bundle.controlTotals || typeof bundle.controlTotals !== "object" ||
           !Array.isArray(bundle.rows) ||
           bundle.rows.some((row) => !row || typeof row.record_type !== "string" || typeof row.source_key !== "string" || !row.payload)
         ) throw new Error("This JSON is not a valid Tally staging bundle.");
+        const checksumPayload = {
+          schemaVersion: bundle.schemaVersion,
+          sourceCompanyName: bundle.sourceCompanyName,
+          sourceCompanyGuid: bundle.sourceCompanyGuid ?? null,
+          sourceChecksum: bundle.sourceChecksum,
+          sourcePeriod: bundle.sourcePeriod,
+          controlTotals: bundle.controlTotals,
+          rows: bundle.rows,
+        };
+        const bundleDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(checksumPayload)));
+        const computedBundleChecksum = Array.from(new Uint8Array(bundleDigest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        if (computedBundleChecksum !== bundle.bundleChecksum.toLowerCase()) {
+          throw new Error("Staging bundle checksum mismatch; refusing to stage modified data.");
+        }
         setMigrationBundle(bundle as TallyStagingBundle);
         setParsed(null);
         if (!targetCompanyId && activeCompany?.id) setTargetCompanyId(activeCompany.id);
