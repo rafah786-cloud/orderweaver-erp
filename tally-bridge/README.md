@@ -43,3 +43,16 @@ same-name companies or unsupported message envelopes fail explicitly.
 The UI currently offers source preview/validation only. Canonical transactional Tally
 commit, changed-voucher policy, ledger/stock identity mapping and verified isolated
 recovery remain required before live import. No successful sync is fabricated.
+
+
+## ERP migration staging bundles
+
+Convert a completed read-only snapshot into per-period JSON packages for the ERP migration control plane:
+
+```powershell
+npm run bundle -- ".\tally-voucher-register-april\ABOOD_TRADINGS\manifest.json" ".\erp-staging-abood-april"
+```
+
+The tool creates one bundle per date segment. The first bundle carries masters and opening balances; subsequent bundles carry only that period's vouchers, normalized inventory lines, ledger entries, and voucher-linked bill allocations. Original parsed voucher payloads, source GUIDs, Alter IDs, checksums and control totals are retained for validation. In Mattress Maestro, open **Import from Tally → Migration control plane**, upload a staging-bundle JSON file, select the matching official company, and stage it. Large bundles are submitted in bounded chunks and validated only after all chunks succeed.
+
+This is staging, not live posting. It does not write to Tally, update ERP accounting/inventory, or approve a migration. Final canonical commit remains gated on reconciliation, company/ledger/stock mapping and recovery testing.
