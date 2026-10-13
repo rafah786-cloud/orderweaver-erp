@@ -271,6 +271,7 @@ function TallyImportPage() {
         sourceCompanyName = migrationBundle.sourceCompanyName;
         sourceCompanyGuid = migrationBundle.sourceCompanyGuid;
       } else {
+      if (!migrationParsed) throw new Error("No parsed XML or staging bundle is available.");
       const encoder = new TextEncoder();
       const digest = await crypto.subtle.digest(
         "SHA-256",
