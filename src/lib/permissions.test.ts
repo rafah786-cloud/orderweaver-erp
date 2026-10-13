@@ -18,6 +18,16 @@ describe("ERP route security policy", () => {
     expect(allowedRolesFor("/unknown-finance-route")).toBeNull();
   });
 
+  it("does not grant access to similarly prefixed but unregistered routes", () => {
+    expect(allowedRolesFor("/gst-archive")).toBeNull();
+    expect(allowedRolesFor("/accounting-old")).toBeNull();
+  });
+
+  it("applies the parent screen policy to nested routes", () => {
+    expect(allowedRolesFor("/gst/returns")).toEqual(["admin", "accountant"]);
+    expect(allowedRolesFor("/tally-import/validate")).toEqual(["admin"]);
+  });
+
   it("contains no duplicate top-level route prefixes", () => {
     const prefixes = ROUTE_ROLES.map((entry) => entry.prefix);
     expect(new Set(prefixes).size).toBe(prefixes.length);
