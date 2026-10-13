@@ -5,18 +5,18 @@
 
 do $migration$
 declare
-  p record;
+  policy_row record;
   affected_tables text[];
   v_table text;
 begin
   -- Restrict this migration to the additive enterprise domains. Do not rewrite
   -- legacy accounting, voucher, party, invoice or canonical stock ledger policies.
-  select array_agg(distinct p.tablename order by p.tablename)
+  select array_agg(distinct policy_def.tablename order by policy_def.tablename)
     into affected_tables
-  from pg_policies p
-  where p.schemaname = 'public'
-    and p.policyname like 'company_scope%'
-    and p.tablename = any (array[
+  from pg_policies policy_def
+  where policy_def.schemaname = 'public'
+    and policy_def.policyname like 'company_scope%'
+    and policy_def.tablename = any (array[
       'ai_data_freshness','backup_verification_runs',
       'bom_revision_lines','bom_revisions',
       'data_quality_issues','engineering_change_order_lines','engineering_change_orders',
@@ -34,20 +34,20 @@ begin
     and exists (
       select 1 from information_schema.columns c
       where c.table_schema = 'public'
-        and c.table_name = p.tablename
+        and c.table_name = policy_def.tablename
         and c.column_name = 'company_id'
     );
 
   foreach v_table in array coalesce(affected_tables, array[]::text[])
   loop
     -- PostgreSQL ORs permissive policies together, so remove every old broad policy.
-    for p in
+    for policy_row in
       select policyname from pg_policies
       where schemaname = 'public'
         and tablename = v_table
         and policyname like 'company_scope%'
     loop
-      execute format('drop policy if exists %I on public.%I', p.policyname, v_table);
+      execute format('drop policy if exists %I on public.%I', policy_row.policyname, v_table);
     end loop;
 
     execute format('drop policy if exists company_permission_select on public.%I', v_table);
