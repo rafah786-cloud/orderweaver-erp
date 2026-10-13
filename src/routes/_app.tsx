@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar, MobileTopBar } from "@/components/AppSidebar";
-import { allowedRolesFor, defaultRouteForRoles } from "@/lib/permissions";
+import { canAccessPath, defaultRouteForRoles } from "@/lib/permissions";
 import { Bell, Search, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider, useCompany } from "@/lib/company-context";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
-  const { loading, session, profile, hasAnyRole, roles } = useAuth();
+  const { loading, session, profile, roles } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -46,8 +46,7 @@ function AppLayout() {
 
   if (profile.status !== "approved") return <Navigate to="/pending" />;
 
-  const allowed = allowedRolesFor(location.pathname);
-  const denied = allowed !== null && !hasAnyRole(allowed);
+  const denied = !canAccessPath(location.pathname, roles);
 
   return (
     <CompanyProvider>
