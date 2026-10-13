@@ -34,6 +34,15 @@ import {
 import { useCompany } from "@/lib/company-context";
 import { Progress } from "@/components/ui/progress";
 
+type TallyStagingBundle = {
+  schemaVersion: 1;
+  sourceCompanyName: string;
+  sourceCompanyGuid: string | null;
+  sourceChecksum: string;
+  controlTotals: Record<string, unknown>;
+  rows: Array<any>;
+};
+
 export const Route = createFileRoute("/_app/tally-import")({
   head: () => ({
     meta: [
@@ -114,6 +123,7 @@ function TallyImportPage() {
   const [importing, setImporting] = useState(false);
   const [parsed, setParsed] = useState<TallyParsed | null>(null);
   const [migrationParsed, setMigrationParsed] = useState<TallyParsed | null>(null);
+  const [migrationBundle, setMigrationBundle] = useState<TallyStagingBundle | null>(null);
   const [result, setResult] = useState<TallyImportResult | null>(null);
   const [staging, setStaging] = useState(false);
   const [migrationRuns, setMigrationRuns] = useState<any[]>([]);
@@ -172,6 +182,27 @@ function TallyImportPage() {
     setResult(null);
     setParsing(true);
     try {
+      if (f.name.toLowerCase().endsWith(".json")) {
+        const bundle = JSON.parse(await f.text()) as Partial<TallyStagingBundle>;
+        if (
+          bundle.schemaVersion !== 1 ||
+          typeof bundle.sourceCompanyName !== "string" ||
+          typeof bundle.sourceChecksum !== "string" ||
+          !/^[a-f0-9]{64}$/i.test(bundle.sourceChecksum) ||
+          !bundle.controlTotals || typeof bundle.controlTotals !== "object" ||
+          !Array.isArray(bundle.rows) ||
+          bundle.rows.some((row) => !row || typeof row.record_type !== "string" || typeof row.source_key !== "string" || !row.payload)
+        ) {
+          throw new Error("This JSON is not a valid Tally staging bundle.");
+        }
+        setMigrationBundle(bundle as TallyStagingBundle);
+        setMigrationParsed(null);
+        setParsed(null);
+        if (!targetCompanyId && activeCompany?.id) setTargetCompanyId(activeCompany.id);
+        toast.success(`Loaded ${bundle.rows.length} staging rows from ${bundle.sourceCompanyName}. Review the target company before staging.`);
+        return;
+      }
+      setMigrationBundle(null);
       const xml = await readXmlFile(f);
       const opts = {
         rawGroups: rawGroups
@@ -217,7 +248,7 @@ function TallyImportPage() {
   };
 
   const stageMigrationRun = async () => {
-    if (!migrationParsed || !targetCompany) return;
+    if ((!migrationParsed && !migrationBundle) || !targetCompany) return;
     if (targetCompany.id !== activeCompany?.id) {
       toast.error(
         "Switch the active company to the selected target before posting live masters. Staging itself remains safe.",
@@ -226,16 +257,28 @@ function TallyImportPage() {
     }
     setStaging(true);
     try {
+      let checksum: string;
+      let rows: Array<any>;
+      let controlTotals: Record<string, unknown>;
+      let sourceCompanyName = targetCompany.display_name;
+      let sourceCompanyGuid: string | null = null;
+      if (migrationBundle) {
+        checksum = migrationBundle.sourceChecksum;
+        rows = migrationBundle.rows;
+        controlTotals = migrationBundle.controlTotals;
+        sourceCompanyName = migrationBundle.sourceCompanyName;
+        sourceCompanyGuid = migrationBundle.sourceCompanyGuid;
+      } else {
       const encoder = new TextEncoder();
       const digest = await crypto.subtle.digest(
         "SHA-256",
         encoder.encode(JSON.stringify(migrationParsed)),
       );
-      const checksum = Array.from(new Uint8Array(digest))
+      checksum = Array.from(new Uint8Array(digest))
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 
-      const rows: Array<any> = [];
+      rows = [];
       const add = (
         record_type: string,
         list: any[],
@@ -353,7 +396,7 @@ function TallyImportPage() {
         (s, v) => s + v.entries.reduce((a, e) => a + e.credit, 0),
         0,
       );
-      const controlTotals = {
+      controlTotals = {
         vouchers: migrationParsed.vouchers.length,
         inventoryLines: migrationParsed.inventoryLines.length,
         voucherDebit: dr,
@@ -367,6 +410,7 @@ function TallyImportPage() {
         costCentres: migrationParsed.costCentres.length,
         bills: migrationParsed.bills.length,
       };
+      }
       if (rows.length === 0) throw new Error("No source records were parsed; refusing to create an empty migration run.");
 
       // Keep each server request bounded while preserving one atomic-to-validate
@@ -381,8 +425,8 @@ function TallyImportPage() {
         const res = await stageMigration({
           data: {
             companyId: targetCompany.id,
-            sourceCompanyName: targetCompany.display_name,
-            sourceCompanyGuid: null,
+            sourceCompanyName,
+            sourceCompanyGuid,
             sourceChecksum: checksum,
             controlTotals,
             ...(runId ? { runId } : {}),
@@ -595,7 +639,7 @@ function TallyImportPage() {
             </p>
             <Button
               onClick={() => void stageMigrationRun()}
-              disabled={!migrationParsed || staging || !activeCompany}
+              disabled={(!migrationParsed && !migrationBundle) || staging || !activeCompany}
             >
               {staging ? "Staging…" : "Stage migration run safely"}
             </Button>
