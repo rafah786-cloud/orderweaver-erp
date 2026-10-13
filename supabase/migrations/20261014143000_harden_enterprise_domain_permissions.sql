@@ -9,15 +9,32 @@ declare
   affected_tables text[];
   v_table text;
 begin
-  select array_agg(distinct tablename order by tablename)
+  -- Restrict this migration to the additive enterprise domains. Do not rewrite
+  -- legacy accounting, voucher, party, invoice or canonical stock ledger policies.
+  select array_agg(distinct p.tablename order by p.tablename)
     into affected_tables
-  from pg_policies
-  where schemaname = 'public'
-    and policyname like 'company_scope%'
+  from pg_policies p
+  where p.schemaname = 'public'
+    and p.policyname like 'company_scope%'
+    and p.tablename = any (array[
+      'ai_data_freshness','backup_verification_runs','bank_reconciliations','budgets',
+      'bom_revision_lines','bom_revisions','crm_activities','crm_leads','crm_opportunities',
+      'data_quality_issues','engineering_change_order_lines','engineering_change_orders',
+      'erp_domain_audit_log','fixed_assets','integration_health','integration_runs',
+      'maintenance_assets','maintenance_meter_readings','maintenance_plans','maintenance_spares',
+      'maintenance_work_orders','master_data_quality_rules','mps_lines','mps_plans',
+      'mrp_exceptions','mrp_planned_orders','mrp_runs','production_operations','project_tasks','projects',
+      'quality_capa_actions','quality_inspections','quality_nonconformances','quality_plans','quality_results',
+      'rfq_lines','rfqs','routing_operation_dependencies','routing_operations','routings',
+      'sales_return_lines','sales_returns','shipment_lines','stock_count_lines','stock_counts',
+      'supplier_quote_lines','supplier_quotes','supplier_scorecards','three_way_match_results',
+      'warehouse_bins','warehouse_zones','work_center_calendars','work_centers',
+      'workflow_definitions','workflow_instances','workflow_tasks'
+    ]::text[])
     and exists (
       select 1 from information_schema.columns c
       where c.table_schema = 'public'
-        and c.table_name = pg_policies.tablename
+        and c.table_name = p.tablename
         and c.column_name = 'company_id'
     );
 
