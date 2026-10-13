@@ -247,6 +247,10 @@ function TallyImportPage() {
 
   const stageMigrationRun = async () => {
     if ((!migrationParsed && !migrationBundle) || !targetCompany) return;
+    if (migrationBundle?.sourceCompanyName.trim().toUpperCase() === "ESTIMATE") {
+      toast.error("ESTIMATE is a separate management-books source and cannot be staged into an official ERP company.");
+      return;
+    }
     if (targetCompany.id !== activeCompany?.id) {
       toast.error(
         "Switch the active company to the selected target before posting live masters. Staging itself remains safe.",
