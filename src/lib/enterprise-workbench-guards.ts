@@ -19,7 +19,7 @@ const GOVERNED_STATUSES = new Set([
 export function normalizeWorkbenchSearch(input: string): string {
   return input
     .normalize("NFKC")
-    .replace(/[^\p{L}\p{N}\s_-]/gu, " ")
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 80);
