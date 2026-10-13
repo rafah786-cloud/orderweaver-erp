@@ -37,7 +37,13 @@ export function getWorkbenchSearchColumns(
 ): string[] {
   return [...new Set(
     fields
-      .filter((field) => field.type === undefined || field.type === "text" || (field.type === "select" && !(field.options?.length === 2 && field.options.every((option) => option === "true" || option === "false"))))
+      .filter((field) =>
+        field.key !== "id"
+        && !field.key.endsWith("_id")
+        && (field.type === undefined
+          || field.type === "text"
+          || (field.type === "select" && !(field.options?.length === 2 && field.options.every((option) => option === "true" || option === "false"))))
+      )
       .map((field) => field.key),
   )];
 }
