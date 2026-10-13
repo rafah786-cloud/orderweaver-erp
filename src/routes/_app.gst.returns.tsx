@@ -23,7 +23,7 @@ import { useState } from "react";
 import { sb } from "@/lib/accounting";
 import { generateReturn, type GstReturn, type ReturnType, MONTH_NAMES } from "@/lib/gst";
 import { inr, formatDate } from "@/lib/format";
-import { ExternalLink, Play, FileSpreadsheet } from "lucide-react";
+import { ExternalLink, Play, FileSpreadsheet, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/gst/returns")({
@@ -68,8 +68,17 @@ function ReturnsPage() {
 
   return (
     <>
-      <PageHeader title="GST Returns" description="Generate and review GSTR-1, GSTR-3B, GSTR-9." />
+      <PageHeader title="GST Returns" description="Prepare and review return data for GSTR-1, GSTR-3B, and GSTR-9." />
       <PageBody>
+        <Card className="mb-4 border-amber-300 bg-amber-50/70">
+          <CardContent className="flex gap-3 p-4 text-sm">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
+            <div className="space-y-1">
+              <p className="font-semibold text-amber-950">Preparation only — not filed with GSTN</p>
+              <p className="text-amber-900">Generate creates a draft from ERP records. It does not submit a return, pay tax, or receive a GSTN acknowledgement. Portal filing requires an authorized GSTN/GSP integration and explicit taxpayer authorization. Do not treat a generated draft as filed.</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card className="mb-4">
           <CardContent className="p-4 flex flex-wrap items-end gap-3">
             <div>
@@ -141,6 +150,12 @@ function ReturnsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {listQ.isLoading && (
+                  <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Loading GST returns…</TableCell></TableRow>
+                )}
+                {listQ.isError && (
+                  <TableRow><TableCell colSpan={8} className="py-8 text-center text-destructive">Could not load GST returns. Refresh the page or check your company access, then retry.</TableCell></TableRow>
+                )}
                 {listQ.data?.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
@@ -171,7 +186,7 @@ function ReturnsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {listQ.data?.length === 0 && (
+                {!listQ.isLoading && !listQ.isError && listQ.data?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 opacity-50" />
