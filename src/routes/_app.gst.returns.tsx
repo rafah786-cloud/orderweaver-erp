@@ -43,11 +43,12 @@ function ReturnsPage() {
 
   const listQ = useQuery({
     queryKey: ["gst_returns", activeCompany?.id],
-    enabled: !!activeCompany?.id,
+    enabled: !!activeCompany?.id && !!activeCompany?.gstin,
     queryFn: async () => {
       const { data, error } = await sb
         .from("gst_returns")
         .select("*")
+        .eq("gstin", activeCompany!.gstin!.trim().toUpperCase())
         .order("period_year", { ascending: false })
         .order("period_month", { ascending: false })
         .limit(100);
