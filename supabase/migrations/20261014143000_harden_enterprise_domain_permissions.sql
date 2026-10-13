@@ -47,19 +47,19 @@ begin
     else
       execute format(
         'create policy company_permission_select on public.%I for select using (public.is_approved(auth.uid()) and company_id = public.current_company_id() and exists (select 1 from public.user_company_access a where a.user_id = auth.uid() and a.company_id = %I.company_id and a.can_view))',
-        t.tablename, t.tablename
+        v_table, v_table
       );
       execute format(
         'create policy company_permission_insert on public.%I for insert with check (public.is_approved(auth.uid()) and company_id = public.current_company_id() and exists (select 1 from public.user_company_access a where a.user_id = auth.uid() and a.company_id = %I.company_id and a.can_view and a.can_create))',
-        t.tablename, t.tablename
+        v_table, v_table
       );
       execute format(
         'create policy company_permission_update on public.%I for update using (public.is_approved(auth.uid()) and company_id = public.current_company_id() and exists (select 1 from public.user_company_access a where a.user_id = auth.uid() and a.company_id = %I.company_id and a.can_view and a.can_edit)) with check (public.is_approved(auth.uid()) and company_id = public.current_company_id() and exists (select 1 from public.user_company_access a where a.user_id = auth.uid() and a.company_id = %I.company_id and a.can_view and a.can_edit))',
-        t.tablename, t.tablename, t.tablename
+        v_table, v_table, v_table
       );
       execute format(
         'create policy company_permission_delete on public.%I for delete using (public.is_approved(auth.uid()) and company_id = public.current_company_id() and exists (select 1 from public.user_company_access a where a.user_id = auth.uid() and a.company_id = %I.company_id and a.can_view and a.can_delete))',
-        t.tablename, t.tablename
+        v_table, v_table
       );
     end if;
   end loop;
