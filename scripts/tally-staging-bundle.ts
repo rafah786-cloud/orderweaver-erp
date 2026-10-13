@@ -27,7 +27,8 @@ const lifecycle = (value: unknown): StagingRow["lifecycle_state"] =>
   value === "cancelled" || value === "optional" || value === "deleted" ? value : "posted";
 
 function messages(xml: string): string[] {
-  return [...xml.matchAll(/<TALLYMESSAGE\b[^>]*>([\s\S]*?)<\/TALLYMESSAGE>/gi)].map((m) => m[1]);
+  // Keep complete message elements, including xmlns:UDF attributes required by some Tally exports.
+  return [...xml.matchAll(/<TALLYMESSAGE\b[^>]*>[\s\S]*?<\/TALLYMESSAGE>/gi)].map((m) => m[0]);
 }
 async function readVerifiedSegment(segment: Manifest["segments"][number]): Promise<string> {
   const xml = await readFile(path.resolve(segment.path), "utf8");
@@ -40,7 +41,7 @@ async function readVerifiedSegment(segment: Manifest["segments"][number]): Promi
 function combinedXml(parts: string[]): string {
   const all = parts.flatMap(messages);
   if (!all.length) throw new Error("No TALLYMESSAGE objects found in one or more source XML segments.");
-  return "<ENVELOPE><BODY><DATA>" + all.map((m) => "<TALLYMESSAGE>" + m + "</TALLYMESSAGE>").join("") + "</DATA></BODY></ENVELOPE>";
+  return "<ENVELOPE><BODY><DATA>" + all.join("") + "</DATA></BODY></ENVELOPE>";
 }
 function rowsFor(parsed: TallyParsed, includeMasters: boolean): StagingRow[] {
   const rows: StagingRow[] = [];
