@@ -31,13 +31,16 @@ const inputSchema = z.object({
   sourceCompanyGuid: z.string().max(255).nullable().optional(),
   sourceChecksum: z.string().min(16).max(128),
   controlTotals: z.record(z.string(), jsonSchema),
-  rows: z.array(rowSchema).max(50000),
+  // Each request is deliberately bounded; large historical migrations append
+  // multiple chunks to one run rather than creating misleading partial runs.
+  runId: z.string().uuid().optional(),
+  rows: z.array(rowSchema).max(20000),
 });
 
 async function assertMigrationRunAccess(db: any, userId: string, runId: string) {
   const { data, error } = await db
     .from("tally_migration_runs")
-    .select("id, company_id")
+    .select("id, company_id, status")
     .eq("id", runId)
     .maybeSingle();
   if (error || !data) throw new Error("Migration run is not visible in the active company");
@@ -75,20 +78,43 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!access) throw new Error("No access to selected company");
 
-    const { data: run, error: runError } = await supabase
-      .from("tally_migration_runs")
-      .insert({
-        company_id: data.companyId,
-        source_company_name: data.sourceCompanyName ?? null,
-        source_company_guid: data.sourceCompanyGuid ?? null,
-        source_checksum: data.sourceChecksum,
-        control_totals: data.controlTotals,
-        created_by: userId,
-        status: "staged",
-      })
-      .select("id")
-      .single();
-    if (runError || !run) throw new Error(runError?.message || "Could not create migration run");
+    let run: { id: string };
+    if (data.runId) {
+      const existing = await assertMigrationRunAccess(supabase, userId, data.runId);
+      const { data: activeCompanyId, error: activeCompanyError } =
+        await supabase.rpc("current_company_id");
+      if (activeCompanyError || !activeCompanyId || existing.company_id !== activeCompanyId || existing.company_id !== data.companyId) {
+        throw new Error("Migration chunk is outside the active company");
+      }
+      if (existing.status !== "staged") {
+        throw new Error("Only a staged migration run can receive more rows");
+      }
+      const { data: metadata, error: metadataError } = await supabase
+        .from("tally_migration_runs")
+        .select("source_checksum")
+        .eq("id", data.runId)
+        .single();
+      if (metadataError || metadata?.source_checksum !== data.sourceChecksum) {
+        throw new Error("Migration chunk checksum does not match the existing run");
+      }
+      run = { id: data.runId };
+    } else {
+      const { data: created, error: runError } = await supabase
+        .from("tally_migration_runs")
+        .insert({
+          company_id: data.companyId,
+          source_company_name: data.sourceCompanyName ?? null,
+          source_company_guid: data.sourceCompanyGuid ?? null,
+          source_checksum: data.sourceChecksum,
+          control_totals: data.controlTotals,
+          created_by: userId,
+          status: "staged",
+        })
+        .select("id")
+        .single();
+      if (runError || !created) throw new Error(runError?.message || "Could not create migration run");
+      run = { id: created.id };
+    }
 
     const rows = data.rows.map((r) => ({
       run_id: run.id,
@@ -105,7 +131,14 @@ export const stageTallyMigration = createServerFn({ method: "POST" })
 
     for (let i = 0; i < rows.length; i += 500) {
       const { error } = await supabase.from("tally_migration_rows").insert(rows.slice(i, i + 500));
-      if (error) throw new Error("Could not stage migration rows: " + error.message);
+      if (error) {
+        // A partially inserted run must never be approved or validated.
+        await supabase.from("tally_migration_runs").update({
+          status: "failed",
+          notes: "Row staging failed; this run must not be validated or approved.",
+        }).eq("id", run.id).eq("company_id", data.companyId);
+        throw new Error("Could not stage migration rows: " + error.message);
+      }
     }
 
     return { runId: run.id, rowCount: rows.length, checksum: data.sourceChecksum };
