@@ -242,12 +242,13 @@ function TallyImportPage() {
         keyFn: (x: any, i: number) => string,
         idFn?: (x: any) => string | null,
         parentFn?: (x: any) => string | null,
+        alterIdFn?: (x: any) => string | null,
       ) => {
         list.forEach((x, i) =>
           rows.push({
             record_type,
             source_id: idFn?.(x) ?? null,
-            alter_id: null,
+            alter_id: alterIdFn?.(x) ?? null,
             source_key: keyFn(x, i),
             lifecycle_state: x.lifecycle_state ?? "posted",
             parent_source_key: parentFn?.(x) ?? null,
@@ -313,6 +314,8 @@ function TallyImportPage() {
         migrationParsed.vouchers,
         (x) => `voucher:${x.source_id}`,
         (x) => x.source_id,
+        undefined,
+        (x) => x.alter_id ?? null,
       );
       add(
         "ledger",
