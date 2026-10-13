@@ -44,7 +44,7 @@ begin
 
   select count(*) into v_missing_policy
   from unnest(v_domain_tables) as target(tablename)
-  where target.tablename <> 'erp_domain_audit_log'
+  where target.tablename <> all (array['ai_data_freshness','backup_verification_runs','erp_domain_audit_log','integration_health','integration_runs','mrp_runs','workflow_definitions','workflow_instances','workflow_tasks']::text[])
     and exists (select 1 from pg_policies p where p.schemaname='public' and p.tablename=target.tablename)
     and (
       not exists (select 1 from pg_policies p where p.schemaname='public' and p.tablename=target.tablename and p.policyname='company_permission_insert' and p.with_check like '%can_create%')
@@ -58,11 +58,12 @@ begin
 
   select count(*) into v_audit_writes
   from pg_policies
-  where schemaname='public' and tablename='erp_domain_audit_log'
+  where schemaname='public'
+    and tablename = any (array['ai_data_freshness','backup_verification_runs','erp_domain_audit_log','integration_health','integration_runs','mrp_runs','workflow_definitions','workflow_instances','workflow_tasks']::text[])
     and cmd in ('INSERT','UPDATE','DELETE','ALL');
 
   if v_audit_writes > 0 then
-    raise exception 'Authenticated write policy exists on append-only audit log';
+    raise exception 'A system-managed read-only table has a client write policy';
   end if;
 end
 $test$;
