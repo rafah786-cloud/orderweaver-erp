@@ -374,7 +374,7 @@ function TallyImportPage() {
         (x) => x.external_ref,
       );
       add(
-        "bill_allocation",
+        "bill",
         migrationParsed.bills,
         (x) => `bill:${x.external_ref}`,
         (x) => x.external_ref,
