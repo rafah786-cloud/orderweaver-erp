@@ -108,7 +108,7 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
     const xml = raw.toString("utf8");
     // An empty optional Tally collection may contain no TALLYMESSAGE at all.
     // It is valid to skip that segment after its checksum has been verified.
-    if (!/<TALLYMESSAGE\\b/i.test(xml) && !/<IMPORTDATA\\b/i.test(xml)) continue;
+    if (!/<TALLYMESSAGE\b/i.test(xml) && !/<IMPORTDATA\b/i.test(xml)) continue;
     const result = parseTallyMasters(xml, { ...defaults, preserveLifecycle: true });
     mergeParsed(parsed, result);
   }
