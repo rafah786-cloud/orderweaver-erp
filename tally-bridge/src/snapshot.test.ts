@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sanitizeTallyXml, validateCollectionResponse, validateDayBookDates } from "./snapshot.js";
+import { sanitizeTallyXml, validateCollectionResponse, validateVoucherRegisterDates } from "./snapshot.js";
 
 const envelope = (body: string, status = 1) =>
   `<ENVELOPE><HEADER><STATUS>${status}</STATUS></HEADER><BODY><DATA>${body}</DATA></BODY></ENVELOPE>`;
@@ -44,22 +44,22 @@ test("rejects non-envelope responses", () => {
   );
 });
 
-test("accepts DayBook vouchers inside the requested date window", () => {
+test("accepts Voucher Register vouchers inside the requested date window", () => {
   const xml = envelope('<VOUCHER><DATE>20220401</DATE><VOUCHERNUMBER>A1</VOUCHERNUMBER></VOUCHER><VOUCHER><DATE>20220430</DATE><VOUCHERNUMBER>A2</VOUCHERNUMBER></VOUCHER>');
-  assert.deepEqual(validateDayBookDates(xml, "2022-04-01", "2022-04-30"), { voucherCount: 2 });
+  assert.deepEqual(validateVoucherRegisterDates(xml, "2022-04-01", "2022-04-30"), { voucherCount: 2 });
 });
 
-test("rejects Tally DayBook vouchers outside the requested date window", () => {
+test("rejects Tally Voucher Register vouchers outside the requested date window", () => {
   const xml = envelope('<VOUCHER><DATE>20261012</DATE><VOUCHERNUMBER>ABT-26-27/723</VOUCHERNUMBER></VOUCHER>');
   assert.throws(
-    () => validateDayBookDates(xml, "2022-04-01", "2022-04-30"),
+    () => validateVoucherRegisterDates(xml, "2022-04-01", "2022-04-30"),
     /out-of-range voucher ABT-26-27\/723 dated 20261012; refusing to save/,
   );
 });
 
 test("rejects vouchers without valid dates", () => {
   assert.throws(
-    () => validateDayBookDates(envelope("<VOUCHER><VOUCHERNUMBER>A1</VOUCHERNUMBER></VOUCHER>"), "2022-04-01", "2022-04-30"),
+    () => validateVoucherRegisterDates(envelope("<VOUCHER><VOUCHERNUMBER>A1</VOUCHERNUMBER></VOUCHER>"), "2022-04-01", "2022-04-30"),
     /missing\/invalid DATE; refusing to save/,
   );
 });
