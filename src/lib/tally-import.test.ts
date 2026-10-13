@@ -278,7 +278,8 @@ describe("Tally import — migration source preservation", () => {
         <ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>100</AMOUNT></ALLLEDGERENTRIES.LIST>
         <LEDGERENTRIES.LIST><LEDGERNAME>Alias Customer</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-100</AMOUNT></LEDGERENTRIES.LIST>
         <LEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>100</AMOUNT></LEDGERENTRIES.LIST>
-        <ALLINVENTORYENTRIES.LIST></ALLINVENTORYENTRIES.LIST>
+        <ALLINVENTORYENTRIES.LIST><STOCKITEMNAME>Foam</STOCKITEMNAME><ACTUALQTY>2 Nos</ACTUALQTY><BILLEDQTY>2 Nos</BILLEDQTY><RATE>50/Nos</RATE><AMOUNT>100</AMOUNT></ALLINVENTORYENTRIES.LIST>
+        <INVENTORYENTRIES.LIST><STOCKITEMNAME>Foam</STOCKITEMNAME><ACTUALQTY>2 Nos</ACTUALQTY><BILLEDQTY>2 Nos</BILLEDQTY><RATE>50/Nos</RATE><AMOUNT>100</AMOUNT></INVENTORYENTRIES.LIST>
       </VOUCHER>
     </TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
     const parsed = parseTallyMasters(xml, { rawGroups: [], finishedGroups: [], preserveLifecycle: true });
@@ -286,7 +287,8 @@ describe("Tally import — migration source preservation", () => {
     expect(parsed.vouchers[0].entries).toHaveLength(2);
     expect(parsed.vouchers[0].alter_id).toBe("456");
     expect(parsed.vouchers[0].source_payload).toBeDefined();
-    expect(parsed.vouchers[0].inventory_entries).toHaveLength(0);
+    expect(parsed.vouchers[0].inventory_entries).toHaveLength(1);
+    expect(parsed.vouchers[0].inventory_entries[0].stock_item_name).toBe("Foam");
   });
 });
 
