@@ -1,0 +1,69 @@
+const GOVERNED_STATUSES = new Set([
+  "approved",
+  "awarded",
+  "closed",
+  "completed",
+  "delivered",
+  "dispatched",
+  "in_transit",
+  "locked",
+  "obsolete",
+  "paid",
+  "posted",
+  "reconciled",
+  "released",
+  "cancelled",
+  "disposed",
+  "conditional",
+  "failed",
+  "inspected",
+  "passed",
+  "rejected",
+  "returned",
+  "sent",
+]);
+
+export function normalizeWorkbenchSearch(input: string): string {
+  return input
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
+export function getWorkbenchSearchColumns(
+  fields: ReadonlyArray<{ key: string; type?: string; options?: readonly string[] }>,
+): string[] {
+  return [...new Set(
+    fields
+      .filter((field) =>
+        field.key !== "id"
+        && !field.key.endsWith("_id")
+        && (field.type === undefined
+          || field.type === "text"
+          || (field.type === "select" && !(field.options?.length === 2 && field.options.every((option) => option === "true" || option === "false"))))
+      )
+      .map((field) => field.key),
+  )];
+}
+
+export function isGovernedWorkbenchStatus(status: unknown): boolean {
+  return typeof status === "string" && GOVERNED_STATUSES.has(status.trim().toLowerCase());
+}
+
+/**
+ * The generic workbench is not the approval, posting, dispatch or close workflow.
+ * It may retain an already-governed value while editing ordinary fields, but may
+ * not create a record in a governed state or move a record into one.
+ */
+export function canSetWorkbenchStatus(nextStatus: unknown, currentStatus?: unknown): boolean {
+  if (typeof nextStatus !== "string" || !nextStatus.trim()) return false;
+
+  const next = nextStatus.trim().toLowerCase();
+  const current = typeof currentStatus === "string" ? currentStatus.trim().toLowerCase() : "";
+  const transitionTouchesGovernedState = isGovernedWorkbenchStatus(next) || isGovernedWorkbenchStatus(current);
+
+  if (!transitionTouchesGovernedState) return true;
+  return current !== "" && current === next;
+}

@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, RefreshCw, Save, Trash2, Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, Database } from "lucide-react";
+import { Plus, RefreshCw, Save, Trash2, Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, Database, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { canSetWorkbenchStatus, getWorkbenchSearchColumns, isGovernedWorkbenchStatus, normalizeWorkbenchSearch } from "@/lib/enterprise-workbench-guards";
 
 export const Route = createFileRoute("/_app/enterprise-workbench")({
   head: () => ({ meta: [
@@ -42,6 +43,8 @@ type EntityConfig = {
   statusField?: string;
   statusOptions?: string[];
   orderBy?: string;
+  readOnly?: boolean;
+  readOnlyReason?: string;
 };
 
 type ModuleConfig = {
@@ -59,7 +62,7 @@ const MODULES: ModuleConfig[] = [
       { key: "work-centers", table: "work_centers", title: "Work Centres", description: "Capacity, efficiency and utilization master data.", fields: [F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("department","Department"),F("work_center_type","Type","select",{options:["machine","labor","mixed"],defaultValue:"machine"}),F("capacity_minutes_per_day","Capacity minutes/day","number",{defaultValue:"480"}),F("efficiency_pct","Efficiency %","number",{defaultValue:"100"})], columns:["code","name","department","work_center_type","capacity_minutes_per_day","efficiency_pct"], orderBy:"code" },
       { key: "mps-plans", table: "mps_plans", title: "MPS Plans", description: "Master production schedules with controlled lifecycle.", fields: [F("plan_number","Plan number","text",{required:true}),F("name","Name","text",{required:true}),F("horizon_start","Start","date",{required:true}),F("horizon_end","End","date",{required:true}),F("planning_policy","Policy","select",{options:["make_to_stock","make_to_order","mixed"],defaultValue:"make_to_stock"}),F("status","Status","select",{options:["draft","approved","released","closed","cancelled"],defaultValue:"draft"}),F("notes","Notes","textarea")], columns:["plan_number","name","horizon_start","horizon_end","status","planning_policy"], statusField:"status", statusOptions:["draft","approved","released","closed","cancelled"], orderBy:"created_at" },
       { key: "routings", table: "routings", title: "Routings", description: "Manufacturing route revisions and effective dates.", fields: [F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("model_id","Product model ID"),F("revision","Revision","text",{defaultValue:"1"}),F("status","Status","select",{options:["draft","approved","obsolete"],defaultValue:"draft"}),F("effective_from","Effective from","date"),F("effective_to","Effective to","date"),F("notes","Notes","textarea")], columns:["code","name","revision","status","effective_from","effective_to"], statusField:"status", statusOptions:["draft","approved","obsolete"], orderBy:"code" },
-      { key: "mrp-runs", table: "mrp_runs", title: "MRP Runs", description: "Planning snapshots and exception control; no direct ledger posting.", fields: [F("run_number","Run number","text",{required:true}),F("plan_id","MPS plan ID"),F("horizon_start","Start","date",{required:true}),F("horizon_end","End","date",{required:true}),F("status","Status","select",{options:["running","completed","failed","cancelled"],defaultValue:"running"}),F("planning_parameters","Planning parameters (JSON)","textarea",{defaultValue:"{}"})], columns:["run_number","horizon_start","horizon_end","status","run_at"], statusField:"status", statusOptions:["running","completed","failed","cancelled"], orderBy:"run_at" },
+      { key: "mrp-runs", table: "mrp_runs", title: "MRP Runs", description: "Planning snapshots only; automated material netting and planned-order generation are not yet enabled.", readOnly: true, readOnlyReason: "MRP execution is read-only until BOM explosion, material netting, lead times and planned-order generation are implemented and validated.", fields: [F("run_number","Run number","text",{required:true}),F("plan_id","MPS plan ID"),F("horizon_start","Start","date",{required:true}),F("horizon_end","End","date",{required:true}),F("status","Status","select",{options:["running","completed","failed","cancelled"],defaultValue:"running"}),F("planning_parameters","Planning parameters (JSON)","textarea",{defaultValue:"{}"})], columns:["run_number","horizon_start","horizon_end","status","run_at"], statusField:"status", statusOptions:["running","completed","failed","cancelled"], orderBy:"run_at" },
       { key: "production-operations", table: "production_operations", title: "Production Operations", description: "Operation-level WIP, good output, scrap, rework and downtime.", fields: [F("production_order_id","Production order ID","text",{required:true}),F("sequence_no","Sequence","number",{required:true,defaultValue:"10"}),F("status","Status","select",{options:["pending","ready","running","paused","completed","blocked","cancelled"],defaultValue:"pending"}),F("planned_qty","Planned qty","number",{defaultValue:"0"}),F("good_qty","Good qty","number",{defaultValue:"0"}),F("scrap_qty","Scrap qty","number",{defaultValue:"0"}),F("rework_qty","Rework qty","number",{defaultValue:"0"}),F("downtime_minutes","Downtime minutes","number",{defaultValue:"0"}),F("notes","Notes","textarea")], columns:["sequence_no","status","planned_qty","good_qty","scrap_qty","rework_qty","downtime_minutes"], statusField:"status", statusOptions:["pending","ready","running","paused","completed","blocked","cancelled"], orderBy:"sequence_no" },
     ],
   },
@@ -91,47 +94,47 @@ const MODULES: ModuleConfig[] = [
   },
   {
     key:"warehouse",title:"Warehouse & Inventory Controls",icon:Warehouse,entities:[
-      {key:"zones",table:"warehouse_zones",title:"Warehouse Zones",description:"Warehouse zone master for controlled putaway and picking.",fields:[F("warehouse_id","Warehouse/Godown ID","text",{required:true}),F("code","Zone code","text",{required:true}),F("name","Name","text",{required:true}),F("zone_type","Type","text",{defaultValue:"storage"}),F("active","Active","select",{options:["true","false"],defaultValue:"true"})],columns:["code","name","zone_type","active"],orderBy:"code"},
-      {key:"bins",table:"warehouse_bins",title:"Warehouse Bins",description:"Bin-level location master and capacity.",fields:[F("zone_id","Zone ID","text",{required:true}),F("code","Bin code","text",{required:true}),F("name","Name","text",{required:true}),F("capacity_qty","Capacity","number",{defaultValue:"0"}),F("active","Active","select",{options:["true","false"],defaultValue:"true"})],columns:["code","name","capacity_qty","active"],orderBy:"code"},
-      {key:"stock-counts",table:"stock_counts",title:"Cycle Counts",description:"Physical count control and variance investigation.",fields:[F("count_number","Count number","text",{required:true}),F("godown_id","Godown ID"),F("count_date","Count date","date",{required:true}),F("status","Status","select",{options:["draft","in_progress","review","posted","cancelled"],defaultValue:"draft"}),F("notes","Notes","textarea")],columns:["count_number","count_date","status","notes"],statusField:"status",statusOptions:["draft","in_progress","review","posted","cancelled"],orderBy:"count_date"},
+      {key:"zones",table:"warehouse_zones",title:"Warehouse Zones",description:"Warehouse zones linked to an existing godown.",fields:[F("godown_id","Godown ID","text",{required:true}),F("code","Zone code","text",{required:true}),F("name","Name","text",{required:true}),F("active","Active","select",{options:["true","false"],defaultValue:"true"})],columns:["code","name","godown_id","active"],orderBy:"code"},
+      {key:"bins",table:"warehouse_bins",title:"Warehouse Bins",description:"Bin-level location master and capacity.",fields:[F("zone_id","Zone ID","text",{required:true}),F("code","Bin code","text",{required:true}),F("name","Name","text",{required:true}),F("capacity","Capacity","number",{defaultValue:"0"}),F("active","Active","select",{options:["true","false"],defaultValue:"true"})],columns:["code","name","capacity","active"],orderBy:"code"},
+      {key:"stock-counts",table:"stock_counts",title:"Cycle Counts",description:"Physical count control; posting remains in the stock-count workflow.",fields:[F("count_number","Count number","text",{required:true}),F("godown_id","Godown ID"),F("count_date","Count date","date",{required:true}),F("count_type","Count type","select",{options:["cycle","annual","spot"],defaultValue:"cycle"}),F("blind_count","Blind count","select",{options:["true","false"],defaultValue:"false"}),F("status","Status","select",{options:["draft","in_progress","review","posted","cancelled"],defaultValue:"draft"})],columns:["count_number","count_date","count_type","status","blind_count"],statusField:"status",statusOptions:["draft","in_progress","review","posted","cancelled"],orderBy:"count_date"},
     ],
   },
   {
     key:"finance",title:"Finance Controls",icon:Landmark,entities:[
-      {key:"budgets",table:"budgets",title:"Budgets",description:"Versioned budget header and approval state.",fields:[F("budget_code","Budget code","text",{required:true}),F("name","Name","text",{required:true}),F("fiscal_year_id","Financial year ID"),F("status","Status","select",{options:["draft","submitted","approved","locked","closed"],defaultValue:"draft"}),F("version","Version","number",{defaultValue:"1"}),F("currency_code","Currency","text",{defaultValue:"INR"})],columns:["budget_code","name","version","status","currency_code"],statusField:"status",statusOptions:["draft","submitted","approved","locked","closed"],orderBy:"created_at"},
+      {key:"budgets",table:"budgets",title:"Budgets",description:"Budget header with controlled status; use the supported budget process for approval.",fields:[F("code","Budget code","text",{required:true}),F("name","Name","text",{required:true}),F("financial_year_id","Financial year ID"),F("start_date","Start date","date"),F("end_date","End date","date"),F("status","Status","select",{options:["draft","submitted","approved","locked","closed"],defaultValue:"draft"}),F("currency_code","Currency","text",{defaultValue:"INR"}),F("notes","Notes","textarea")],columns:["code","name","start_date","end_date","status","currency_code"],statusField:"status",statusOptions:["draft","submitted","approved","locked","closed"],orderBy:"created_at"},
       {key:"bank-reconciliations",table:"bank_reconciliations",title:"Bank Reconciliations",description:"Statement-to-book reconciliation control.",fields:[F("bank_account_id","Bank account ID","text",{required:true}),F("reconciliation_number","Reconciliation number","text",{required:true}),F("statement_date","Statement date","date",{required:true}),F("opening_balance","Opening balance","number",{defaultValue:"0"}),F("closing_balance","Closing balance","number",{defaultValue:"0"}),F("book_balance","Book balance","number",{defaultValue:"0"}),F("difference","Difference","number",{defaultValue:"0"}),F("status","Status","select",{options:["open","review","reconciled","locked"],defaultValue:"open"})],columns:["reconciliation_number","statement_date","opening_balance","closing_balance","book_balance","difference","status"],statusField:"status",statusOptions:["open","review","reconciled","locked"],orderBy:"statement_date"},
       {key:"fixed-assets",table:"fixed_assets",title:"Fixed Assets",description:"Asset register for depreciation and disposal controls.",fields:[F("asset_code","Asset code","text",{required:true}),F("asset_name","Asset name","text",{required:true}),F("category","Category","text",{required:true}),F("serial_number","Serial number"),F("acquisition_date","Acquisition date","date",{required:true}),F("acquisition_cost","Acquisition cost","number",{required:true}),F("residual_value","Residual value","number",{defaultValue:"0"}),F("useful_life_months","Useful life months","number",{defaultValue:"60"}),F("status","Status","select",{options:["draft","active","disposed","impaired"],defaultValue:"active"})],columns:["asset_code","asset_name","category","acquisition_date","acquisition_cost","useful_life_months","status"],statusField:"status",statusOptions:["draft","active","disposed","impaired"],orderBy:"acquisition_date"},
     ],
   },
   {
     key:"crm",title:"CRM & Pipeline",icon:Users,entities:[
-      {key:"leads",table:"crm_leads",title:"Leads",description:"Lead qualification and conversion pipeline.",fields:[F("lead_number","Lead number","text",{required:true}),F("name","Name","text",{required:true}),F("company_name","Company"),F("email","Email"),F("phone","Phone"),F("source","Source"),F("status","Status","select",{options:["new","qualified","contacted","converted","lost","junk"],defaultValue:"new"}),F("estimated_value","Estimated value","number",{defaultValue:"0"}),F("expected_close_date","Expected close","date"),F("notes","Notes","textarea")],columns:["lead_number","name","company_name","source","status","estimated_value","expected_close_date"],statusField:"status",statusOptions:["new","qualified","contacted","converted","lost","junk"],orderBy:"created_at"},
+      {key:"leads",table:"crm_leads",title:"Leads",description:"Lead qualification pipeline using the real lead schema.",fields:[F("lead_number","Lead number","text",{required:true}),F("title","Lead title","text",{required:true}),F("party_id","Party ID"),F("source","Source"),F("status","Status","select",{options:["new","qualified","contacted","converted","lost","junk"],defaultValue:"new"}),F("owner_id","Owner ID"),F("expected_value","Expected value","number",{defaultValue:"0"}),F("probability","Probability %","number",{defaultValue:"0"}),F("next_activity_at","Next activity","datetime"),F("notes","Notes","textarea")],columns:["lead_number","title","source","status","expected_value","probability","next_activity_at"],statusField:"status",statusOptions:["new","qualified","contacted","converted","lost","junk"],orderBy:"created_at"},
       {key:"opportunities",table:"crm_opportunities",title:"Opportunities",description:"Weighted pipeline and won/lost management.",fields:[F("opportunity_number","Opportunity number","text",{required:true}),F("party_id","Customer/party ID"),F("lead_id","Lead ID"),F("name","Name","text",{required:true}),F("stage","Stage","select",{options:["qualification","needs_analysis","proposal","negotiation","closed_won","closed_lost"],defaultValue:"qualification"}),F("probability_pct","Probability %","number",{defaultValue:"10"}),F("amount","Amount","number",{defaultValue:"0"}),F("expected_close_date","Expected close","date"),F("status","Status","select",{options:["open","won","lost","on_hold"],defaultValue:"open"}),F("lost_reason","Lost reason","textarea")],columns:["opportunity_number","name","stage","probability_pct","amount","expected_close_date","status"],statusField:"status",statusOptions:["open","won","lost","on_hold"],orderBy:"created_at"},
       {key:"activities",table:"crm_activities",title:"CRM Activities",description:"Calls, meetings, tasks, emails and notes.",fields:[F("activity_type","Type","select",{options:["call","meeting","email","task","note"],defaultValue:"task"}),F("subject","Subject","text",{required:true}),F("due_at","Due","datetime"),F("party_id","Party ID"),F("lead_id","Lead ID"),F("opportunity_id","Opportunity ID"),F("notes","Notes","textarea")],columns:["activity_type","subject","due_at","completed_at","created_at"],orderBy:"due_at"},
     ],
   },
   {
     key:"logistics",title:"Logistics & Returns",icon:Truck,entities:[
-      {key:"shipments",table:"shipments",title:"Shipments",description:"Pack, dispatch, in-transit, delivery and return tracking.",fields:[F("shipment_number","Shipment number","text",{required:true}),F("sales_order_id","Sales order ID"),F("party_id","Party ID"),F("shipment_date","Shipment date","date"),F("promised_date","Promised date","date"),F("transporter_name","Transporter"),F("tracking_number","Tracking number"),F("status","Status","select",{options:["draft","packed","dispatched","in_transit","delivered","cancelled","returned"],defaultValue:"draft"}),F("freight_amount","Freight","number",{defaultValue:"0"})],columns:["shipment_number","shipment_date","promised_date","transporter_name","tracking_number","status"],statusField:"status",statusOptions:["draft","packed","dispatched","in_transit","delivered","cancelled","returned"],orderBy:"shipment_date"},
+      {key:"shipments",table:"shipments",title:"Shipments",description:"Shipment tracking; dispatch and delivery states require the dispatch workflow.",fields:[F("shipment_number","Shipment number","text",{required:true}),F("sales_order_id","Sales order ID"),F("invoice_id","Invoice ID"),F("party_id","Party ID"),F("shipment_date","Shipment date","date",{required:true}),F("expected_delivery","Expected delivery","date"),F("transporter_name","Transporter"),F("tracking_number","Tracking number"),F("pod_reference","Proof-of-delivery reference"),F("delivered_at","Delivered at","datetime"),F("notes","Notes","textarea"),F("status","Status","select",{options:["draft","packed","dispatched","in_transit","delivered","cancelled","returned"],defaultValue:"draft"})],columns:["shipment_number","shipment_date","expected_delivery","transporter_name","tracking_number","status"],statusField:"status",statusOptions:["draft","packed","dispatched","in_transit","delivered","cancelled","returned"],orderBy:"shipment_date"},
       {key:"returns",table:"sales_returns",title:"Sales Returns",description:"Return approval, receipt, inspection and posting control.",fields:[F("return_number","Return number","text",{required:true}),F("invoice_id","Invoice ID"),F("party_id","Party ID"),F("return_date","Return date","date",{required:true}),F("reason_code","Reason"),F("status","Status","select",{options:["draft","approved","received","inspected","posted","rejected","cancelled"],defaultValue:"draft"}),F("refund_method","Refund method"),F("total_value","Total value","number",{defaultValue:"0"})],columns:["return_number","return_date","reason_code","status","refund_method","total_value"],statusField:"status",statusOptions:["draft","approved","received","inspected","posted","rejected","cancelled"],orderBy:"return_date"},
     ],
   },
   {
     key:"projects",title:"Projects & Tasks",icon:BriefcaseBusiness,entities:[
-      {key:"projects",table:"projects",title:"Projects",description:"Project execution, budget and actual tracking.",fields:[F("project_code","Project code","text",{required:true}),F("name","Name","text",{required:true}),F("party_id","Party ID"),F("manager_id","Manager ID"),F("start_date","Start","date"),F("end_date","End","date"),F("status","Status","select",{options:["planned","active","on_hold","completed","cancelled"],defaultValue:"planned"}),F("budget_amount","Budget","number",{defaultValue:"0"}),F("description","Description","textarea")],columns:["project_code","name","start_date","end_date","status","budget_amount","actual_amount"],statusField:"status",statusOptions:["planned","active","on_hold","completed","cancelled"],orderBy:"created_at"},
+      {key:"projects",table:"projects",title:"Projects",description:"Project execution, budget and actual tracking.",fields:[F("project_number","Project number","text",{required:true}),F("name","Name","text",{required:true}),F("owner_id","Owner ID"),F("start_date","Start","date"),F("end_date","End","date"),F("status","Status","select",{options:["planned","active","on_hold","completed","cancelled"],defaultValue:"planned"}),F("budget_amount","Budget","number",{defaultValue:"0"}),F("notes","Description / notes","textarea")],columns:["project_number","name","start_date","end_date","status","budget_amount"],statusField:"status",statusOptions:["planned","active","on_hold","completed","cancelled"],orderBy:"created_at"},
       {key:"project-tasks",table:"project_tasks",title:"Project Tasks",description:"Task execution, dependencies, assignees and completion.",fields:[F("project_id","Project ID","text",{required:true}),F("task_code","Task code","text",{required:true}),F("name","Name","text",{required:true}),F("start_date","Start","date"),F("due_date","Due","date"),F("status","Status","select",{options:["todo","in_progress","blocked","done","cancelled"],defaultValue:"todo"}),F("priority","Priority","select",{options:["low","medium","high","critical"],defaultValue:"medium"}),F("assignee_id","Assignee ID"),F("estimated_hours","Estimated hours","number",{defaultValue:"0"}),F("percent_complete","Complete %","number",{defaultValue:"0"})],columns:["task_code","name","due_date","status","priority","estimated_hours","percent_complete"],statusField:"status",statusOptions:["todo","in_progress","blocked","done","cancelled"],orderBy:"due_date"},
     ],
   },
   {
     key:"workflow",title:"Workflow & Governance",icon:Workflow,entities:[
-      {key:"workflow-definitions",table:"workflow_definitions",title:"Workflow Definitions",description:"Versioned approval definitions for governed business processes.",fields:[F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("entity_type","Entity type","text",{required:true}),F("active","Active","select",{options:["true","false"],defaultValue:"true"}),F("version","Version","number",{defaultValue:"1"}),F("definition","Definition (JSON)","textarea",{defaultValue:"{}"})],columns:["code","name","entity_type","active","version"],orderBy:"created_at"},
-      {key:"workflow-instances",table:"workflow_instances",title:"Workflow Instances",description:"Live approval instances and current step.",fields:[F("workflow_definition_id","Definition ID","text",{required:true}),F("entity_type","Entity type","text",{required:true}),F("entity_id","Entity ID","text",{required:true}),F("status","Status","select",{options:["pending","in_progress","approved","rejected","cancelled"],defaultValue:"pending"}),F("current_step","Current step")],columns:["entity_type","entity_id","status","current_step","initiated_at","completed_at"],statusField:"status",statusOptions:["pending","in_progress","approved","rejected","cancelled"],orderBy:"initiated_at"},
+      {key:"workflow-definitions",table:"workflow_definitions",title:"Workflow Definitions",description:"Read-only view of approval definitions until their versioned publish workflow is enabled.",readOnly:true,readOnlyReason:"Workflow definitions are read-only here to prevent manual activation of unfinished approval logic.",fields:[F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("entity_type","Entity type","text",{required:true}),F("status","Status"),F("version","Version","number",{defaultValue:"1"}),F("definition","Definition (JSON)","textarea",{defaultValue:"{}"})],columns:["code","name","entity_type","status","version"],orderBy:"created_at"},
+      {key:"workflow-instances",table:"workflow_instances",title:"Workflow Instances",description:"Read-only approval execution register; approval outcomes must come from assigned workflow tasks.",readOnly:true,readOnlyReason:"Workflow execution records cannot be created or status-edited from this generic register.",fields:[F("workflow_definition_id","Definition ID","text",{required:true}),F("entity_type","Entity type","text",{required:true}),F("entity_id","Entity ID","text",{required:true}),F("status","Status"),F("current_step","Current step")],columns:["entity_type","entity_id","status","current_step","initiated_at","completed_at"],orderBy:"initiated_at"},
       {key:"data-quality",table:"data_quality_issues",title:"Data Quality Issues",description:"Central exception register for master and transaction data quality.",fields:[F("entity_type","Entity type","text",{required:true}),F("entity_id","Entity ID"),F("rule_code","Rule code","text",{required:true}),F("severity","Severity","select",{options:["info","warning","critical"],defaultValue:"warning"}),F("message","Message","textarea",{required:true}),F("status","Status","select",{options:["open","acknowledged","resolved","ignored"],defaultValue:"open"}),F("details","Details (JSON)","textarea",{defaultValue:"{}"})],columns:["entity_type","rule_code","severity","message","status","detected_at"],statusField:"status",statusOptions:["open","acknowledged","resolved","ignored"],orderBy:"detected_at"},
     ],
   },
   {
     key:"ai",title:"AI & Data Freshness",icon:Sparkles,entities:[
-      {key:"freshness",table:"ai_data_freshness",title:"Source Freshness",description:"Prevents stale or failed integrations from masquerading as current data.",fields:[F("source_system","Source system","text",{required:true}),F("source_scope","Scope","text",{defaultValue:"erp"}),F("status","Status","select",{options:["current","pending","stale","failed","unknown"],defaultValue:"unknown"}),F("last_success_at","Last success","datetime"),F("last_attempt_at","Last attempt","datetime"),F("watermark","Watermark"),F("record_count","Record count","number"),F("error_message","Error","textarea")],columns:["source_system","source_scope","status","last_success_at","last_attempt_at","record_count","error_message"],statusField:"status",statusOptions:["current","pending","stale","failed","unknown"],orderBy:"updated_at"},
+      {key:"freshness",table:"ai_data_freshness",title:"AI/Data Freshness",description:"Integration-reported freshness; manual edits are disabled to preserve the source-of-truth signal.",readOnly:true,readOnlyReason:"Integration freshness records are written by connector jobs; manual changes could falsely report healthy or current data.",fields:[F("integration_code","Integration code","text",{required:true}),F("source_name","Source name","text",{required:true}),F("status","Status","select",{options:["unknown","current","stale","error","syncing"],defaultValue:"unknown"}),F("last_success_at","Last success","datetime"),F("last_attempt_at","Last attempt","datetime"),F("recorded_at","Recorded at","datetime"),F("details","Details (JSON)","textarea",{defaultValue:"{}"})],columns:["integration_code","source_name","status","last_success_at","last_attempt_at","recorded_at","details"],orderBy:"recorded_at"},
     ],
   },
 ];
@@ -172,14 +175,34 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [form, setForm] = useState<Record<string,string>>(() => Object.fromEntries(config.fields.map(f => [f.key, f.defaultValue ?? ""])));
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState("__all");
+  const [pageIndex, setPageIndex] = useState(0);
+  const pageSize = 50;
+  const normalizedSearch = normalizeWorkbenchSearch(searchInput);
+  const searchColumns = getWorkbenchSearchColumns(config.fields);
   const db = supabase as any;
 
-  const { data = [], isFetching } = useQuery({
-    queryKey: ["enterprise-workbench", companyId, config.table],
+  const { data: queryData, isFetching, isLoading, isError, refetch } = useQuery({
+    queryKey: ["enterprise-workbench", companyId, config.table, pageIndex, normalizedSearch, statusFilter],
     queryFn: async () => {
-      const { data, error } = await db.from(config.table).select("*").eq("company_id", companyId).order(config.orderBy ?? "created_at", { ascending: false }).limit(50);
+      let query = db.from(config.table)
+        .select("*", { count: "exact" })
+        .eq("company_id", companyId)
+        .order(config.orderBy ?? "created_at", { ascending: false })
+        .range(pageIndex * pageSize, pageIndex * pageSize + pageSize - 1);
+
+      if (normalizedSearch && searchColumns.length > 0) {
+        const filters = searchColumns.map(column => `${column}.ilike.%${normalizedSearch}%`).join(",");
+        query = query.or(filters);
+      }
+      if (config.statusField && statusFilter !== "__all") {
+        query = query.eq(config.statusField, statusFilter);
+      }
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return (data ?? []) as Record<string, unknown>[];
+      return { rows: (data ?? []) as Record<string, unknown>[], count: count ?? 0 };
     },
     staleTime: 10_000,
   });
@@ -191,11 +214,21 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
         const raw = form[field.key] ?? "";
         if (!raw && field.required) throw new Error(field.label + " is required.");
         if (!raw) continue;
-        if (field.type === "number") payload[field.key] = Number(raw);
-        else if (field.type === "select" && (raw === "true" || raw === "false")) payload[field.key] = raw === "true";
+        if (field.type === "number") {
+          const value = Number(raw);
+          if (!Number.isFinite(value)) throw new Error(field.label + " must be a valid number.");
+          payload[field.key] = value;
+        } else if (field.type === "select" && (raw === "true" || raw === "false")) payload[field.key] = raw === "true";
         else if ((field.key === "planning_parameters" || field.key === "acceptance_rule" || field.key === "checklist" || field.key === "definition" || field.key === "details") && raw) {
           try { payload[field.key] = JSON.parse(raw); } catch { throw new Error(field.label + " must be valid JSON."); }
         } else payload[field.key] = raw;
+      }
+      if (config.statusField && Object.prototype.hasOwnProperty.call(payload, config.statusField)) {
+        const nextStatus = payload[config.statusField];
+        const currentStatus = editing?.[config.statusField];
+        if (!canSetWorkbenchStatus(nextStatus, currentStatus)) {
+          throw new Error("This status requires its dedicated approval, posting, dispatch or completion workflow. The generic workbench cannot set it.");
+        }
       }
       const query = editing ? db.from(config.table).update(payload).eq("id", editing.id).eq("company_id", companyId) : db.from(config.table).insert(payload);
       const { error } = await query;
@@ -203,7 +236,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
     },
     onSuccess: () => {
       toast.success(editing ? "Record updated." : "Record created.");
-      setOpen(false); setEditing(null);
+      setOpen(false); setEditing(null); setPageIndex(0);
       setForm(Object.fromEntries(config.fields.map(f => [f.key, f.defaultValue ?? ""])));
       qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] });
     },
@@ -215,21 +248,28 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
       const { error } = await db.from(config.table).delete().eq("id", id).eq("company_id", companyId);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Record deleted."); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
+    onSuccess: () => { toast.success("Record deleted."); setPageIndex(0); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, currentStatus }: { id: string; status: string; currentStatus: string }) => {
       if (!config.statusField) return;
+      if (!canSetWorkbenchStatus(status, currentStatus)) {
+        throw new Error("Use the dedicated workflow to approve, release, post, dispatch or complete this record.");
+      }
       const { error } = await db.from(config.table).update({ [config.statusField]: status }).eq("id", id).eq("company_id", companyId);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Lifecycle status updated."); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
+    onSuccess: () => { toast.success("Working status updated."); setPageIndex(0); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const rows = data as Record<string, unknown>[];
+  const rows = queryData?.rows ?? [];
+  const totalRows = queryData?.count ?? 0;
+  const totalPages = Math.ceil(totalRows / pageSize);
+  const fromRow = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
+  const toRow = Math.min((pageIndex + 1) * pageSize, totalRows);
   const openNew = () => {
     setEditing(null); setForm(Object.fromEntries(config.fields.map(f => [f.key, f.defaultValue ?? ""]))); setOpen(true);
   };
@@ -241,19 +281,59 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
 
   return (
     <Card>
-      <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{config.title}</CardTitle><p className="mt-1 text-xs text-muted-foreground">{config.description}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>qc.invalidateQueries({queryKey:["enterprise-workbench",companyId,config.table]})}><RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} />Refresh</Button><Button size="sm" onClick={openNew}><Plus className="h-3.5 w-3.5 mr-1" />New</Button></div></div></CardHeader>
+      <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{config.title}</CardTitle><p className="mt-1 text-xs text-muted-foreground">{config.description}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>refetch()} disabled={isFetching}><RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} />Refresh</Button>{!config.readOnly && <Button size="sm" onClick={openNew}><Plus className="h-3.5 w-3.5 mr-1" />New</Button>}</div></div></CardHeader>
       <CardContent>
-        {open && <div className="mb-5 rounded-lg border bg-muted/20 p-4"><div className="mb-3 flex items-center justify-between"><div className="text-sm font-semibold">{editing ? "Edit record" : "Create record"}</div><Button size="sm" variant="ghost" onClick={()=>setOpen(false)}>Close</Button></div><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{config.fields.map(field=><FieldEditor key={field.key} field={field} value={form[field.key] ?? ""} onChange={v=>setForm(s=>({...s,[field.key]:v}))}/>)}</div><div className="mt-4 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1"/>{save.isPending ? "Saving…" : "Save"}</Button></div></div>}
-        <div className="overflow-x-auto rounded-md border"><table className="w-full text-xs"><thead><tr className="border-b bg-muted/30">{config.columns.map(c=><th key={c} className="whitespace-nowrap px-3 py-2 text-left font-medium">{c.replaceAll("_"," ")}</th>)}<th className="px-3 py-2 text-right">Actions</th></tr></thead><tbody>{rows.length===0 ? <tr><td colSpan={config.columns.length+1} className="px-3 py-8 text-center text-muted-foreground">No records yet.</td></tr> : rows.map(row=><tr key={String(row.id)} className="border-b last:border-0"><>{config.columns.map(c=><td key={c} className="max-w-[260px] truncate px-3 py-2">{formatCell(row[c])}</td>)}</><td className="whitespace-nowrap px-3 py-2 text-right"><div className="flex justify-end gap-1"><Button size="sm" variant="ghost" onClick={()=>openEdit(row)}>Edit</Button>{config.statusField && config.statusOptions && <Select value={String(row[config.statusField] ?? "")} onValueChange={status => statusMutation.mutate({id:String(row.id),status})}><SelectTrigger className="h-8 w-[130px]"><SelectValue/></SelectTrigger><SelectContent>{config.statusOptions.map(s=><SelectItem key={s} value={s}>{s.replaceAll("_"," ")}</SelectItem>)}</SelectContent></Select>}<Button size="icon" variant="ghost" onClick={()=>{if(confirm("Delete this record?")) remove.mutate(String(row.id));}}><Trash2 className="h-3.5 w-3.5"/></Button></div></td></tr>)}</tbody></table></div>
-        <div className="mt-2 text-[11px] text-muted-foreground">Showing up to 50 records. Lifecycle updates are auditable domain changes; posted accounting/inventory transactions are not modified here.</div>
+        {config.readOnly && <div className="mb-3 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">{config.readOnlyReason ?? "This register is read-only until its workflow is implemented."}</div>}
+        {open && <div className="mb-5 rounded-lg border bg-muted/20 p-4"><div className="mb-3 flex items-center justify-between"><div className="text-sm font-semibold">{editing ? "Edit record" : "Create record"}</div><Button size="sm" variant="ghost" onClick={()=>setOpen(false)}>Close</Button></div><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{config.fields.map(field=><FieldEditor key={field.key} field={field} value={form[field.key] ?? ""} onChange={v=>setForm(s=>({...s,[field.key]:v}))} restrictGovernedOptions={field.key===config.statusField} currentStatus={editing && config.statusField ? String(editing[config.statusField] ?? "") : undefined}/>)}</div><div className="mt-4 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1"/>{save.isPending ? "Saving…" : "Save"}</Button></div></div>}
+        <div className="mb-3 flex flex-col gap-2 md:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input aria-label={`Search ${config.title}`} className="pl-9" value={searchInput} onChange={event => { setSearchInput(event.target.value); setPageIndex(0); }} placeholder="Search records by code, name, status or reference…" />
+          </div>
+          {config.statusField && config.statusOptions && <div className="w-full md:w-52">
+            <Select value={statusFilter} onValueChange={value => { setStatusFilter(value); setPageIndex(0); }}>
+              <SelectTrigger aria-label={`Filter ${config.title} by status`}><SelectValue placeholder="All statuses" /></SelectTrigger>
+              <SelectContent><SelectItem value="__all">All statuses</SelectItem>{config.statusOptions.map(status => <SelectItem key={status} value={status}>{status.replaceAll("_", " ")}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>}
+        </div>
+        {isError && <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 p-3 text-sm">
+          <span>Couldn’t load {config.title.toLowerCase()}. Check your connection and access permissions, then retry.</span>
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>Retry</Button>
+        </div>}
+        <div className="overflow-x-auto rounded-md border"><table className="w-full text-xs"><thead><tr className="border-b bg-muted/30">{config.columns.map(c=><th key={c} className="whitespace-nowrap px-3 py-2 text-left font-medium">{c.replaceAll("_"," ")}</th>)}<th className="px-3 py-2 text-right">Actions</th></tr></thead><tbody>
+          {isLoading && !queryData ? <tr><td colSpan={config.columns.length+1} className="px-3 py-8 text-center text-muted-foreground">Loading records…</td></tr>
+          : isError && !queryData ? <tr><td colSpan={config.columns.length+1} className="px-3 py-8 text-center text-muted-foreground">Records unavailable.</td></tr>
+          : rows.length===0 ? <tr><td colSpan={config.columns.length+1} className="px-3 py-8 text-center text-muted-foreground">{normalizedSearch || statusFilter !== "__all" ? "No records match these filters." : "No records yet."}</td></tr>
+          : rows.map(row => {
+            const currentStatus = config.statusField ? String(row[config.statusField] ?? "") : "";
+            const protectedRow = isGovernedWorkbenchStatus(currentStatus);
+            return <tr key={String(row.id)} className="border-b last:border-0"><>{config.columns.map(c=><td key={c} className="max-w-[260px] truncate px-3 py-2">{formatCell(row[c])}</td>)}</><td className="whitespace-nowrap px-3 py-2 text-right"><div className="flex justify-end gap-1">
+              <Button size="sm" variant="ghost" disabled={config.readOnly || protectedRow} title={protectedRow ? "Use the dedicated workflow for governed records." : "Edit record"} onClick={()=>openEdit(row)}>Edit</Button>
+              {!config.readOnly && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus})} disabled={protectedRow || statusMutation.isPending}>
+                <SelectTrigger className="h-8 w-[130px]" aria-label={`Change status for ${config.title} record`}><SelectValue placeholder="Status"/></SelectTrigger>
+                <SelectContent>{config.statusOptions.map(status=><SelectItem key={status} value={status} disabled={!canSetWorkbenchStatus(status,currentStatus)}>{status.replaceAll("_"," ")}</SelectItem>)}</SelectContent>
+              </Select>}
+              <Button size="icon" variant="ghost" disabled={config.readOnly || protectedRow || remove.isPending} title={protectedRow ? "Governed records cannot be deleted here." : "Delete record"} aria-label={`Delete ${config.title} record`} onClick={()=>{if(confirm("Delete this record?")) remove.mutate(String(row.id));}}><Trash2 className="h-3.5 w-3.5"/></Button>
+            </div></td></tr>;
+          })}
+        </tbody></table></div>
+        <div className="mt-3 flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div>Showing {fromRow}–{toRow} of {totalRows} matching records. Governed states (approval, release, posting, dispatch, completion and close) require their dedicated workflow.</div>
+          <div className="flex items-center justify-end gap-2">
+            <Button size="sm" variant="outline" disabled={pageIndex===0 || isFetching} onClick={()=>setPageIndex(page=>Math.max(0,page-1))}><ChevronLeft className="mr-1 h-3.5 w-3.5"/>Previous</Button>
+            <span className="whitespace-nowrap">Page {Math.min(pageIndex+1,Math.max(totalPages,1))} of {Math.max(totalPages,1)}</span>
+            <Button size="sm" variant="outline" disabled={pageIndex+1>=totalPages || isFetching} onClick={()=>setPageIndex(page=>Math.min(Math.max(totalPages-1,0),page+1))}>Next<ChevronRight className="ml-1 h-3.5 w-3.5"/></Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function FieldEditor({ field, value, onChange }: { field: Field; value: string; onChange: (v:string)=>void }) {
+function FieldEditor({ field, value, onChange, restrictGovernedOptions = false, currentStatus }: { field: Field; value: string; onChange: (v:string)=>void; restrictGovernedOptions?: boolean; currentStatus?: string }) {
   const id = "field-" + field.key;
-  return <div className={field.type==="textarea" ? "md:col-span-2 lg:col-span-3" : ""}><Label htmlFor={id} className="text-xs">{field.label}{field.required ? " *" : ""}</Label>{field.type==="textarea" ? <Textarea id={id} value={value} placeholder={field.placeholder} onChange={e=>onChange(e.target.value)} rows={3}/> : field.type==="select" ? <Select value={value} onValueChange={onChange}><SelectTrigger id={id}><SelectValue placeholder={field.placeholder ?? "Select"} /></SelectTrigger><SelectContent>{(field.options ?? []).map(o=><SelectItem key={o} value={o}>{o.replaceAll("_"," ")}</SelectItem>)}</SelectContent></Select> : <Input id={id} type={field.type==="number" ? "number" : field.type==="date" ? "date" : field.type==="datetime" ? "datetime-local" : "text"} value={value} placeholder={field.placeholder} onChange={e=>onChange(e.target.value)}/>}</div>;
+  return <div className={field.type==="textarea" ? "md:col-span-2 lg:col-span-3" : ""}><Label htmlFor={id} className="text-xs">{field.label}{field.required ? " *" : ""}</Label>{field.type==="textarea" ? <Textarea id={id} value={value} placeholder={field.placeholder} onChange={e=>onChange(e.target.value)} rows={3}/> : field.type==="select" ? <Select value={value} onValueChange={onChange}><SelectTrigger id={id}><SelectValue placeholder={field.placeholder ?? "Select"} /></SelectTrigger><SelectContent>{(field.options ?? []).map(option=><SelectItem key={option} value={option} disabled={restrictGovernedOptions && !canSetWorkbenchStatus(option,currentStatus)}>{option.replaceAll("_"," ")}</SelectItem>)}</SelectContent></Select> : <Input id={id} type={field.type==="number" ? "number" : field.type==="date" ? "date" : field.type==="datetime" ? "datetime-local" : "text"} value={value} placeholder={field.placeholder} onChange={e=>onChange(e.target.value)}/>}</div>;
 }
 
 function formatCell(value: unknown): string {
