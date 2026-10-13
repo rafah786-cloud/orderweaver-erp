@@ -26,6 +26,7 @@ import { downloadJson } from "@/lib/gstr1";
 import { inr, formatDate } from "@/lib/format";
 import { Download, RefreshCw, ExternalLink, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useCompany } from "@/lib/company-context";
 
 export const Route = createFileRoute("/_app/gst/returns/$id")({
   component: ReturnDetail,
@@ -33,12 +34,14 @@ export const Route = createFileRoute("/_app/gst/returns/$id")({
 
 function ReturnDetail() {
   const { id } = useParams({ from: "/_app/gst/returns/$id" });
+  const { activeCompany } = useCompany();
   const qc = useQueryClient();
 
   const rq = useQuery({
-    queryKey: ["gst_return", id],
+    queryKey: ["gst_return", activeCompany?.id, id],
+    enabled: !!activeCompany?.id && !!activeCompany?.gstin,
     queryFn: async () => {
-      const { data, error } = await sb.from("gst_returns").select("*").eq("id", id).single();
+      const { data, error } = await sb.from("gst_returns").select("*").eq("id", id).eq("gstin", activeCompany!.gstin!.trim().toUpperCase()).single();
       if (error) throw error;
       return data as GstReturn;
     },
@@ -66,17 +69,34 @@ function ReturnDetail() {
       }),
     onSuccess: () => {
       toast.success("Re-generated");
-      qc.invalidateQueries({ queryKey: ["gst_return", id] });
+      qc.invalidateQueries({ queryKey: ["gst_return", activeCompany?.id, id] });
+      qc.invalidateQueries({ queryKey: ["gst_returns"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
 
-  if (rq.isLoading || !ret)
+  if (rq.isLoading)
     return (
       <PageBody>
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent>
+          <CardContent className="p-8 text-center text-muted-foreground">Loading GST return…</CardContent>
+        </Card>
+      </PageBody>
+    );
+
+  if (rq.isError || !ret)
+    return (
+      <PageBody>
+        <Card>
+          <CardContent className="space-y-3 p-8 text-center">
+            <p className="font-semibold">Unable to load this GST return</p>
+            <p className="text-sm text-muted-foreground">The record may not exist, or your active company may not have access to it. No filing status has been changed.</p>
+            <div className="flex justify-center gap-2">
+              <Button variant="outline" onClick={() => rq.refetch()}>Retry</Button>
+              <Button asChild><Link to="/gst/returns">Back to GST Returns</Link></Button>
+            </div>
+          </CardContent>
         </Card>
       </PageBody>
     );
@@ -93,8 +113,8 @@ function ReturnDetail() {
         description={`GSTIN ${ret.gstin} · status: ${ret.status}`}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => regen.mutate()} disabled={regen.isPending}>
-              <RefreshCw className="h-4 w-4 mr-1" /> Re-generate
+            <Button variant="outline" onClick={() => regen.mutate()} disabled={regen.isPending || ret.return_type === "GSTR-9"}>
+              <RefreshCw className="h-4 w-4 mr-1" /> {ret.return_type === "GSTR-9" ? "Annual generation unavailable" : "Re-generate"}
             </Button>
             <Button
               variant="outline"
@@ -162,7 +182,7 @@ function ReturnDetail() {
         {ret.return_type === "GSTR-9" && (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              Annual return aggregation — generate after filing 12 monthly GSTR-1 + GSTR-3B.
+              Annual GSTR-9 aggregation is not implemented. Do not file or rely on this record as an annual return; reconcile the full financial year and complete the supported annual workflow first.
             </CardContent>
           </Card>
         )}

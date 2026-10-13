@@ -38,15 +38,17 @@ function ReturnsPage() {
   const qc = useQueryClient();
   const now = new Date();
   const [type, setType] = useState<ReturnType>("GSTR-1");
-  const [year, setYear] = useState(now.getFullYear());
+  const [year, setYear] = useState(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() === 0 ? 12 : now.getMonth());
 
   const listQ = useQuery({
-    queryKey: ["gst_returns"],
+    queryKey: ["gst_returns", activeCompany?.id],
+    enabled: !!activeCompany?.id && !!activeCompany?.gstin,
     queryFn: async () => {
       const { data, error } = await sb
         .from("gst_returns")
         .select("*")
+        .eq("gstin", activeCompany!.gstin!.trim().toUpperCase())
         .order("period_year", { ascending: false })
         .order("period_month", { ascending: false })
         .limit(100);
@@ -77,7 +79,7 @@ function ReturnsPage() {
 
   return (
     <>
-      <PageHeader title="GST Returns" description="Generate and review GSTR-1, GSTR-3B, GSTR-9." />
+      <PageHeader title="GST Returns" description="Prepare and review GST return data. Direct GSTN filing is not enabled until an authorised GSP/API connection is configured." />
       <PageBody>
         <Card className="mb-4">
           <CardContent className="p-4 flex flex-wrap items-end gap-3">
@@ -128,12 +130,26 @@ function ReturnsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
-              <Play className="h-4 w-4 mr-1" /> {generate.isPending ? "Generating..." : "Generate"}
+            <Button onClick={() => generate.mutate()} disabled={generate.isPending || !activeCompany?.gstin || type === "GSTR-9"}>
+              <Play className="h-4 w-4 mr-1" /> {generate.isPending ? "Generating..." : type === "GSTR-9" ? "Annual return unavailable" : "Generate"}
             </Button>
           </CardContent>
         </Card>
 
+        {type === "GSTR-9" && (
+          <Card className="mb-4 border-amber-300 bg-amber-50/70">
+            <CardContent className="p-4 text-sm text-amber-950">
+              Annual GSTR-9 aggregation is not implemented yet. Generation is disabled to prevent a placeholder or zero-value return from being mistaken for a valid annual return.
+            </CardContent>
+          </Card>
+        )}
+        {!activeCompany?.gstin && (
+          <Card className="mb-4 border-amber-300 bg-amber-50/70">
+            <CardContent className="p-4 text-sm text-amber-950">
+              Configure the active company GSTIN before generating a GST return.
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -150,6 +166,15 @@ function ReturnsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {listQ.isLoading && (
+                  <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Loading GST returns…</TableCell></TableRow>
+                )}
+                {listQ.isError && (
+                  <TableRow><TableCell colSpan={8} className="py-8 text-center text-destructive">
+                    Unable to load GST returns. Check company access or database connectivity, then retry.
+                    <div className="mt-2"><Button variant="outline" size="sm" onClick={() => listQ.refetch()}>Retry</Button></div>
+                  </TableCell></TableRow>
+                )}
                 {listQ.data?.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
@@ -180,7 +205,7 @@ function ReturnsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {listQ.data?.length === 0 && (
+                {!listQ.isLoading && !listQ.isError && listQ.data?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 opacity-50" />

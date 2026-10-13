@@ -327,6 +327,11 @@ export async function generateReturn(opts: {
   gstin?: string;
   supplierStateCode: string;
 }): Promise<{ id: string }> {
+  if (opts.type === "GSTR-9") {
+    throw new Error(
+      "Annual GSTR-9 generation is not available yet. Generate it only after the annual aggregation and reconciliation workflow is implemented.",
+    );
+  }
   const gstin = opts.gstin?.trim().toUpperCase();
   if (!gstin || !/^\d{2}[A-Z0-9]{13}$/.test(gstin)) {
     throw new Error(
