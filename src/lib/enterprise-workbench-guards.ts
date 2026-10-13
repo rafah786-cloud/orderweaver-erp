@@ -59,8 +59,11 @@ export function isGovernedWorkbenchStatus(status: unknown): boolean {
  */
 export function canSetWorkbenchStatus(nextStatus: unknown, currentStatus?: unknown): boolean {
   if (typeof nextStatus !== "string" || !nextStatus.trim()) return false;
-  if (!isGovernedWorkbenchStatus(nextStatus)) return true;
 
-  return typeof currentStatus === "string"
-    && currentStatus.trim().toLowerCase() === nextStatus.trim().toLowerCase();
+  const next = nextStatus.trim().toLowerCase();
+  const current = typeof currentStatus === "string" ? currentStatus.trim().toLowerCase() : "";
+  const transitionTouchesGovernedState = isGovernedWorkbenchStatus(next) || isGovernedWorkbenchStatus(current);
+
+  if (!transitionTouchesGovernedState) return true;
+  return current !== "" && current === next;
 }
