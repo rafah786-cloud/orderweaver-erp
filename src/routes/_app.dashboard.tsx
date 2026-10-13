@@ -44,18 +44,18 @@ function DashboardPage() {
     queryKey: ["role-dashboard-metrics", roles.slice().sort().join("|")],
     queryFn: async () => {
       const wanted = admin
-        ? ["sales_orders", "parties", "invoices", "purchases", "inventory_items"]
+        ? ["sales_orders", "parties", "invoices", "purchase_bills", "stock_items"]
         : sales
           ? ["sales_orders", "parties", "invoices"]
           : production
-            ? ["sales_orders", "inventory_items"]
+            ? ["sales_orders", "stock_items"]
             : accountant
-              ? ["invoices", "purchases", "parties"]
+              ? ["invoices", "purchase_bills", "parties"]
               : hr
-                ? ["employees", "attendance_records"]
+                ? ["employees", "attendance"]
                 : customer
                   ? ["sales_orders", "invoices"]
-                  : ["attendance_records"];
+                  : ["attendance"];
       const pairs = await Promise.all(wanted.map(async (table) => [table, await countRows(table)] as const));
       return Object.fromEntries(pairs) as Record<string, MetricResult>;
     },
@@ -64,7 +64,7 @@ function DashboardPage() {
 
   const { data: recentOrders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["role-dashboard-recent-orders"],
-    enabled: admin || sales || production || customer,
+    enabled: admin || sales || production,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sales_orders")
@@ -148,8 +148,8 @@ function DashboardPage() {
         { label: "Sales orders", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
         { label: "Customers & parties", key: "parties", icon: Users, to: "/parties" },
         { label: "Invoices", key: "invoices", icon: FileText, to: "/invoices" },
-        { label: "Purchase records", key: "purchases", icon: Truck, to: "/purchases" },
-        { label: "Inventory records", key: "inventory_items", icon: Boxes, to: "/inventory" },
+        { label: "Purchase records", key: "purchase_bills", icon: Truck, to: "/purchases" },
+        { label: "Inventory records", key: "stock_items", icon: Boxes, to: "/inventory" },
       ]
     : sales
       ? [
@@ -171,7 +171,7 @@ function DashboardPage() {
           : hr
             ? [
                 { label: "Employees", key: "employees", icon: Users, to: "/employees" },
-                { label: "Attendance records", key: "attendance_records", icon: CalendarClock, to: "/attendance" },
+                { label: "Attendance records", key: "attendance", icon: CalendarClock, to: "/attendance" },
               ]
             : customer
               ? [
@@ -237,7 +237,7 @@ function DashboardPage() {
             <p className="text-sm text-muted-foreground">{admin ? "A quick look at the latest order activity." : "Shortcuts to continue your daily work."}</p>
           </CardHeader>
           <CardContent>
-            {(admin || sales || production || customer) ? (
+            {(admin || sales || production) ? (
               ordersLoading ? <p className="py-5 text-sm text-muted-foreground">Loading recent orders…</p> :
               recentOrders.length ? <div className="space-y-1">
                 {recentOrders.map((order) => <Link key={order.id} to="/sales-orders" className="flex items-center justify-between gap-3 rounded-md px-2 py-3 hover:bg-muted/60">
