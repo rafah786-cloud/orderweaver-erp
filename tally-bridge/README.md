@@ -35,3 +35,18 @@ npm run bundle -- ".\tally-voucher-register-april\ABOOD_TRADINGS\manifest.json" 
 The command writes one JSON bundle per date segment. The first bundle carries the master snapshot and opening balances; subsequent bundles carry only their period's vouchers, inventory movements, ledger entries, and voucher-linked bill allocations. Each bundle includes a source checksum and control totals. Upload each `staging-bundle-*.json` through Mattress Maestro's **Import from Tally → Migration control plane** and stage it against the matching official ERP company. The ERP stages large bundles in bounded chunks and validates only after all chunks in that bundle succeed.
 
 **Safety boundary:** this creates validated staging runs only. It does not post accounting transactions, update inventory balances, write to Tally, or approve the migration. Review reconciliation and company mappings before any future canonical import.
+
+
+## Build an ERP staging bundle from verified snapshots
+
+After a company snapshot is extracted, the bundle builder verifies every segment's SHA-256 before parsing and writes the JSON format accepted by the ERP's **Tally Import → Migration staging** flow. This is a local conversion only: it does not upload or post anything.
+
+```powershell
+npm.cmd run build
+npm.cmd test
+npm.cmd run bundle -- ".\tally-voucher-register-april\ABOOD_TRADINGS\manifest.json" ".\ABOOD_TRADINGS-staging-bundle.json"
+```
+
+Use the manifest for the full snapshot, not an isolated date segment. In the ERP, select the matching official target company, upload the generated JSON bundle in the migration staging area, review the source company and control totals, then stage and validate. Do not commit to live books until accounting and inventory reconciliation is approved. Keep the management-book company `ESTIMATE` separate from official books.
+
+The bundle builder refuses changed snapshot segments (SHA-256 mismatch), duplicate record-type/source-key pairs, or empty parsed bundles. Source company GUID is left null unless it is established by a verified source field; do not infer it from the company name.
