@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sanitizeTallyXml, validateCollectionResponse, validateVoucherRegisterDates } from "./snapshot.js";
+import { auditVoucherXml } from "./voucher-audit.js";
 
 const envelope = (body: string, status = 1) =>
   `<ENVELOPE><HEADER><STATUS>${status}</STATUS></HEADER><BODY><DATA>${body}</DATA></BODY></ENVELOPE>`;
@@ -62,4 +63,63 @@ test("rejects vouchers without valid dates", () => {
     () => validateVoucherRegisterDates(envelope("<VOUCHER><VOUCHERNUMBER>A1</VOUCHERNUMBER></VOUCHER>"), "2022-04-01", "2022-04-30"),
     /missing\/invalid DATE; refusing to save/,
   );
+});
+
+
+test("audits a sales voucher using ledger postings plus nested inventory accounting allocations", () => {
+  const xml = envelope(`
+    <VOUCHER>
+      <DATE>20220402</DATE><GUID>sales-guid</GUID><VOUCHERNUMBER>SALE-1</VOUCHERNUMBER><VOUCHERTYPENAME>B2C SALES</VOUCHERTYPENAME>
+      <LEDGERENTRIES.LIST><LEDGERNAME>Bank</LEDGERNAME><AMOUNT>-4250.00</AMOUNT></LEDGERENTRIES.LIST>
+      <LEDGERENTRIES.LIST><LEDGERNAME>CGST</LEDGERNAME><AMOUNT>101.20</AMOUNT></LEDGERENTRIES.LIST>
+      <LEDGERENTRIES.LIST><LEDGERNAME>SGST</LEDGERNAME><AMOUNT>101.20</AMOUNT></LEDGERENTRIES.LIST>
+      <LEDGERENTRIES.LIST><LEDGERNAME>Round Off</LEDGERNAME><AMOUNT>-0.40</AMOUNT></LEDGERENTRIES.LIST>
+      <ALLINVENTORYENTRIES.LIST><STOCKITEMNAME>Mattress</STOCKITEMNAME><AMOUNT>4048.00</AMOUNT><ACTUALQTY>5 NOS</ACTUALQTY>
+        <ACCOUNTINGALLOCATIONS.LIST><LEDGERNAME>Sales</LEDGERNAME><AMOUNT>4048.00</AMOUNT></ACCOUNTINGALLOCATIONS.LIST>
+      </ALLINVENTORYENTRIES.LIST>
+    </VOUCHER>`);
+  const [row] = auditVoucherXml(xml);
+  assert.equal(row.ledgerFamily, "LEDGERENTRIES.LIST");
+  assert.equal(row.ledgerEntries, 4);
+  assert.equal(row.inventoryEntries, 1);
+  assert.equal(row.inventoryAccountingAllocations, 1);
+  assert.equal(row.ledgerNet, -4048);
+  assert.equal(row.allocationNet, 4048);
+  assert.equal(row.combinedCandidateNet, 0);
+  assert.equal(row.status, "candidate-balanced");
+});
+
+test("audits receipt postings and does not require inventory allocations", () => {
+  const xml = envelope(`
+    <VOUCHER><DATE>20220402</DATE><GUID>receipt-guid</GUID><VOUCHERNUMBER>131</VOUCHERNUMBER><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME>
+      <ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer</LEDGERNAME><AMOUNT>5917.00</AMOUNT></ALLLEDGERENTRIES.LIST>
+      <ALLLEDGERENTRIES.LIST><LEDGERNAME>Cash</LEDGERNAME><AMOUNT>-5917.00</AMOUNT></ALLLEDGERENTRIES.LIST>
+    </VOUCHER>`);
+  const [row] = auditVoucherXml(xml);
+  assert.equal(row.ledgerFamily, "ALLLEDGERENTRIES.LIST");
+  assert.equal(row.ledgerNet, 0);
+  assert.equal(row.combinedCandidateNet, 0);
+  assert.equal(row.status, "candidate-balanced");
+});
+
+test("does not double-count alternate ledger-entry families", () => {
+  const xml = envelope(`
+    <VOUCHER><DATE>20220402</DATE><GUID>alias-guid</GUID><VOUCHERNUMBER>ALIAS-1</VOUCHERNUMBER>
+      <ALLLEDGERENTRIES.LIST><LEDGERNAME>Cash</LEDGERNAME><AMOUNT>-10</AMOUNT></ALLLEDGERENTRIES.LIST>
+      <LEDGERENTRIES.LIST><LEDGERNAME>Cash</LEDGERNAME><AMOUNT>-10</AMOUNT></LEDGERENTRIES.LIST>
+    </VOUCHER>`);
+  const [row] = auditVoucherXml(xml);
+  assert.equal(row.ledgerFamily, "ALLLEDGERENTRIES.LIST");
+  assert.equal(row.ledgerEntries, 1);
+  assert.equal(row.ledgerNet, -10);
+});
+
+test("marks missing ledger amounts as incomplete instead of balanced", () => {
+  const xml = envelope(`
+    <VOUCHER><DATE>20220402</DATE><GUID>incomplete-guid</GUID><VOUCHERNUMBER>INCOMPLETE-1</VOUCHERNUMBER>
+      <LEDGERENTRIES.LIST><LEDGERNAME>Cash</LEDGERNAME></LEDGERENTRIES.LIST>
+    </VOUCHER>`);
+  const [row] = auditVoucherXml(xml);
+  assert.equal(row.status, "incomplete");
+  assert.equal(row.combinedCandidateNet, null);
 });
