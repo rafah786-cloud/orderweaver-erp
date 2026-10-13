@@ -1,0 +1,39 @@
+name: Production Release Smoke
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: production-release-smoke
+  cancel-in-progress: false
+
+jobs:
+  published-app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for the published release checkpoint
+        env:
+          RELEASE_CHECKPOINT: "mm-erp-release-check-2026-10-14-r3"
+          PRODUCTION_URL: "https://orderweaver-erp.lovable.app/login"
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if body="$(curl --silent --show-error --fail --location \
+              --connect-timeout 10 --max-time 20 \
+              -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+              "${PRODUCTION_URL}?release_check=${RELEASE_CHECKPOINT}" 2>/dev/null)"; then
+              if grep -Fq "${RELEASE_CHECKPOINT}" <<< "${body}"; then
+                echo "Published page is serving release checkpoint ${RELEASE_CHECKPOINT}"
+                exit 0
+              fi
+              echo "Attempt ${attempt}: production responds, but the new checkpoint is not yet present."
+            else
+              echo "Attempt ${attempt}: production URL did not return a successful response yet."
+            fi
+            sleep 20
+          done
+          echo "::error::Production did not serve the expected release checkpoint within 10 minutes."
+          exit 1
