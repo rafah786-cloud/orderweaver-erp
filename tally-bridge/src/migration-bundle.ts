@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseTallyMasters, type TallyParsed } from "../../src/lib/tally-import.js";
@@ -43,6 +44,41 @@ const defaults = {
   rawGroups: ["Raw Materials", "Components", "Fabric", "Foam"],
   finishedGroups: ["Finished Goods", "Mattresses", "Products"],
 };
+
+// Direct Tally collection exports place master records inside DATA/COLLECTION,
+// unlike standard exports which place them inside DATA/TALLYMESSAGE. Normalize
+// only that structural difference; keep the existing canonical field parser.
+const directCollectionParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_",
+  parseTagValue: false,
+  trimValues: true,
+});
+const directCollectionBuilder = new XMLBuilder({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_",
+  format: false,
+});
+
+function normalizeDirectCollectionXml(xml: string): string | null {
+  const parsed = directCollectionParser.parse(xml) as Record<string, any>;
+  const collection = parsed?.ENVELOPE?.BODY?.DATA?.COLLECTION;
+  if (!collection || typeof collection !== "object") return null;
+  const records: Array<Record<string, unknown>> = [];
+  for (const tag of [
+    "GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE", "VOUCHER",
+  ]) {
+    const value = collection[tag];
+    if (value == null) continue;
+    for (const item of (Array.isArray(value) ? value : [value])) {
+      if (item && typeof item === "object") records.push({ [tag]: item });
+    }
+  }
+  if (!records.length) return null;
+  return directCollectionBuilder.build({
+    ENVELOPE: { BODY: { DATA: { TALLYMESSAGE: records } } },
+  });
+}
 
 function mergeParsed(target: TallyParsed, next: TallyParsed): void {
   for (const key of Object.keys(target) as Array<keyof TallyParsed>) {
@@ -110,10 +146,15 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
     totalBytes += raw.byteLength;
     hash.update(segment.name).update("\0").update(raw).update("\0");
     const xml = raw.toString("utf8");
-    // An empty optional Tally collection may contain no TALLYMESSAGE at all.
-    // It is valid to skip that segment after its checksum has been verified.
-    if (!/<TALLYMESSAGE\b/i.test(xml) && !/<IMPORTDATA\b/i.test(xml)) continue;
-    const result = parseTallyMasters(xml, { ...defaults, preserveLifecycle: true });
+    // An empty optional Tally collection may contain no records at all.
+    // Direct exports use DATA/COLLECTION; ordinary exports use TALLYMESSAGE.
+    let parserXml = xml;
+    if (!/<TALLYMESSAGE\b/i.test(xml) && !/<IMPORTDATA\b/i.test(xml)) {
+      const normalized = normalizeDirectCollectionXml(xml);
+      if (!normalized) continue;
+      parserXml = normalized;
+    }
+    const result = parseTallyMasters(parserXml, { ...defaults, preserveLifecycle: true });
     mergeParsed(parsed, result);
   }
   // Fail closed: collection XML can differ from the TALLYMESSAGE format expected by the ERP parser.
