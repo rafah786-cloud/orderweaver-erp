@@ -50,7 +50,8 @@ describe("active company refresh", () => {
   it("persists a fallback only when the saved company is inaccessible", async () => {
     setup("inaccessible-company");
     await vi.waitFor(() => expect(mocks.setters[1]).toHaveBeenCalledWith(companies[0]));
-    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("set_active_company", { _company_id: "first-company" });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).toHaveBeenCalledWith("set_active_company", { _company_id: "first-company" });
   });
   it("does not display a fallback when persisting it fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
