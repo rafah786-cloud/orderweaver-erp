@@ -17,10 +17,10 @@ begin
   where p.schemaname = 'public'
     and p.policyname like 'company_scope%'
     and p.tablename = any (array[
-      'ai_data_freshness','backup_verification_runs','bank_reconciliations','budgets',
-      'bom_revision_lines','bom_revisions','crm_activities','crm_leads','crm_opportunities',
+      'ai_data_freshness','backup_verification_runs',
+      'bom_revision_lines','bom_revisions',
       'data_quality_issues','engineering_change_order_lines','engineering_change_orders',
-      'erp_domain_audit_log','fixed_assets','integration_health','integration_runs',
+      'erp_domain_audit_log','integration_health','integration_runs',
       'maintenance_assets','maintenance_meter_readings','maintenance_plans','maintenance_spares',
       'maintenance_work_orders','master_data_quality_rules','mps_lines','mps_plans',
       'mrp_exceptions','mrp_planned_orders','mrp_runs','production_operations','project_tasks','projects',
