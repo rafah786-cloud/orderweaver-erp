@@ -29,6 +29,14 @@ const lifecycle = (value: unknown): StagingRow["lifecycle_state"] =>
 function messages(xml: string): string[] {
   return [...xml.matchAll(/<TALLYMESSAGE\b[^>]*>([\s\S]*?)<\/TALLYMESSAGE>/gi)].map((m) => m[1]);
 }
+async function readVerifiedSegment(segment: Manifest["segments"][number]): Promise<string> {
+  const xml = await readFile(path.resolve(segment.path), "utf8");
+  const actual = createHash("sha256").update(xml).digest("hex");
+  if (actual !== segment.sha256) {
+    throw new Error(`Snapshot segment checksum mismatch for ${segment.path}; refusing to build staging data.`);
+  }
+  return xml;
+}
 function combinedXml(parts: string[]): string {
   const all = parts.flatMap(messages);
   if (!all.length) throw new Error("No TALLYMESSAGE objects found in one or more source XML segments.");
@@ -111,14 +119,14 @@ async function main() {
   if (!masters.length) throw new Error("Snapshot manifest has no master collections.");
   if (!periods.length) throw new Error("Snapshot manifest has no Voucher Register data segments.");
 
-  const masterXml = await Promise.all(masters.map((s) => readFile(path.resolve(s.path), "utf8")));
+  const masterXml = await Promise.all(masters.map(readVerifiedSegment));
   const masterHash = masters.map((s) => s.sha256).sort().join("|");
   const outDir = path.resolve(outputArg);
   await mkdir(outDir, { recursive: true });
 
   for (let i = 0; i < periods.length; i++) {
     const segment = periods[i];
-    const voucherXml = await readFile(path.resolve(segment.path), "utf8");
+    const voucherXml = await readVerifiedSegment(segment);
     const xml = combinedXml([...masterXml, voucherXml]);
     const parsed = parseTallyMasters(xml, {
       rawGroups: ["Raw Materials", "Components", "Fabric", "Foam"],
