@@ -1,5 +1,3 @@
-import { XMLParser } from "fast-xml-parser";
-
 export type TallyRequestOptions = {
   company: string;
   fromDate?: string;
@@ -15,12 +13,6 @@ export type TallyResponse = {
   xml: string;
   bytes: number;
 };
-
-const parser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: "@_",
-  trimValues: true,
-});
 
 function escapeXml(value: string): string {
   return value
@@ -148,11 +140,10 @@ export class TallyClient {
       throw new Error("Tally HTTP " + response.status + ": " + responseXml.slice(0, 500));
     }
 
-    let status = 1;
-    try {
-      const parsed = parser.parse(responseXml) as Record<string, any>;
-      status = Number(parsed?.ENVELOPE?.HEADER?.STATUS ?? 1);
-    } catch {}
+    // This client only needs Tally's envelope status. Parse that scalar directly
+    // to avoid a runtime XML-parser dependency for a single fixed field.
+    const statusMatch = responseXml.match(/<STATUS>\s*(-?\d+)\s*<\/STATUS>/i);
+    const status = statusMatch ? Number(statusMatch[1]) : 1;
     if (status < 0) {
       throw new Error("Tally request " + requestName + " returned STATUS=" + status);
     }
