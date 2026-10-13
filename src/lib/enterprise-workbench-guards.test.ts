@@ -45,6 +45,7 @@ describe("enterprise workbench guard helpers", () => {
   it("permits retaining a governed state while editing unrelated fields", () => {
     expect(canSetWorkbenchStatus("released", "released")).toBe(true);
     expect(canSetWorkbenchStatus("Posted", "posted")).toBe(true);
-    expect(canSetWorkbenchStatus("draft", "posted")).toBe(true);
+    expect(canSetWorkbenchStatus("draft", "posted")).toBe(false);
+    expect(canSetWorkbenchStatus("released", "posted")).toBe(false);
   });
 });
