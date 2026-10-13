@@ -378,6 +378,8 @@ function TallyImportPage() {
         migrationParsed.ledgerEntries,
         (x) => `ledger-entry:${x.external_ref}`,
         (x) => x.external_ref,
+        undefined,
+        () => null,
       );
       add(
         "bill",
