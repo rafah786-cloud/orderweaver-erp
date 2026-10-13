@@ -13,13 +13,22 @@ def test_enterprise_crud_policies_use_individual_permission_flags():
 
 
 def test_audit_log_is_read_only_to_authenticated_clients():
-    branch = SQL.split("if t.tablename = 'erp_domain_audit_log' then", 1)[1].split("else", 1)[0]
+    branch = SQL.split("if v_table = 'erp_domain_audit_log' then", 1)[1].split("else", 1)[0]
     assert "for select" in branch
     assert "for insert" not in branch
     assert "for update" not in branch
     assert "for delete" not in branch
 
 
-def test_old_permissive_policy_family_is_removed_before_replacement():
+def test_migration_is_limited_to_additive_domains():
+    selector = SQL.split("select array_agg", 1)[1].split("and exists", 1)[0]
+    assert "'vouchers'" not in selector
+    assert "'invoices'" not in selector
+    assert "'stock_movements'" not in selector
+    assert "'mps_plans'" in selector
+    assert "'production_operations'" in selector
+
+
+def test_old_permissive_policies_are_removed_before_replacement():
     assert "policyname like 'company_scope%'" in SQL
     assert "drop policy if exists %i on public.%i" in SQL
