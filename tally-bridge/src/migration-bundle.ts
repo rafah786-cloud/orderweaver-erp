@@ -88,6 +88,9 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
   if (!manifest.company || !Array.isArray(manifest.segments) || !manifest.segments.length) {
     throw new Error("Invalid TallyBridge manifest: company or segments missing.");
   }
+  const sourceCompany = manifest.company.trim().toUpperCase().replace(/\s+/g, " ");
+  const allowedSources = new Set(["ABOOD TRADINGS", "ESTIMATE", "ABRAZ SLEEPING SOLUTIONS", "ABZ - EST"]);
+  if (!allowedSources.has(sourceCompany)) throw new Error("Unrecognized Tally company " + manifest.company + "; refusing to create an unmapped staging bundle.");
   const parsed: TallyParsed = {
     customers: [], vendors: [], rawMaterials: [], finishedGoods: [], ledgerEntries: [],
     inventoryLines: [], groups: [], ledgers: [], godowns: [], costCentres: [], bills: [], vouchers: [],
