@@ -14,6 +14,13 @@ const GOVERNED_STATUSES = new Set([
   "released",
   "cancelled",
   "disposed",
+  "conditional",
+  "failed",
+  "inspected",
+  "passed",
+  "rejected",
+  "returned",
+  "sent",
 ]);
 
 export function normalizeWorkbenchSearch(input: string): string {
@@ -26,11 +33,11 @@ export function normalizeWorkbenchSearch(input: string): string {
 }
 
 export function getWorkbenchSearchColumns(
-  fields: ReadonlyArray<{ key: string; type?: string }>,
+  fields: ReadonlyArray<{ key: string; type?: string; options?: readonly string[] }>,
 ): string[] {
   return [...new Set(
     fields
-      .filter((field) => field.type === undefined || field.type === "text" || field.type === "select")
+      .filter((field) => field.type === undefined || field.type === "text" || (field.type === "select" && !(field.options?.length === 2 && field.options.every((option) => option === "true" || option === "false"))))
       .map((field) => field.key),
   )];
 }
