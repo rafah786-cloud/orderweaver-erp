@@ -63,7 +63,7 @@ function GstLayout() {
     <>
       <PageHeader
         title="GST Compliance"
-        description="File returns, manage HSN codes, generate e-invoices."
+        description="Prepare GST return data, manage HSN codes and review e-invoices. Actual filing requires an authorised GST API/GSP connection."
       />
       <PageBody>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
