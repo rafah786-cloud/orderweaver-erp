@@ -23,7 +23,7 @@ import { webPushFactory } from "./providers/web-push.server";
  */
 const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   "whatsapp:interakt": interaktFactory,
-  // Stubs — replace with real implementations and register here.
+  // SMS and Email remain explicit stubs; Web Push has a real VAPID implementation.
   "sms:stub": stubFactory,
   "email:stub": stubFactory,
   "push:webpush": webPushFactory,
