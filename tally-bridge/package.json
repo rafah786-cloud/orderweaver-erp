@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
-    "bundle": "tsx src/staging-bundle.ts",
+    "bundle": "node --import tsx src/migration-bundle.ts",
     "build": "tsc --noEmit",
     "test": "node --import tsx --test src/*.test.ts"
   },
