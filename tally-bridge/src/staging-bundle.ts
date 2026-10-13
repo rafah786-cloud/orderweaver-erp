@@ -70,7 +70,7 @@ function rowsFor(parsed: TallyParsed, includeMasters: boolean): StagingRow[] {
   add("voucher", parsed.vouchers, (x) => `voucher:${x.source_id}`, (x) => x.source_id, undefined, (x) => x.alter_id ?? null);
   add("inventory_line", parsed.inventoryLines, (x) => `inventory:${x.voucher_guid}:${x.line_index}`, (x) => x.voucher_guid, (x) => `voucher:${x.voucher_guid}`);
   add("ledger", parsed.ledgerEntries, (x) => `ledger-entry:${x.external_ref}`, (x) => x.external_ref);
-  add("bill_allocation", parsed.bills.filter((b) => includeMasters || b.voucher_guid !== null), (x) => `bill:${x.external_ref}`, (x) => x.external_ref);
+  add("bill", parsed.bills.filter((b) => includeMasters || b.voucher_guid !== null), (x) => `bill:${x.external_ref}`, (x) => x.external_ref);
   return rows;
 }
 function controls(parsed: TallyParsed, includeMasters: boolean) {
