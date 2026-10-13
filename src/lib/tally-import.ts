@@ -85,10 +85,26 @@ export type TallyBill = {
 };
 
 /** Complete source voucher for pre-import reconciliation; never inferred from party balances. */
+export type TallyInventoryLine = {
+  voucher_guid: string;
+  line_index: number;
+  stock_item_name: string;
+  actual_qty: number;
+  billed_qty: number;
+  unit: string;
+  rate: string | null;
+  amount: number;
+  lifecycle_state: "posted" | "cancelled" | "optional" | "deleted";
+  /** Original parsed Tally inventory node, including nested batch/godown allocations. */
+  source_payload: Record<string, unknown>;
+};
+
 export type TallyVoucher = {
   source_id: string;
   /** Tally's monotonic ALTERID, preserved separately from the stable GUID. */
   alter_id?: string | null;
+  /** Full parsed source voucher node, retaining fields not yet normalized by ERP. */
+  source_payload?: Record<string, unknown>;
   has_stable_id: boolean;
   voucher_type: string | null;
   voucher_number: string | null;
@@ -104,6 +120,8 @@ export type TallyParsed = {
   finishedGoods: TallyStockItem[];
   /** Voucher-level ledger entries (Day Book / Ledger XML exports). */
   ledgerEntries: TallyLedgerEntry[];
+  /** Inventory movement lines retained separately from accounting ledger legs. */
+  inventoryLines: TallyInventoryLine[];
   /** Full Chart of Accounts. */
   groups: TallyGroup[];
   ledgers: TallyLedgerMaster[];
@@ -267,6 +285,7 @@ export function parseTallyMasters(
   const rawMaterials: TallyStockItem[] = [];
   const finishedGoods: TallyStockItem[] = [];
   const ledgerEntries: TallyLedgerEntry[] = [];
+  const inventoryLines: TallyInventoryLine[] = [];
   const groups: TallyGroup[] = [];
   const ledgersOut: TallyLedgerMaster[] = [];
   const godowns: TallyGodown[] = [];
@@ -539,11 +558,30 @@ export function parseTallyMasters(
       // Sales/purchase account legs can be nested inside inventory entries rather
       // than emitted as top-level ledger entries. Include those allocations in
       // voucher-level reconciliation, but keep stock quantity/rate values separate.
-      const inventoryLines = [
+      const voucherInventoryLines = [
         ...arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never),
         ...arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never),
       ];
-      const allocationLines = inventoryLines.flatMap((inventory) =>
+      voucherInventoryLines.forEach((inventory, lineIndex) => {
+        const stockItemName = text(inventory.STOCKITEMNAME ?? inventory.ITEMNAME);
+        // Ignore empty XML list containers; only real stock-item lines are staged.
+        if (!stockItemName) return;
+        const actual = parseQtyUnit(text(inventory.ACTUALQTY));
+        const billed = parseQtyUnit(text(inventory.BILLEDQTY));
+        inventoryLines.push({
+          voucher_guid: guid,
+          line_index: lineIndex,
+          stock_item_name: stockItemName,
+          actual_qty: actual.qty,
+          billed_qty: billed.qty,
+          unit: text(inventory.ACTUALQTY) ? actual.unit : billed.unit,
+          rate: text(inventory.RATE) || null,
+          amount: num(inventory.AMOUNT),
+          lifecycle_state: lifecycleState(inventory),
+          source_payload: inventory,
+        });
+      });
+      const allocationLines = voucherInventoryLines.flatMap((inventory) =>
         arr<Record<string, unknown>>(inventory["ACCOUNTINGALLOCATIONS.LIST"] as never),
       );
       const lines = [...ledgerLines, ...altLines, ...allocationLines];
@@ -551,6 +589,7 @@ export function parseTallyMasters(
       vouchersOut.push({
         source_id: guid,
         ...(text(v.ALTERID) ? { alter_id: text(v.ALTERID) } : {}),
+        source_payload: v,
         has_stable_id: !!text(v.GUID ?? v["@_REMOTEID"]),
         voucher_type,
         voucher_number,
@@ -660,6 +699,7 @@ export function parseTallyMasters(
     rawMaterials,
     finishedGoods,
     ledgerEntries,
+    inventoryLines,
     groups,
     ledgers: ledgersOut,
     godowns,
