@@ -66,6 +66,21 @@ test("rejects vouchers without valid dates", () => {
 });
 
 
+test("ignores empty Tally list containers instead of counting them as entries", () => {
+  const xml = envelope(`
+    <VOUCHER>
+      <DATE>20220403</DATE><GUID>accounting-only-guid</GUID><VOUCHERNUMBER>141</VOUCHERNUMBER><VOUCHERTYPENAME>Purchase</VOUCHERTYPENAME>
+      <ALLINVENTORYENTRIES.LIST></ALLINVENTORYENTRIES.LIST>
+      <LEDGERENTRIES.LIST><LEDGERNAME>Party</LEDGERNAME><AMOUNT>100</AMOUNT></LEDGERENTRIES.LIST>
+      <LEDGERENTRIES.LIST><LEDGERNAME>Expense</LEDGERNAME><AMOUNT>-100</AMOUNT></LEDGERENTRIES.LIST>
+    </VOUCHER>`);
+  const [row] = auditVoucherXml(xml);
+  assert.equal(row.inventoryEntries, 0);
+  assert.equal(row.inventoryAccountingAllocations, 0);
+  assert.equal(row.status, "candidate-balanced");
+  assert.equal(row.notes.some(note => note.includes("Inventory exists")), false);
+});
+
 test("audits a sales voucher using ledger postings plus nested inventory accounting allocations", () => {
   const xml = envelope(`
     <VOUCHER>
