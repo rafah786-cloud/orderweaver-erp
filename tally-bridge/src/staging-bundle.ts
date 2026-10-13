@@ -70,7 +70,7 @@ function rowsFor(parsed: TallyParsed, includeMasters: boolean): StagingRow[] {
   add("voucher", parsed.vouchers, (x) => `voucher:${x.source_id}`, (x) => x.source_id, undefined, (x) => x.alter_id ?? null);
   add("inventory_line", parsed.inventoryLines, (x) => `inventory:${x.voucher_guid}:${x.line_index}`, (x) => x.voucher_guid, (x) => `voucher:${x.voucher_guid}`);
   add("ledger", parsed.ledgerEntries, (x) => `ledger-entry:${x.external_ref}`, (x) => x.external_ref);
-  add("bill_allocation", parsed.bills.filter((b) => b.voucher_guid !== null), (x) => `bill:${x.external_ref}`, (x) => x.external_ref);
+  add("bill_allocation", parsed.bills.filter((b) => includeMasters || b.voucher_guid !== null), (x) => `bill:${x.external_ref}`, (x) => x.external_ref);
   return rows;
 }
 function controls(parsed: TallyParsed, includeMasters: boolean) {
@@ -86,7 +86,7 @@ function controls(parsed: TallyParsed, includeMasters: boolean) {
     stockItems: includeMasters ? parsed.rawMaterials.length + parsed.finishedGoods.length : 0,
     godowns: includeMasters ? parsed.godowns.length : 0,
     costCentres: includeMasters ? parsed.costCentres.length : 0,
-    bills: parsed.bills.filter((b) => b.voucher_guid !== null).length,
+    bills: parsed.bills.filter((b) => includeMasters || b.voucher_guid !== null).length,
   };
 }
 
@@ -110,7 +110,6 @@ async function main() {
   if (!periods.length) throw new Error("Snapshot manifest has no Voucher Register data segments.");
 
   const masterXml = await Promise.all(masters.map((s) => readFile(path.resolve(s.path), "utf8")));
-  const masterMessageXml = combinedXml(masterXml);
   const masterHash = masters.map((s) => s.sha256).sort().join("|");
   const outDir = path.resolve(outputArg);
   await mkdir(outDir, { recursive: true });
