@@ -17,6 +17,7 @@ const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
       <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
       <VOUCHERNUMBER>S/001</VOUCHERNUMBER>
       <GUID>voucher-guid-1</GUID>
+      <ALTERID>987654</ALTERID>
       <ALLLEDGERENTRIES.LIST>
         <LEDGERNAME>Acme Traders</LEDGERNAME>
         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
@@ -85,6 +86,7 @@ describe("Tally import — idempotent re-import", () => {
     const a = parseTallyMasters(SAMPLE_XML, groups);
     const b = parseTallyMasters(SAMPLE_XML, groups);
     expect(a.ledgerEntries).toHaveLength(2);
+    expect(a.vouchers.find((v) => v.source_id === "voucher-guid-1")?.alter_id).toBe("987654");
     expect(a.ledgerEntries.map((e) => e.external_ref).sort()).toEqual(
       b.ledgerEntries.map((e) => e.external_ref).sort(),
     );
