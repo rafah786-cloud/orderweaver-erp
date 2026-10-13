@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { routePathMatches } from "@/lib/permissions";
 import { LayoutDashboard, ClipboardList, BookOpen, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,11 +54,12 @@ function VendorShell() {
               const Icon = n.icon;
               const active = n.exact
                 ? location.pathname === n.to
-                : location.pathname.startsWith(n.to);
+                : routePathMatches(location.pathname, n.to);
               return (
                 <Link
                   key={n.to}
                   to={n.to}
+                  aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${active ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                 >
                   <Icon className="h-4 w-4" />
