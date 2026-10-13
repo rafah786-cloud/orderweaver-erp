@@ -2,7 +2,7 @@ name: ERP CI
 
 on:
   push:
-    branches: ["feat/**"]
+    branches: ["main", "feat/**"]
   workflow_dispatch:
   pull_request:
 
