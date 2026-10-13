@@ -31,8 +31,16 @@ function escapeXml(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
+/** Tally TYPE="Date" static variables require YYYYMMDD, not ISO YYYY-MM-DD. */
+function tallyDate(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error("Invalid date '" + value + "': expected YYYY-MM-DD.");
+  }
+  return value.replaceAll("-", "");
+}
+
 function dateVariable(name: string, value?: string): string {
-  return value ? "<" + name + ' TYPE="Date">' + escapeXml(value) + "</" + name + ">" : "";
+  return value ? "<" + name + ' TYPE="Date">' + tallyDate(value) + "</" + name + ">" : "";
 }
 
 /**
