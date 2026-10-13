@@ -52,7 +52,7 @@ function SidebarBody({ collapsed, setCollapsed, onNavigate }: SidebarBodyProps) 
   const uncategorized = items.filter((item) => !GROUPS.some((group) => group.prefixes.includes(item.to)));
 
   const renderLink = (item: (typeof items)[number]) => {
-    const active = location.pathname.startsWith(item.to);
+    const active = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
     const Icon = item.icon;
     const link = (
       <Link
