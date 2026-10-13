@@ -51,6 +51,57 @@ async function sumColumn(db: SupabaseClient, table: string, column: string) {
   return { total, rows, nonzero, error: null };
 }
 
+// Preserve the sign distribution: a single net total can hide offsetting
+// debit and credit balances and must not be presented as receivables by itself.
+async function balanceSignSummary(db: SupabaseClient, table: string, column: string) {
+  let from = 0;
+  let rows = 0;
+  let positiveBalanceTotal = 0;
+  let negativeBalanceTotal = 0;
+  let positiveRows = 0;
+  let negativeRows = 0;
+  let zeroRows = 0;
+  for (;;) {
+    const { data, error } = await db.from(table).select(column).range(from, from + 999);
+    if (error) {
+      return {
+        positiveBalanceTotal: null,
+        negativeBalanceTotal: null,
+        positiveRows,
+        negativeRows,
+        zeroRows,
+        rows,
+        error: CHECK_UNAVAILABLE,
+      };
+    }
+    const batch = data ?? [];
+    for (const row of batch) {
+      const value = Number(Object.values(row)[0] ?? 0);
+      rows += 1;
+      if (value > 0) {
+        positiveBalanceTotal += value;
+        positiveRows += 1;
+      } else if (value < 0) {
+        negativeBalanceTotal += Math.abs(value);
+        negativeRows += 1;
+      } else {
+        zeroRows += 1;
+      }
+    }
+    if (batch.length < 1000) break;
+    from += 1000;
+  }
+  return {
+    positiveBalanceTotal,
+    negativeBalanceTotal,
+    positiveRows,
+    negativeRows,
+    zeroRows,
+    rows,
+    error: null,
+  };
+}
+
 export const accountingPreflight = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -168,7 +219,9 @@ export const accountingPreflight = createServerFn({ method: "GET" })
       voucherSeries: series.data ?? [],
       voucherSeriesError: series.error ? CHECK_UNAVAILABLE : null,
       customerOutstanding: await sumColumn(db, "parties", "current_balance"),
+      customerBalanceSignSummary: await balanceSignSummary(db, "parties", "current_balance"),
       supplierOutstanding: await sumColumn(db, "suppliers", "current_balance"),
+      supplierBalanceSignSummary: await balanceSignSummary(db, "suppliers", "current_balance"),
       invoicePaid,
       invoiceTotal,
       invoiceOutstanding:
