@@ -33,7 +33,5 @@ jobs:
         with:
           node-version: "20"
       - run: npm install --no-audit --no-fund
-      - run: npm install --no-save --no-audit --no-fund "fast-xml-parser@^5.8.0"
-      - run: npm ls fast-xml-parser
       - run: npm run build
       - run: npm test
