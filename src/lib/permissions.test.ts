@@ -44,3 +44,21 @@ describe("route boundary matching", () => {
     expect(routePathMatches("/accounting/trial-balance/", "/accounting/")).toBe(true);
   });
 });
+
+describe("fail-closed role enforcement", () => {
+  it("denies unmapped app paths even to administrators until a policy is added", () => {
+    expect(canAccessPath("/unknown-app-module", ["admin"])).toBe(false);
+    expect(canAccessPath("/unknown-app-module", ["sales"])).toBe(false);
+  });
+
+  it("restricts the generic enterprise workbench to administrators", () => {
+    expect(canAccessPath("/enterprise-workbench", ["admin"])).toBe(true);
+    expect(canAccessPath("/enterprise-workbench", ["accountant"])).toBe(false);
+    expect(canAccessPath("/enterprise-workbench", ["production"])).toBe(false);
+  });
+
+  it("preserves nested route permissions for documented modules", () => {
+    expect(canAccessPath("/accounting/trial-balance", ["accountant"])).toBe(true);
+    expect(canAccessPath("/accounting/trial-balance", ["sales"])).toBe(false);
+  });
+});
