@@ -38,6 +38,13 @@ const DEFAULT_ROUTE_BY_ROLE: Partial<Record<AppRole, string>> = {
   hr: "/employees", employee: "/attendance", customer: "/dashboard", vendor: "/vendor",
 };
 
+/** Matches a route and its nested routes without accepting similarly-prefixed paths. */
+export function routePathMatches(pathname: string, prefix: string): boolean {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  const base = prefix.replace(/\/+$/, "") || "/";
+  return path === base || (base !== "/" && path.startsWith(`${base}/`));
+}
+
 export function defaultRouteForRoles(roles: AppRole[]): string {
   for (const role of ["admin", "accountant", "sales", "production", "hr", "employee", "customer", "vendor"] as AppRole[]) {
     if (roles.includes(role)) return DEFAULT_ROUTE_BY_ROLE[role] ?? "/dashboard";
@@ -46,6 +53,6 @@ export function defaultRouteForRoles(roles: AppRole[]): string {
 }
 
 export function allowedRolesFor(pathname: string): AppRole[] | null {
-  const match = ROUTE_ROLES.find((r) => pathname.startsWith(r.prefix));
+  const match = ROUTE_ROLES.find((r) => routePathMatches(pathname, r.prefix));
   return match ? match.roles : null;
 }
