@@ -79,22 +79,22 @@ export function validateCollectionResponse(
   return { xml, recordCount };
 }
 
-/** Fail closed if DayBook returns vouchers outside the requested window. */
-export function validateDayBookDates(xml: string, fromDate: string, toDate: string): { voucherCount: number } {
+/** Fail closed if Voucher Register returns vouchers outside the requested window. */
+export function validateVoucherRegisterDates(xml: string, fromDate: string, toDate: string): { voucherCount: number } {
   const from = fromDate.replaceAll("-", "");
   const to = toDate.replaceAll("-", "");
   if (!/^\d{8}$/.test(from) || !/^\d{8}$/.test(to) || from > to) {
-    throw new Error("Invalid DayBook date window: " + fromDate + " to " + toDate);
+    throw new Error("Invalid Voucher Register date window: " + fromDate + " to " + toDate);
   }
   const vouchers = [...xml.matchAll(/<VOUCHER\b[^>]*>([\s\S]*?)<\/VOUCHER>/gi)];
   for (const [, body] of vouchers) {
     const date = body.match(/<DATE(?:\s[^>]*)?>([^<]*)<\/DATE>/i)?.[1]?.trim();
     const number = body.match(/<VOUCHERNUMBER(?:\s[^>]*)?>([^<]*)<\/VOUCHERNUMBER>/i)?.[1]?.trim() || "(unnumbered)";
     if (!date || !/^\d{8}$/.test(date)) {
-      throw new Error("DayBook " + fromDate + " to " + toDate + ": voucher " + number + " has missing/invalid DATE; refusing to save.");
+      throw new Error("Voucher Register " + fromDate + " to " + toDate + ": voucher " + number + " has missing/invalid DATE; refusing to save.");
     }
     if (date < from || date > to) {
-      throw new Error("DayBook " + fromDate + " to " + toDate + ": Tally returned out-of-range voucher " + number + " dated " + date + "; refusing to save. Date filtering must be fixed before migration.");
+      throw new Error("Voucher Register " + fromDate + " to " + toDate + ": Tally returned out-of-range voucher " + number + " dated " + date + "; refusing to save. Date filtering must be fixed before migration.");
     }
   }
   return { voucherCount: vouchers.length };
@@ -151,26 +151,26 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         toDate: chunkEnd,
       };
       const response = await client.request(
-        "DayBook",
-        dataRequest("DayBook", requestOptions),
+        "Voucher Register",
+        dataRequest("Voucher Register", requestOptions),
         requestOptions,
       );
       const cleanXml = sanitizeTallyXml(response.xml);
       if (!/<ENVELOPE\b/i.test(cleanXml) || !/<DATA\b/i.test(cleanXml)) {
-        throw new Error("DayBook " + cursor + " to " + chunkEnd + ": invalid Tally export envelope.");
+        throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": invalid Tally export envelope.");
       }
       const dayBookStatus = cleanXml.match(/<STATUS>\s*(-?\d+)\s*<\/STATUS>/i)?.[1];
       if (dayBookStatus !== "1") {
-        throw new Error("DayBook " + cursor + " to " + chunkEnd + ": Tally export status was " + (dayBookStatus ?? "missing") + ".");
+        throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": Tally export status was " + (dayBookStatus ?? "missing") + ".");
       }
-      validateDayBookDates(cleanXml, cursor, chunkEnd);
+      validateVoucherRegisterDates(cleanXml, cursor, chunkEnd);
       const saved = await save(
         root,
-        "daybook-" + String(index).padStart(4, "0") + "-" + cursor + "-" + chunkEnd + ".xml",
+        "voucher-register-" + String(index).padStart(4, "0") + "-" + cursor + "-" + chunkEnd + ".xml",
         cleanXml,
       );
       segments.push({
-        name: "DayBook",
+        name: "Voucher Register",
         kind: "data",
         fromDate: cursor,
         toDate: chunkEnd,
