@@ -26,6 +26,7 @@ import { downloadJson } from "@/lib/gstr1";
 import { inr, formatDate } from "@/lib/format";
 import { Download, RefreshCw, ExternalLink, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useCompany } from "@/lib/company-context";
 
 export const Route = createFileRoute("/_app/gst/returns/$id")({
   component: ReturnDetail,
@@ -33,12 +34,14 @@ export const Route = createFileRoute("/_app/gst/returns/$id")({
 
 function ReturnDetail() {
   const { id } = useParams({ from: "/_app/gst/returns/$id" });
+  const { activeCompany } = useCompany();
   const qc = useQueryClient();
 
   const rq = useQuery({
-    queryKey: ["gst_return", id],
+    queryKey: ["gst_return", activeCompany?.id, id],
+    enabled: !!activeCompany?.id && !!activeCompany?.gstin,
     queryFn: async () => {
-      const { data, error } = await sb.from("gst_returns").select("*").eq("id", id).single();
+      const { data, error } = await sb.from("gst_returns").select("*").eq("id", id).eq("gstin", activeCompany!.gstin!.trim().toUpperCase()).single();
       if (error) throw error;
       return data as GstReturn;
     },
@@ -66,7 +69,7 @@ function ReturnDetail() {
       }),
     onSuccess: () => {
       toast.success("Re-generated");
-      qc.invalidateQueries({ queryKey: ["gst_return", id] });
+      qc.invalidateQueries({ queryKey: ["gst_return", activeCompany?.id, id] });
       qc.invalidateQueries({ queryKey: ["gst_returns"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -179,7 +182,7 @@ function ReturnDetail() {
         {ret.return_type === "GSTR-9" && (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              Annual return aggregation — generate after filing 12 monthly GSTR-1 + GSTR-3B.
+              Annual GSTR-9 aggregation is not implemented. Do not file or rely on this record as an annual return; reconcile the full financial year and complete the supported annual workflow first.
             </CardContent>
           </Card>
         )}
