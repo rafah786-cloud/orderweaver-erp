@@ -74,7 +74,6 @@ function rowsFor(parsed: TallyParsed, includeMasters: boolean): StagingRow[] {
     voucher_guid: voucher.source_id,
     line_index: lineIndex,
     lifecycle_state: voucher.lifecycle_state,
-    source_payload: voucher.source_payload ?? voucher,
   })));
   add("inventory_line", inventoryRows, (x) => `inventory:${x.voucher_guid}:${x.line_index}`, (x) => x.voucher_guid, (x) => `voucher:${x.voucher_guid}`, () => null);
   add("ledger", parsed.ledgerEntries, (x) => `ledger-entry:${x.external_ref}`, (x) => x.external_ref, undefined, () => null);
