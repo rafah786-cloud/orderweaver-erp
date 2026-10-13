@@ -230,6 +230,27 @@ describe("Tally import — TallyPrime 4/5 format", () => {
   });
 });
 
+describe("Tally import — source preservation", () => {
+  it("selects one ledger alias family and ignores empty inventory list containers", () => {
+    const xml = `<ENVELOPE><BODY><DATA><TALLYMESSAGE>
+      <LEDGER NAME="Alias Customer"><PARENT>Sundry Debtors</PARENT></LEDGER>
+      <VOUCHER VCHTYPE="Journal" REMOTEID="alias-guid">
+        <DATE>20261001</DATE><GUID>alias-guid</GUID><ALTERID>456</ALTERID><VOUCHERNUMBER>J-1</VOUCHERNUMBER>
+        <ALLLEDGERENTRIES.LIST><LEDGERNAME>Alias Customer</LEDGERNAME><AMOUNT>-100</AMOUNT></ALLLEDGERENTRIES.LIST>
+        <ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><AMOUNT>100</AMOUNT></ALLLEDGERENTRIES.LIST>
+        <LEDGERENTRIES.LIST><LEDGERNAME>Alias Customer</LEDGERNAME><AMOUNT>-100</AMOUNT></LEDGERENTRIES.LIST>
+        <LEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><AMOUNT>100</AMOUNT></LEDGERENTRIES.LIST>
+        <ALLINVENTORYENTRIES.LIST></ALLINVENTORYENTRIES.LIST>
+      </VOUCHER>
+    </TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
+    const parsed = parseTallyMasters(xml, groups,);
+    expect(parsed.vouchers).toHaveLength(1);
+    expect(parsed.vouchers[0].entries).toHaveLength(2);
+    expect(parsed.vouchers[0].alter_id).toBe("456");
+    expect(parsed.inventoryLines).toHaveLength(0);
+  });
+});
+
 describe("Tally import — bill-wise references", () => {
   it("preserves opening, settlement type, dates, signs, and stable identities", () => {
     const xml = `<?xml version="1.0"?><ENVELOPE><BODY><DATA><TALLYMESSAGE>
