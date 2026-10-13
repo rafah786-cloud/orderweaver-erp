@@ -47,6 +47,18 @@ npm.cmd test
 npm.cmd run bundle -- ".\tally-voucher-register-april\ABOOD_TRADINGS\manifest.json" ".\ABOOD_TRADINGS-staging-bundle.json"
 ```
 
-Use the manifest for the full snapshot, not an isolated date segment. In the ERP, select the matching official target company, upload the generated JSON bundle in the migration staging area, review the source company and control totals, then stage and validate. Do not commit to live books until accounting and inventory reconciliation is approved. Keep the management-book company `ESTIMATE` separate from official books.
+Use the manifest for the full snapshot, not an isolated date segment. In the ERP, select the matching official target company, upload the generated JSON bundle in the migration staging area, review the source company and control totals, then stage and validate. Do not commit to live books until accounting and inventory reconciliation is approved. **Company separation is mandatory:** the two legal/official entities are `ABOOD TRADINGS` and `ABRAZ SLEEPING SOLUTIONS`. Their management books are separate datasets: `ESTIMATE` belongs to `ABOOD TRADINGS`; `ABZ - EST` belongs to `ABRAZ SLEEPING SOLUTIONS`. Never merge either management book into its official company or into the other entity. Treat each source company as its own migration run and target only its matching ERP company/book. Management-book staging remains blocked by the current ERP guard until an explicit, audited management-book migration path is implemented.
 
 The bundle builder refuses changed snapshot segments (SHA-256 mismatch), duplicate record-type/source-key pairs, or empty parsed bundles. Source company GUID is left null unless it is established by a verified source field; do not infer it from the company name.
+
+
+## Required four-way source separation
+
+| Tally source company | Relationship | Migration boundary |
+| --- | --- | --- |
+| `ABOOD TRADINGS` | Official books | Its own run; target only the ERP company for ABOOD TRADINGS |
+| `ESTIMATE` | Management books for ABOOD TRADINGS | Separate run and dataset; never merge into ABOOD TRADINGS official books |
+| `ABRAZ SLEEPING SOLUTIONS` | Official books | Its own run; target only the ERP company for ABRAZ SLEEPING SOLUTIONS |
+| `ABZ - EST` | Management books for ABRAZ SLEEPING SOLUTIONS | Separate run and dataset; never merge into ABRAZ SLEEPING SOLUTIONS official books |
+
+A shared business relationship does not make management books interchangeable with the official books. Do not infer target company identity from similar names. The current UI deliberately blocks migration while a management-book ERP company is active; do not bypass that guard. A separate, explicitly approved path is required if those management datasets are to be staged in ERP.
