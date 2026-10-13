@@ -39,7 +39,7 @@ type TallyStagingBundle = {
   sourceCompanyName: string;
   sourceCompanyGuid: string | null;
   sourceChecksum: string;
-  controlTotals: Record<string, unknown>;
+  controlTotals: Record<string, any>;
   rows: Array<any>;
 };
 
@@ -180,6 +180,8 @@ function TallyImportPage() {
     if (!f) return;
     setFileName(f.name);
     setResult(null);
+    setMigrationBundle(null);
+    setMigrationParsed(null);
     setParsing(true);
     try {
       if (f.name.toLowerCase().endsWith(".json")) {
@@ -259,7 +261,7 @@ function TallyImportPage() {
     try {
       let checksum: string;
       let rows: Array<any>;
-      let controlTotals: Record<string, unknown>;
+      let controlTotals: Record<string, any>;
       let sourceCompanyName = targetCompany.display_name;
       let sourceCompanyGuid: string | null = null;
       if (migrationBundle) {
@@ -726,7 +728,7 @@ function TallyImportPage() {
                 </span>
                 <input
                   type="file"
-                  accept=".xml,application/xml,text/xml"
+                  accept=".xml,.json,application/xml,text/xml,application/json"
                   className="hidden"
                   onChange={onFile}
                   disabled={parsing}
