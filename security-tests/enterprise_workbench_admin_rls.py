@@ -108,9 +108,9 @@ def main() -> None:
             """, caller=False)
 
             for table in TABLES:
-                sql(f"CREATE TABLE public.{table}(id uuid PRIMARY KEY, company_id uuid NOT NULL, notes text)")
-                sql(f"GRANT SELECT, INSERT, UPDATE, DELETE ON public.{table} TO authenticated, anon")
-                sql(f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY")
+                sql(f"CREATE TABLE public.{table}(id uuid PRIMARY KEY, company_id uuid NOT NULL, notes text)", caller=False)
+                sql(f"GRANT SELECT, INSERT, UPDATE, DELETE ON public.{table} TO authenticated, anon", caller=False)
+                sql(f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY", caller=False)
                 sql(f"""
                     CREATE POLICY company_scope_select ON public.{table}
                       FOR SELECT TO authenticated
@@ -133,7 +133,7 @@ def main() -> None:
                       WITH CHECK (company_id = public.current_company_id());
                     CREATE POLICY unrelated_permissive_delete ON public.{table}
                       FOR DELETE TO authenticated USING (company_id = public.current_company_id());
-                """)
+                """, caller=False)
                 sql(f"""
                     INSERT INTO public.{table}(id, company_id, notes)
                     VALUES ('{ROW_A}', '{COMPANY_A}', 'company-a'), ('{ROW_B}', '{COMPANY_B}', 'company-b')
