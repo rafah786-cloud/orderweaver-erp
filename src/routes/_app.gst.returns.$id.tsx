@@ -67,16 +67,33 @@ function ReturnDetail() {
     onSuccess: () => {
       toast.success("Re-generated");
       qc.invalidateQueries({ queryKey: ["gst_return", id] });
+      qc.invalidateQueries({ queryKey: ["gst_returns"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
 
-  if (rq.isLoading || !ret)
+  if (rq.isLoading)
     return (
       <PageBody>
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent>
+          <CardContent className="p-8 text-center text-muted-foreground">Loading GST return…</CardContent>
+        </Card>
+      </PageBody>
+    );
+
+  if (rq.isError || !ret)
+    return (
+      <PageBody>
+        <Card>
+          <CardContent className="space-y-3 p-8 text-center">
+            <p className="font-semibold">Unable to load this GST return</p>
+            <p className="text-sm text-muted-foreground">The record may not exist, or your active company may not have access to it. No filing status has been changed.</p>
+            <div className="flex justify-center gap-2">
+              <Button variant="outline" onClick={() => rq.refetch()}>Retry</Button>
+              <Button asChild><Link to="/gst/returns">Back to GST Returns</Link></Button>
+            </div>
+          </CardContent>
         </Card>
       </PageBody>
     );
