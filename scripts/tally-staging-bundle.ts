@@ -139,8 +139,8 @@ async function main() {
     const checksum = createHash("sha256")
       .update(manifest.company + "|" + masterHash + "|" + segment.sha256)
       .digest("hex");
-    const bundle = {
-      schemaVersion: 1,
+    const bundleContent = {
+      schemaVersion: 1 as const,
       sourceCompanyName: manifest.company,
       sourceCompanyGuid: parsed.sourceCompanies?.find((c) => c.guid)?.guid ?? null,
       sourceChecksum: checksum,
@@ -148,6 +148,8 @@ async function main() {
       controlTotals: controls(parsed, includeMasters),
       rows,
     };
+    const bundleChecksum = createHash("sha256").update(JSON.stringify(bundleContent)).digest("hex");
+    const bundle = { ...bundleContent, bundleChecksum };
     const name = "staging-bundle-" + String(i + 1).padStart(4, "0") + ".json";
     await writeFile(path.join(outDir, name), JSON.stringify(bundle), "utf8");
     console.log("[staging-bundle] " + name + ": " + rows.length + " rows; " + parsed.vouchers.length + " vouchers; masters=" + (includeMasters ? "included" : "not repeated"));
