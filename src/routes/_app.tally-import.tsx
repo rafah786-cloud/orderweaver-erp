@@ -414,6 +414,28 @@ function TallyImportPage() {
         bills: migrationParsed.bills.length,
       };
       }
+      // Hard-stop cross-company staging. Source company names are not inferred from the selected target.
+      const sourceKey = sourceCompanyName.trim().toUpperCase().replace(/\\s+/g, " ");
+      const targetCode = String((targetCompany as any).code ?? "").trim().toUpperCase();
+      const sourceTargetRules: Record<string, { targetCode: string; label: string }> = {
+        "ABOOD TRADINGS": { targetCode: "ABOOD", label: "official books of ABOOD TRADINGS" },
+        "ABRAZ SLEEPING SOLUTIONS": { targetCode: "ABRAZ", label: "official books of ABRAZ SLEEPING SOLUTIONS" },
+      };
+      if (sourceKey === "ESTIMATE" || sourceKey === "ABZ - EST") {
+        throw new Error(
+          sourceKey + " is a separate management-books dataset. It must not be staged into official books; its dedicated management migration path is not enabled yet.",
+        );
+      }
+      const sourceRule = sourceTargetRules[sourceKey];
+      if (!sourceRule) {
+        throw new Error("Unrecognized Tally source company '" + sourceCompanyName + "'. Refusing to stage until its company relationship is explicitly mapped.");
+      }
+      if (targetCode !== sourceRule.targetCode) {
+        throw new Error(
+          "Company mismatch: Tally source '" + sourceCompanyName + "' belongs only to ERP company code " +
+          sourceRule.targetCode + ", not selected target " + (targetCode || "(unknown)") + ".",
+        );
+      }
       if (rows.length === 0) throw new Error("No source records were parsed; refusing to create an empty migration run.");
 
       // Keep each server request bounded while preserving one atomic-to-validate
