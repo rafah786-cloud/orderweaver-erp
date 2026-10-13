@@ -85,7 +85,7 @@ test("audits a sales voucher using ledger postings plus nested inventory account
   assert.equal(row.inventoryAccountingAllocations, 1);
   assert.equal(row.ledgerNet, -4048);
   assert.equal(row.allocationNet, 4048);
-  assert.equal(row.combinedCandidateNet, 0);
+  assert.ok(row.combinedCandidateNet === 0, `expected zero candidate net, got ${row.combinedCandidateNet}`);
   assert.equal(row.status, "candidate-balanced");
 });
 
