@@ -39,7 +39,7 @@ const CHANNELS = [
   { key: "whatsapp", label: "WhatsApp", Icon: MessageSquare, implemented: true },
   { key: "sms", label: "SMS", Icon: Smartphone, implemented: false },
   { key: "email", label: "Email", Icon: Mail, implemented: false },
-  { key: "push", label: "Push", Icon: Bell, implemented: false },
+  { key: "push", label: "Push", Icon: Bell, implemented: true },
   { key: "in_app", label: "In-App", Icon: Bell, implemented: true },
 ] as const;
 
