@@ -96,6 +96,7 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
     inventoryLines: [], groups: [], ledgers: [], godowns: [], costCentres: [], bills: [], vouchers: [],
   };
   const hash = createHash("sha256");
+  hash.update(sourceCompany).update("\0").update(manifest.fromDate).update("\0").update(manifest.toDate).update("\0");
   let totalBytes = 0;
   const seenSegmentPaths = new Set<string>();
   for (const segment of manifest.segments) {
@@ -127,7 +128,7 @@ export async function buildStagingBundle(manifestPath: string, outputPath: strin
   addRows(rows, "opening_balance", parsed.vendors.filter(x => x.opening_balance !== 0) as any, x => `opening:vendor:${x.name}`);
   addRows(rows, "voucher", parsed.vouchers as any, x => `voucher:${x.source_id}`, x => x.source_id, undefined, x => x.alter_id ?? null);
   addRows(rows, "inventory_line", parsed.inventoryLines as any, x => `inventory:${x.voucher_guid}:${x.line_index}`, x => x.voucher_guid, x => `voucher:${x.voucher_guid}`);
-  addRows(rows, "ledger", parsed.ledgerEntries as any, x => `ledger-entry:${x.external_ref}`, x => x.external_ref);
+  addRows(rows, "ledger", parsed.ledgerEntries as any, (x, index) => `ledger-entry:${x.external_ref}:${index}`, x => x.external_ref);
   addRows(rows, "bill", parsed.bills as any, x => `bill:${x.external_ref}`, x => x.external_ref);
   const stockOpen = [...parsed.rawMaterials, ...parsed.finishedGoods].filter(x => x.opening_qty !== 0 || x.opening_rate !== 0);
   addRows(rows, "inventory_line", stockOpen as any, x => `stock-opening:${x.name}`, x => x.name);
