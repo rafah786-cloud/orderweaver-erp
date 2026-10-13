@@ -27,7 +27,13 @@ function amount(raw: string): number | null {
   const n = Number(s);
   return Number.isFinite(n) ? (parens ? -n : n) : null;
 }
-function rounded(value: number): number {\n  const n = Number(value.toFixed(4));\n  return Object.is(n, -0) || Math.abs(n) < 0.00005 ? 0 : n;\n}\nfunction sumEntryAmounts(entries: string[]) {
+function rounded(value: number): number {
+  const n = Number(value.toFixed(4));
+  // Normalize IEEE-754 negative zero so strict comparisons and JSON reports are stable.
+  if (Object.is(n, -0) || Math.abs(n) < 0.00005) return 0;
+  return n;
+}
+function sumEntryAmounts(entries: string[]) {
   // Read the entry's own AMOUNT only. Scanning all descendant AMOUNT tags
   // would double-count nested bill allocations or inventory accounting splits.
   const parsed = entries.map(entry => amount(tag(entry, "AMOUNT")));
