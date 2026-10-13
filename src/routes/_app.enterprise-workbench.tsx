@@ -202,7 +202,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
         } else if (field.type === "date" || field.type === "datetime") {
           if (Number.isNaN(Date.parse(raw))) throw new Error(field.label + " must be a valid date/time.");
           payload[field.key] = raw;
-        else if (field.type === "select" && (raw === "true" || raw === "false")) payload[field.key] = raw === "true";
+        } else if (field.type === "select" && (raw === "true" || raw === "false")) payload[field.key] = raw === "true";
         else if ((field.key === "planning_parameters" || field.key === "acceptance_rule" || field.key === "checklist" || field.key === "definition" || field.key === "details") && raw) {
           try { payload[field.key] = JSON.parse(raw); } catch { throw new Error(field.label + " must be valid JSON."); }
         } else payload[field.key] = raw;
