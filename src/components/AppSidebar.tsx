@@ -23,6 +23,7 @@ import {
   Landmark,
   Menu,
   PanelLeft,
+  Printer,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -54,6 +55,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/inventory": Boxes,
   "/banking": Landmark,
   "/ai": Sparkles,
+  "/print": Printer,
   "/vendor": Truck,
   "/settings": Settings,
 };
@@ -78,6 +80,7 @@ const LABELS: Record<string, string> = {
   "/inventory": "Inventory",
   "/banking": "Banking",
   "/ai": "AI Intelligence",
+  "/print": "Print & Labels",
   "/vendor": "Vendor Portal",
   "/settings": "Settings",
 };
@@ -92,6 +95,7 @@ const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
+  { label: "Documents & Tools", prefixes: ["/print"] },
   { label: "Sales & Customers", prefixes: ["/parties", "/sales-orders", "/invoices"] },
   { label: "Purchasing & Inventory", prefixes: ["/purchases", "/inventory", "/boq"] },
   { label: "Production", prefixes: ["/production"] },
