@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, RefreshCw, Save, Trash2, Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, Database, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { canSetWorkbenchStatus, getWorkbenchSearchColumns, isGovernedWorkbenchStatus, normalizeWorkbenchSearch, validateQualityInspection } from "@/lib/enterprise-workbench-guards";
+import { validateCapaActionCompletion } from "@/lib/capa-action-guards";
 
 export const Route = createFileRoute("/_app/enterprise-workbench")({
   head: () => ({ meta: [
@@ -72,6 +73,7 @@ const MODULES: ModuleConfig[] = [
       { key: "quality-plans", table:"quality_plans", title:"Inspection Plans", description:"Controlled inspection plans and acceptance rules.", fields:[F("code","Code","text",{required:true}),F("name","Name","text",{required:true}),F("model_id","Product model ID"),F("revision","Revision","text",{defaultValue:"1"}),F("status","Status","select",{options:["draft","approved","obsolete"],defaultValue:"draft"}),F("sampling_method","Sampling","select",{options:["100_percent","aql","skip_lot","first_article"],defaultValue:"100_percent"}),F("acceptance_rule","Acceptance rule (JSON)","textarea",{defaultValue:"{}"})], columns:["code","name","revision","status","sampling_method"], statusField:"status", statusOptions:["draft","approved","obsolete"], orderBy:"code" },
       { key:"quality-inspections",table:"quality_inspections",title:"Inspections",description:"In-process, incoming and final inspection records.",fields:[F("inspection_number","Inspection number","text",{required:true}),F("quality_plan_id","Quality plan ID"),F("production_order_id","Production order ID"),F("purchase_bill_id","Purchase bill ID"),F("stage","Stage","text",{required:true,placeholder:"incoming / in-process / final"}),F("quantity_inspected","Inspected qty","number",{defaultValue:"0"}),F("quantity_accepted","Accepted qty","number",{defaultValue:"0"}),F("quantity_rejected","Rejected qty","number",{defaultValue:"0"}),F("status","Status","select",{options:["open","passed","failed","conditional","cancelled"],defaultValue:"open"}),F("notes","Notes","textarea")],columns:["inspection_number","stage","quantity_inspected","quantity_accepted","quantity_rejected","status"],statusField:"status",statusOptions:["open","passed","failed","conditional","cancelled"],orderBy:"inspected_at"},
       { key:"quality-nc",table:"quality_nonconformances",title:"Nonconformances / CAPA",description:"Defect containment, disposition and root-cause control.",fields:[F("nc_number","NC number","text",{required:true}),F("inspection_id","Inspection ID"),F("production_order_id","Production order ID"),F("supplier_id","Supplier ID"),F("severity","Severity","select",{options:["minor","major","critical"],defaultValue:"minor"}),F("defect_code","Defect code","text",{required:true}),F("description","Description","textarea",{required:true}),F("disposition","Disposition","select",{options:["use_as_is","rework","scrap","return_to_supplier","hold","concession"]}),F("status","Status","select",{options:["open","investigating","dispositioned","closed"],defaultValue:"open"}),F("root_cause","Root cause","textarea"),F("containment_action","Containment","textarea")],columns:["nc_number","severity","defect_code","disposition","status","created_at"],statusField:"status",statusOptions:["open","investigating","dispositioned","closed"],orderBy:"created_at"},
+      { key:"quality-capa-actions",table:"quality_capa_actions",title:"CAPA Actions",description:"Containment, corrective/preventive actions and effectiveness verification. Completion requires an effectiveness result.",fields:[F("nc_id","Nonconformance ID","text",{required:true}),F("action_type","Action type","select",{options:["containment","corrective","preventive","verification"],defaultValue:"corrective"}),F("action_text","Action","textarea",{required:true}),F("owner_id","Owner employee ID"),F("due_date","Due date","date"),F("status","Status","select",{options:["open","in_progress","done","overdue","cancelled"],defaultValue:"open"}),F("effectiveness_result","Effectiveness result","textarea")],columns:["nc_id","action_type","action_text","owner_id","due_date","status","completed_at"],statusField:"status",statusOptions:["open","in_progress","done","overdue","cancelled"],orderBy:"due_date"},
     ],
   },
   {
@@ -269,12 +271,21 @@ function EntityPanel({ config, companyId, canManageQuality }: { config: EntityCo
   });
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, status, currentStatus }: { id: string; status: string; currentStatus: string }) => {
+    mutationFn: async ({ id, status, currentStatus, effectivenessResult }: { id: string; status: string; currentStatus: string; effectivenessResult?: unknown }) => {
       if (!config.statusField) return;
-      if (!canSetWorkbenchStatus(status, currentStatus)) {
+      const capaCompletion = config.key === "quality-capa-actions" && status === "done";
+      if (capaCompletion) {
+        const validationError = validateCapaActionCompletion(effectivenessResult);
+        if (validationError) throw new Error(validationError);
+      } else if (!canSetWorkbenchStatus(status, currentStatus)) {
         throw new Error("Use the dedicated workflow to approve, release, post, dispatch or complete this record.");
       }
-      const { error } = await db.from(config.table).update({ [config.statusField]: status }).eq("id", id).eq("company_id", companyId);
+      const payload: Record<string, unknown> = { [config.statusField]: status };
+      if (capaCompletion) {
+        payload.effectiveness_result = String(effectivenessResult).trim();
+        payload.completed_at = new Date().toISOString();
+      }
+      const { error } = await db.from(config.table).update(payload).eq("id", id).eq("company_id", companyId);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Working status updated."); setPageIndex(0); qc.invalidateQueries({ queryKey: ["enterprise-workbench", companyId, config.table] }); },
@@ -326,9 +337,9 @@ function EntityPanel({ config, companyId, canManageQuality }: { config: EntityCo
             const protectedRow = isGovernedWorkbenchStatus(currentStatus);
             return <tr key={String(row.id)} className="border-b last:border-0"><>{config.columns.map(c=><td key={c} className="max-w-[260px] truncate px-3 py-2">{formatCell(row[c])}</td>)}</><td className="whitespace-nowrap px-3 py-2 text-right"><div className="flex justify-end gap-1">
               <Button size="sm" variant="ghost" disabled={effectiveReadOnly || protectedRow} title={protectedRow ? "Use the dedicated workflow for governed records." : "Edit record"} onClick={()=>openEdit(row)}>Edit</Button>
-              {!effectiveReadOnly && config.key!=="quality-inspections" && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus})} disabled={protectedRow || statusMutation.isPending}>
+              {!effectiveReadOnly && config.key!=="quality-inspections" && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus,effectivenessResult:row.effectiveness_result})} disabled={protectedRow || statusMutation.isPending}>
                 <SelectTrigger className="h-8 w-[130px]" aria-label={`Change status for ${config.title} record`}><SelectValue placeholder="Status"/></SelectTrigger>
-                <SelectContent>{config.statusOptions.map(status=><SelectItem key={status} value={status} disabled={!canSetWorkbenchStatus(status,currentStatus)}>{status.replaceAll("_"," ")}</SelectItem>)}</SelectContent>
+                <SelectContent>{config.statusOptions.map(status=><SelectItem key={status} value={status} disabled={!(config.key === "quality-capa-actions" && status === "done" ? !validateCapaActionCompletion(row.effectiveness_result) : canSetWorkbenchStatus(status,currentStatus))}>{status.replaceAll("_"," ")}</SelectItem>)}</SelectContent>
               </Select>}
               <Button size="icon" variant="ghost" disabled={effectiveReadOnly || protectedRow || remove.isPending} title={protectedRow ? "Governed records cannot be deleted here." : "Delete record"} aria-label={`Delete ${config.title} record`} onClick={()=>{if(confirm("Delete this record?")) remove.mutate(String(row.id));}}><Trash2 className="h-3.5 w-3.5"/></Button>
             </div></td></tr>;
