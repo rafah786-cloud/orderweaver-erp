@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, ClipboardList, Boxes, PackageCheck } from "lucide-react";
 import { explodeMultiLevelMaterialRequirements, type MrpDemandLine, type MrpMultiLevelBomLine } from "@/lib/mrp-explosion";
 import { selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "@/lib/mrp-bom-source";
-import { buildVerifiedMrpMaterialBalances } from "@/lib/mrp-stock-balance";
+import { MRP_NETTING_BLOCKER, unnettedMaterialBalances } from "@/lib/mrp-availability";
 
 export const Route = createFileRoute("/_app/mrp")({
   head: () => ({ meta: [
@@ -27,13 +27,10 @@ type ProductionOrder = { id: string; production_number: string; status: string; 
 type SalesItem = { sales_order_id: string; model_id: string | null; product_name: string; quantity: number };
 type ProductModel = { id: string; name: string };
 type RawMaterial = { id: string; name: string; unit: string };
-type StockItem = { id: string; name: string; unit: string; mapped_raw_material_id: string | null };
+type StockItem = { id: string; name: string; unit: string };
 type BomRevision = BomRevisionCandidate;
 type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null; stock_item_id: string | null; component_model_id: string | null; quantity_per_unit: number; scrap_pct: number };
 type LegacyBomLine = { model_id: string; raw_material_id: string; quantity_per_unit: number };
-type StockMovementRow = { stock_item_id: string; movement_type: string; quantity: number; posting_id: string | null; reverses_posting_id: string | null };
-type StockReservationRow = { stock_item_id: string; qty: number; status: string };
-type StockPostingRow = { id: string; reversed_by: string | null };
 
 type PageResponse = { data: unknown[] | null; error: { message: string } | null };
 async function readAllRows<T>(
@@ -223,83 +220,12 @@ function MrpPage() {
         }
         demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity });
       }
-      const requiredRawMaterialIds = new Set(
-        bom.filter((line) => line.componentType === "raw-material").map((line) => line.componentId.slice(4)),
-      );
-      const directlyRequiredStockItemIds = new Set(
-        bom.filter((line) => line.componentType === "stock-item").map((line) => line.componentId.slice(6)),
-      );
-      const requiredRawMaterials = rawMaterials.filter((item) => requiredRawMaterialIds.has(item.id));
-      const requiredStockItems = stockItems.filter((item) =>
-        directlyRequiredStockItemIds.has(item.id) ||
-        (item.mapped_raw_material_id !== null && requiredRawMaterialIds.has(item.mapped_raw_material_id))
-      );
-      const requiredStockItemIds = [...new Set(requiredStockItems.map((item) => item.id))];
-
-      // Every query is company-scoped and paginated. Do not rely on the stock_summary
-      // view here: it sums movements without applying the issue sign consistently.
-      const movementPages = await Promise.all(chunksOf(requiredStockItemIds, 80).map((ids) =>
-        readAllRows<StockMovementRow>((from, to) =>
-          supabase.from("stock_movements")
-            .select("stock_item_id, movement_type, quantity, posting_id, reverses_posting_id")
-            .eq("company_id", activeCompany.id)
-            .in("stock_item_id", ids)
-            .range(from, to)
-        )
-      ));
-      const reservationPages = await Promise.all(chunksOf(requiredStockItemIds, 80).map((ids) =>
-        readAllRows<StockReservationRow>((from, to) =>
-          supabase.from("stock_reservations")
-            .select("stock_item_id, qty, status")
-            .eq("company_id", activeCompany.id)
-            .eq("status", "open")
-            .in("stock_item_id", ids)
-            .range(from, to)
-        )
-      ));
-      const reversedPostingRows = requiredStockItemIds.length
-        ? await readAllRows<StockPostingRow>((from, to) =>
-            supabase.from("stock_postings")
-              .select("id, reversed_by")
-              .eq("company_id", activeCompany.id)
-              .not("reversed_by", "is", null)
-              .range(from, to)
-          )
-        : [];
-      const reversedPostingIds = new Set<string>();
-      for (const posting of reversedPostingRows) {
-        reversedPostingIds.add(posting.id);
-        if (posting.reversed_by) reversedPostingIds.add(posting.reversed_by);
-      }
-
-      const verifiedBalances = buildVerifiedMrpMaterialBalances({
-        rawMaterials: requiredRawMaterials,
-        stockItems: requiredStockItems.map((item) => ({
-          id: item.id,
-          name: item.name,
-          unit: item.unit,
-          mappedRawMaterialId: item.mapped_raw_material_id,
-        })),
-        movements: movementPages.flat().map((row) => ({
-          stockItemId: row.stock_item_id,
-          movementType: row.movement_type,
-          quantity: Number(row.quantity),
-          postingId: row.posting_id,
-          reversesPostingId: row.reverses_posting_id,
-        })),
-        reservations: reservationPages.flat().map((row) => ({
-          stockItemId: row.stock_item_id,
-          quantity: Number(row.qty),
-          status: row.status,
-        })),
-        reversedPostingIds,
-      });
-      const result = explodeMultiLevelMaterialRequirements(demand, bom, verifiedBalances.balances);
-      result.invalidMaterialBalances = [...new Set([
-        ...result.invalidMaterialBalances,
-        ...verifiedBalances.invalidMaterialBalances,
-      ])];
-      result.notes.push(...verifiedBalances.notes);
+      // The production-readiness contract explicitly blocks live MRP netting:
+      // current reservation lifecycle, reversal-aware as-of balances and open supply
+      // are not yet proven for this route. Keep availability/shortage null.
+      const balances = unnettedMaterialBalances(rawMaterials, stockItems);
+      const result = explodeMultiLevelMaterialRequirements(demand, bom, balances);
+      result.notes.push(MRP_NETTING_BLOCKER);
       if (unmappedDemandNames.length) {
         result.status = "insufficient-data";
         result.missingBomModels = [...new Set([...result.missingBomModels, ...unmappedDemandNames.map((name) => `Unmapped sales item: ${name}`)])].sort();
