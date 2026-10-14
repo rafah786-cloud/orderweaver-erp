@@ -191,7 +191,7 @@ describe("multi-level MRP explosion", () => {
       [multiBalance()],
     );
     expect(result.status).toBe("insufficient-data");
-    expect(result.missingBomModels).toContain("missing-model");
+    expect(result.missingBomModels).toContain("Missing Model");
     expect(result.requirements).toEqual([]);
   });
 
