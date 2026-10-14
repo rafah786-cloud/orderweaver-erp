@@ -4,4 +4,4 @@
  * Update this checkpoint with the smoke workflow when intentionally verifying
  * a new published release.
  */
-export const APP_RELEASE_CHECKPOINT = "mm-erp-release-check-2026-10-14-r13";
+export const APP_RELEASE_CHECKPOINT = "mm-erp-release-check-2026-10-14-r14";
