@@ -64,24 +64,26 @@ function MrpPage() {
     enabled: canView && !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
       if (!activeCompany?.id) throw new Error("Select an active company to calculate requirements.");
-      const { data: ordersData, error: ordersError } = await supabase
-        .from("production_orders")
-        .select("id, production_number, status, sales_order_id")
-        .eq("company_id", activeCompany.id)
-        .in("status", ["received", "in_production", "qc"])
-        .order("created_at", { ascending: true });
-      if (ordersError) throw ordersError;
-      const orders = (ordersData ?? []) as ProductionOrder[];
+      const orders = await readAllRows<ProductionOrder>((from, to) =>
+        supabase.from("production_orders")
+          .select("id, production_number, status, sales_order_id")
+          .eq("company_id", activeCompany.id)
+          .in("status", ["received", "in_production", "qc"])
+          .order("created_at", { ascending: true })
+          .range(from, to)
+      );
       const salesOrderIds = [...new Set(orders.map((o) => o.sales_order_id).filter(Boolean))];
       if (!salesOrderIds.length) return { orders, result: explodeMaterialRequirements([], [], []) };
 
-      const { data: itemData, error: itemError } = await supabase
-        .from("sales_order_items")
-        .select("sales_order_id, model_id, product_name, quantity")
-        .eq("company_id", activeCompany.id)
-        .in("sales_order_id", salesOrderIds);
-      if (itemError) throw itemError;
-      const items = (itemData ?? []) as SalesItem[];
+      const items = (await Promise.all(chunksOf(salesOrderIds, 100).map((ids) =>
+        readAllRows<SalesItem>((from, to) =>
+          supabase.from("sales_order_items")
+            .select("sales_order_id, model_id, product_name, quantity")
+            .eq("company_id", activeCompany.id)
+            .in("sales_order_id", ids)
+            .range(from, to)
+        )
+      ))).flat();
       const modelIds = [...new Set(items.map((i) => i.model_id).filter((id): id is string => Boolean(id)))];
       const [modelsResponse, legacyBomResponse, revisionsResponse, materialsResponse, stockItemsResponse, revisionLinesResponse] = await Promise.all([
         supabase.from("product_models").select("id, name").eq("company_id", activeCompany.id),
