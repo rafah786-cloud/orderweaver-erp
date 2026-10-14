@@ -50,8 +50,13 @@ export function defaultRouteForRoles(roles: AppRole[]): string {
 
 /** Match a route and its nested routes without accepting similarly-prefixed paths. */
 export function routePathMatches(pathname: string, prefix: string): boolean {
-  const path = pathname.replace(/\\/+$/, "") || "/";
-  const base = prefix.replace(/\\/+$/, "") || "/";
+  const trimTrailingSlashes = (value: string) => {
+    let trimmed = value;
+    while (trimmed.length > 1 && trimmed.endsWith("/")) trimmed = trimmed.slice(0, -1);
+    return trimmed || "/";
+  };
+  const path = trimTrailingSlashes(pathname);
+  const base = trimTrailingSlashes(prefix);
   return path === base || (base !== "/" && path.startsWith(`${base}/`));
 }
 
