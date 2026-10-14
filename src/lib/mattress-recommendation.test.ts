@@ -122,6 +122,7 @@ describe("mattress budget recommendations", () => {
 
   it("selects the current released BOM and ignores expired or future revisions", async () => {
     const future = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
     const expired = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
     const result = await mattressBudgetRecommendations(
       fakeDb({
