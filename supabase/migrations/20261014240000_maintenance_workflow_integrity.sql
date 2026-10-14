@@ -43,7 +43,7 @@ begin
       add constraint maintenance_assets_company_work_center_fk
       foreign key (company_id, work_center_id)
       references public.work_centers(company_id, id)
-      on delete set null not valid;
+      on delete restrict not valid;
   end if;
 
   if not exists (select 1 from pg_constraint where conname = 'maintenance_meter_readings_company_asset_fk') then
