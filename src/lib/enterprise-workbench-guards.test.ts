@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateWorkbenchDateRanges, validateWorkbenchFieldValue } from "./enterprise-workbench-guards";
 import {
   canSetWorkbenchStatus,
   getWorkbenchSearchColumns,
@@ -79,5 +80,22 @@ describe("quality inspection result validation", () => {
 
   it("does not apply completion rules to an open inspection", () => {
     expect(validateQualityInspection({ status: "open", quantity_inspected: 0, quantity_accepted: 0, quantity_rejected: 0 })).toBeNull();
+  });
+});
+
+
+describe("enterprise workbench field validation", () => {
+  it("rejects blank required fields, non-finite numbers and out-of-range numbers", () => {
+    expect(validateWorkbenchFieldValue({ label: "Code", required: true }, "   ")).toMatch(/required/);
+    expect(validateWorkbenchFieldValue({ label: "Capacity", type: "number" }, "Infinity")).toMatch(/valid number/);
+    expect(validateWorkbenchFieldValue({ label: "Efficiency", type: "number", min: 0, max: 100 }, "-1")).toMatch(/at least 0/);
+    expect(validateWorkbenchFieldValue({ label: "Efficiency", type: "number", min: 0, max: 100 }, "101")).toMatch(/no more than 100/);
+    expect(validateWorkbenchFieldValue({ label: "Efficiency", type: "number", min: 0, max: 100 }, "100")).toBeNull();
+  });
+
+  it("validates dates and rejects inverted planning/effective ranges", () => {
+    expect(validateWorkbenchFieldValue({ label: "Start", type: "date" }, "not-a-date")).toMatch(/valid date\/time/);
+    expect(validateWorkbenchDateRanges({ horizon_start: "2026-10-20", horizon_end: "2026-10-01" })).toMatch(/cannot be after/);
+    expect(validateWorkbenchDateRanges({ effective_from: "2026-10-01", effective_to: "2026-10-20" })).toBeNull();
   });
 });

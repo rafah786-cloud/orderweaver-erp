@@ -100,3 +100,48 @@ export function validateQualityInspection(values: QualityInspectionValues): stri
   }
   return null;
 }
+
+
+export interface WorkbenchFieldRule {
+  label: string;
+  type?: string;
+  required?: boolean;
+  min?: number;
+  max?: number;
+}
+
+/** Validate generic workbench input before it reaches Supabase. */
+export function validateWorkbenchFieldValue(field: WorkbenchFieldRule, raw: string): string | null {
+  const value = raw.trim();
+  if (!value && field.required) return field.label + " is required.";
+  if (!value) return null;
+
+  if (field.type === "number") {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return field.label + " must be a valid number.";
+    if (field.min !== undefined && numericValue < field.min) return field.label + " must be at least " + field.min + ".";
+    if (field.max !== undefined && numericValue > field.max) return field.label + " must be no more than " + field.max + ".";
+  }
+  if ((field.type === "date" || field.type === "datetime") && Number.isNaN(Date.parse(value))) {
+    return field.label + " must be a valid date/time.";
+  }
+  return null;
+}
+
+/** Reject inverted planning and effective-date ranges before saving. */
+export function validateWorkbenchDateRanges(values: Readonly<Record<string, string>>): string | null {
+  for (const [startKey, endKey, startLabel, endLabel] of [
+    ["horizon_start", "horizon_end", "Planning start", "Planning end"],
+    ["effective_from", "effective_to", "Effective from", "Effective to"],
+  ] as const) {
+    const start = values[startKey]?.trim();
+    const end = values[endKey]?.trim();
+    if (!start || !end) continue;
+    const startTime = Date.parse(start);
+    const endTime = Date.parse(end);
+    if (Number.isFinite(startTime) && Number.isFinite(endTime) && startTime > endTime) {
+      return startLabel + " cannot be after " + endLabel.toLowerCase() + ".";
+    }
+  }
+  return null;
+}
