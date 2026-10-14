@@ -279,10 +279,12 @@ export function explodeMultiLevelMaterialRequirements(
   }
 
   const byParent = new Map<string, MrpMultiLevelBomLine[]>();
+  const modelNameById = new Map(demand.map((row) => [row.productModelId, row.productModelName]));
   for (const line of bom) {
     const rows = byParent.get(line.parentModelId) ?? [];
     rows.push(line);
     byParent.set(line.parentModelId, rows);
+    if (line.componentType === "subassembly") modelNameById.set(line.componentId, line.componentName);
   }
 
   const masterById = new Map<string, MrpMaterialBalance>();
@@ -326,7 +328,7 @@ export function explodeMultiLevelMaterialRequirements(
 
     const lines = byParent.get(modelId) ?? [];
     if (!lines.length) {
-      const label = demand.find((row) => row.productModelId === modelId)?.productModelName ?? modelId;
+      const label = modelNameById.get(modelId) ?? modelId;
       missingBomModels.add(label);
       return;
     }
