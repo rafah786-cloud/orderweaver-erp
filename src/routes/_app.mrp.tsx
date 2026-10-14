@@ -154,7 +154,7 @@ function MrpPage() {
 
       // Fall back to the legacy model BOQ only when no governed BOM revision exists for that model.
       // If revisions exist but none is released/effective, fail closed instead of planning from stale legacy data.
-      const modelsWithAnyRevision = new Set(revisions.map((revision) => revision.model_id));
+
       const legacyBomRows = (legacyBomResponse.data ?? []).filter((line) => !modelsWithAnyRevision.has(line.model_id));
       for (const line of legacyBomRows) {
         const material = materialById.get(line.raw_material_id);
