@@ -61,13 +61,13 @@ export function buildVerifiedMrpMaterialBalances(input: MrpVerifiedBalanceInput)
     reservationsByItem.set(reservation.stockItemId, rows);
   }
 
-  const stockMasterById = new Map<string, MrpStockItemMaster>();
+  const stockItemCounts = new Map<string, number>();
+  for (const item of input.stockItems) stockItemCounts.set(item.id, (stockItemCounts.get(item.id) ?? 0) + 1);
+  const duplicateStockItemIds = new Set([...stockItemCounts].filter(([, count]) => count > 1).map(([id]) => id));
   for (const item of input.stockItems) {
-    if (!item.id || !item.name.trim() || !item.unit.trim() || stockMasterById.has(item.id)) {
+    if (!item.id || !item.name.trim() || !item.unit.trim() || duplicateStockItemIds.has(item.id)) {
       invalid.add(item.name || item.id || "Unknown stock item");
-      continue;
     }
-    stockMasterById.set(item.id, item);
   }
 
   const balanceByStockItem = new Map<string, number | null>();
@@ -76,7 +76,9 @@ export function buildVerifiedMrpMaterialBalances(input: MrpVerifiedBalanceInput)
     const reservations = reservationsByItem.get(item.id) ?? [];
     let invalidReason: string | null = null;
 
-    if (!rows.length) invalidReason = "no verified movement history";
+    if (duplicateStockItemIds.has(item.id)) invalidReason = "conflicting duplicate stock-item master";
+    if (!invalidReason && (!item.id || !item.name.trim() || !item.unit.trim())) invalidReason = "invalid stock-item master";
+    if (!invalidReason && !rows.length) invalidReason = "no verified movement history";
     let onHand = 0;
     if (!invalidReason) {
       for (const row of rows) {
