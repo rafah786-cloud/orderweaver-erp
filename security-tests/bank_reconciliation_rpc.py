@@ -101,7 +101,7 @@ def main() -> None:
                 GRANT SELECT, UPDATE ON public.bank_transactions TO authenticated;
             """, caller=False)
 
-            run(["psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-f", str(migration)], env=env, text=True, capture_output=True, check=True)
+            run(["psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-f", str(migration)])
 
             sql(f"""
                 INSERT INTO public.bank_accounts(id, company_id) VALUES
