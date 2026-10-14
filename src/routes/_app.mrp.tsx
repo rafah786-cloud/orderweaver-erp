@@ -14,9 +14,9 @@ import { buildVerifiedMrpMaterialBalances } from "@/lib/mrp-stock-balance";
 export const Route = createFileRoute("/_app/mrp")({
   head: () => ({ meta: [
     { title: "Material Requirements | Mattress Maestro ERP" },
-    { name: "description", content: "Read-only production material requirements preview." },
+    { name: "description", content: "Read-only multi-level material requirements preview with conservative ledger-backed availability." },
     { property: "og:title", content: "Material Requirements | Mattress Maestro ERP" },
-    { property: "og:description", content: "Read-only production material requirements preview." },
+    { property: "og:description", content: "Read-only multi-level material requirements preview with conservative ledger-backed availability." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
