@@ -46,11 +46,6 @@ async function readAllRows<T>(
     if (page.length < pageSize) return rows;
   }
 }
-function chunksOf<T>(values: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < values.length; i += size) chunks.push(values.slice(i, i + size));
-  return chunks;
-}
 
 function MrpPage() {
   const { hasAnyRole } = useAuth();
@@ -100,7 +95,7 @@ function MrpPage() {
           supabase.from("raw_materials").select("id, name, unit").eq("company_id", activeCompany.id).range(from, to)
         ),
         readAllRows<StockItem>((from, to) =>
-          supabase.from("stock_items").select("id, name, unit, mapped_raw_material_id")
+          supabase.from("stock_items").select("id, name, unit")
             .eq("company_id", activeCompany.id).range(from, to)
         ),
         readAllRows<BomRevisionLine>((from, to) =>
