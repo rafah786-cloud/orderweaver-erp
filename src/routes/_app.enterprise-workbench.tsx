@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, RefreshCw, Save, Trash2, Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, Database, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { canSetWorkbenchStatus, getWorkbenchSearchColumns, isGovernedWorkbenchStatus, normalizeWorkbenchSearch } from "@/lib/enterprise-workbench-guards";
+import { canSetWorkbenchStatus, getWorkbenchSearchColumns, isGovernedWorkbenchStatus, normalizeWorkbenchSearch, validateQualityInspection } from "@/lib/enterprise-workbench-guards";
 
 export const Route = createFileRoute("/_app/enterprise-workbench")({
   head: () => ({ meta: [
@@ -223,10 +223,15 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
           try { payload[field.key] = JSON.parse(raw); } catch { throw new Error(field.label + " must be valid JSON."); }
         } else payload[field.key] = raw;
       }
+      const qualityInspectionError = config.key === "quality-inspections" ? validateQualityInspection(payload) : null;
+      if (qualityInspectionError) throw new Error(qualityInspectionError);
       if (config.statusField && Object.prototype.hasOwnProperty.call(payload, config.statusField)) {
         const nextStatus = payload[config.statusField];
         const currentStatus = editing?.[config.statusField];
-        if (!canSetWorkbenchStatus(nextStatus, currentStatus)) {
+        const isValidatedQualityResult = config.key === "quality-inspections"
+          && ["passed", "failed", "conditional"].includes(String(nextStatus).toLowerCase())
+          && qualityInspectionError === null;
+        if (!canSetWorkbenchStatus(nextStatus, currentStatus) && !isValidatedQualityResult) {
           throw new Error("This status requires its dedicated approval, posting, dispatch or completion workflow. The generic workbench cannot set it.");
         }
       }
@@ -284,7 +289,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
       <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{config.title}</CardTitle><p className="mt-1 text-xs text-muted-foreground">{config.description}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>refetch()} disabled={isFetching}><RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} />Refresh</Button>{!config.readOnly && <Button size="sm" onClick={openNew}><Plus className="h-3.5 w-3.5 mr-1" />New</Button>}</div></div></CardHeader>
       <CardContent>
         {config.readOnly && <div className="mb-3 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">{config.readOnlyReason ?? "This register is read-only until its workflow is implemented."}</div>}
-        {open && <div className="mb-5 rounded-lg border bg-muted/20 p-4"><div className="mb-3 flex items-center justify-between"><div className="text-sm font-semibold">{editing ? "Edit record" : "Create record"}</div><Button size="sm" variant="ghost" onClick={()=>setOpen(false)}>Close</Button></div><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{config.fields.map(field=><FieldEditor key={field.key} field={field} value={form[field.key] ?? ""} onChange={v=>setForm(s=>({...s,[field.key]:v}))} restrictGovernedOptions={field.key===config.statusField} currentStatus={editing && config.statusField ? String(editing[config.statusField] ?? "") : undefined}/>)}</div><div className="mt-4 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1"/>{save.isPending ? "Saving…" : "Save"}</Button></div></div>}
+        {open && <div className="mb-5 rounded-lg border bg-muted/20 p-4"><div className="mb-3 flex items-center justify-between"><div className="text-sm font-semibold">{editing ? "Edit record" : "Create record"}</div><Button size="sm" variant="ghost" onClick={()=>setOpen(false)}>Close</Button></div><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{config.fields.map(field=><FieldEditor key={field.key} field={field} value={form[field.key] ?? ""} onChange={v=>setForm(s=>({...s,[field.key]:v}))} restrictGovernedOptions={field.key===config.statusField && config.key!=="quality-inspections"} currentStatus={editing && config.statusField ? String(editing[config.statusField] ?? "") : undefined}/>)}</div><div className="mt-4 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1"/>{save.isPending ? "Saving…" : "Save"}</Button></div></div>}
         <div className="mb-3 flex flex-col gap-2 md:flex-row">
           <div className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -310,7 +315,7 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
             const protectedRow = isGovernedWorkbenchStatus(currentStatus);
             return <tr key={String(row.id)} className="border-b last:border-0"><>{config.columns.map(c=><td key={c} className="max-w-[260px] truncate px-3 py-2">{formatCell(row[c])}</td>)}</><td className="whitespace-nowrap px-3 py-2 text-right"><div className="flex justify-end gap-1">
               <Button size="sm" variant="ghost" disabled={config.readOnly || protectedRow} title={protectedRow ? "Use the dedicated workflow for governed records." : "Edit record"} onClick={()=>openEdit(row)}>Edit</Button>
-              {!config.readOnly && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus})} disabled={protectedRow || statusMutation.isPending}>
+              {!config.readOnly && config.key!=="quality-inspections" && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus})} disabled={protectedRow || statusMutation.isPending}>
                 <SelectTrigger className="h-8 w-[130px]" aria-label={`Change status for ${config.title} record`}><SelectValue placeholder="Status"/></SelectTrigger>
                 <SelectContent>{config.statusOptions.map(status=><SelectItem key={status} value={status} disabled={!canSetWorkbenchStatus(status,currentStatus)}>{status.replaceAll("_"," ")}</SelectItem>)}</SelectContent>
               </Select>}
