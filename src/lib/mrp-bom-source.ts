@@ -49,3 +49,18 @@ export function selectEffectiveReleasedBomRevisions(
   }
   return { selectedByModel, missingEffectiveRevisionModelIds };
 }
+
+
+/**
+ * Align scrap allowance with the existing mattress recommendation engine:
+ * base quantity × (1 + max(0, scrap_pct) / 100).
+ */
+export function grossQuantityPerFinishedUnit(quantityPerUnit: number, scrapPct: number): number {
+  if (!Number.isFinite(quantityPerUnit) || quantityPerUnit <= 0) {
+    throw new Error("BOM quantity per unit must be positive and finite.");
+  }
+  if (!Number.isFinite(scrapPct)) {
+    throw new Error("BOM scrap percentage must be finite.");
+  }
+  return quantityPerUnit * (1 + Math.max(0, scrapPct) / 100);
+}
