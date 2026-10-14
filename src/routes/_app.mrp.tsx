@@ -185,7 +185,7 @@ function MrpPage() {
       if (scrapFactorNotes.length) {
         result.status = "insufficient-data";
         result.notes.push("Scrap factors exist on released BOM revisions but are not applied by this preview.");
-        result.missingMaterialMasters = [...new Set([...result.missingMaterialMasters, ...scrapFactorNotes])].sort();
+        
       }
       return { orders, result };
     },
@@ -195,11 +195,11 @@ function MrpPage() {
 
   const result = query.data?.result;
   return <>
-    <PageHeader title="Material Requirements Planning" description="Read-only gross requirements using legacy model BOQs for active production orders." actions={<Button variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching || companyLoading} className="min-h-11"><RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>} />
+    <PageHeader title="Material Requirements Planning" description="Read-only gross requirements using effective released BOM revisions where available." actions={<Button variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching || companyLoading} className="min-h-11"><RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>} />
     <PageBody>
       <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
         <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-        <div className="text-sm"><div className="font-semibold">Planning preview — no stock changes</div><p className="mt-1 text-muted-foreground">This preview uses the legacy per-model BOQ only. It does not yet select effective approved BOM revisions or apply revision scrap factors, reserve stock, create purchase orders, or post inventory. Available stock is intentionally not netted because the current-stock field is not a verified reservation-aware planning balance.</p></div>
+        <div className="text-sm"><div className="font-semibold">Planning preview — no stock changes</div><p className="mt-1 text-muted-foreground">This preview uses the latest effective released BOM revision when one exists. It uses the legacy per-model BOQ only when no BOM revision exists for that model. Scrap factors are not applied, and the preview never reserves stock, creates purchase orders, or posts inventory. Available stock is intentionally not netted because the current-stock field is not a verified reservation-aware planning balance.</p></div>
       </div>
       {companyLoading && <div role="status" className="rounded-lg border p-4 text-sm text-muted-foreground">Loading active company…</div>}
       {!companyLoading && !activeCompany?.id && <div role="alert" className="rounded-lg border p-4 text-sm">Select an active company to continue.</div>}
@@ -213,7 +213,7 @@ function MrpPage() {
         </div>
         {result.status === "insufficient-data" && <div role="alert" className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm"><div className="font-semibold">Some requirements are incomplete</div><ul className="mt-2 list-disc space-y-1 pl-5">{result.notes.map((note) => <li key={note}>{note}</li>)}{result.missingBomModels.map((name) => <li key={name}>Missing BOM: {name}</li>)}{result.missingMaterialMasters.map((name) => <li key={name}>Missing or incompatible material master: {name}</li>)}</ul></div>}
         {query.data.orders.length === 0 ? <div className="mt-4 rounded-lg border p-8 text-center"><ClipboardList className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><div className="font-semibold">No active production demand</div><p className="mt-1 text-sm text-muted-foreground">Orders in Received, In Production, or QC will appear here.</p></div> : result.requirements.length === 0 ? <div className="mt-4 rounded-lg border p-6 text-sm text-muted-foreground">No material requirements could be calculated. Review sales-order model mapping and BOM setup above.</div> : <div className="mt-4 overflow-x-auto rounded-lg border"><table className="w-full min-w-[720px] text-sm"><thead className="bg-muted/50"><tr className="text-left"><th className="p-3 font-semibold">Raw material</th><th className="p-3 font-semibold">Unit</th><th className="p-3 text-right font-semibold">Gross required</th><th className="p-3 font-semibold">Source production orders</th><th className="p-3 font-semibold">Availability</th></tr></thead><tbody>{result.requirements.map((line) => <tr key={line.rawMaterialId} className="border-t"><td className="p-3 font-medium">{line.rawMaterialName}</td><td className="p-3">{line.unit}</td><td className="p-3 text-right tabular-nums">{line.grossRequired.toLocaleString("en-IN", { maximumFractionDigits: 6 })}</td><td className="p-3">{[...new Set(line.sourceOrders.map((o) => o.productionOrderNumber))].join(", ") || "—"}</td><td className="p-3 text-muted-foreground">Not netted (ledger/reservations not connected)</td></tr>)}</tbody></table></div>}
-        <p className="mt-3 text-xs text-muted-foreground">Calculation excludes governed BOM revisions/ECOs, scrap/yield, issued material, reservations, open purchase supply, subassemblies, lead times, and machine capacity. Validate the active engineering revision before using these figures for purchasing or production commitments.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Calculation excludes scrap/yield, issued material, reservations, open purchase supply, subassemblies, lead times, and machine capacity. Validate the active engineering revision before using these figures for purchasing or production commitments.</p>
       </>}
     </PageBody>
   </>;
