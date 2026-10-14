@@ -383,7 +383,7 @@ export async function generateReturn(opts: {
       {
         return_type: opts.type,
         period_year: opts.year,
-        period_month: opts.type === "GSTR-9" ? null : opts.month,
+        period_month: opts.month,
         gstin,
         status: "generated",
         payload,
