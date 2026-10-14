@@ -1,8 +1,8 @@
 name: Production Release Smoke
 
+# Lovable pushes to GitHub do not publish the live site. Run this smoke check
+# manually only after a Lovable production publish/update has completed.
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
