@@ -48,11 +48,15 @@ export function defaultRouteForRoles(roles: AppRole[]): string {
   return "/pending";
 }
 
+/** Matches a route and its nested routes without accepting similarly-prefixed paths. */
+export function routePathMatches(pathname: string, prefix: string): boolean {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  const base = prefix.replace(/\/+$/, "") || "/";
+  return path === base || (base !== "/" && path.startsWith(`${base}/`));
+}
+
 export function allowedRolesFor(pathname: string): AppRole[] | null {
-  // Match a registered route and its descendants, never a similarly prefixed sibling.
-  const match = ROUTE_ROLES.find(
-    (r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`),
-  );
+  const match = ROUTE_ROLES.find((r) => routePathMatches(pathname, r.prefix));
   return match ? match.roles : null;
 }
 
