@@ -15,3 +15,4 @@
 - AI audit company attribution is resolved through the caller's authenticated client and current company; unverifiable attribution is skipped rather than assigned a default tenant.
 - CRM, shipping, budgets, asset registers and bank reconciliation table policies enforce approved callers and active-company CRUD membership permissions; child records also require same-company parents to prevent tenant bypass.
 - Velocity requests use a server-only bounded transport and official-schema read/quote allowlist; approved-admin diagnostics never expose raw errors or tokens, and undocumented warehouse sync and shipment booking remain disabled.
+- Sales-order reads require a restrictive approved-account RLS gate alongside existing role and company policies, because permissive ALL policies also authorize SELECT and must not bypass rejection.
