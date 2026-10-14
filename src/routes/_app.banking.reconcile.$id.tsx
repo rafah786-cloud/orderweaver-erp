@@ -1,6 +1,6 @@
 import { todayIndia } from "@/lib/format";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { sb, type BankAccount, type BankTransaction } from "@/lib/banking";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -28,7 +28,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Link2, Unlink } from "lucide-react";
+import { Plus, Link2, Unlink, RefreshCw } from "lucide-react";
+import { bankLineAmountsMatch, validBankStatementAmounts } from "@/lib/bank-reconciliation";
 
 export const Route = createFileRoute("/_app/banking/reconcile/$id")({ component: Reconcile });
 
@@ -39,6 +40,11 @@ function Reconcile() {
   const [bookSel, setBookSel] = useState<string | null>(null);
   const [stmtSel, setStmtSel] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [addingLine, setAddingLine] = useState(false);
+  const [matching, setMatching] = useState(false);
+  const [unreconcilingId, setUnreconcilingId] = useState<string | null>(null);
   const addStatementLineFn = useServerFn(addBankStatementLine);
   const matchBankLinesFn = useServerFn(matchBankLines);
   const unreconcileBankLineFn = useServerFn(unreconcileBankLine);
@@ -50,36 +56,60 @@ function Reconcile() {
     credit: 0,
   });
 
-  async function load() {
-    const [a, t] = await Promise.all([
-      sb.from("bank_accounts").select("*").eq("id", id).maybeSingle(),
-      sb
-        .from("bank_transactions")
-        .select("*")
-        .eq("bank_account_id", id)
-        .order("txn_date", { ascending: false }),
-    ]);
-    setAccount(a.data);
-    setTxns(t.data ?? []);
-  }
-  useEffect(() => {
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [a, t] = await Promise.all([
+        sb.from("bank_accounts").select("*").eq("id", id).maybeSingle(),
+        sb
+          .from("bank_transactions")
+          .select("*")
+          .eq("bank_account_id", id)
+          .order("txn_date", { ascending: false }),
+      ]);
+      if (a.error) throw a.error;
+      if (t.error) throw t.error;
+      if (!a.data) throw new Error("Bank account was not found in the active company.");
+      setAccount(a.data);
+      setTxns(t.data ?? []);
+      setBookSel(null);
+      setStmtSel(null);
+    } catch (error) {
+      setAccount(null);
+      setTxns([]);
+      setBookSel(null);
+      setStmtSel(null);
+      setLoadError(error instanceof Error ? error.message : "Unable to load bank reconciliation data.");
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const book = useMemo(() => txns.filter((t) => t.source === "book"), [txns]);
   const statement = useMemo(() => txns.filter((t) => t.source === "statement"), [txns]);
 
   async function addStatementLine() {
-    try {
-      await addStatementLineFn({ data: { ...stmt, bank_account_id: id } });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add statement line");
+    if (!validBankStatementAmounts(stmt.debit, stmt.credit)) {
+      toast.error("Enter one positive debit or credit amount only. Zero-value and dual-sided lines are not allowed.");
       return;
     }
-    toast.success("Statement line added");
-    setOpen(false);
-    setStmt({ ...stmt, description: "", reference: "", debit: 0, credit: 0 });
-    load();
+    setAddingLine(true);
+    try {
+      await addStatementLineFn({ data: { ...stmt, bank_account_id: id } });
+      toast.success("Statement line added");
+      setOpen(false);
+      setStmt({ ...stmt, description: "", reference: "", debit: 0, credit: 0 });
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add statement line");
+    } finally {
+      setAddingLine(false);
+    }
   }
 
   async function match() {
@@ -87,30 +117,43 @@ function Reconcile() {
       toast.error("Select one book and one statement line");
       return;
     }
-    const b = book.find((x) => x.id === bookSel)!;
-    const s = statement.find((x) => x.id === stmtSel)!;
-    if (Math.abs(b.debit - s.debit + (b.credit - s.credit)) > 0.01) {
-      toast.error("Amounts don't match");
+    const b = book.find((x) => x.id === bookSel);
+    const s = statement.find((x) => x.id === stmtSel);
+    if (!b || !s) {
+      setBookSel(null);
+      setStmtSel(null);
+      toast.error("One of the selected transactions is no longer available. Reload and select both lines again.");
       return;
     }
+    if (!bankLineAmountsMatch(b, s)) {
+      toast.error("Debit and credit must each match exactly. Opposite money directions are not interchangeable.");
+      return;
+    }
+    setMatching(true);
     try {
       await matchBankLinesFn({ data: { book_id: b.id, statement_id: s.id } });
+      toast.success("Reconciled");
+      setBookSel(null);
+      setStmtSel(null);
+      await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to reconcile");
-      return;
+    } finally {
+      setMatching(false);
     }
-    toast.success("Reconciled");
-    setBookSel(null);
-    setStmtSel(null);
-    load();
   }
 
   async function unreconcile(t: BankTransaction) {
+    if (!confirm("Unmatch this transaction pair? Both lines will return to the unreconciled list.")) return;
+    setUnreconcilingId(t.id);
     try {
       await unreconcileBankLineFn({ data: { id: t.id, reconciled_with: t.reconciled_with } });
-      load();
+      toast.success("Transaction pair unmatched.");
+      await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to unreconcile");
+      toast.error(e instanceof Error ? e.message : "Failed to unmatch transaction pair");
+    } finally {
+      setUnreconcilingId(null);
     }
   }
 
@@ -131,7 +174,7 @@ function Reconcile() {
           <>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" disabled={loading || !!loadError || !account || addingLine || matching || unreconcilingId !== null}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Statement Line
                 </Button>
@@ -167,6 +210,8 @@ function Reconcile() {
                     <Label>Debit (money in)</Label>
                     <Input
                       type="number"
+                      min={0}
+                      step="0.01"
                       value={stmt.debit}
                       onChange={(e) => setStmt({ ...stmt, debit: Number(e.target.value) })}
                     />
@@ -175,15 +220,17 @@ function Reconcile() {
                     <Label>Credit (money out)</Label>
                     <Input
                       type="number"
+                      min={0}
+                      step="0.01"
                       value={stmt.credit}
                       onChange={(e) => setStmt({ ...stmt, credit: Number(e.target.value) })}
                     />
                   </div>
                 </div>
-                <Button onClick={addStatementLine}>Add</Button>
+                <Button onClick={addStatementLine} disabled={addingLine || loading || !!loadError || !validBankStatementAmounts(stmt.debit, stmt.credit)}>{addingLine ? "Adding…" : "Add"}</Button>
               </DialogContent>
             </Dialog>
-            <Button onClick={match} disabled={!bookSel || !stmtSel}>
+            <Button onClick={match} disabled={!bookSel || !stmtSel || matching || loading || !!loadError || addingLine || unreconcilingId !== null}>
               <Link2 className="h-4 w-4 mr-2" />
               Match Selected
             </Button>
@@ -191,6 +238,16 @@ function Reconcile() {
         }
       />
 
+      {loading ? (
+        <p role="status" className="text-sm text-muted-foreground">Loading bank transactions…</p>
+      ) : loadError ? (
+        <div role="alert" className="rounded-lg border border-destructive/40 p-4 text-sm">
+          <p className="font-medium text-destructive">Reconciliation data could not be loaded.</p>
+          <p className="mt-1 text-muted-foreground">{loadError}</p>
+          <Button className="mt-3" size="sm" variant="outline" onClick={() => void load()}><RefreshCw className="mr-2 h-4 w-4" />Retry</Button>
+        </div>
+      ) : (
+        <>
       <div className="grid grid-cols-3 gap-4">
         <div className="glass p-4 rounded-xl">
           <div className="text-xs text-muted-foreground">Book Balance</div>
@@ -219,6 +276,7 @@ function Reconcile() {
           sel={bookSel}
           setSel={setBookSel}
           onUnreconcile={unreconcile}
+          actionsDisabled={loading || !!loadError || matching || addingLine || unreconcilingId !== null}
         />
         <Side
           title="Bank Statement"
@@ -228,6 +286,8 @@ function Reconcile() {
           onUnreconcile={unreconcile}
         />
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -238,12 +298,14 @@ function Side({
   sel,
   setSel,
   onUnreconcile,
+  actionsDisabled,
 }: {
   title: string;
   rows: BankTransaction[];
   sel: string | null;
   setSel: (v: string | null) => void;
   onUnreconcile: (t: BankTransaction) => void;
+  actionsDisabled: boolean;
 }) {
   return (
     <div className="glass rounded-2xl p-3">
@@ -265,13 +327,15 @@ function Side({
               <TableRow
                 key={t.id}
                 className={`${sel === t.id ? "bg-primary/10" : ""} ${t.reconciled_at ? "opacity-60" : "cursor-pointer"}`}
-                onClick={() => !t.reconciled_at && setSel(sel === t.id ? null : t.id)}
+                onClick={() => !actionsDisabled && !t.reconciled_at && setSel(sel === t.id ? null : t.id)}
               >
                 <TableCell>
                   <input
                     type="radio"
                     checked={sel === t.id}
-                    disabled={!!t.reconciled_at}
+                    name={`reconcile-${title}`}
+                    aria-label={`Select ${title} transaction ${t.txn_date} ${t.description ?? ""}`}
+                    disabled={actionsDisabled || !!t.reconciled_at}
                     onChange={() => setSel(t.id)}
                   />
                 </TableCell>
@@ -291,6 +355,8 @@ function Side({
                     <Button
                       size="sm"
                       variant="ghost"
+                      aria-label={`Unmatch transaction ${t.txn_date} ${t.description ?? ""}`}
+                      disabled={actionsDisabled}
                       onClick={(e) => {
                         e.stopPropagation();
                         onUnreconcile(t);
