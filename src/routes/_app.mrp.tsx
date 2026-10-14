@@ -85,31 +85,38 @@ function MrpPage() {
         )
       ))).flat();
       const modelIds = [...new Set(items.map((i) => i.model_id).filter((id): id is string => Boolean(id)))];
-      const [modelsResponse, legacyBomResponse, revisionsResponse, materialsResponse, stockItemsResponse, revisionLinesResponse] = await Promise.all([
-        supabase.from("product_models").select("id, name").eq("company_id", activeCompany.id),
-        modelIds.length ? supabase.from("model_boq").select("model_id, raw_material_id, quantity_per_unit").eq("company_id", activeCompany.id).in("model_id", modelIds) : Promise.resolve({ data: [], error: null }),
-        supabase.from("bom_revisions").select("id, model_id, revision, status, effective_from, effective_to").eq("company_id", activeCompany.id),
-        supabase.from("raw_materials").select("id, name, unit").eq("company_id", activeCompany.id),
-        supabase.from("stock_items").select("id, name, unit").eq("company_id", activeCompany.id),
-        supabase.from("bom_revision_lines").select("bom_revision_id, raw_material_id, stock_item_id, component_model_id, quantity_per_unit, scrap_pct").eq("company_id", activeCompany.id),
+      const [models, legacyBomRowsFetched, revisions, rawMaterials, stockItems, revisionLines] = await Promise.all([
+        readAllRows<ProductModel>((from, to) =>
+          supabase.from("product_models").select("id, name").eq("company_id", activeCompany.id).range(from, to)
+        ),
+        modelIds.length ? Promise.all(chunksOf(modelIds, 100).map((ids) =>
+          readAllRows<LegacyBomLine>((from, to) =>
+            supabase.from("model_boq").select("model_id, raw_material_id, quantity_per_unit")
+              .eq("company_id", activeCompany.id).in("model_id", ids).range(from, to)
+          )
+        )).then((pages) => pages.flat()) : Promise.resolve([] as LegacyBomLine[]),
+        readAllRows<BomRevision>((from, to) =>
+          supabase.from("bom_revisions").select("id, model_id, revision, status, effective_from, effective_to")
+            .eq("company_id", activeCompany.id).range(from, to)
+        ),
+        readAllRows<RawMaterial>((from, to) =>
+          supabase.from("raw_materials").select("id, name, unit").eq("company_id", activeCompany.id).range(from, to)
+        ),
+        readAllRows<StockItem>((from, to) =>
+          supabase.from("stock_items").select("id, name, unit, mapped_raw_material_id")
+            .eq("company_id", activeCompany.id).range(from, to)
+        ),
+        readAllRows<BomRevisionLine>((from, to) =>
+          supabase.from("bom_revision_lines")
+            .select("bom_revision_id, raw_material_id, stock_item_id, component_model_id, quantity_per_unit, scrap_pct")
+            .eq("company_id", activeCompany.id).range(from, to)
+        ),
       ]);
-      if (modelsResponse.error) throw modelsResponse.error;
-      if (legacyBomResponse.error) throw legacyBomResponse.error;
-      if (revisionsResponse.error) throw revisionsResponse.error;
-      if (materialsResponse.error) throw materialsResponse.error;
-      if (stockItemsResponse.error) throw stockItemsResponse.error;
-      if (revisionLinesResponse.error) throw revisionLinesResponse.error;
-
-      const models = (modelsResponse.data ?? []) as ProductModel[];
-      const rawMaterials = (materialsResponse.data ?? []) as RawMaterial[];
-      const stockItems = (stockItemsResponse.data ?? []) as StockItem[];
-      const revisions = (revisionsResponse.data ?? []) as BomRevision[];
       const modelName = new Map(models.map((m) => [m.id, m.name]));
       const materialById = new Map(rawMaterials.map((m) => [m.id, m]));
       const stockItemById = new Map(stockItems.map((m) => [m.id, m]));
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      const revisionLines = (revisionLinesResponse.data ?? []) as BomRevisionLine[];
       const selectedRevisionByModel = new Map<string, BomRevisionCandidate>();
       const modelsWithAnyRevision = new Set(revisions.map((revision) => revision.model_id));
       const visitedModelIds = new Set<string>();
@@ -182,7 +189,7 @@ function MrpPage() {
       // Fall back to the legacy model BOQ only when no governed BOM revision exists for that model.
       // If revisions exist but none is released/effective, fail closed instead of planning from stale legacy data.
 
-      const legacyBomRows = (legacyBomResponse.data ?? []).filter((line) => !modelsWithAnyRevision.has(line.model_id));
+      const legacyBomRows = legacyBomRowsFetched.filter((line) => !modelsWithAnyRevision.has(line.model_id));
       for (const line of legacyBomRows) {
         const material = materialById.get(line.raw_material_id);
         if (!material) {
