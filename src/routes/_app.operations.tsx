@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, ShieldCheck, Database } from "lucide-react";
+import { classifyCapabilityTableError, type CapabilityTableStatus } from "@/lib/capability-schema-status";
 
 export const Route = createFileRoute("/_app/operations")({
   head: () => ({ meta: [
@@ -41,7 +42,7 @@ const MODULES: Module[] = [
 
 function EnterpriseOperations() {
   const { activeCompany, loading: companyLoading } = useCompany();
-  const { data: counts = {}, isLoading, isError, error, refetch } = useQuery({
+  const { data: capabilityData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["enterprise-capability-counts", activeCompany?.id],
     enabled: !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
@@ -49,14 +50,21 @@ function EnterpriseOperations() {
       const entries = await Promise.all(
         MODULES.flatMap((module) => module.tables.map(async (table) => {
           const { count, error } = await supabase.from(table as never).select("id", { count: "exact", head: true }).eq("company_id", activeCompany.id);
-          if (error) throw error;
-          return [table, count ?? 0] as const;
+          if (error) return { table, count: 0, status: classifyCapabilityTableError(error) };
+          return { table, count: count ?? 0, status: "available" as const };
         })),
       );
-      return Object.fromEntries(entries) as Record<string, number>;
+      return {
+        counts: Object.fromEntries(entries.map((entry) => [entry.table, entry.count])) as Record<string, number>,
+        statuses: Object.fromEntries(entries.map((entry) => [entry.table, entry.status])) as Record<string, CapabilityTableStatus>,
+      };
     },
     staleTime: 30_000,
   });
+  const counts = capabilityData?.counts ?? {};
+  const statuses = capabilityData?.statuses ?? {};
+  const missingTables = Object.entries(statuses).filter(([, status]) => status === "not-installed").map(([table]) => table);
+  const unavailableTables = Object.entries(statuses).filter(([, status]) => status === "unavailable").map(([table]) => table);
 
   return (
     <>
@@ -65,6 +73,8 @@ function EnterpriseOperations() {
         {companyLoading && <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading active company…</div>}
         {!companyLoading && !activeCompany?.id && <div role="alert" className="mb-4 rounded-lg border p-4 text-sm">Select an active company to view its capability data.</div>}
         {isError && <div role="alert" className="mb-4 flex flex-col gap-3 rounded-lg border border-destructive/40 p-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-sm">Capability counts could not be loaded: {error instanceof Error ? error.message : "Unknown error"}</span><Button variant="outline" onClick={() => void refetch()} className="min-h-11">Retry</Button></div>}
+        {missingTables.length > 0 && <div role="alert" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm"><div className="font-semibold">Some enterprise schemas are not installed in this database</div><p className="mt-1 text-muted-foreground">These modules remain unavailable until their reviewed database migrations are applied through the approved deployment workflow. Existing accounting and inventory data has not been changed.</p><p className="mt-2 text-xs">Missing tables: {missingTables.join(", ")}</p></div>}
+        {unavailableTables.length > 0 && <div role="alert" className="mb-4 rounded-lg border border-destructive/40 p-4 text-sm"><div className="font-semibold">Some capability tables could not be checked</div><p className="mt-1 text-muted-foreground">This may indicate a permissions, network or schema issue. Use refresh after confirming access.</p><p className="mt-2 text-xs">Unavailable tables: {unavailableTables.join(", ")}</p></div>}
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5" /><div><div className="text-sm font-medium">Governed foundation</div><div className="text-xs text-muted-foreground">Company-scoped RLS on every new domain</div></div></CardContent></Card>
           <Card><CardContent className="flex items-center gap-3 p-5"><Database className="h-5 w-5" /><div><div className="text-sm font-medium">Additive architecture</div><div className="text-xs text-muted-foreground">No replacement of canonical accounting or stock ledgers</div></div></CardContent></Card>
@@ -78,7 +88,7 @@ function EnterpriseOperations() {
               <Card key={module.key} className="h-full transition-shadow hover:shadow-md">
                 <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl btn-gold"><Icon className="h-5 w-5" /></div><CardTitle className="text-base">{module.title}</CardTitle></div>
-                  <span className="rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{isLoading ? "Checking" : records > 0 ? "Active data" : "Ready"}</span>
+                  <span className="rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{isLoading ? "Checking" : module.tables.every((table) => statuses[table] === "not-installed") ? "Schema pending" : module.tables.some((table) => statuses[table] === "unavailable" || statuses[table] === "not-installed") ? "Partial / check" : records > 0 ? "Active data" : "No records"}</span>
                 </div></CardHeader>
                 <CardContent><p className="text-sm text-muted-foreground">{module.description}</p><div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                   <span>{isLoading ? "…" : String(records) + " records in foundation"}</span>
