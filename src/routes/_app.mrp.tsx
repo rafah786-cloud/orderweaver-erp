@@ -223,11 +223,83 @@ function MrpPage() {
         }
         demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity });
       }
-      const balances: MrpMaterialBalance[] = [
-        ...rawMaterials.map((m) => ({ rawMaterialId: `raw:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
-        ...stockItems.map((m) => ({ rawMaterialId: `stock:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
-      ];
-      const result = explodeMultiLevelMaterialRequirements(demand, bom, balances);
+      const requiredRawMaterialIds = new Set(
+        bom.filter((line) => line.componentType === "raw-material").map((line) => line.componentId.slice(4)),
+      );
+      const directlyRequiredStockItemIds = new Set(
+        bom.filter((line) => line.componentType === "stock-item").map((line) => line.componentId.slice(6)),
+      );
+      const requiredRawMaterials = rawMaterials.filter((item) => requiredRawMaterialIds.has(item.id));
+      const requiredStockItems = stockItems.filter((item) =>
+        directlyRequiredStockItemIds.has(item.id) ||
+        (item.mapped_raw_material_id !== null && requiredRawMaterialIds.has(item.mapped_raw_material_id))
+      );
+      const requiredStockItemIds = [...new Set(requiredStockItems.map((item) => item.id))];
+
+      // Every query is company-scoped and paginated. Do not rely on the stock_summary
+      // view here: it sums movements without applying the issue sign consistently.
+      const movementPages = await Promise.all(chunksOf(requiredStockItemIds, 80).map((ids) =>
+        readAllRows<StockMovementRow>((from, to) =>
+          supabase.from("stock_movements")
+            .select("stock_item_id, movement_type, quantity, posting_id, reverses_posting_id")
+            .eq("company_id", activeCompany.id)
+            .in("stock_item_id", ids)
+            .range(from, to)
+        )
+      ));
+      const reservationPages = await Promise.all(chunksOf(requiredStockItemIds, 80).map((ids) =>
+        readAllRows<StockReservationRow>((from, to) =>
+          supabase.from("stock_reservations")
+            .select("stock_item_id, qty, status")
+            .eq("company_id", activeCompany.id)
+            .eq("status", "open")
+            .in("stock_item_id", ids)
+            .range(from, to)
+        )
+      ));
+      const reversedPostingRows = requiredStockItemIds.length
+        ? await readAllRows<StockPostingRow>((from, to) =>
+            supabase.from("stock_postings")
+              .select("id, reversed_by")
+              .eq("company_id", activeCompany.id)
+              .not("reversed_by", "is", null)
+              .range(from, to)
+          )
+        : [];
+      const reversedPostingIds = new Set<string>();
+      for (const posting of reversedPostingRows) {
+        reversedPostingIds.add(posting.id);
+        if (posting.reversed_by) reversedPostingIds.add(posting.reversed_by);
+      }
+
+      const verifiedBalances = buildVerifiedMrpMaterialBalances({
+        rawMaterials: requiredRawMaterials,
+        stockItems: requiredStockItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          unit: item.unit,
+          mappedRawMaterialId: item.mapped_raw_material_id,
+        })),
+        movements: movementPages.flat().map((row) => ({
+          stockItemId: row.stock_item_id,
+          movementType: row.movement_type,
+          quantity: Number(row.quantity),
+          postingId: row.posting_id,
+          reversesPostingId: row.reverses_posting_id,
+        })),
+        reservations: reservationPages.flat().map((row) => ({
+          stockItemId: row.stock_item_id,
+          quantity: Number(row.qty),
+          status: row.status,
+        })),
+        reversedPostingIds,
+      });
+      const result = explodeMultiLevelMaterialRequirements(demand, bom, verifiedBalances.balances);
+      result.invalidMaterialBalances = [...new Set([
+        ...result.invalidMaterialBalances,
+        ...verifiedBalances.invalidMaterialBalances,
+      ])];
+      result.notes.push(...verifiedBalances.notes);
       if (unmappedDemandNames.length) {
         result.status = "insufficient-data";
         result.missingBomModels = [...new Set([...result.missingBomModels, ...unmappedDemandNames.map((name) => `Unmapped sales item: ${name}`)])].sort();
