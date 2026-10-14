@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedRolesFor, isRouteDenied, ROUTE_ROLES } from "./permissions";
+import { allowedRolesFor, isRouteDenied, routePathMatches, ROUTE_ROLES } from "./permissions";
 
 describe("ERP route security policy", () => {
   it("keeps financial administration restricted to finance roles", () => {
@@ -33,6 +33,13 @@ describe("ERP route security policy", () => {
     expect(isRouteDenied("/enterprise-workbench", ["production"])).toBe(true);
     expect(isRouteDenied("/enterprise-workbench", ["admin"])).toBe(false);
     expect(isRouteDenied("/mrp", ["production"])).toBe(false);
+  });
+
+  it("matches nested routes without matching similarly prefixed siblings", () => {
+    expect(routePathMatches("/ai/ask", "/ai")).toBe(true);
+    expect(routePathMatches("/ai", "/ai")).toBe(true);
+    expect(routePathMatches("/ai-old", "/ai")).toBe(false);
+    expect(routePathMatches("/ai/", "/ai")).toBe(true);
   });
 
   it("contains no duplicate top-level route prefixes", () => {
