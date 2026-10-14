@@ -7,7 +7,7 @@ on:
 
 concurrency:
   group: production-release-smoke
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   published-app:
@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Wait for the published release checkpoint
         env:
-          RELEASE_CHECKPOINT: "mm-erp-release-check-2026-10-14-r8"
+          RELEASE_CHECKPOINT: "mm-erp-release-check-2026-10-14-r15"
           PRODUCTION_URL: "https://orderweaver-erp.lovable.app/login"
         run: |
           set -euo pipefail

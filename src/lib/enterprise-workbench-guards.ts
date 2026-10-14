@@ -67,3 +67,36 @@ export function canSetWorkbenchStatus(nextStatus: unknown, currentStatus?: unkno
   if (!transitionTouchesGovernedState) return true;
   return current !== "" && current === next;
 }
+
+
+export interface QualityInspectionValues {
+  status?: unknown;
+  quantity_inspected?: unknown;
+  quantity_accepted?: unknown;
+  quantity_rejected?: unknown;
+}
+
+/** Validate completed inspection totals before the quality workflow may set a result status. */
+export function validateQualityInspection(values: QualityInspectionValues): string | null {
+  const status = typeof values.status === "string" ? values.status.trim().toLowerCase() : "";
+  if (!["passed", "failed", "conditional"].includes(status)) return null;
+
+  const inspected = Number(values.quantity_inspected);
+  const accepted = Number(values.quantity_accepted);
+  const rejected = Number(values.quantity_rejected);
+  if (![inspected, accepted, rejected].every(Number.isFinite)) {
+    return "Inspection quantities must be valid finite numbers.";
+  }
+  if (inspected <= 0) return "A completed inspection must inspect at least one unit.";
+  if (accepted < 0 || rejected < 0) return "Accepted and rejected quantities cannot be negative.";
+  if (Math.abs(accepted + rejected - inspected) > 1e-6) {
+    return "Accepted plus rejected quantity must equal the inspected quantity.";
+  }
+  if (status === "passed" && (accepted !== inspected || rejected !== 0)) {
+    return "A passed inspection requires every inspected unit to be accepted and zero rejected units.";
+  }
+  if (status === "failed" && rejected <= 0) {
+    return "A failed inspection must record at least one rejected unit.";
+  }
+  return null;
+}

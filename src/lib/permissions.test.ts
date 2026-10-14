@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedRolesFor, ROUTE_ROLES } from "./permissions";
+import { allowedRolesFor, isRouteDenied, ROUTE_ROLES } from "./permissions";
 
 describe("ERP route security policy", () => {
   it("keeps financial administration restricted to finance roles", () => {
@@ -26,6 +26,13 @@ describe("ERP route security policy", () => {
   it("applies the parent screen policy to nested routes", () => {
     expect(allowedRolesFor("/gst/returns")).toEqual(["admin", "accountant"]);
     expect(allowedRolesFor("/tally-import/validate")).toEqual(["admin"]);
+  });
+
+  it("fails closed for unregistered private routes and restricts the generic workbench to admins", () => {
+    expect(isRouteDenied("/unknown-finance-route", ["admin"])).toBe(true);
+    expect(isRouteDenied("/enterprise-workbench", ["production"])).toBe(true);
+    expect(isRouteDenied("/enterprise-workbench", ["admin"])).toBe(false);
+    expect(isRouteDenied("/mrp", ["production"])).toBe(false);
   });
 
   it("contains no duplicate top-level route prefixes", () => {
