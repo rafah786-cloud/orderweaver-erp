@@ -165,7 +165,8 @@ describe("multi-level MRP explosion", () => {
     expect(result.requirements).toHaveLength(1);
     expect(result.requirements[0].grossRequired).toBeCloseTo(27.72);
     expect(result.requirements[0].shortageQuantity).toBe(0);
-    expect(result.requirements[0].sourceOrders[0]).toMatchObject({ finishedQuantity: 4, requiredQuantity: 27.72 });
+    expect(result.requirements[0].sourceOrders[0].finishedQuantity).toBe(4);
+    expect(result.requirements[0].sourceOrders[0].requiredQuantity).toBeCloseTo(27.72);
   });
 
   it("aggregates shared leaf components across direct and nested BOM paths", () => {
