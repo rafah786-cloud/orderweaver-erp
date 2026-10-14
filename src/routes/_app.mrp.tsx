@@ -25,6 +25,9 @@ type ProductionOrder = { id: string; production_number: string; status: string; 
 type SalesItem = { sales_order_id: string; model_id: string | null; product_name: string; quantity: number };
 type ProductModel = { id: string; name: string };
 type RawMaterial = { id: string; name: string; unit: string };
+type StockItem = { id: string; name: string; unit: string };
+type BomRevision = { id: string; model_id: string; revision: string; status: string; effective_from: string | null; effective_to: string | null };
+type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null; stock_item_id: string | null; quantity_per_unit: number; scrap_pct: number };
 
 function MrpPage() {
   const { hasAnyRole } = useAuth();
@@ -54,27 +57,103 @@ function MrpPage() {
       if (itemError) throw itemError;
       const items = (itemData ?? []) as SalesItem[];
       const modelIds = [...new Set(items.map((i) => i.model_id).filter((id): id is string => Boolean(id)))];
-      const [modelsResponse, bomResponse, materialsResponse] = await Promise.all([
+      const [modelsResponse, legacyBomResponse, revisionsResponse, materialsResponse, stockItemsResponse] = await Promise.all([
         modelIds.length ? supabase.from("product_models").select("id, name").eq("company_id", activeCompany.id).in("id", modelIds) : Promise.resolve({ data: [], error: null }),
         modelIds.length ? supabase.from("model_boq").select("model_id, raw_material_id, quantity_per_unit").eq("company_id", activeCompany.id).in("model_id", modelIds) : Promise.resolve({ data: [], error: null }),
+        modelIds.length ? supabase.from("bom_revisions").select("id, model_id, revision, status, effective_from, effective_to").eq("company_id", activeCompany.id).in("model_id", modelIds) : Promise.resolve({ data: [], error: null }),
         supabase.from("raw_materials").select("id, name, unit").eq("company_id", activeCompany.id),
+        supabase.from("stock_items").select("id, name, unit").eq("company_id", activeCompany.id),
       ]);
       if (modelsResponse.error) throw modelsResponse.error;
-      if (bomResponse.error) throw bomResponse.error;
+      if (legacyBomResponse.error) throw legacyBomResponse.error;
+      if (revisionsResponse.error) throw revisionsResponse.error;
       if (materialsResponse.error) throw materialsResponse.error;
+      if (stockItemsResponse.error) throw stockItemsResponse.error;
+
       const models = (modelsResponse.data ?? []) as ProductModel[];
       const rawMaterials = (materialsResponse.data ?? []) as RawMaterial[];
+      const stockItems = (stockItemsResponse.data ?? []) as StockItem[];
+      const revisions = (revisionsResponse.data ?? []) as BomRevision[];
       const modelName = new Map(models.map((m) => [m.id, m.name]));
       const materialById = new Map(rawMaterials.map((m) => [m.id, m]));
-      const missingBomMaterialNames = (bomResponse.data ?? [])
-        .filter((line) => !materialById.has(line.raw_material_id))
-        .map((line) => `Unknown raw material (${line.raw_material_id})`);
-      const bom: MrpBomLine[] = (bomResponse.data ?? []).flatMap((line) => {
+      const stockItemById = new Map(stockItems.map((m) => [m.id, m]));
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const revisionsByModel = new Map<string, BomRevision[]>();
+      for (const revision of revisions) {
+        const rows = revisionsByModel.get(revision.model_id) ?? [];
+        rows.push(revision);
+        revisionsByModel.set(revision.model_id, rows);
+      }
+      const selectedRevisionByModel = new Map<string, BomRevision>();
+      const missingEffectiveRevisionModels: string[] = [];
+      for (const modelId of modelIds) {
+        const candidates = revisionsByModel.get(modelId) ?? [];
+        if (!candidates.length) continue;
+        const effective = candidates
+          .filter((revision) => revision.status === "released" &&
+            (!revision.effective_from || revision.effective_from <= today) &&
+            (!revision.effective_to || revision.effective_to >= today))
+          .sort((a, b) => (b.effective_from ?? "").localeCompare(a.effective_from ?? ""));
+        if (effective[0]) selectedRevisionByModel.set(modelId, effective[0]);
+        else missingEffectiveRevisionModels.push(modelName.get(modelId) ?? modelId);
+      }
+      const selectedRevisionIds = [...selectedRevisionByModel.values()].map((revision) => revision.id);
+      const revisionLinesResponse = selectedRevisionIds.length
+        ? await supabase.from("bom_revision_lines").select("bom_revision_id, raw_material_id, stock_item_id, quantity_per_unit, scrap_pct").eq("company_id", activeCompany.id).in("bom_revision_id", selectedRevisionIds)
+        : { data: [], error: null };
+      if (revisionLinesResponse.error) throw revisionLinesResponse.error;
+
+      const revisionLines = (revisionLinesResponse.data ?? []) as BomRevisionLine[];
+      const missingBomMaterialNames: string[] = [];
+      const scrapFactorNotes: string[] = [];
+      const bom: MrpBomLine[] = [];
+      for (const [modelId, revision] of selectedRevisionByModel) {
+        const lines = revisionLines.filter((line) => line.bom_revision_id === revision.id);
+        for (const line of lines) {
+          if (line.scrap_pct > 0) scrapFactorNotes.push(`${modelName.get(modelId) ?? modelId} revision ${revision.revision} has a scrap factor (${line.scrap_pct}%) that is not applied in this preview.`);
+          if (Boolean(line.raw_material_id) === Boolean(line.stock_item_id)) {
+            missingBomMaterialNames.push(`Invalid component mapping in ${modelName.get(modelId) ?? modelId} revision ${revision.revision}`);
+            continue;
+          }
+          if (!Number.isFinite(Number(line.quantity_per_unit)) || Number(line.quantity_per_unit) <= 0) {
+            missingBomMaterialNames.push(`Invalid component quantity in ${modelName.get(modelId) ?? modelId} revision ${revision.revision}`);
+            continue;
+          }
+          if (line.raw_material_id) {
+            const material = materialById.get(line.raw_material_id);
+            if (!material) {
+              missingBomMaterialNames.push(`Unknown raw material (${line.raw_material_id}) in revision ${revision.revision}`);
+              continue;
+            }
+            bom.push({ productModelId: modelId, rawMaterialId: `raw:${material.id}`, rawMaterialName: material.name, unit: material.unit, quantityPerFinishedUnit: Number(line.quantity_per_unit) });
+          } else if (line.stock_item_id) {
+            const item = stockItemById.get(line.stock_item_id);
+            if (!item) {
+              missingBomMaterialNames.push(`Unknown stock item (${line.stock_item_id}) in revision ${revision.revision}`);
+              continue;
+            }
+            bom.push({ productModelId: modelId, rawMaterialId: `stock:${item.id}`, rawMaterialName: item.name, unit: item.unit, quantityPerFinishedUnit: Number(line.quantity_per_unit) });
+          }
+        }
+      }
+
+      // Fall back to the legacy model BOQ only when no governed BOM revision exists for that model.
+      // If revisions exist but none is released/effective, fail closed instead of planning from stale legacy data.
+      const legacyBomRows = (legacyBomResponse.data ?? []).filter((line) => !revisionsByModel.has(line.model_id));
+      for (const line of legacyBomRows) {
         const material = materialById.get(line.raw_material_id);
-        if (!material) return [];
-        return [{ productModelId: line.model_id, rawMaterialId: line.raw_material_id, rawMaterialName: material.name, unit: material.unit, quantityPerFinishedUnit: Number(line.quantity_per_unit) }];
-      });
-      // A production order points to its sales order, but has no quantity column. Count each sales order once,
+        if (!material) {
+          missingBomMaterialNames.push(`Unknown raw material (${line.raw_material_id}) in legacy BOQ`);
+          continue;
+        }
+        if (!Number.isFinite(Number(line.quantity_per_unit)) || Number(line.quantity_per_unit) <= 0) {
+          missingBomMaterialNames.push(`Invalid component quantity in legacy BOQ for ${modelName.get(line.model_id) ?? line.model_id}`);
+          continue;
+        }
+        bom.push({ productModelId: line.model_id, rawMaterialId: `raw:${material.id}`, rawMaterialName: material.name, unit: material.unit, quantityPerFinishedUnit: Number(line.quantity_per_unit) });
+      }
+            // A production order points to its sales order, but has no quantity column. Count each sales order once,
       // then explode its ordered line quantities; this avoids double-counting if an order has multiple production records.
       const uniqueOrderBySalesId = new Map<string, ProductionOrder>();
       for (const order of orders) if (!uniqueOrderBySalesId.has(order.sales_order_id)) uniqueOrderBySalesId.set(order.sales_order_id, order);
@@ -88,13 +167,25 @@ function MrpPage() {
         }
         demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity: Number(item.quantity) });
       }
-      const balances: MrpMaterialBalance[] = rawMaterials.map((m) => ({ rawMaterialId: m.id, rawMaterialName: m.name, unit: m.unit, availableQuantity: null }));
+      const balances: MrpMaterialBalance[] = [
+        ...rawMaterials.map((m) => ({ rawMaterialId: `raw:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
+        ...stockItems.map((m) => ({ rawMaterialId: `stock:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
+      ];
       const result = explodeMaterialRequirements(demand, bom, balances);
-      // Do not silently omit BOM lines whose material master is missing or outside the active company.
+      if (missingEffectiveRevisionModels.length) {
+        result.status = "insufficient-data";
+        result.missingBomModels = [...new Set([...result.missingBomModels, ...missingEffectiveRevisionModels.map((name) => `${name} (no effective released revision)`)])].sort();
+        result.notes.push("Some models have BOM revisions but none is released and effective today; legacy BOQs were not used as a fallback for those models.");
+      }
       if (missingBomMaterialNames.length) {
         result.status = "insufficient-data";
         result.missingMaterialMasters = [...new Set([...result.missingMaterialMasters, ...missingBomMaterialNames])].sort();
-        result.notes.push("Some BOM lines reference raw materials that are missing or inaccessible in the active company; their requirements are excluded.");
+        result.notes.push("Some BOM components are invalid or missing/inaccessible in the active company; affected requirements are excluded.");
+      }
+      if (scrapFactorNotes.length) {
+        result.status = "insufficient-data";
+        result.notes.push("Scrap factors exist on released BOM revisions but are not applied by this preview.");
+        result.missingMaterialMasters = [...new Set([...result.missingMaterialMasters, ...scrapFactorNotes])].sort();
       }
       return { orders, result };
     },
