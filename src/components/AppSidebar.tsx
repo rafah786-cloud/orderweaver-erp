@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,7 +11,7 @@ import { AccountMenu } from "@/components/AccountMenu";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard": LayoutDashboard, "/parties": Users, "/invoices": FileText, "/sales-orders": ShoppingCart, "/boq": Package,
-  "/purchases": Truck, "/production": Factory, "/mrp": ClipboardList, "/operations": Network, "/employees": UserCog, "/attendance": CalendarCheck,
+  "/purchases": Truck, "/production": Factory, "/mrp": ClipboardList, "/capacity": Gauge, "/operations": Network, "/employees": UserCog, "/attendance": CalendarCheck,
   "/payslips": Receipt, "/approvals": ShieldCheck, "/whatsapp": MessageCircle, "/communications": MessageCircle,
   "/tally-import": Database, "/accounting": BookOpen, "/gst": FileSpreadsheet, "/inventory": Boxes, "/banking": Landmark,
   "/ai": Sparkles, "/vendor": Truck, "/settings": Settings,
@@ -19,7 +19,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 const LABELS: Record<string, string> = {
   "/dashboard": "Dashboard", "/parties": "Parties", "/invoices": "Invoices", "/sales-orders": "Sales Orders", "/boq": "BOQ",
-  "/purchases": "Purchases", "/production": "Production", "/mrp": "Material Planning", "/operations": "Enterprise Operations", "/employees": "Employees",
+  "/purchases": "Purchases", "/production": "Production", "/mrp": "Material Planning", "/capacity": "Capacity Preview", "/operations": "Enterprise Operations", "/employees": "Employees",
   "/attendance": "Attendance", "/payslips": "Payslips", "/approvals": "User Approvals", "/whatsapp": "WhatsApp",
   "/communications": "Communications", "/tally-import": "Tally Import", "/accounting": "Accounting", "/gst": "GST",
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
@@ -32,7 +32,7 @@ const GROUPS = [
   { label: "Documents & Tools", prefixes: ["/print"] },
   { label: "Sales & Customers", prefixes: ["/parties", "/sales-orders", "/invoices"] },
   { label: "Purchasing & Inventory", prefixes: ["/purchases", "/inventory", "/boq"] },
-  { label: "Production", prefixes: ["/production", "/mrp", "/operations"] },
+  { label: "Production", prefixes: ["/production", "/mrp", "/capacity", "/operations"] },
   { label: "Finance", prefixes: ["/accounting", "/banking", "/gst", "/local-tally-accounts"] },
   { label: "People", prefixes: ["/employees", "/attendance", "/payslips"] },
   { label: "Automation & Admin", prefixes: ["/ai", "/whatsapp", "/communications", "/approvals", "/tally-import", "/vendor", "/settings"] },
