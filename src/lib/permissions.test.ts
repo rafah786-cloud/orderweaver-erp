@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedRolesFor, isRouteDenied, ROUTE_ROLES } from "./permissions";
+import { allowedRolesFor, isRouteDenied, routePathMatches, ROUTE_ROLES } from "./permissions";
 
 describe("ERP route security policy", () => {
   it("keeps financial administration restricted to finance roles", () => {
@@ -43,15 +43,13 @@ describe("ERP route security policy", () => {
 
 
 describe("route boundary matching", () => {
-  it("matches a route and its nested screens", async () => {
-    const { routePathMatches } = await import("./permissions");
+  it("matches a route and its nested screens, normalizing trailing slashes", () => {
     expect(routePathMatches("/accounting", "/accounting")).toBe(true);
     expect(routePathMatches("/accounting/trial-balance", "/accounting")).toBe(true);
     expect(routePathMatches("/accounting/trial-balance/", "/accounting/")).toBe(true);
   });
 
-  it("rejects similarly prefixed siblings and unmapped paths", async () => {
-    const { routePathMatches } = await import("./permissions");
+  it("rejects similarly prefixed siblings and unmapped paths", () => {
     expect(routePathMatches("/accounting-extra", "/accounting")).toBe(false);
     expect(routePathMatches("/vendorish", "/vendor")).toBe(false);
     expect(allowedRolesFor("/accounting-extra")).toBeNull();
