@@ -66,6 +66,9 @@ function MrpPage() {
       const rawMaterials = (materialsResponse.data ?? []) as RawMaterial[];
       const modelName = new Map(models.map((m) => [m.id, m.name]));
       const materialById = new Map(rawMaterials.map((m) => [m.id, m]));
+      const missingBomMaterialNames = (bomResponse.data ?? [])
+        .filter((line) => !materialById.has(line.raw_material_id))
+        .map((line) => `Unknown raw material (${line.raw_material_id})`);
       const bom: MrpBomLine[] = (bomResponse.data ?? []).flatMap((line) => {
         const material = materialById.get(line.raw_material_id);
         if (!material) return [];
@@ -86,7 +89,14 @@ function MrpPage() {
         demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity: Number(item.quantity) });
       }
       const balances: MrpMaterialBalance[] = rawMaterials.map((m) => ({ rawMaterialId: m.id, rawMaterialName: m.name, unit: m.unit, availableQuantity: null }));
-      return { orders, result: explodeMaterialRequirements(demand, bom, balances) };
+      const result = explodeMaterialRequirements(demand, bom, balances);
+      // Do not silently omit BOM lines whose material master is missing or outside the active company.
+      if (missingBomMaterialNames.length) {
+        result.status = "insufficient-data";
+        result.missingMaterialMasters = [...new Set([...result.missingMaterialMasters, ...missingBomMaterialNames])].sort();
+        result.notes.push("Some BOM lines reference raw materials that are missing or inaccessible in the active company; their requirements are excluded.");
+      }
+      return { orders, result };
     },
   });
 
