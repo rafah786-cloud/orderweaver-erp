@@ -5,7 +5,7 @@
 ## Included in this phase
 
 - manufacturing-phase1/001_foam_bun_genealogy_quarantine.sql proposes additive foam_bun_lots and foam_bun_lineage tables, company-scoped RLS, explicit cure start/minimum hours/release timestamp, and parent-child lineage.
-- The prepared SQL rejects release before the cure boundary, lineage across companies, self-links, cycles, unit mismatches, and lineage from a parent that is not released and cured.
+- The prepared SQL rejects release before the cure boundary, cross-company stock-item/batch/order references, lineage across companies, self-links, cycles, unit mismatches, lineage from a parent that is not released and cured, and mutation of a lot's identity/curing requirements.
 - src/lib/foam-bun-curing.ts provides deterministic domain guards for curing windows, active-company consumption checks, and lineage validation. Tests cover the time boundary, quarantine, malformed values, company separation, and cycles.
 - No UI was added because the live schema has not been activated. No production records or stock ledger rows were changed.
 
