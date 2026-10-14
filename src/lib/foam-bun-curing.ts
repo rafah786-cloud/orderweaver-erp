@@ -72,9 +72,14 @@ export function assertFoamBunLineageValid(
   if (!Number.isFinite(edge.quantity) || edge.quantity <= 0 || !edge.unit.trim()) {
     throw new Error("Lineage quantity must be positive and its unit explicit.");
   }
+  if (parent.companyId !== child.companyId || parent.companyId !== edge.companyId ||
+      !edge.unit.trim() || !parent.id || !child.id) {
+    throw new Error("Parent, child, and lineage identity must agree.");
+  }
   assertFoamBunCanConsume(parent, edge.companyId, at);
   const adjacency = new Map<string, string[]>();
   for (const existing of existingEdges) {
+    if (existing.companyId !== edge.companyId) continue;
     const children = adjacency.get(existing.parentBunLotId) ?? [];
     children.push(existing.childBunLotId);
     adjacency.set(existing.parentBunLotId, children);
