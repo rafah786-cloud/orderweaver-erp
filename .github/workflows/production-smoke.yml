@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Wait for the published release checkpoint
         env:
-          RELEASE_CHECKPOINT: "mm-erp-release-check-2026-10-14-r10"
+          RELEASE_CHECKPOINT: "mm-erp-release-check-2026-10-14-r11"
           PRODUCTION_URL: "https://orderweaver-erp.lovable.app/login"
         run: |
           set -euo pipefail
