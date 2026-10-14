@@ -85,3 +85,19 @@ describe("foam bun curing and genealogy guards", () => {
     }], "2026-10-04T00:00:00Z")).toThrow(/cycle/);
   });
 });
+
+describe("staged foam bun migration contract", () => {
+  it("keeps schema activation out of automatic Supabase migrations and declares its safety gates", () => {
+    const sql = readFileSync(
+      new URL("../../manufacturing-phase1/001_foam_bun_genealogy_quarantine.sql", import.meta.url),
+      "utf8",
+    );
+    expect(sql).toContain("PREPARED ONLY");
+    expect(sql).toContain("company_id = public.current_company_id()");
+    expect(sql).toContain("public.has_company_access(company_id)");
+    expect(sql).toContain("foam_bun_lineage_validate");
+    expect(sql).toContain("minimum curing interval has not elapsed");
+    expect(sql).toContain("foam bun lineage cycle rejected");
+    expect(sql).toContain("canonical production-consumption RPC must require bun_lot_id");
+  });
+});
