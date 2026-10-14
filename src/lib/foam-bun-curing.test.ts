@@ -15,6 +15,7 @@ const parent: FoamBunCureRecord = {
   cureStartedAt: "2026-10-01T00:00:00.000Z",
   requiredCureHours: 48,
   releasedAt: "2026-10-03T00:00:00.000Z",
+  unit: "slab",
 };
 const child: FoamBunCureRecord = {
   id: "bun-child",
@@ -23,6 +24,7 @@ const child: FoamBunCureRecord = {
   cureStartedAt: "2026-10-03T00:00:00.000Z",
   requiredCureHours: 48,
   releasedAt: null,
+  unit: "slab",
 };
 const edge: FoamBunLineageEdge = {
   parentBunLotId: parent.id,
@@ -69,13 +71,15 @@ describe("foam bun curing and genealogy guards", () => {
     expect(() => assertFoamBunLineageValid(edge, parent, child, [], "2026-10-04T00:00:00Z")).not.toThrow();
   });
 
-  it("rejects self lineage, cross-company lineage, invalid quantity, and cycles", () => {
+  it("rejects self lineage, cross-company lineage, invalid quantity, unit mismatch, and cycles", () => {
     expect(() => assertFoamBunLineageValid({ ...edge, childBunLotId: parent.id }, parent, child, [], "2026-10-04T00:00:00Z"))
       .toThrow(/Invalid parent-child/);
     expect(() => assertFoamBunLineageValid({ ...edge, companyId: "company-b" }, parent, child, [], "2026-10-04T00:00:00Z"))
       .toThrow(/same company/);
     expect(() => assertFoamBunLineageValid({ ...edge, quantity: 0 }, parent, child, [], "2026-10-04T00:00:00Z"))
       .toThrow(/positive/);
+    expect(() => assertFoamBunLineageValid({ ...edge, unit: "kg" }, parent, child, [], "2026-10-04T00:00:00Z"))
+      .toThrow(/units/);
     expect(() => assertFoamBunLineageValid(edge, parent, child, [{
       parentBunLotId: child.id, childBunLotId: parent.id, companyId: "company-a", quantity: 1, unit: "slab",
     }], "2026-10-04T00:00:00Z")).toThrow(/cycle/);
