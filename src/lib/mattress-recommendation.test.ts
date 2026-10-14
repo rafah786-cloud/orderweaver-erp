@@ -165,7 +165,7 @@ describe("mattress budget recommendations", () => {
     expect(result.candidates[0]?.components[0]?.quantityPerUnit).toBe(2);
     expect(result.candidates[0]?.components[0]?.quantityPerUnit).not.toBe(7);
     expect(result.candidates[0]?.components[0]?.quantityPerUnit).not.toBe(9);
-    expect(today).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/);
+    expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("uses recorded purchase rates and stock readiness instead of invented costs", async () => {
