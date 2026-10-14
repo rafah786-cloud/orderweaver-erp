@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { routePathMatches } from "@/lib/permissions";
 import { LayoutDashboard, ClipboardList, BookOpen, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +54,7 @@ function VendorShell() {
               const Icon = n.icon;
               const active = n.exact
                 ? location.pathname === n.to
-                : location.pathname.startsWith(n.to);
+                : routePathMatches(location.pathname, n.to);
               return (
                 <Link
                   key={n.to}
