@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, ClipboardList, Boxes, PackageCheck } from "lucide-react";
 import { explodeMaterialRequirements, type MrpBomLine, type MrpDemandLine, type MrpMaterialBalance } from "@/lib/mrp-explosion";
+import { selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "@/lib/mrp-bom-source";
 
 export const Route = createFileRoute("/_app/mrp")({
   head: () => ({ meta: [
@@ -26,7 +27,7 @@ type SalesItem = { sales_order_id: string; model_id: string | null; product_name
 type ProductModel = { id: string; name: string };
 type RawMaterial = { id: string; name: string; unit: string };
 type StockItem = { id: string; name: string; unit: string };
-type BomRevision = { id: string; model_id: string; revision: string; status: string; effective_from: string | null; effective_to: string | null };
+type BomRevision = BomRevisionCandidate;
 type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null; stock_item_id: string | null; quantity_per_unit: number; scrap_pct: number };
 
 function MrpPage() {
@@ -79,25 +80,9 @@ function MrpPage() {
       const stockItemById = new Map(stockItems.map((m) => [m.id, m]));
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      const revisionsByModel = new Map<string, BomRevision[]>();
-      for (const revision of revisions) {
-        const rows = revisionsByModel.get(revision.model_id) ?? [];
-        rows.push(revision);
-        revisionsByModel.set(revision.model_id, rows);
-      }
-      const selectedRevisionByModel = new Map<string, BomRevision>();
-      const missingEffectiveRevisionModels: string[] = [];
-      for (const modelId of modelIds) {
-        const candidates = revisionsByModel.get(modelId) ?? [];
-        if (!candidates.length) continue;
-        const effective = candidates
-          .filter((revision) => revision.status === "released" &&
-            Boolean(revision.effective_from) && revision.effective_from <= today &&
-            (!revision.effective_to || revision.effective_to >= today))
-          .sort((a, b) => (b.effective_from ?? "").localeCompare(a.effective_from ?? ""));
-        if (effective[0]) selectedRevisionByModel.set(modelId, effective[0]);
-        else missingEffectiveRevisionModels.push(modelName.get(modelId) ?? modelId);
-      }
+      const selection = selectEffectiveReleasedBomRevisions(modelIds, revisions, today);
+      const selectedRevisionByModel = selection.selectedByModel;
+      const missingEffectiveRevisionModels = selection.missingEffectiveRevisionModelIds.map((id) => modelName.get(id) ?? id);
       const selectedRevisionIds = [...selectedRevisionByModel.values()].map((revision) => revision.id);
       const revisionLinesResponse = selectedRevisionIds.length
         ? await supabase.from("bom_revision_lines").select("bom_revision_id, raw_material_id, stock_item_id, quantity_per_unit, scrap_pct").eq("company_id", activeCompany.id).in("bom_revision_id", selectedRevisionIds)
@@ -140,7 +125,8 @@ function MrpPage() {
 
       // Fall back to the legacy model BOQ only when no governed BOM revision exists for that model.
       // If revisions exist but none is released/effective, fail closed instead of planning from stale legacy data.
-      const legacyBomRows = (legacyBomResponse.data ?? []).filter((line) => !revisionsByModel.has(line.model_id));
+      const modelsWithAnyRevision = new Set(revisions.map((revision) => revision.model_id));
+      const legacyBomRows = (legacyBomResponse.data ?? []).filter((line) => !modelsWithAnyRevision.has(line.model_id));
       for (const line of legacyBomRows) {
         const material = materialById.get(line.raw_material_id);
         if (!material) {
