@@ -68,11 +68,13 @@ function ProductionPage() {
     queryKey: ["production-orders", activeCompany?.id],
     enabled: !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
+      if (!activeCompany?.id) throw new Error("Select an active company to load production orders.");
       const { data, error } = await supabase
         .from("production_orders")
         .select(
           "id, production_number, status, tracking_number, transporter_name, sales_order_id, sales_orders(order_number, party_id, parties(name))",
         )
+        .eq("company_id", activeCompany.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Order[];
