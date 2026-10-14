@@ -40,3 +40,21 @@ describe("ERP route security policy", () => {
     expect(new Set(prefixes).size).toBe(prefixes.length);
   });
 });
+
+
+describe("route boundary matching", () => {
+  it("matches a route and its nested screens", async () => {
+    const { routePathMatches } = await import("./permissions");
+    expect(routePathMatches("/accounting", "/accounting")).toBe(true);
+    expect(routePathMatches("/accounting/trial-balance", "/accounting")).toBe(true);
+    expect(routePathMatches("/accounting/trial-balance/", "/accounting/")).toBe(true);
+  });
+
+  it("rejects similarly prefixed siblings and unmapped paths", async () => {
+    const { routePathMatches } = await import("./permissions");
+    expect(routePathMatches("/accounting-extra", "/accounting")).toBe(false);
+    expect(routePathMatches("/vendorish", "/vendor")).toBe(false);
+    expect(allowedRolesFor("/accounting-extra")).toBeNull();
+    expect(isRouteDenied("/unknown-app-module", ["admin"])).toBe(true);
+  });
+});
