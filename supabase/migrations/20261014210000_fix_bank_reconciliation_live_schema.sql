@@ -75,23 +75,23 @@ BEGIN
     RAISE EXCEPTION 'Amounts do not match';
   END IF;
 
-  UPDATE public.bank_transactions
+  UPDATE public.bank_transactions AS bt
   SET reconciled_at = clock_timestamp(),
       reconciled_with = p_statement
-  WHERE id = p_book
+  WHERE bt.id = p_book
     AND EXISTS (
       SELECT 1 FROM public.bank_accounts AS ba
-      WHERE ba.id = public.bank_transactions.bank_account_id
+      WHERE ba.id = bt.bank_account_id
         AND ba.company_id = v_company
     );
 
-  UPDATE public.bank_transactions
+  UPDATE public.bank_transactions AS bt
   SET reconciled_at = clock_timestamp(),
       reconciled_with = p_book
-  WHERE id = p_statement
+  WHERE bt.id = p_statement
     AND EXISTS (
       SELECT 1 FROM public.bank_accounts AS ba
-      WHERE ba.id = public.bank_transactions.bank_account_id
+      WHERE ba.id = bt.bank_account_id
         AND ba.company_id = v_company
     );
 END;
