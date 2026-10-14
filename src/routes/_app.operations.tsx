@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "@/lib/company-context";
 import { PageHeader, PageBody } from "@/components/PageHeader";
@@ -42,6 +43,8 @@ const MODULES: Module[] = [
 
 function EnterpriseOperations() {
   const { activeCompany, loading: companyLoading } = useCompany();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const { data: capabilityData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["enterprise-capability-counts", activeCompany?.id],
     enabled: !companyLoading && Boolean(activeCompany?.id),
@@ -68,7 +71,7 @@ function EnterpriseOperations() {
 
   return (
     <>
-      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={<div className="flex flex-wrap gap-2"><Link to="/capacity" className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium">Capacity Preview →</Link><Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link></div>} />
+      <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={<div className="flex flex-wrap gap-2"><Link to="/capacity" className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium">Capacity Preview →</Link>{isAdmin && <Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link>}</div>} />
       <PageBody>
         {companyLoading && <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading active company…</div>}
         {!companyLoading && !activeCompany?.id && <div role="alert" className="mb-4 rounded-lg border p-4 text-sm">Select an active company to view its capability data.</div>}
@@ -92,7 +95,7 @@ function EnterpriseOperations() {
                 </div></CardHeader>
                 <CardContent><p className="text-sm text-muted-foreground">{module.description}</p><div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                   <span>{isLoading ? "…" : String(records) + " records in foundation"}</span>
-                  {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>} {module.key === "planning" && <Link to="/capacity" className="font-medium text-primary hover:underline">Capacity preview →</Link>} {!module.existingPath && <Link to="/enterprise-workbench" className="font-medium text-primary hover:underline">Open workbench →</Link>}
+                  {module.existingPath && <Link to={module.existingPath} className="font-medium text-primary hover:underline">Open existing module →</Link>} {module.key === "planning" && <Link to="/capacity" className="font-medium text-primary hover:underline">Capacity preview →</Link>} {!module.existingPath && isAdmin && <Link to="/enterprise-workbench" className="font-medium text-primary hover:underline">Open workbench →</Link>}
                 </div></CardContent>
               </Card>
             );
