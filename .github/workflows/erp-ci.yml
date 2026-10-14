@@ -49,3 +49,16 @@ jobs:
         run: |
           export PATH="$(pg_config --bindir):$PATH"
           python security-tests/enterprise_workbench_admin_rls.py supabase/migrations/20261014140000_enterprise_workbench_admin_dml_guard.sql
+
+  bank-reconciliation-rpc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test bank reconciliation RPC company and role boundaries
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/bank_reconciliation_rpc.py supabase/migrations/20261007210000_harden_bank_reconciliation.sql supabase/migrations/20261014210000_fix_bank_reconciliation_live_schema.sql
