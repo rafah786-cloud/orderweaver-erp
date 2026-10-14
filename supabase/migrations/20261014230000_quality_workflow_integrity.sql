@@ -42,7 +42,7 @@ security definer
 set search_path = ''
 as $function$
 begin
-  if new.status = 'closed' and old.status is distinct from 'closed' then
+  if new.status = 'closed' and (tg_op = 'INSERT' or old.status is distinct from 'closed') then
     if new.disposition is null
       or nullif(btrim(new.root_cause), '') is null
       or nullif(btrim(new.containment_action), '') is null then
@@ -66,7 +66,7 @@ $function$;
 
 drop trigger if exists quality_nonconformance_closure_guard on public.quality_nonconformances;
 create trigger quality_nonconformance_closure_guard
-before update of status on public.quality_nonconformances
+before insert or update of status on public.quality_nonconformances
 for each row execute function public.enforce_quality_nonconformance_closure();
 
 revoke all on function public.enforce_quality_nonconformance_closure() from public, anon, authenticated;
