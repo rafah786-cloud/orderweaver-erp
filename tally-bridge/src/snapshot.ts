@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import {
   TallyClient,
@@ -113,9 +113,62 @@ async function save(root: string, name: string, xml: string) {
 export async function snapshotCompany(client: TallyClient, options: SnapshotOptions) {
   const root = options.outputDir + "/" + options.company.replace(/[^a-z0-9._-]+/gi, "_");
   await mkdir(root, { recursive: true });
+
+  // Checkpoint each validated segment immediately. If Tally closes or the
+  // connection drops, a rerun verifies and reuses completed files instead of
+  // repeating hours of exports. Never reuse a segment from another company or
+  // date window.
+  const manifestPath = root + "/manifest.json";
   const segments: any[] = [];
+  try {
+    const previous = JSON.parse(await readFile(manifestPath, "utf8"));
+    if (
+      previous.company === options.company &&
+      previous.fromDate === options.fromDate &&
+      previous.toDate === options.toDate &&
+      Array.isArray(previous.segments)
+    ) {
+      segments.push(...previous.segments);
+    }
+  } catch {
+    // First run or an incomplete manifest; start with verified files only.
+  }
+
+  const writeCheckpoint = async () => {
+    const manifest = {
+      schemaVersion: 2,
+      generatedAt: new Date().toISOString(),
+      company: options.company,
+      fromDate: options.fromDate,
+      toDate: options.toDate,
+      segments,
+    };
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2), "utf8");
+  };
+
+  const reusable = async (matches: (segment: any) => boolean): Promise<any | null> => {
+    const index = segments.findIndex(matches);
+    if (index < 0) return null;
+    const segment = segments[index];
+    try {
+      const bytes = await readFile(segment.path);
+      const digest = createHash("sha256").update(bytes).digest("hex");
+      if (digest === segment.sha256 && bytes.byteLength === segment.bytes) {
+        console.log("[tally-bridge] Reusing verified checkpoint: " + segment.name + (segment.fromDate ? " " + segment.fromDate + " to " + segment.toDate : ""));
+        return segment;
+      }
+    } catch {
+      // Missing or unreadable checkpoint: fetch it again from Tally.
+    }
+    segments.splice(index, 1);
+    await writeCheckpoint();
+    return null;
+  };
 
   for (const collection of MASTER_COLLECTIONS) {
+    const prior = await reusable((segment) => segment.kind === "collection" && segment.name === collection);
+    if (prior) continue;
+
     const response = await client.request(
       collection,
       collectionRequest(collection, options),
@@ -133,7 +186,8 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
       recordCount: validated.recordCount,
       ...saved,
     });
-    console.log("[tally-bridge] " + options.company + " / " + collection + ": " + validated.recordCount + " records");
+    await writeCheckpoint();
+    console.log("[tally-bridge] " + options.company + " / " + collection + ": " + validated.recordCount + " records (checkpoint saved)");
   }
 
   if (options.includeDayBook) {
@@ -145,6 +199,18 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         shiftMonths(cursor, options.chunkMonths) < endDate
           ? shiftMonths(cursor, options.chunkMonths)
           : endDate;
+      const prior = await reusable((segment) =>
+        segment.kind === "data" &&
+        segment.name === "Voucher Register" &&
+        segment.fromDate === cursor &&
+        segment.toDate === chunkEnd
+      );
+      if (prior) {
+        index++;
+        cursor = nextDay(chunkEnd);
+        continue;
+      }
+
       const requestOptions = {
         ...options,
         fromDate: cursor,
@@ -156,10 +222,10 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         requestOptions,
       );
       const cleanXml = sanitizeTallyXml(response.xml);
-      if (!/<ENVELOPE\b/i.test(cleanXml) || !/<DATA\b/i.test(cleanXml)) {
+      if (!/<ENVELOPE\\b/i.test(cleanXml) || !/<DATA\\b/i.test(cleanXml)) {
         throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": invalid Tally export envelope.");
       }
-      const dayBookStatus = cleanXml.match(/<STATUS>\s*(-?\d+)\s*<\/STATUS>/i)?.[1];
+      const dayBookStatus = cleanXml.match(/<STATUS>\\s*(-?\\d+)\\s*<\\/STATUS>/i)?.[1];
       if (dayBookStatus !== "1") {
         throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": Tally export status was " + (dayBookStatus ?? "missing") + ".");
       }
@@ -176,19 +242,13 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         toDate: chunkEnd,
         ...saved,
       });
+      await writeCheckpoint();
+      console.log("[tally-bridge] " + options.company + " / Voucher Register " + cursor + " to " + chunkEnd + " (checkpoint saved)");
       index++;
       cursor = nextDay(chunkEnd);
     }
   }
 
-  const manifest = {
-    schemaVersion: 2,
-    generatedAt: new Date().toISOString(),
-    company: options.company,
-    fromDate: options.fromDate,
-    toDate: options.toDate,
-    segments,
-  };
-  await writeFile(root + "/manifest.json", JSON.stringify(manifest, null, 2), "utf8");
-  return manifest;
+  await writeCheckpoint();
+  return JSON.parse(await readFile(manifestPath, "utf8"));
 }
