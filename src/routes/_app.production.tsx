@@ -7,7 +7,8 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { AiInsightButton } from "@/components/ai/AiInsightButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, RefreshCw, AlertTriangle, ClipboardCheck } from "lucide-react";
+import { useCompany } from "@/lib/company-context";
 import { toast } from "sonner";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
@@ -56,14 +57,16 @@ type Order = {
 
 function ProductionPage() {
   const { hasAnyRole } = useAuth();
+  const { activeCompany, loading: companyLoading } = useCompany();
   const canAdvance = hasAnyRole(["admin", "production"]);
   const qc = useQueryClient();
   const notifyCustomer = useServerFn(notifyCustomerEvent);
   const notifyStaff = useServerFn(notifyStaffEvent);
   const advanceProductionOrderFn = useServerFn(advanceProductionOrder);
 
-  const { data = [] } = useQuery({
-    queryKey: ["production-orders"],
+  const { data = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["production-orders", activeCompany?.id],
+    enabled: !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("production_orders")
@@ -138,7 +141,21 @@ function ProductionPage() {
         actions={<AiInsightButton topic="production" label="Analyze production" />}
       />
       <PageBody>
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
+        {isError && (
+          <div role="alert" className="mb-4 flex flex-col gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2 text-sm"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" /><span>Production orders could not be loaded: {error instanceof Error ? error.message : "Unknown error"}</span></div>
+            <Button variant="outline" onClick={() => void refetch()} className="min-h-11 w-full sm:w-auto"><RefreshCw className="mr-2 h-4 w-4" />Retry</Button>
+          </div>
+        )}
+        {!isError && (isLoading || companyLoading) && (
+          <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading production orders for {activeCompany?.display_name ?? "the active company"}…</div>
+        )}
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+          <ClipboardCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div className="text-sm"><div className="font-semibold">Final quality gate</div><p className="mt-1 text-muted-foreground">Before moving an order from QC to Ready, record a passed <strong>final</strong> inspection in Quality Management. Every inspected unit must be accepted, with zero rejected units. The database enforces this gate even if a request bypasses this screen.</p></div>
+        </div>
+        <div className="overflow-x-auto pb-2">
+        <div className="grid min-w-[1100px] gap-4 grid-cols-5">
           {STAGES.map((s) => (
             <Card key={s.key}>
               <CardHeader className="pb-3">
@@ -158,7 +175,7 @@ function ProductionPage() {
                     return (
                       <div
                         key={o.id}
-                        className="rounded-md border border-border bg-card p-3 text-xs space-y-2"
+                        className="rounded-md border border-border bg-card p-4 text-sm space-y-3"
                       >
                         <div>
                           <div className="font-medium text-foreground">{o.production_number}</div>
@@ -175,7 +192,7 @@ function ProductionPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="w-full h-7 text-xs"
+                            className="w-full min-h-11 text-sm"
                             disabled={advance.isPending}
                             onClick={() => advance.mutate(o)}
                           >
@@ -190,6 +207,7 @@ function ProductionPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
         </div>
       </PageBody>
     </>
