@@ -29,6 +29,20 @@ This document is the engineering gate for making Mattress Maestro a production-g
 
 ## Business workflow rules
 
+### Read-only MRP netting gate — 2026-10-14
+
+**Blocked, not implemented.** Read-only inspection of the live catalog confirmed:
+
+- `stock_movements` has company/item/godown IDs, `movement_date`, `created_at`, `posting_id` and `reverses_posting_id`. `stock_on_hand(uuid, uuid)` has no as-of argument and excludes every compensating row via `reverses_posting_id IS NULL`; it cannot reproduce reversal-aware dated balances. Movement sign conventions and historical cutoffs require isolated integration tests before any replacement calculation is trusted.
+- `stock_available(uuid, uuid)` subtracts only current `status = 'open'` reservations. Neither function accepts an explicit company/date; invoker RLS supplies the active-company boundary, not an independently verified planning snapshot.
+- `stock_reservations` has `qty`, `status` and `created_at`, but no effective/released/consumed timestamps or dated lifecycle history. A reservation consumed today cannot be reconstructed as open yesterday. Its SELECT policy is admin-only, so an empty result for production/accountant callers cannot mean zero reservations.
+- `purchase_bills` has current receipt status and expected dispatch date, not a confirmed inbound due-date/remaining-supply history. Receipt lines have quantities and parent receipts have `received_at`, but no verified as-of commitment/cancellation/partial-receipt contract joins these to nettable supply. `mrp_planned_orders.firmed` and conversion IDs alone are not proof of a real open supply commitment.
+- Raw-material mappings on stock items exist, but no tested mapping/unit, godown, completeness, consumed-demand and reservation-attribution contract establishes a safe netting scope. Counting already-issued production demand or this demand's reservations again would misstate shortages.
+
+MRP therefore retains gross requirements only. The master-only availability gate ignores `raw_materials.current_stock` and any extra projection fields; available quantity and shortage remain **null**, never zero. The page displays the blocker. No stock/reservation/supply reads, new RPCs, policies, migrations or live writes were introduced.
+
+Enable netting only after an approved recovery/migration workflow establishes the missing dated lifecycle and authoritative supply contracts, and isolated tests cover companies/roles, cutoffs, reversals/transfers, consumed/released reservations, partial receipts/cancellations, mapping/unit ambiguity, complete pagination and double counting. Existing in-memory stock-ledger tests do not validate this live planning contract.
+
 ### Sales
 
 Draft → confirmed → dispatched → invoiced/paid as applicable.

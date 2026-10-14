@@ -1,5 +1,11 @@
 ## Open tasks
 
+## Read-only MRP netting gate
+- [x] Inspect live stock/reservation/supply schema and availability functions without business-data writes
+- [x] Keep availability/shortages unknown, expose the exact blocker and add focused regression tests
+- [ ] Verify lint, tests and automatic preview build
+- [ ] Enable canonical netting only after an approved, tested as-of balance and reservation/supply lifecycle contract exists (blocked by schema gaps documented in production readiness)
+
 ## Velocity safe integration increment
 - [ ] Inspect official API documentation, existing schema and deployment configuration
 - [ ] Add server-only timed requests, redacted failures and bounded 401 recovery
