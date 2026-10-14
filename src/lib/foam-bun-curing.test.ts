@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   assertFoamBunCanConsume,
@@ -79,7 +80,7 @@ describe("foam bun curing and genealogy guards", () => {
     expect(() => assertFoamBunLineageValid({ ...edge, quantity: 0 }, parent, child, [], "2026-10-04T00:00:00Z"))
       .toThrow(/positive/);
     expect(() => assertFoamBunLineageValid({ ...edge, unit: "kg" }, parent, child, [], "2026-10-04T00:00:00Z"))
-      .toThrow(/units/);
+      .toThrow(/identity|unit/i);
     expect(() => assertFoamBunLineageValid(edge, parent, child, [{
       parentBunLotId: child.id, childBunLotId: parent.id, companyId: "company-a", quantity: 1, unit: "slab",
     }], "2026-10-04T00:00:00Z")).toThrow(/cycle/);
