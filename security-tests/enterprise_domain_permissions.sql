@@ -67,3 +67,21 @@ begin
   end if;
 end
 $test$;
+
+-- Direct-call privileges: audit is trigger-only; sales-order creation is authenticated-only.
+do $privilege_test$
+begin
+  if has_function_privilege('anon', 'public.audit_enterprise_domain_change()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.audit_enterprise_domain_change()', 'EXECUTE') then
+    raise exception 'Trigger-only audit function must not be directly executable by client roles';
+  end if;
+
+  if has_function_privilege('anon', 'public.create_sales_order_atomic(uuid,date,date,text,text,jsonb)', 'EXECUTE') then
+    raise exception 'Anonymous callers must not execute the sales-order creation RPC';
+  end if;
+
+  if not has_function_privilege('authenticated', 'public.create_sales_order_atomic(uuid,date,date,text,text,jsonb)', 'EXECUTE') then
+    raise exception 'Authenticated callers must retain the guarded sales-order creation RPC';
+  end if;
+end
+$privilege_test$;
