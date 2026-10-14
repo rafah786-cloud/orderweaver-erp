@@ -17,6 +17,7 @@ export const ROUTE_ROLES: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/mrp", roles: ["admin", "production", "accountant"] },
   { prefix: "/capacity", roles: ["admin", "production"] },
   { prefix: "/operations", roles: ["admin", "accountant", "sales", "production", "hr"] },
+  { prefix: "/enterprise-workbench", roles: ["admin"] },
   { prefix: "/employees", roles: ["admin", "hr"] },
   { prefix: "/attendance", roles: ["admin", "hr", "employee"] },
   { prefix: "/payslips", roles: ["admin", "hr", "employee"] },
@@ -53,4 +54,10 @@ export function allowedRolesFor(pathname: string): AppRole[] | null {
     (r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`),
   );
   return match ? match.roles : null;
+}
+
+/** Private routes must have an explicit role policy; missing policy means deny. */
+export function isRouteDenied(pathname: string, roles: AppRole[]): boolean {
+  const allowed = allowedRolesFor(pathname);
+  return allowed === null || !allowed.some((role) => roles.includes(role));
 }
