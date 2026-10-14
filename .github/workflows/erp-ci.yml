@@ -36,3 +36,16 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm test
+
+  enterprise-workbench-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test company isolation and admin-only writes
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/enterprise_workbench_admin_rls.py supabase/migrations/20261014140000_enterprise_workbench_admin_dml_guard.sql
