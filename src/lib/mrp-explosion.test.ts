@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest';
+import { explodeMaterialRequirements } from './mrp-explosion';
+describe('MRP explosion', () => { it('aggregates gross requirements and calculates shortages', () => { const r=explodeMaterialRequirements([{productionOrderId:'p1',productionOrderNumber:'PO-1',productModelId:'m1',productModelName:'Classic',orderQuantity:5}], [{productModelId:'m1',rawMaterialId:'r1',rawMaterialName:'Foam',unit:'sheet',quantityPerFinishedUnit:2}], [{rawMaterialId:'r1',rawMaterialName:'Foam',unit:'sheet',availableQuantity:6}]); expect(r.status).toBe('calculated'); expect(r.requirements[0]).toMatchObject({grossRequired:10,shortageQuantity:4}); }); });
