@@ -85,6 +85,48 @@ CREATE POLICY foam_bun_lineage_insert_production ON public.foam_bun_lineage
   FOR INSERT TO authenticated
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'production'));
 
+-- Verify all referenced operational records belong to the same company and freeze lot identity.
+CREATE OR REPLACE FUNCTION public.validate_foam_bun_lot()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $
+DECLARE item_company uuid; batch_item uuid; order_company uuid;
+BEGIN
+  SELECT company_id INTO item_company FROM public.stock_items WHERE id = NEW.stock_item_id;
+  IF item_company IS NULL OR item_company <> NEW.company_id THEN
+    RAISE EXCEPTION 'foam bun stock item must belong to the same company';
+  END IF;
+  IF NEW.stock_batch_id IS NOT NULL THEN
+    SELECT stock_item_id INTO batch_item FROM public.stock_batches WHERE id = NEW.stock_batch_id;
+    IF batch_item IS NULL OR batch_item <> NEW.stock_item_id THEN
+      RAISE EXCEPTION 'foam bun batch must belong to the selected stock item';
+    END IF;
+  END IF;
+  IF NEW.source_production_order_id IS NOT NULL THEN
+    SELECT company_id INTO order_company FROM public.production_orders WHERE id = NEW.source_production_order_id;
+    IF order_company IS NULL OR order_company <> NEW.company_id THEN
+      RAISE EXCEPTION 'source production order must belong to the same company';
+    END IF;
+  END IF;
+  IF TG_OP = 'UPDATE' AND (
+    NEW.company_id IS DISTINCT FROM OLD.company_id OR
+    NEW.bun_code IS DISTINCT FROM OLD.bun_code OR
+    NEW.stock_item_id IS DISTINCT FROM OLD.stock_item_id OR
+    NEW.stock_batch_id IS DISTINCT FROM OLD.stock_batch_id OR
+    NEW.source_production_order_id IS DISTINCT FROM OLD.source_production_order_id OR
+    NEW.quantity IS DISTINCT FROM OLD.quantity OR
+    NEW.unit IS DISTINCT FROM OLD.unit OR
+    NEW.cure_started_at IS DISTINCT FROM OLD.cure_started_at OR
+    NEW.required_cure_hours IS DISTINCT FROM OLD.required_cure_hours
+  ) THEN
+    RAISE EXCEPTION 'foam bun identity and curing requirements are immutable; create a traceable successor lot';
+  END IF;
+  RETURN NEW;
+END;
+$;
+DROP TRIGGER IF EXISTS foam_bun_lot_validate ON public.foam_bun_lots;
+CREATE TRIGGER foam_bun_lot_validate
+  BEFORE INSERT OR UPDATE ON public.foam_bun_lots
+  FOR EACH ROW EXECUTE FUNCTION public.validate_foam_bun_lot();
+
 -- Validates cure status and minimum cure duration at the moment of an authorized release/issue call.
 CREATE OR REPLACE FUNCTION public.assert_foam_bun_cured(p_bun_lot uuid, p_at timestamptz DEFAULT now())
 RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
