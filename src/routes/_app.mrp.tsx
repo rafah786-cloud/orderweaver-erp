@@ -7,7 +7,8 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, ClipboardList, Boxes, PackageCheck } from "lucide-react";
-import { explodeMaterialRequirements, type MrpBomLine, type MrpDemandLine, type MrpMaterialBalance } from "@/lib/mrp-explosion";
+import { explodeMaterialRequirements, type MrpBomLine, type MrpDemandLine } from "@/lib/mrp-explosion";
+import { MRP_NETTING_BLOCKER, unnettedMaterialBalances } from "@/lib/mrp-availability";
 import { grossQuantityPerFinishedUnit, selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "@/lib/mrp-bom-source";
 
 export const Route = createFileRoute("/_app/mrp")({
@@ -164,10 +165,7 @@ function MrpPage() {
         }
         demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity });
       }
-      const balances: MrpMaterialBalance[] = [
-        ...rawMaterials.map((m) => ({ rawMaterialId: `raw:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
-        ...stockItems.map((m) => ({ rawMaterialId: `stock:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
-      ];
+      const balances = unnettedMaterialBalances(rawMaterials, stockItems);
       const result = explodeMaterialRequirements(demand, bom, balances);
       if (unmappedDemandNames.length) {
         result.status = "insufficient-data";
@@ -206,6 +204,7 @@ function MrpPage() {
         <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
         <div className="text-sm"><div className="font-semibold">Planning preview — no stock changes</div><p className="mt-1 text-muted-foreground">This preview uses the latest effective released BOM revision when one exists. It uses the legacy per-model BOQ only when no BOM revision exists for that model. Scrap allowance uses the existing recommendation-engine convention: quantity per unit × (1 + max(0, scrap percentage) / 100). The preview never reserves stock, creates purchase orders, or posts inventory. Available stock is intentionally not netted because the current-stock field is not a verified reservation-aware planning balance.</p></div>
       </div>
+      <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">{MRP_NETTING_BLOCKER}</div>
       {companyLoading && <div role="status" className="rounded-lg border p-4 text-sm text-muted-foreground">Loading active company…</div>}
       {!companyLoading && !activeCompany?.id && <div role="alert" className="rounded-lg border p-4 text-sm">Select an active company to continue.</div>}
       {query.isError && <div role="alert" className="mb-4 flex flex-col gap-3 rounded-lg border border-destructive/40 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2 text-sm"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" /><span>Could not calculate requirements: {query.error instanceof Error ? query.error.message : "Unknown error"}</span></div><Button variant="outline" onClick={() => void query.refetch()} className="min-h-11"><RefreshCw className="mr-2 h-4 w-4" />Retry</Button></div>}
