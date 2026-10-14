@@ -1,5 +1,11 @@
 ## Open tasks
 
+- [x] Make the Enterprise Operations dashboard resilient to partially installed capability schemas; surface missing migration tables separately from permission/network errors instead of failing all module counts.
+
+- [x] Add guarded maintenance work-order completion: require resolution and non-negative downtime/costs, stamp completion time, and make completed work orders terminal.
+
+- [x] Add CAPA action register with company-scoped CRUD, corrective/preventive action types, owners and due dates; require effectiveness evidence and completion timestamp before an action can be marked done.
+
 ## Read-only MRP netting gate
 - [x] Inspect live stock/reservation/supply schema and availability functions without business-data writes
 - [x] Keep availability/shortages unknown, expose the exact blocker and add focused regression tests
