@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
-  const { loading, session, profile, hasAnyRole, roles } = useAuth();
+  const { loading, session, profile, roles } = useAuth();
   const location = useLocation();
 
   if (loading) {
