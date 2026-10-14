@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { routePathMatches } from "@/lib/permissions";
 
 const TABS = [
   { to: "/communications/setup", label: "Setup Wizard" },
@@ -21,7 +22,7 @@ function CommunicationsLayout() {
       <div className="border-b">
         <nav className="flex gap-1 px-4 pt-3 overflow-x-auto">
           {TABS.map((t) => {
-            const active = pathname.startsWith(t.to);
+            const active = routePathMatches(pathname, t.to);
             return (
               <Link
                 key={t.to}
