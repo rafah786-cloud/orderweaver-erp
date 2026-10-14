@@ -52,7 +52,7 @@ describe("ERP route security policy", () => {
   it("does not leave a top-level private route without an explicit role policy", async () => {
     const { readdirSync } = await import("node:fs");
     const routeFiles = readdirSync(new URL("../routes/", import.meta.url))
-      .filter((file) => /^_app\\.[^.]+\\.tsx$/.test(file))
+      .filter((file) => file.startsWith("_app.") && file.endsWith(".tsx") && !file.slice(5, -4).includes("."))
       .map((file) => `/${file.slice(5, -4)}`);
     const configured = new Set(ROUTE_ROLES.map(({ prefix }) => prefix));
     for (const path of routeFiles) {
