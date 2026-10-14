@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/lib/company-context";
+import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -141,6 +142,8 @@ const MODULES: ModuleConfig[] = [
 
 function EnterpriseWorkbench() {
   const { activeCompany, loading: companyLoading } = useCompany();
+  const { hasAnyRole } = useAuth();
+  const canManageQuality = hasAnyRole(["admin", "production"]);
   const [activeModule, setActiveModule] = useState(MODULES[0].key);
   if (companyLoading) return <PageBody><p className="text-sm text-muted-foreground">Loading company context…</p></PageBody>;
   if (!activeCompany) return <PageBody><Card><CardContent className="p-6 text-sm text-muted-foreground">No active company is available.</CardContent></Card></PageBody>;
@@ -163,14 +166,14 @@ function EnterpriseWorkbench() {
           <TabsList className="flex h-auto flex-wrap justify-start gap-1">
             {MODULES.map((m) => { const Icon=m.icon; return <TabsTrigger key={m.key} value={m.key} className="gap-1"><Icon className="h-3.5 w-3.5" />{m.title}</TabsTrigger>; })}
           </TabsList>
-          {MODULES.map((m) => <TabsContent key={m.key} value={m.key} className="mt-5 space-y-5">{m.entities.map((e)=><EntityPanel key={e.key} config={e} companyId={activeCompany.id} />)}</TabsContent>)}
+          {MODULES.map((m) => <TabsContent key={m.key} value={m.key} className="mt-5 space-y-5">{m.entities.map((e)=><EntityPanel key={e.key} config={e} companyId={activeCompany.id} canManageQuality={canManageQuality} />)}</TabsContent>)}
         </Tabs>
       </PageBody>
     </>
   );
 }
 
-function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: string }) {
+function EntityPanel({ config, companyId, canManageQuality }: { config: EntityConfig; companyId: string; canManageQuality: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -182,6 +185,8 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
   const normalizedSearch = normalizeWorkbenchSearch(searchInput);
   const searchColumns = getWorkbenchSearchColumns(config.fields);
   const db = supabase as any;
+  const qualityReadOnly = config.key === "quality-inspections" && !canManageQuality;
+  const effectiveReadOnly = Boolean(config.readOnly || qualityReadOnly);
 
   const { data: queryData, isFetching, isLoading, isError, refetch } = useQuery({
     queryKey: ["enterprise-workbench", companyId, config.table, pageIndex, normalizedSearch, statusFilter],
@@ -209,6 +214,9 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
 
   const save = useMutation({
     mutationFn: async () => {
+      if (config.key === "quality-inspections" && !canManageQuality) {
+        throw new Error("Only admin or production roles may record quality inspection results.");
+      }
       const payload: Record<string, unknown> = { company_id: companyId };
       for (const field of config.fields) {
         const raw = form[field.key] ?? "";
@@ -250,6 +258,9 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      if (config.key === "quality-inspections" && !canManageQuality) {
+        throw new Error("Only admin or production roles may manage quality inspection records.");
+      }
       const { error } = await db.from(config.table).delete().eq("id", id).eq("company_id", companyId);
       if (error) throw error;
     },
@@ -286,9 +297,9 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
 
   return (
     <Card>
-      <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{config.title}</CardTitle><p className="mt-1 text-xs text-muted-foreground">{config.description}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>refetch()} disabled={isFetching}><RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} />Refresh</Button>{!config.readOnly && <Button size="sm" onClick={openNew}><Plus className="h-3.5 w-3.5 mr-1" />New</Button>}</div></div></CardHeader>
+      <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{config.title}</CardTitle><p className="mt-1 text-xs text-muted-foreground">{config.description}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>refetch()} disabled={isFetching}><RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} />Refresh</Button>{!effectiveReadOnly && <Button size="sm" onClick={openNew}><Plus className="h-3.5 w-3.5 mr-1" />New</Button>}</div></div></CardHeader>
       <CardContent>
-        {config.readOnly && <div className="mb-3 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">{config.readOnlyReason ?? "This register is read-only until its workflow is implemented."}</div>}
+        {effectiveReadOnly && <div className="mb-3 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">{qualityReadOnly ? "Quality inspection results are view-only for your role. Only admin or production roles may record outcomes." : config.readOnlyReason ?? "This register is read-only until its workflow is implemented."}</div>}
         {open && <div className="mb-5 rounded-lg border bg-muted/20 p-4"><div className="mb-3 flex items-center justify-between"><div className="text-sm font-semibold">{editing ? "Edit record" : "Create record"}</div><Button size="sm" variant="ghost" onClick={()=>setOpen(false)}>Close</Button></div><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{config.fields.map(field=><FieldEditor key={field.key} field={field} value={form[field.key] ?? ""} onChange={v=>setForm(s=>({...s,[field.key]:v}))} restrictGovernedOptions={field.key===config.statusField && config.key!=="quality-inspections"} currentStatus={editing && config.statusField ? String(editing[config.statusField] ?? "") : undefined}/>)}</div><div className="mt-4 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1"/>{save.isPending ? "Saving…" : "Save"}</Button></div></div>}
         <div className="mb-3 flex flex-col gap-2 md:flex-row">
           <div className="relative min-w-0 flex-1">
@@ -314,12 +325,12 @@ function EntityPanel({ config, companyId }: { config: EntityConfig; companyId: s
             const currentStatus = config.statusField ? String(row[config.statusField] ?? "") : "";
             const protectedRow = isGovernedWorkbenchStatus(currentStatus);
             return <tr key={String(row.id)} className="border-b last:border-0"><>{config.columns.map(c=><td key={c} className="max-w-[260px] truncate px-3 py-2">{formatCell(row[c])}</td>)}</><td className="whitespace-nowrap px-3 py-2 text-right"><div className="flex justify-end gap-1">
-              <Button size="sm" variant="ghost" disabled={config.readOnly || protectedRow} title={protectedRow ? "Use the dedicated workflow for governed records." : "Edit record"} onClick={()=>openEdit(row)}>Edit</Button>
-              {!config.readOnly && config.key!=="quality-inspections" && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus})} disabled={protectedRow || statusMutation.isPending}>
+              <Button size="sm" variant="ghost" disabled={effectiveReadOnly || protectedRow} title={protectedRow ? "Use the dedicated workflow for governed records." : "Edit record"} onClick={()=>openEdit(row)}>Edit</Button>
+              {!effectiveReadOnly && config.key!=="quality-inspections" && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus})} disabled={protectedRow || statusMutation.isPending}>
                 <SelectTrigger className="h-8 w-[130px]" aria-label={`Change status for ${config.title} record`}><SelectValue placeholder="Status"/></SelectTrigger>
                 <SelectContent>{config.statusOptions.map(status=><SelectItem key={status} value={status} disabled={!canSetWorkbenchStatus(status,currentStatus)}>{status.replaceAll("_"," ")}</SelectItem>)}</SelectContent>
               </Select>}
-              <Button size="icon" variant="ghost" disabled={config.readOnly || protectedRow || remove.isPending} title={protectedRow ? "Governed records cannot be deleted here." : "Delete record"} aria-label={`Delete ${config.title} record`} onClick={()=>{if(confirm("Delete this record?")) remove.mutate(String(row.id));}}><Trash2 className="h-3.5 w-3.5"/></Button>
+              <Button size="icon" variant="ghost" disabled={effectiveReadOnly || protectedRow || remove.isPending} title={protectedRow ? "Governed records cannot be deleted here." : "Delete record"} aria-label={`Delete ${config.title} record`} onClick={()=>{if(confirm("Delete this record?")) remove.mutate(String(row.id));}}><Trash2 className="h-3.5 w-3.5"/></Button>
             </div></td></tr>;
           })}
         </tbody></table></div>
