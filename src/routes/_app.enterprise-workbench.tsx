@@ -334,7 +334,7 @@ function EntityPanel({ config, companyId, canManageQuality }: { config: EntityCo
           : rows.length===0 ? <tr><td colSpan={config.columns.length+1} className="px-3 py-8 text-center text-muted-foreground">{normalizedSearch || statusFilter !== "__all" ? "No records match these filters." : "No records yet."}</td></tr>
           : rows.map(row => {
             const currentStatus = config.statusField ? String(row[config.statusField] ?? "") : "";
-            const protectedRow = isGovernedWorkbenchStatus(currentStatus);
+            const protectedRow = isGovernedWorkbenchStatus(currentStatus) || (config.key === "quality-capa-actions" && currentStatus === "done");
             return <tr key={String(row.id)} className="border-b last:border-0"><>{config.columns.map(c=><td key={c} className="max-w-[260px] truncate px-3 py-2">{formatCell(row[c])}</td>)}</><td className="whitespace-nowrap px-3 py-2 text-right"><div className="flex justify-end gap-1">
               <Button size="sm" variant="ghost" disabled={effectiveReadOnly || protectedRow} title={protectedRow ? "Use the dedicated workflow for governed records." : "Edit record"} onClick={()=>openEdit(row)}>Edit</Button>
               {!effectiveReadOnly && config.key!=="quality-inspections" && config.statusField && config.statusOptions && <Select value={currentStatus || undefined} onValueChange={status => statusMutation.mutate({id:String(row.id),status,currentStatus,effectivenessResult:row.effectiveness_result})} disabled={protectedRow || statusMutation.isPending}>
