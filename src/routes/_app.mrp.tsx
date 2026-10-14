@@ -10,7 +10,14 @@ import { AlertTriangle, RefreshCw, ClipboardList, Boxes, PackageCheck } from "lu
 import { explodeMaterialRequirements, type MrpBomLine, type MrpDemandLine, type MrpMaterialBalance } from "@/lib/mrp-explosion";
 
 export const Route = createFileRoute("/_app/mrp")({
-  head: () => ({ meta: [{ title: "Material Requirements | Mattress Maestro ERP" }, { name: "description", content: "Read-only production material requirements preview." }] }),
+  head: () => ({ meta: [
+    { title: "Material Requirements | Mattress Maestro ERP" },
+    { name: "description", content: "Read-only production material requirements preview." },
+    { property: "og:title", content: "Material Requirements | Mattress Maestro ERP" },
+    { property: "og:description", content: "Read-only production material requirements preview." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MrpPage,
 });
 
