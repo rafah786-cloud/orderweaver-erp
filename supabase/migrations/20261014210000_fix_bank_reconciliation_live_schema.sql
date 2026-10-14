@@ -25,8 +25,8 @@ BEGIN
   END IF;
 
   IF NOT (
-    public.has_role(auth.uid(),'admin')
-    OR public.has_role(auth.uid(),'accountant')
+    public.has_role(auth.uid(),'admin'::public.app_role)
+    OR public.has_role(auth.uid(),'accountant'::public.app_role)
   ) THEN
     RAISE EXCEPTION 'Bank reconciliation access required';
   END IF;
