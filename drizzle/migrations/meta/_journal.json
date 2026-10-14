@@ -22,6 +22,13 @@
       "when": 1791530411944,
       "tag": "0002_protect_selected_crm_finance_shipping_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791955207747,
+      "tag": "0003_sales_orders_approved_read",
+      "breakpoints": true
     }
   ]
 }
