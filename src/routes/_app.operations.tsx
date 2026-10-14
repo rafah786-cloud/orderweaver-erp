@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useCompany } from "@/lib/company-context";
 import { PageHeader, PageBody } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Factory, ClipboardCheck, Wrench, GitBranch, ShoppingCart, Warehouse, Landmark, Users, Truck, BriefcaseBusiness, Workflow, Sparkles, ShieldCheck, Database } from "lucide-react";
@@ -23,7 +25,7 @@ type Module = {
 };
 
 const MODULES: Module[] = [
-  { key: "planning", title: "MPS / MRP / Capacity", description: "Master scheduling, material planning, work centres, routings and operation dependencies.", Icon: Factory, tables: ["mps_plans", "mrp_runs", "work_centers", "routings"], existingPath: "/production" },
+  { key: "planning", title: "MPS / MRP / Capacity", description: "Gross material requirements preview; MPS plans and capacity masters are managed in the Enterprise Workbench.", Icon: Factory, tables: ["mps_plans", "mrp_runs", "work_centers", "routings"], existingPath: "/mrp" },
   { key: "quality", title: "Quality Management", description: "Inspection plans, in-process checks, nonconformance and CAPA control.", Icon: ClipboardCheck, tables: ["quality_plans", "quality_inspections", "quality_nonconformances"] },
   { key: "maintenance", title: "Maintenance & Assets", description: "Preventive maintenance, breakdowns, downtime, spares and asset history.", Icon: Wrench, tables: ["maintenance_assets", "maintenance_plans", "maintenance_work_orders"] },
   { key: "plm", title: "PLM / ECO / BOM Revision", description: "Effective-dated revisions, engineering changes and controlled release.", Icon: GitBranch, tables: ["bom_revisions", "engineering_change_orders"] },
@@ -38,12 +40,15 @@ const MODULES: Module[] = [
 ];
 
 function EnterpriseOperations() {
-  const { data: counts = {}, isLoading } = useQuery({
-    queryKey: ["enterprise-capability-counts"],
+  const { activeCompany, loading: companyLoading } = useCompany();
+  const { data: counts = {}, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["enterprise-capability-counts", activeCompany?.id],
+    enabled: !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
+      if (!activeCompany?.id) throw new Error("Select an active company to view capability counts.");
       const entries = await Promise.all(
         MODULES.flatMap((module) => module.tables.map(async (table) => {
-          const { count, error } = await supabase.from(table as never).select("id", { count: "exact", head: true });
+          const { count, error } = await supabase.from(table as never).select("id", { count: "exact", head: true }).eq("company_id", activeCompany.id);
           if (error) throw error;
           return [table, count ?? 0] as const;
         })),
@@ -57,6 +62,9 @@ function EnterpriseOperations() {
     <>
       <PageHeader title="Enterprise Operations" description="The capability layer that closes the major gaps found against leading global ERPs. Existing posting, inventory and Tally controls remain authoritative." actions={<Link to="/enterprise-workbench" className="btn-gold inline-flex items-center rounded-md px-4 py-2 text-sm font-medium">Open Enterprise Workbench →</Link>} />
       <PageBody>
+        {companyLoading && <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading active company…</div>}
+        {!companyLoading && !activeCompany?.id && <div role="alert" className="mb-4 rounded-lg border p-4 text-sm">Select an active company to view its capability data.</div>}
+        {isError && <div role="alert" className="mb-4 flex flex-col gap-3 rounded-lg border border-destructive/40 p-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-sm">Capability counts could not be loaded: {error instanceof Error ? error.message : "Unknown error"}</span><Button variant="outline" onClick={() => void refetch()} className="min-h-11">Retry</Button></div>}
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5" /><div><div className="text-sm font-medium">Governed foundation</div><div className="text-xs text-muted-foreground">Company-scoped RLS on every new domain</div></div></CardContent></Card>
           <Card><CardContent className="flex items-center gap-3 p-5"><Database className="h-5 w-5" /><div><div className="text-sm font-medium">Additive architecture</div><div className="text-xs text-muted-foreground">No replacement of canonical accounting or stock ledgers</div></div></CardContent></Card>
