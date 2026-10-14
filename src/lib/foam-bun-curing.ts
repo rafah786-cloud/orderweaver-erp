@@ -7,6 +7,7 @@ export interface FoamBunCureRecord {
   cureStartedAt: string;
   requiredCureHours: number;
   releasedAt: string | null;
+  unit: string;
 }
 
 export interface FoamBunLineageEdge {
@@ -73,7 +74,8 @@ export function assertFoamBunLineageValid(
     throw new Error("Lineage quantity must be positive and its unit explicit.");
   }
   if (parent.companyId !== child.companyId || parent.companyId !== edge.companyId ||
-      !edge.unit.trim() || !parent.id || !child.id) {
+      parent.unit.trim().toLowerCase() !== edge.unit.trim().toLowerCase() ||
+      child.unit.trim().toLowerCase() !== edge.unit.trim().toLowerCase()) {
     throw new Error("Parent, child, and lineage identity must agree.");
   }
   assertFoamBunCanConsume(parent, edge.companyId, at);
