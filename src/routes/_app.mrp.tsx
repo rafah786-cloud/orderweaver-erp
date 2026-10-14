@@ -7,8 +7,9 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, ClipboardList, Boxes, PackageCheck } from "lucide-react";
-import { explodeMultiLevelMaterialRequirements, type MrpDemandLine, type MrpMaterialBalance, type MrpMultiLevelBomLine } from "@/lib/mrp-explosion";
+import { explodeMultiLevelMaterialRequirements, type MrpDemandLine, type MrpMultiLevelBomLine } from "@/lib/mrp-explosion";
 import { selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "@/lib/mrp-bom-source";
+import { buildVerifiedMrpMaterialBalances } from "@/lib/mrp-stock-balance";
 
 export const Route = createFileRoute("/_app/mrp")({
   head: () => ({ meta: [
@@ -26,9 +27,33 @@ type ProductionOrder = { id: string; production_number: string; status: string; 
 type SalesItem = { sales_order_id: string; model_id: string | null; product_name: string; quantity: number };
 type ProductModel = { id: string; name: string };
 type RawMaterial = { id: string; name: string; unit: string };
-type StockItem = { id: string; name: string; unit: string };
+type StockItem = { id: string; name: string; unit: string; mapped_raw_material_id: string | null };
 type BomRevision = BomRevisionCandidate;
 type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null; stock_item_id: string | null; component_model_id: string | null; quantity_per_unit: number; scrap_pct: number };
+type LegacyBomLine = { model_id: string; raw_material_id: string; quantity_per_unit: number };
+type StockMovementRow = { stock_item_id: string; movement_type: string; quantity: number; posting_id: string | null; reverses_posting_id: string | null };
+type StockReservationRow = { stock_item_id: string; qty: number; status: string };
+type StockPostingRow = { id: string; reversed_by: string | null };
+
+type PageResponse = { data: unknown[] | null; error: { message: string } | null };
+async function readAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<PageResponse>,
+): Promise<T[]> {
+  const pageSize = 500;
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const response = await fetchPage(from, from + pageSize - 1);
+    if (response.error) throw new Error(response.error.message);
+    const page = (response.data ?? []) as T[];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+function chunksOf<T>(values: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < values.length; i += size) chunks.push(values.slice(i, i + size));
+  return chunks;
+}
 
 function MrpPage() {
   const { hasAnyRole } = useAuth();
