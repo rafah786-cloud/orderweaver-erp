@@ -6,6 +6,10 @@ language plpgsql
 set search_path = public, pg_temp
 as $$
 begin
+  if tg_op = 'UPDATE' and old.status = 'done' and new.status <> 'done' then
+    raise exception 'Completed CAPA actions cannot be reopened or cancelled; create a follow-up action instead'
+      using errcode = '23514';
+  end if;
   if new.status = 'done' then
     if length(btrim(coalesce(new.effectiveness_result, ''))) < 10 then
       raise exception 'CAPA action completion requires an effectiveness result of at least 10 characters'
