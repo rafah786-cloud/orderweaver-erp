@@ -33,6 +33,7 @@ import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppLocalTallyAccountsRouteImport } from './routes/_app.local-tally-accounts'
+import { Route as AppMrpRouteImport } from './routes/_app.mrp'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
@@ -218,6 +219,11 @@ const AppInvoicesRoute = AppInvoicesRouteImport.update({
 const AppLocalTallyAccountsRoute = AppLocalTallyAccountsRouteImport.update({
   id: '/local-tally-accounts',
   path: '/local-tally-accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMrpRoute = AppMrpRouteImport.update({
+  id: '/mrp',
+  path: '/mrp',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -586,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/local-tally-accounts': typeof AppLocalTallyAccountsRoute
+  '/mrp': typeof AppMrpRoute
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -675,6 +682,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/local-tally-accounts': typeof AppLocalTallyAccountsRoute
+  '/mrp': typeof AppMrpRoute
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
@@ -767,6 +775,7 @@ export interface FileRoutesById {
   '/_app/inventory': typeof AppInventoryRouteWithChildren
   '/_app/invoices': typeof AppInvoicesRoute
   '/_app/local-tally-accounts': typeof AppLocalTallyAccountsRoute
+  '/_app/mrp': typeof AppMrpRoute
   '/_app/operations': typeof AppOperationsRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
@@ -860,6 +869,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/invoices'
     | '/local-tally-accounts'
+    | '/mrp'
     | '/operations'
     | '/parties'
     | '/payslips'
@@ -949,6 +959,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/invoices'
     | '/local-tally-accounts'
+    | '/mrp'
     | '/operations'
     | '/parties'
     | '/payslips'
@@ -1040,6 +1051,7 @@ export interface FileRouteTypes {
     | '/_app/inventory'
     | '/_app/invoices'
     | '/_app/local-tally-accounts'
+    | '/_app/mrp'
     | '/_app/operations'
     | '/_app/parties'
     | '/_app/payslips'
@@ -1292,6 +1304,13 @@ declare module '@tanstack/react-router' {
       path: '/local-tally-accounts'
       fullPath: '/local-tally-accounts'
       preLoaderRoute: typeof AppLocalTallyAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/mrp': {
+      id: '/_app/mrp'
+      path: '/mrp'
+      fullPath: '/mrp'
+      preLoaderRoute: typeof AppMrpRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/operations': {
@@ -1970,6 +1989,7 @@ interface AppRouteChildren {
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppLocalTallyAccountsRoute: typeof AppLocalTallyAccountsRoute
+  AppMrpRoute: typeof AppMrpRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -2001,6 +2021,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppInvoicesRoute: AppInvoicesRoute,
   AppLocalTallyAccountsRoute: AppLocalTallyAccountsRoute,
+  AppMrpRoute: AppMrpRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
