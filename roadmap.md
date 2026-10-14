@@ -1,3 +1,17 @@
+## 2026-10-14 ERP audit continuation
+
+- [x] Route authorization regression coverage now checks route-boundary matching, nested paths, trailing slashes, unknown-route denial, and that every top-level private route has an explicit role policy.
+- [x] Nested AI, communications and vendor tabs use segment-aware route matching; admin-only workbench entry points are hidden from non-admin roles.
+- [x] Enterprise workbench validates required values, finite numeric input, configured numeric bounds, date/time values, planning/effective date order, and editable date/time formatting.
+- [x] Enterprise Operations reports missing/unavailable schema counts without treating access failures as empty data; refresh/retry paths remain available.
+- [x] Bank reconciliation now has a live-schema-compatible migration and a disposable PostgreSQL integration harness covering matching, amount mismatch, account/company isolation, source ordering, role restrictions and execute grants. The migration is merged to source but has not been applied to production.
+- [~] Multi-level BOM explosion and MRP regression coverage are merged. Stock netting intentionally remains blocked until the live as-of balance, reservation lifecycle, confirmed inbound supply, mapping/unit and role/RLS contracts are verified.
+- [~] Quality inspection/CAPA and maintenance/work-order integrity guards are merged and tested. Their database migrations remain staged pending schema/recovery validation and controlled activation.
+- [~] PLM ECO/BOM release governance guards and tests are merged. Dedicated UI activation and production migration validation remain gated.
+- [~] Print Hub route is merged and CI-tested; Windows receipt/label printing still requires physical verification on the configured PC/printers before unattended use.
+- [~] Velocity Shipping diagnostics remain fail-closed. The official public product page does not publish a verifiable API contract for the warehouse-list endpoint; no endpoint or payload is guessed. Enable shipping sync only after the provider supplies authoritative endpoint/schema documentation.
+- [~] Tally historical migration remains source/accountant dependent. The real export, identity exceptions, canonical staging and accountant-approved reconciliation/cutover are not claimed complete by repository CI alone.
+
 ## Open tasks
 
 - [x] Make the Enterprise Operations dashboard resilient to partially installed capability schemas; surface missing migration tables separately from permission/network errors instead of failing all module counts.
