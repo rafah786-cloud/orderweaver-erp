@@ -1,5 +1,7 @@
 ## Open tasks
 
+- [x] Add guarded maintenance work-order completion: require resolution and non-negative downtime/costs, stamp completion time, and make completed work orders terminal.
+
 - [x] Add CAPA action register with company-scoped CRUD, corrective/preventive action types, owners and due dates; require effectiveness evidence and completion timestamp before an action can be marked done.
 
 ## Velocity safe integration increment
