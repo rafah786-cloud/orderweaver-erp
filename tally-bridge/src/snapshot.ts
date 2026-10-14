@@ -68,11 +68,11 @@ export function validateCollectionResponse(
   const expectedTag = EXPECTED_RECORD_TAG[collection];
   // Count named master objects only. Tally's CMPINFO contains scalar tags
   // such as <LEDGER>0</LEDGER>; those totals are not actual ledger records.
-  const recordPattern = new RegExp("<" + expectedTag + "\\b(?=[^>]*\\bNAME\\s*=)[^>]*>", "gi");
+  const recordPattern = new RegExp("<" + expectedTag + "\b(?=[^>]*\bNAME\s*=)[^>]*>", "gi");
   const recordCount = (xml.match(recordPattern) ?? []).length;
   const knownMasterTags = ["GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE"];
   const hasOtherMasterRecords = knownMasterTags.some((tag) => tag !== expectedTag &&
-    new RegExp("<" + tag + "\\b(?=[^>]*\\bNAME\\s*=)[^>]*>", "i").test(xml));
+    new RegExp("<" + tag + "\b(?=[^>]*\bNAME\s*=)[^>]*>", "i").test(xml));
   if (recordCount === 0 && (collection === "List of Groups" || collection === "List of Ledgers" || hasOtherMasterRecords)) {
     throw new Error(collection + ": no named <" + expectedTag + "> master records were returned; refusing to save a misleading export.");
   }
@@ -222,10 +222,10 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         requestOptions,
       );
       const cleanXml = sanitizeTallyXml(response.xml);
-      if (!/<ENVELOPE\\b/i.test(cleanXml) || !/<DATA\\b/i.test(cleanXml)) {
+      if (!/<ENVELOPE\b/i.test(cleanXml) || !/<DATA\b/i.test(cleanXml)) {
         throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": invalid Tally export envelope.");
       }
-      const dayBookStatus = cleanXml.match(/<STATUS>\\s*(-?\\d+)\\s*<\\/STATUS>/i)?.[1];
+      const dayBookStatus = cleanXml.match(/<STATUS>\s*(-?\\d+)\s*<\/STATUS>/i)?.[1];
       if (dayBookStatus !== "1") {
         throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": Tally export status was " + (dayBookStatus ?? "missing") + ".");
       }
