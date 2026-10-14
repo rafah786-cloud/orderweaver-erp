@@ -7,8 +7,8 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, ClipboardList, Boxes, PackageCheck } from "lucide-react";
-import { explodeMaterialRequirements, type MrpBomLine, type MrpDemandLine, type MrpMaterialBalance } from "@/lib/mrp-explosion";
-import { grossQuantityPerFinishedUnit, selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "@/lib/mrp-bom-source";
+import { explodeMultiLevelMaterialRequirements, type MrpDemandLine, type MrpMaterialBalance, type MrpMultiLevelBomLine } from "@/lib/mrp-explosion";
+import { selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "@/lib/mrp-bom-source";
 
 export const Route = createFileRoute("/_app/mrp")({
   head: () => ({ meta: [
@@ -28,7 +28,7 @@ type ProductModel = { id: string; name: string };
 type RawMaterial = { id: string; name: string; unit: string };
 type StockItem = { id: string; name: string; unit: string };
 type BomRevision = BomRevisionCandidate;
-type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null; stock_item_id: string | null; quantity_per_unit: number; scrap_pct: number };
+type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null; stock_item_id: string | null; component_model_id: string | null; quantity_per_unit: number; scrap_pct: number };
 
 function MrpPage() {
   const { hasAnyRole } = useAuth();
@@ -58,18 +58,20 @@ function MrpPage() {
       if (itemError) throw itemError;
       const items = (itemData ?? []) as SalesItem[];
       const modelIds = [...new Set(items.map((i) => i.model_id).filter((id): id is string => Boolean(id)))];
-      const [modelsResponse, legacyBomResponse, revisionsResponse, materialsResponse, stockItemsResponse] = await Promise.all([
-        modelIds.length ? supabase.from("product_models").select("id, name").eq("company_id", activeCompany.id).in("id", modelIds) : Promise.resolve({ data: [], error: null }),
+      const [modelsResponse, legacyBomResponse, revisionsResponse, materialsResponse, stockItemsResponse, revisionLinesResponse] = await Promise.all([
+        supabase.from("product_models").select("id, name").eq("company_id", activeCompany.id),
         modelIds.length ? supabase.from("model_boq").select("model_id, raw_material_id, quantity_per_unit").eq("company_id", activeCompany.id).in("model_id", modelIds) : Promise.resolve({ data: [], error: null }),
-        modelIds.length ? supabase.from("bom_revisions").select("id, model_id, revision, status, effective_from, effective_to").eq("company_id", activeCompany.id).in("model_id", modelIds) : Promise.resolve({ data: [], error: null }),
+        supabase.from("bom_revisions").select("id, model_id, revision, status, effective_from, effective_to").eq("company_id", activeCompany.id),
         supabase.from("raw_materials").select("id, name, unit").eq("company_id", activeCompany.id),
         supabase.from("stock_items").select("id, name, unit").eq("company_id", activeCompany.id),
+        supabase.from("bom_revision_lines").select("bom_revision_id, raw_material_id, stock_item_id, component_model_id, quantity_per_unit, scrap_pct").eq("company_id", activeCompany.id),
       ]);
       if (modelsResponse.error) throw modelsResponse.error;
       if (legacyBomResponse.error) throw legacyBomResponse.error;
       if (revisionsResponse.error) throw revisionsResponse.error;
       if (materialsResponse.error) throw materialsResponse.error;
       if (stockItemsResponse.error) throw stockItemsResponse.error;
+      if (revisionLinesResponse.error) throw revisionLinesResponse.error;
 
       const models = (modelsResponse.data ?? []) as ProductModel[];
       const rawMaterials = (materialsResponse.data ?? []) as RawMaterial[];
@@ -80,23 +82,40 @@ function MrpPage() {
       const stockItemById = new Map(stockItems.map((m) => [m.id, m]));
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      const selection = selectEffectiveReleasedBomRevisions(modelIds, revisions, today);
-      const selectedRevisionByModel = selection.selectedByModel;
-      const missingEffectiveRevisionModels = selection.missingEffectiveRevisionModelIds.map((id) => modelName.get(id) ?? id);
-      const selectedRevisionIds = [...selectedRevisionByModel.values()].map((revision) => revision.id);
-      const revisionLinesResponse = selectedRevisionIds.length
-        ? await supabase.from("bom_revision_lines").select("bom_revision_id, raw_material_id, stock_item_id, quantity_per_unit, scrap_pct").eq("company_id", activeCompany.id).in("bom_revision_id", selectedRevisionIds)
-        : { data: [], error: null };
-      if (revisionLinesResponse.error) throw revisionLinesResponse.error;
-
       const revisionLines = (revisionLinesResponse.data ?? []) as BomRevisionLine[];
+      const selectedRevisionByModel = new Map<string, BomRevisionCandidate>();
+      const modelsWithAnyRevision = new Set(revisions.map((revision) => revision.model_id));
+      const visitedModelIds = new Set<string>();
+      const missingEffectiveRevisionModelIds = new Set<string>();
+      const pendingModelIds = [...modelIds];
+
+      // Traverse BOMs reachable from current demand; each subassembly needs its own effective released revision.
+      while (pendingModelIds.length) {
+        const modelId = pendingModelIds.shift()!;
+        if (visitedModelIds.has(modelId)) continue;
+        visitedModelIds.add(modelId);
+        const selection = selectEffectiveReleasedBomRevisions([modelId], revisions, today);
+        const selectedRevision = selection.selectedByModel.get(modelId);
+        if (!selectedRevision) {
+          if (modelsWithAnyRevision.has(modelId)) missingEffectiveRevisionModelIds.add(modelId);
+          continue;
+        }
+        selectedRevisionByModel.set(modelId, selectedRevision);
+        for (const line of revisionLines) {
+          if (line.bom_revision_id === selectedRevision.id && line.component_model_id) pendingModelIds.push(line.component_model_id);
+        }
+      }
+      const missingEffectiveRevisionModels = [...missingEffectiveRevisionModelIds]
+        .map((id) => modelName.get(id) ?? id)
+        .sort();
       const missingBomMaterialNames: string[] = [];
       const invalidScrapFactorNames: string[] = [];
-      const bom: MrpBomLine[] = [];
+      const bom: MrpMultiLevelBomLine[] = [];
       for (const [modelId, revision] of selectedRevisionByModel) {
         const lines = revisionLines.filter((line) => line.bom_revision_id === revision.id);
         for (const line of lines) {
-          if (Boolean(line.raw_material_id) === Boolean(line.stock_item_id)) {
+          const mappedComponentCount = [line.raw_material_id, line.stock_item_id, line.component_model_id].filter(Boolean).length;
+          if (mappedComponentCount !== 1) {
             missingBomMaterialNames.push(`Invalid component mapping in ${modelName.get(modelId) ?? modelId} revision ${revision.revision}`);
             continue;
           }
@@ -108,21 +127,27 @@ function MrpPage() {
             invalidScrapFactorNames.push(`${modelName.get(modelId) ?? modelId} revision ${revision.revision}`);
             continue;
           }
-          const grossQuantityPerUnit = grossQuantityPerFinishedUnit(Number(line.quantity_per_unit), Number(line.scrap_pct));
-          if (line.raw_material_id) {
-            const material = materialById.get(line.raw_material_id);
-            if (!material) {
-              missingBomMaterialNames.push(`Unknown raw material (${line.raw_material_id}) in revision ${revision.revision}`);
+          if (line.component_model_id) {
+            const componentModelName = modelName.get(line.component_model_id);
+            if (!componentModelName) {
+              missingBomMaterialNames.push("Unknown subassembly model (" + line.component_model_id + ") in revision " + revision.revision);
               continue;
             }
-            bom.push({ productModelId: modelId, rawMaterialId: `raw:${material.id}`, rawMaterialName: material.name, unit: material.unit, quantityPerFinishedUnit: grossQuantityPerUnit });
+            bom.push({ parentModelId: modelId, componentType: "subassembly", componentId: line.component_model_id, componentName: componentModelName, unit: "unit", quantityPerParent: Number(line.quantity_per_unit), scrapPct: Number(line.scrap_pct) });
+          } else if (line.raw_material_id) {
+            const material = materialById.get(line.raw_material_id);
+            if (!material) {
+              missingBomMaterialNames.push("Unknown raw material (" + line.raw_material_id + ") in revision " + revision.revision);
+              continue;
+            }
+            bom.push({ parentModelId: modelId, componentType: "raw-material", componentId: "raw:" + material.id, componentName: material.name, unit: material.unit, quantityPerParent: Number(line.quantity_per_unit), scrapPct: Number(line.scrap_pct) });
           } else if (line.stock_item_id) {
             const item = stockItemById.get(line.stock_item_id);
             if (!item) {
-              missingBomMaterialNames.push(`Unknown stock item (${line.stock_item_id}) in revision ${revision.revision}`);
+              missingBomMaterialNames.push("Unknown stock item (" + line.stock_item_id + ") in revision " + revision.revision);
               continue;
             }
-            bom.push({ productModelId: modelId, rawMaterialId: `stock:${item.id}`, rawMaterialName: item.name, unit: item.unit, quantityPerFinishedUnit: grossQuantityPerUnit });
+            bom.push({ parentModelId: modelId, componentType: "stock-item", componentId: "stock:" + item.id, componentName: item.name, unit: item.unit, quantityPerParent: Number(line.quantity_per_unit), scrapPct: Number(line.scrap_pct) });
           }
         }
       }
@@ -141,7 +166,7 @@ function MrpPage() {
           missingBomMaterialNames.push(`Invalid component quantity in legacy BOQ for ${modelName.get(line.model_id) ?? line.model_id}`);
           continue;
         }
-        bom.push({ productModelId: line.model_id, rawMaterialId: `raw:${material.id}`, rawMaterialName: material.name, unit: material.unit, quantityPerFinishedUnit: Number(line.quantity_per_unit) });
+        bom.push({ parentModelId: line.model_id, componentType: "raw-material", componentId: "raw:" + material.id, componentName: material.name, unit: material.unit, quantityPerParent: Number(line.quantity_per_unit), scrapPct: 0 });
       }
             // A production order points to its sales order, but has no quantity column. Count each sales order once,
       // then explode its ordered line quantities; this avoids double-counting if an order has multiple production records.
@@ -168,7 +193,7 @@ function MrpPage() {
         ...rawMaterials.map((m) => ({ rawMaterialId: `raw:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
         ...stockItems.map((m) => ({ rawMaterialId: `stock:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
       ];
-      const result = explodeMaterialRequirements(demand, bom, balances);
+      const result = explodeMultiLevelMaterialRequirements(demand, bom, balances);
       if (unmappedDemandNames.length) {
         result.status = "insufficient-data";
         result.missingBomModels = [...new Set([...result.missingBomModels, ...unmappedDemandNames.map((name) => `Unmapped sales item: ${name}`)])].sort();
