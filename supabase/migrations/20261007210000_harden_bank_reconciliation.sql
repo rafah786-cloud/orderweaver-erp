@@ -35,23 +35,25 @@ BEGIN
     RAISE EXCEPTION 'Two distinct bank transaction lines are required';
   END IF;
 
-  SELECT *
+  SELECT bt.*
   INTO book
-  FROM public.bank_transactions
-  WHERE id = p_book
-    AND company_id = v_company
-  FOR UPDATE;
+  FROM public.bank_transactions AS bt
+  JOIN public.bank_accounts AS ba ON ba.id = bt.bank_account_id
+  WHERE bt.id = p_book
+    AND ba.company_id = v_company
+  FOR UPDATE OF bt;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Book transaction not found in active company';
   END IF;
 
-  SELECT *
+  SELECT bt.*
   INTO stmt
-  FROM public.bank_transactions
-  WHERE id = p_statement
-    AND company_id = v_company
-  FOR UPDATE;
+  FROM public.bank_transactions AS bt
+  JOIN public.bank_accounts AS ba ON ba.id = bt.bank_account_id
+  WHERE bt.id = p_statement
+    AND ba.company_id = v_company
+  FOR UPDATE OF bt;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Statement transaction not found in active company';
@@ -65,11 +67,11 @@ BEGIN
     RAISE EXCEPTION 'Already reconciled';
   END IF;
 
-  IF book.source = stmt.source THEN
-    RAISE EXCEPTION 'Match one book line to one statement line';
+  IF book.source IS DISTINCT FROM 'book' OR stmt.source IS DISTINCT FROM 'statement' THEN
+    RAISE EXCEPTION 'Select one book line and one statement line';
   END IF;
 
-  IF book.debit <> stmt.debit OR book.credit <> stmt.credit THEN
+  IF book.debit IS DISTINCT FROM stmt.debit OR book.credit IS DISTINCT FROM stmt.credit THEN
     RAISE EXCEPTION 'Amounts do not match';
   END IF;
 
@@ -77,13 +79,21 @@ BEGIN
   SET reconciled_at = clock_timestamp(),
       reconciled_with = p_statement
   WHERE id = p_book
-    AND company_id = v_company;
+    AND EXISTS (
+      SELECT 1 FROM public.bank_accounts AS ba
+      WHERE ba.id = public.bank_transactions.bank_account_id
+        AND ba.company_id = v_company
+    );
 
   UPDATE public.bank_transactions
   SET reconciled_at = clock_timestamp(),
       reconciled_with = p_book
   WHERE id = p_statement
-    AND company_id = v_company;
+    AND EXISTS (
+      SELECT 1 FROM public.bank_accounts AS ba
+      WHERE ba.id = public.bank_transactions.bank_account_id
+        AND ba.company_id = v_company
+    );
 END;
 $$;
 
