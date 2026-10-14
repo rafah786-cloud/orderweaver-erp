@@ -1,5 +1,7 @@
 ## Open tasks
 
+- [x] Add CAPA action register with company-scoped CRUD, corrective/preventive action types, owners and due dates; require effectiveness evidence and completion timestamp before an action can be marked done.
+
 ## Velocity safe integration increment
 - [ ] Inspect official API documentation, existing schema and deployment configuration
 - [ ] Add server-only timed requests, redacted failures and bounded 401 recovery
