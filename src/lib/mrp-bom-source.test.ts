@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "./mrp-bom-source";
+import { grossQuantityPerFinishedUnit, selectEffectiveReleasedBomRevisions, type BomRevisionCandidate } from "./mrp-bom-source";
 
 const revision = (overrides: Partial<BomRevisionCandidate> = {}): BomRevisionCandidate => ({
   id: "rev-1",
@@ -42,5 +42,22 @@ describe("effective released BOM revision selection", () => {
     const result = selectEffectiveReleasedBomRevisions(["legacy-model"], [], "2026-10-14");
     expect(result.selectedByModel.size).toBe(0);
     expect(result.missingEffectiveRevisionModelIds).toEqual([]);
+  });
+});
+
+
+describe("BOM scrap allowance", () => {
+  it("applies the existing recommendation-engine percentage convention", () => {
+    expect(grossQuantityPerFinishedUnit(2, 10)).toBeCloseTo(2.2);
+    expect(grossQuantityPerFinishedUnit(2, 0)).toBe(2);
+  });
+
+  it("clamps negative scrap percentages to zero", () => {
+    expect(grossQuantityPerFinishedUnit(2, -10)).toBe(2);
+  });
+
+  it("rejects invalid quantities and non-finite scrap percentages", () => {
+    expect(() => grossQuantityPerFinishedUnit(0, 0)).toThrow(/positive and finite/);
+    expect(() => grossQuantityPerFinishedUnit(2, Number.NaN)).toThrow(/must be finite/);
   });
 });
