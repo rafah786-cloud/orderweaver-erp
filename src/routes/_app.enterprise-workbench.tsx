@@ -187,7 +187,7 @@ function EntityPanel({ config, companyId, canManageQuality }: { config: EntityCo
   const normalizedSearch = normalizeWorkbenchSearch(searchInput);
   const searchColumns = getWorkbenchSearchColumns(config.fields);
   const db = supabase as any;
-  const qualityReadOnly = config.key === "quality-inspections" && !canManageQuality;
+  const qualityReadOnly = ["quality-inspections", "quality-nc", "quality-capa-actions"].includes(config.key) && !canManageQuality;
   const effectiveReadOnly = Boolean(config.readOnly || qualityReadOnly);
 
   const { data: queryData, isFetching, isLoading, isError, refetch } = useQuery({
@@ -216,8 +216,8 @@ function EntityPanel({ config, companyId, canManageQuality }: { config: EntityCo
 
   const save = useMutation({
     mutationFn: async () => {
-      if (config.key === "quality-inspections" && !canManageQuality) {
-        throw new Error("Only admin or production roles may record quality inspection results.");
+      if (["quality-inspections", "quality-nc", "quality-capa-actions"].includes(config.key) && !canManageQuality) {
+        throw new Error("Only admin or production roles may manage quality records.");
       }
       const payload: Record<string, unknown> = { company_id: companyId };
       for (const field of config.fields) {
@@ -260,8 +260,8 @@ function EntityPanel({ config, companyId, canManageQuality }: { config: EntityCo
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      if (config.key === "quality-inspections" && !canManageQuality) {
-        throw new Error("Only admin or production roles may manage quality inspection records.");
+      if (["quality-inspections", "quality-nc", "quality-capa-actions"].includes(config.key) && !canManageQuality) {
+        throw new Error("Only admin or production roles may manage quality records.");
       }
       const { error } = await db.from(config.table).delete().eq("id", id).eq("company_id", companyId);
       if (error) throw error;
