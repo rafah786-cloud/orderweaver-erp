@@ -269,6 +269,9 @@ function EntityPanel({ config, companyId, canManageQuality, canManageMaintenance
       if (["quality-inspections", "quality-nc", "quality-capa-actions"].includes(config.key) && !canManageQuality) {
         throw new Error("Only admin or production roles may manage quality records.");
       }
+      if (["assets", "maintenance-plans", "maintenance-wo"].includes(config.key) && !canManageMaintenance) {
+        throw new Error("Only admin or production roles may manage maintenance records.");
+      }
       const { error } = await db.from(config.table).delete().eq("id", id).eq("company_id", companyId);
       if (error) throw error;
     },
