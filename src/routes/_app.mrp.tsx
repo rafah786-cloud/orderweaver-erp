@@ -92,7 +92,7 @@ function MrpPage() {
         if (!candidates.length) continue;
         const effective = candidates
           .filter((revision) => revision.status === "released" &&
-            (!revision.effective_from || revision.effective_from <= today) &&
+            Boolean(revision.effective_from) && revision.effective_from <= today &&
             (!revision.effective_to || revision.effective_to >= today))
           .sort((a, b) => (b.effective_from ?? "").localeCompare(a.effective_from ?? ""));
         if (effective[0]) selectedRevisionByModel.set(modelId, effective[0]);
@@ -158,20 +158,36 @@ function MrpPage() {
       const uniqueOrderBySalesId = new Map<string, ProductionOrder>();
       for (const order of orders) if (!uniqueOrderBySalesId.has(order.sales_order_id)) uniqueOrderBySalesId.set(order.sales_order_id, order);
       const demand: MrpDemandLine[] = [];
+      const unmappedDemandNames: string[] = [];
+      const invalidDemandNames: string[] = [];
       for (const item of items) {
         const order = uniqueOrderBySalesId.get(item.sales_order_id);
         if (!order) continue;
         if (!item.model_id) {
-          demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: "", productModelName: item.product_name || "Unmapped sales item", orderQuantity: Number(item.quantity) });
+          unmappedDemandNames.push(item.product_name || "Unnamed sales item");
           continue;
         }
-        demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity: Number(item.quantity) });
+        const orderQuantity = Number(item.quantity);
+        if (!Number.isFinite(orderQuantity) || orderQuantity <= 0) {
+          invalidDemandNames.push(item.product_name || modelName.get(item.model_id) || item.model_id);
+          continue;
+        }
+        demand.push({ productionOrderId: order.id, productionOrderNumber: order.production_number, productModelId: item.model_id, productModelName: modelName.get(item.model_id) ?? item.product_name, orderQuantity });
       }
       const balances: MrpMaterialBalance[] = [
         ...rawMaterials.map((m) => ({ rawMaterialId: `raw:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
         ...stockItems.map((m) => ({ rawMaterialId: `stock:${m.id}`, rawMaterialName: m.name, unit: m.unit, availableQuantity: null })),
       ];
       const result = explodeMaterialRequirements(demand, bom, balances);
+      if (unmappedDemandNames.length) {
+        result.status = "insufficient-data";
+        result.missingBomModels = [...new Set([...result.missingBomModels, ...unmappedDemandNames.map((name) => `Unmapped sales item: ${name}`)])].sort();
+        result.notes.push("Some sales-order lines have no product-model mapping and are excluded; other valid mapped demand is still calculated.");
+      }
+      if (invalidDemandNames.length) {
+        result.status = "insufficient-data";
+        result.notes.push(`Invalid or non-positive quantities were excluded for: ${[...new Set(invalidDemandNames)].join(", ")}.`);
+      }
       if (missingEffectiveRevisionModels.length) {
         result.status = "insufficient-data";
         result.missingBomModels = [...new Set([...result.missingBomModels, ...missingEffectiveRevisionModels.map((name) => `${name} (no effective released revision)`)])].sort();
