@@ -200,7 +200,7 @@ export function explodeMaterialRequirements(
 
   return {
     status:
-      missingBomModels.length || missing.size || invalidBalances.size || !requirements.length
+      missingBomModels.length || missing.size || invalidBalances.size || !requirements.length || requirements.some((row) => row.availableQuantity == null)
         ? "insufficient-data"
         : "calculated",
     requirements,
