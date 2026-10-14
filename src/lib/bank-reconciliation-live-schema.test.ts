@@ -8,6 +8,9 @@ describe("bank reconciliation migration matches the live schema", () => {
     expect(migration).toContain("JOIN public.bank_accounts AS ba ON ba.id = bt.bank_account_id");
     expect(migration).toContain("ba.company_id = v_company");
     expect(migration).toContain("FOR UPDATE OF bt");
+    expect(migration).toContain("UPDATE public.bank_transactions AS bt");
+    expect(migration).toContain("ba.id = bt.bank_account_id");
+    expect(migration).toContain("public.has_role(auth.uid(),'admin'::public.app_role)");
     expect(migration).not.toMatch(/bank_transactions\s+WHERE\s+id\s*=\s*p_(?:book|statement)[\s\S]{0,80}company_id\s*=/i);
   });
 
