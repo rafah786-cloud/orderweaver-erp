@@ -56,3 +56,26 @@ describe("route boundary matching", () => {
     expect(isRouteDenied("/unknown-app-module", ["admin"])).toBe(true);
   });
 });
+
+
+describe("top-level route and permission inventory", () => {
+  it("maps every role policy to an existing top-level route file", async () => {
+    const { readdirSync } = await import("node:fs");
+    const routeFiles = new Set(readdirSync(new URL("../routes/", import.meta.url)));
+    for (const { prefix } of ROUTE_ROLES) {
+      const routeFile = `_app.${prefix.slice(1).replaceAll("/", ".")}.tsx`;
+      expect(routeFiles.has(routeFile), `Missing route file for ${prefix}: ${routeFile}`).toBe(true);
+    }
+  });
+
+  it("does not leave a top-level private route without an explicit role policy", async () => {
+    const { readdirSync } = await import("node:fs");
+    const routeFiles = readdirSync(new URL("../routes/", import.meta.url))
+      .filter((file) => file !== "_app.tsx" && file.startsWith("_app.") && file.endsWith(".tsx") && !file.slice(5, -4).includes("."))
+      .map((file) => `/${file.slice(5, -4)}`);
+    const configured = new Set(ROUTE_ROLES.map(({ prefix }) => prefix));
+    for (const path of routeFiles) {
+      expect(configured.has(path), `Missing role policy for route ${path}`).toBe(true);
+    }
+  });
+});
