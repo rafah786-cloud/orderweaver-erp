@@ -14,9 +14,9 @@ import { MRP_NETTING_BLOCKER, unnettedMaterialBalances } from "@/lib/mrp-availab
 export const Route = createFileRoute("/_app/mrp")({
   head: () => ({ meta: [
     { title: "Material Requirements | Mattress Maestro ERP" },
-    { name: "description", content: "Read-only multi-level material requirements preview with conservative ledger-backed availability." },
+    { name: "description", content: "Read-only multi-level material requirements preview. Stock netting remains blocked pending validated ledger and reservation contracts." },
     { property: "og:title", content: "Material Requirements | Mattress Maestro ERP" },
-    { property: "og:description", content: "Read-only multi-level material requirements preview with conservative ledger-backed availability." },
+    { property: "og:description", content: "Read-only multi-level material requirements preview. Stock netting remains blocked pending validated ledger and reservation contracts." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -252,7 +252,7 @@ function MrpPage() {
 
   const result = query.data?.result;
   return <>
-    <PageHeader title="Material Requirements Planning" description="Read-only multi-level requirements using effective released BOM revisions and verified on-hand less open reservations when the ledger is unambiguous." actions={<Button variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching || companyLoading} className="min-h-11"><RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>} />
+    <PageHeader title="Material Requirements Planning" description="Read-only multi-level gross requirements using effective released BOM revisions. Stock availability and shortages remain unknown until the ERP netting contract is verified." actions={<Button variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching || companyLoading} className="min-h-11"><RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>} />
     <PageBody>
       <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
         <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -270,7 +270,7 @@ function MrpPage() {
         </div>
         {result.status === "insufficient-data" && <div role="alert" className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm"><div className="font-semibold">Some requirements are incomplete</div><ul className="mt-2 list-disc space-y-1 pl-5">{result.notes.map((note) => <li key={note}>{note}</li>)}{result.missingBomModels.map((name) => <li key={name}>Missing BOM: {name}</li>)}{result.missingMaterialMasters.map((name) => <li key={name}>Missing or incompatible material master: {name}</li>)}{result.invalidMaterialBalances.map((name) => <li key={`invalid-balance-${name}`}>Invalid material balance (not used for shortage calculation): {name}</li>)}</ul></div>}
         {query.data.orders.length === 0 ? <div className="mt-4 rounded-lg border p-8 text-center"><ClipboardList className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><div className="font-semibold">No active production demand</div><p className="mt-1 text-sm text-muted-foreground">Orders in Received, In Production, or QC will appear here.</p></div> : result.requirements.length === 0 ? <div className="mt-4 rounded-lg border p-6 text-sm text-muted-foreground">No material requirements could be calculated. Review sales-order model mapping and BOM setup above.</div> : <div className="mt-4 overflow-x-auto rounded-lg border"><table className="w-full min-w-[720px] text-sm"><thead className="bg-muted/50"><tr className="text-left"><th className="p-3 font-semibold">Material / stock item</th><th className="p-3 font-semibold">Unit</th><th className="p-3 text-right font-semibold">Gross required</th><th className="p-3 font-semibold">Source production orders</th><th className="p-3 font-semibold">Availability</th></tr></thead><tbody>{result.requirements.map((line) => <tr key={line.rawMaterialId} className="border-t"><td className="p-3 font-medium">{line.rawMaterialName}</td><td className="p-3">{line.unit}</td><td className="p-3 text-right tabular-nums">{line.grossRequired.toLocaleString("en-IN", { maximumFractionDigits: 6 })}</td><td className="p-3">{[...new Set(line.sourceOrders.map((o) => o.productionOrderNumber))].join(", ") || "—"}</td><td className="p-3 text-muted-foreground">{line.availableQuantity == null ? "Unknown — needs reconciliation" : `${line.availableQuantity.toLocaleString("en-IN", { maximumFractionDigits: 6 })} available${line.shortageQuantity != null && line.shortageQuantity > 0 ? ` · shortage ${line.shortageQuantity.toLocaleString("en-IN", { maximumFractionDigits: 6 })}` : ""}`}</td></tr>)}</tbody></table></div>}
-        <p className="mt-3 text-xs text-muted-foreground">Subassemblies are expanded recursively. Availability uses company-scoped stock movements less open reservations only when ledger signs, unit mappings, and reversal state are unambiguous. Incoming purchase supply, WIP, safety stock, advanced yield rules, lead times, scheduling and machine capacity are excluded. This preview never reserves stock or posts accounting/inventory changes; reconcile physical stock before committing production or purchasing.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Subassemblies are expanded recursively. ${MRP_NETTING_BLOCKER} Availability and shortage remain unknown; this preview never reserves stock or posts accounting/inventory changes. Incoming supply, WIP, safety stock, lead times and capacity are not included.</p>
       </>}
     </PageBody>
   </>;
