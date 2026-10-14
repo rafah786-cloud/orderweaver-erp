@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { routePathMatches } from "@/lib/permissions";
 
 const TABS = [
   { to: "/ai/ask", label: "Ask Maestro" },
@@ -39,7 +40,7 @@ function AiLayout() {
       <div className="border-b">
         <nav className="flex gap-1 overflow-x-auto px-4 pt-3">
           {TABS.map((t) => {
-            const active = pathname.startsWith(t.to);
+            const active = routePathMatches(pathname, t.to);
             return (
               <Link
                 key={t.to}
