@@ -123,6 +123,14 @@ declare
   v_company_id uuid;
   v_status text;
 begin
+  if tg_op = 'UPDATE' and (old.eco_id is distinct from new.eco_id or old.company_id is distinct from new.company_id) then
+    select status into v_status from public.engineering_change_orders
+      where id = old.eco_id and company_id = old.company_id for update;
+    if v_status is null or v_status not in ('draft', 'review') then
+      raise exception 'Change lines cannot be moved out of an approved or terminal ECO'
+        using errcode = '23514';
+    end if;
+  end if;
   if tg_op = 'DELETE' then
     v_company_id := old.company_id;
     select status into v_status from public.engineering_change_orders
@@ -259,6 +267,14 @@ declare
   v_company_id uuid;
   v_revision_id uuid;
 begin
+  if tg_op = 'UPDATE' and (old.bom_revision_id is distinct from new.bom_revision_id or old.company_id is distinct from new.company_id) then
+    select status into v_status from public.bom_revisions
+      where id = old.bom_revision_id and company_id = old.company_id for update;
+    if v_status in ('released', 'obsolete') then
+      raise exception 'BOM revision lines cannot be moved out of a released revision'
+        using errcode = '23514';
+    end if;
+  end if;
   if tg_op = 'DELETE' then
     v_company_id := old.company_id;
     v_revision_id := old.bom_revision_id;
