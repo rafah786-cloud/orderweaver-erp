@@ -225,7 +225,7 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
       if (!/<ENVELOPE\b/i.test(cleanXml) || !/<DATA\b/i.test(cleanXml)) {
         throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": invalid Tally export envelope.");
       }
-      const dayBookStatus = cleanXml.match(/<STATUS>\s*(-?\\d+)\s*<\/STATUS>/i)?.[1];
+      const dayBookStatus = cleanXml.match(/<STATUS>\s*(-?\d+)\s*<\/STATUS>/i)?.[1];
       if (dayBookStatus !== "1") {
         throw new Error("Voucher Register " + cursor + " to " + chunkEnd + ": Tally export status was " + (dayBookStatus ?? "missing") + ".");
       }
