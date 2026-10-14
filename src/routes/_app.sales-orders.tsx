@@ -40,6 +40,7 @@ import { inr, formatDate, todayIndia } from "@/lib/format";
 import { notifyCustomerEvent } from "@/lib/whatsapp.functions";
 import { notifyStaffEvent } from "@/lib/staff-notifications.functions";
 import { createSalesOrder } from "@/lib/sales-orders-admin.functions";
+import { calculateMattressDimensions, formatMattressDimensionsMm } from "@/lib/mattress-dimensions";
 
 export const Route = createFileRoute("/_app/sales-orders")({
   head: () => ({
@@ -57,6 +58,9 @@ type Item = {
   size: string;
   quantity: number;
   unit_price: number;
+  length_mm: string;
+  width_mm: string;
+  thickness_mm: string;
 };
 type ModelOption = { id: string; name: string; size: string | null; default_price: number };
 
@@ -82,7 +86,7 @@ function SalesOrdersPage() {
   const [expectedDelivery, setExpectedDelivery] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Item[]>([
-    { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 },
+    { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0, length_mm: "", width_mm: "", thickness_mm: "" },
   ]);
 
   const { data: orders = [], isLoading, isError, error: ordersError } = useQuery({
@@ -147,7 +151,7 @@ function SalesOrdersPage() {
     setOrderDate(todayIndia());
     setExpectedDelivery("");
     setNotes("");
-    setItems([{ model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 }]);
+    setItems([{ model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0, length_mm: "", width_mm: "", thickness_mm: "" }]);
   };
 
   const pickModel = (idx: number, modelId: string) => {
@@ -197,6 +201,8 @@ function SalesOrdersPage() {
         throw new Error("Every line must have a positive quantity");
       if (items.some((i) => !Number.isFinite(Number(i.unit_price)) || Number(i.unit_price) < 0))
         throw new Error("Every line must have a valid non-negative unit price");
+      if (items.some((i) => [i.length_mm, i.width_mm, i.thickness_mm].some(Boolean) && ![i.length_mm, i.width_mm, i.thickness_mm].every((v) => Number.isFinite(Number(v)) && Number(v) > 0)))
+        throw new Error("For custom sizing, enter positive length, width and thickness in millimetres for every dimension field.");
 
       return createSalesOrderFn({
         data: {
@@ -208,7 +214,9 @@ function SalesOrdersPage() {
           lines: items.map((i) => ({
             model_id: i.model_id,
             product_name: i.product_name,
-            size: i.size || null,
+            size: i.length_mm && i.width_mm && i.thickness_mm
+              ? formatMattressDimensionsMm({ lengthMm: Number(i.length_mm), widthMm: Number(i.width_mm), thicknessMm: Number(i.thickness_mm) })
+              : i.size || null,
             quantity: Number(i.quantity),
             unit_price: Number(i.unit_price),
           })),
@@ -394,7 +402,7 @@ function SalesOrdersPage() {
                   onClick={() =>
                     setItems([
                       ...items,
-                      { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0 },
+                      { model_id: "", product_name: "", size: "", quantity: 1, unit_price: 0, length_mm: "", width_mm: "", thickness_mm: "" },
                     ])
                   }
                 >
@@ -410,7 +418,7 @@ function SalesOrdersPage() {
               )}
               <div className="space-y-2">
                 {items.map((it, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                  <div key={idx} className="space-y-2 rounded-md border p-2"><div className="grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-5">
                       <Select value={it.model_id} onValueChange={(v) => pickModel(idx, v)}>
                         <SelectTrigger>
@@ -475,6 +483,26 @@ function SalesOrdersPage() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="grid gap-1">
+                      <Label className="text-xs text-muted-foreground">Length (mm)</Label>
+                      <Input type="number" min="1" step="1" placeholder="e.g. 2000" value={it.length_mm} onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, length_mm: e.target.value } : x))} />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs text-muted-foreground">Width (mm)</Label>
+                      <Input type="number" min="1" step="1" placeholder="e.g. 1800" value={it.width_mm} onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, width_mm: e.target.value } : x))} />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs text-muted-foreground">Thickness (mm)</Label>
+                      <Input type="number" min="1" step="1" placeholder="e.g. 250" value={it.thickness_mm} onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, thickness_mm: e.target.value } : x))} />
+                    </div>
+                  </div>
+                  {it.length_mm && it.width_mm && it.thickness_mm && Number(it.length_mm) > 0 && Number(it.width_mm) > 0 && Number(it.thickness_mm) > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Geometry: {calculateMattressDimensions({ lengthMm: Number(it.length_mm), widthMm: Number(it.width_mm), thicknessMm: Number(it.thickness_mm) }).surfaceAreaM2.toFixed(3)} m² surface · {calculateMattressDimensions({ lengthMm: Number(it.length_mm), widthMm: Number(it.width_mm), thicknessMm: Number(it.thickness_mm) }).volumeM3.toFixed(4)} m³ volume per mattress. Geometry does not automatically change the selected model price.
+                    </p>
+                  )}
+                </div>
                 ))}
               </div>
             </div>
