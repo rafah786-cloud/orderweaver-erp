@@ -48,4 +48,4 @@ jobs:
       - name: Test company isolation and admin-only writes
         run: |
           export PATH="$(pg_config --bindir):$PATH"
-          python security-tests/enterprise_workbench_admin_rls.py supabase/migrations/20261013090000_enterprise_workbench_admin_dml_guard.sql
+          python security-tests/enterprise_workbench_admin_rls.py supabase/migrations/20261014140000_enterprise_workbench_admin_dml_guard.sql
