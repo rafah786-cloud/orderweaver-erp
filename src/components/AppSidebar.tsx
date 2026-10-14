@@ -23,7 +23,7 @@ const LABELS: Record<string, string> = {
   "/attendance": "Attendance", "/payslips": "Payslips", "/approvals": "User Approvals", "/whatsapp": "WhatsApp",
   "/communications": "Communications", "/tally-import": "Tally Import", "/accounting": "Accounting", "/gst": "GST",
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
-  "/local-tally-accounts": "Tally Data Import", "/print": "Print & Labels",
+  "/local-tally-accounts": "Tally Data Import", "/print": "Print Hub",
 };
 // The enterprise workbench is a privileged generic CRUD surface; keep it off the general navigation.
 const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/enterprise-workbench").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
