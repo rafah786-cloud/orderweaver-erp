@@ -32,7 +32,7 @@ const ECO_TRANSITIONS: Record<EcoStatus, readonly EcoStatus[]> = {
 };
 
 const BOM_TRANSITIONS: Record<BomRevisionStatus, readonly BomRevisionStatus[]> = {
-  draft: ["draft", "review", "cancelled" as BomRevisionStatus],
+  draft: ["draft", "review"],
   review: ["review", "approved", "obsolete"],
   approved: ["approved", "released", "obsolete"],
   released: ["released", "obsolete"],
