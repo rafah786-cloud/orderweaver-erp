@@ -42,4 +42,5 @@ BEGIN
   RETURN po.id;
 END;
 $function$;
+REVOKE ALL ON FUNCTION public.advance_production_order_atomic(uuid,text,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.advance_production_order_atomic(uuid,text,text,text) TO authenticated;
