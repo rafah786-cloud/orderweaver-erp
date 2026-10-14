@@ -73,7 +73,7 @@ function MrpPage() {
           .range(from, to)
       );
       const salesOrderIds = [...new Set(orders.map((o) => o.sales_order_id).filter(Boolean))];
-      if (!salesOrderIds.length) return { orders, result: explodeMaterialRequirements([], [], []) };
+      if (!salesOrderIds.length) return { orders, result: explodeMultiLevelMaterialRequirements([], [], []) };
 
       const items = (await Promise.all(chunksOf(salesOrderIds, 100).map((ids) =>
         readAllRows<SalesItem>((from, to) =>
