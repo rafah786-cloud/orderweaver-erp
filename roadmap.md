@@ -1,4 +1,5 @@
 ## 2026-10-15 Tally bulk staging
+- [ ] Harden manifest paths/checksums, streaming XML boundaries, inherited namespaces and per-record totals; run focused/full tests, lint and automatic build without live writes
 - [x] Inspect completed commit and confirm database staging counts; add direct large-XML preparation to both upload pages and incremental source hashing
 - [x] Run direct upload domain logic against actual 122,916,286-byte Master.xml: 7,021 local rows, zero vouchers, 142 duplicates, 144 rejects; no database writes
 - [x] Run 14 focused / 268 full regression tests and lint (0 errors, 14 existing warnings)
