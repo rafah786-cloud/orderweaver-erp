@@ -92,6 +92,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
     const evidence: Array<{ name: string; bytes: number; sha256: string }> = [];
     const safe = company.replace(/[^A-Z0-9]+/g, "-");
     let rows: string[] = [], size = 0, chunk = 0;
+    let debitMinor = 0n, creditMinor = 0n;
     const flush = () => {
       if (!rows.length) return;
       result.files.push({ company, name: `${safe}-rows-${String(++chunk).padStart(5, "0")}.jsonl`, blob: new Blob([rows.join("\n") + "\n"], { type: "application/x-ndjson" }) });
@@ -149,7 +150,9 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
               else summary.companyGuid = row.sourceId;
             }
             if (row.recordType === "COMPANY" && typeof row.payload["@_NAME"] === "string" && row.payload["@_NAME"].trim().toUpperCase() !== company) identityErrors.push("Source COMPANY name differs from manifest.");
-            summary.debit += row.debit; summary.credit += row.credit;
+            debitMinor += BigInt(Math.round(row.debit * 100)); creditMinor += BigInt(Math.round(row.credit * 100));
+            if (debitMinor > BigInt(Number.MAX_SAFE_INTEGER) || creditMinor > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("Company monetary totals exceed safe reporting range.");
+            summary.debit = Number(debitMinor) / 100; summary.credit = Number(creditMinor) / 100;
             summary.inventoryLines += row.inventoryLines; summary.billAllocations += row.billAllocations;
             summary.missingIds += row.sourceId ? 0 : 1; summary.duplicates += duplicate ? 1 : 0;
             summary.rejects += row.errors.length || duplicate ? 1 : 0; summary.normalized += row.normalization.length ? 1 : 0;

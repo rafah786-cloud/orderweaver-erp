@@ -54,4 +54,13 @@ describe("Tally bulk staging", () => {
   it("rejects malformed envelope structure even when its tail looks valid", async () => {
     await expect(async () => { for await (const p of tallyMessages(chunks("<ENVELOPE><BODY><IMPORTDATA><DATA>" + voucher + "</DATA></BODY></ENVELOPE>"))) void p; }).rejects.toThrow(/Malformed source envelope/);
   });
+  it("uses exact minor-unit controls and quarantines unsupported amounts instead of silently treating them as zero", () => {
+    const [decimal] = prepareTallyMessage(voucher.replaceAll("10</AMOUNT>", "0.29</AMOUNT>"));
+    expect(decimal).toMatchObject({ debit: 0.29, credit: 0.29, errors: [] });
+    const [invalid] = prepareTallyMessage(voucher.replace("-10</AMOUNT>", "not-money</AMOUNT>"));
+    expect(invalid.errors.join(" ")).toContain("monetary control totals unavailable");
+    expect(invalid.debit).toBe(0); expect(invalid.credit).toBe(0);
+    const [imbalance] = prepareTallyMessage(voucher.replace("-10</AMOUNT>", "-10.01</AMOUNT>"));
+    expect(imbalance.errors.join(" ")).toContain("Exact minor-unit");
+  });
 });

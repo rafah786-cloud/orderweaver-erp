@@ -84,8 +84,27 @@ export function prepareTallyMessage(rawXml: string, inheritedNamespaces = ""): B
         const parsed = parseTallyMasters(`<ENVELOPE><BODY><DATA>${singleVoucher}</DATA></BODY></ENVELOPE>`, { rawGroups: [], finishedGroups: [], preserveLifecycle: true });
         const totals = inspectTallyAccounting(parsed);
         errors.push(...totals.errors);
-        debit = lifecycle === "posted" ? totals.debit : 0;
-        credit = lifecycle === "posted" ? totals.credit : 0;
+        // Monetary controls use exact minor units and never inherit the legacy parser's zero fallback.
+        const inventories = [...list(payload["ALLINVENTORYENTRIES.LIST"]), ...list(payload["INVENTORYENTRIES.LIST"])];
+        const ledgerLines = [...list(payload["ALLLEDGERENTRIES.LIST"]), ...list(payload["LEDGERENTRIES.LIST"]), ...inventories.flatMap((inv) => list(inv["ACCOUNTINGALLOCATIONS.LIST"]))];
+        let dr = 0n, cr = 0n, validAmounts = true;
+        for (const line of ledgerLines) {
+          const amount = text(line.AMOUNT);
+          const sign = text(line.ISDEEMEDPOSITIVE).toLowerCase();
+          if (!/^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(amount) || !["yes", "no"].includes(sign)) {
+            errors.push("Missing or unsupported ledger amount/debit-credit flag; monetary control totals unavailable."); validAmounts = false; continue;
+          }
+          const [whole, fraction = ""] = amount.replaceAll(",", "").replace("-", "").split(".");
+          const minor = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0"));
+          if (sign === "yes") dr += minor; else cr += minor;
+        }
+        if (dr > BigInt(Number.MAX_SAFE_INTEGER) || cr > BigInt(Number.MAX_SAFE_INTEGER)) {
+          errors.push("Monetary controls exceed safe reporting range."); validAmounts = false;
+        }
+        if (lifecycle === "posted" && validAmounts) {
+          debit = Number(dr) / 100; credit = Number(cr) / 100;
+          if (dr !== cr) errors.push("Exact minor-unit debit/credit imbalance.");
+        }
         inventoryLines = parsed.vouchers.reduce((n, v) => n + v.inventory_entries.length, 0);
         billAllocations = parsed.bills.length;
         for (const voucher of parsed.vouchers) {
