@@ -2,6 +2,10 @@
 
 ## Implemented path
 
+Both `/tally-import` and `/local-tally-accounts` expose **Select XML export** and **Select snapshot folder**. A single XML file up to 256 MB can now be streamed into local per-company evidence chunks without four manifests. Its `SVCURRENTCOMPANY` header must identify an allowed source; a generated local manifest records the original hash, not verified TallyBridge provenance. The supplied ESTIMATE Master.xml is accepted for local preparation only. A 165 MB ZIP archive **cannot be ingested directly**: extract it first. A 165 MB XML is within the size limit, but processing remains dependent on browser memory and per-message limits; no cloud transfer is implied.
+
+Original hashing is incremental rather than a whole-file buffer. For sources over 32 MB, the combined ZIP is deliberately not constructed in memory; download evidence chunks and retain the original XML separately. Smaller sources may download a combined originals/evidence ZIP.
+
 Accounting → Tally Data Import → **Select snapshot folder** reads four company manifests once: ABOOD TRADINGS, ABRAZ SLEEPING SOLUTIONS, ABZ - EST and ESTIMATE. Download one ZIP containing byte-for-byte originals, source manifests, per-company JSONL chunks and a report. No scheduled task, provider credentials, Tally write, database mutation, live posting, automatic approval or cutover is involved.
 
 This is **not a completed cloud staging transfer**. The current schema only permits the caller's active company; there is no dedicated ESTIMATE destination or approved atomic resumable multi-company upload service. No migrations were applied. The repository snapshot exporter has no 1.0.9 version contract; this implementation accepts the existing `company/segments/path/bytes/sha256` manifest shape and rejects other shapes rather than guessing. Verify real 1.0.9 manifests before activation.
@@ -18,7 +22,7 @@ This is **not a completed cloud staging transfer**. The current schema only perm
 
 ## Limits and reconciliation
 
-XML decoding is streamed (UTF-8 or BOM-marked UTF-16), messages are bounded at 16 MB, files at 256 MB, selected folders at 512 MB. Original hashing reads one bounded file at a time. JSONL chunks contain at most 250 rows and target 4 MB; an indivisible larger message is retained intact. The archive is held in browser memory; larger historical datasets need a approved local disk-streaming/remote resumable transport, not an unbounded browser upload. Inputs are never sent anywhere by this feature.
+XML decoding is streamed (UTF-8 or BOM-marked UTF-16), messages are bounded at 16 MB, files at 256 MB, selected folders at 512 MB. Original hashing reads stream chunks. JSONL chunks contain at most 250 rows and target 4 MB; an indivisible larger message is retained intact. Derivative chunks are still held in browser memory; larger historical datasets need an approved local disk-streaming/remote resumable transport, not an unbounded browser upload. Inputs are never sent anywhere by this feature.
 
 Report includes rows by source type, vouchers, posted-only debit/credit totals, inventory lines, bill allocations, lifecycle counts, normalizations, missing identifiers, duplicates and rejects. These are source checks, **not ERP reconciled balances**. Decimal precision, source-reference resolution, complete master category counts, date-range coverage/overlaps, signed stock unit/value reconciliation, and accountant-certified source totals remain activation requirements.
 
@@ -34,5 +38,7 @@ The uploaded `Master.xml` is 122,916,286 bytes (UTF-16), selects ESTIMATE and co
 4. Source identity/mapping and accountant reconciliation, verified recovery and the existing approved migration workflow. No canonical import can activate from local validation alone.
 
 ## Verification
+
+Continuation inspected starting commit `8a9b6b7ad0b9171407f851907a0d02d9fb5c43fc`. A read-only database query confirmed **0 migration runs and 0 staging rows**. Live company shells are ABOOD, ABRAZ, ABOOD_MGMT and ABRAZ_MGMT; no exact ESTIMATE or ABZ - EST destination exists, and management shells are not silently treated as those source companies. The requester-specific preview session could not be minted because no matching auth account exists. Signed-in upload interaction therefore remains unverified; no account was selected arbitrarily.
 
 Focused tests cover normalization, UDF/raw payload retention, totals/bills, deleted lifecycle, malformed/settings rejection, message boundaries, manifests, hash tampering, company isolation, deterministic retry and ZIP original-byte preservation. Actual four-company transfer/browser source processing is unverified until complete real bundles exist.

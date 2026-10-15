@@ -6,6 +6,7 @@
 - Local Tally browser access uses a loopback-only paired read-only agent with exact-origin authorization; native data files and arbitrary filesystem paths are never accepted.
 - Local accounts previews preserve source GUIDs, lifecycle and inventory accounting allocations; canonical imports remain disabled until a verified transactional commit and recovery gate exist.
 - Bulk Tally preparation uses import-only normalized derivatives and separate company archives with verbatim originals; cloud staging remains disabled until an approved idempotent chunk protocol and non-official estimate boundary exist, because current active-company RLS cannot safely accept four-company batches.
+- Direct Tally XML preparation binds source identity to its explicit header and hashes streams incrementally; large sources retain originals separately instead of allocating a combined archive, to keep local preparation distinct from durable cloud staging.
 - Expose ERP agent tools through OAuth with the caller's verified token and RLS, and check approved account roles for business reads, so external assistants never inherit privileged access.
 - Notification event activation and delivery configuration require a server-verified admin role through the caller's authenticated client; the communications settings are admin-only.
 - Customer alerts, purchase notices and supplier-name enrichment in staff alerts must read targeted business records through the caller's authenticated client and existing RLS; privileged delivery must not widen record visibility.
