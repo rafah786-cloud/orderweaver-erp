@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTallyStagingBundles } from "./tally-bulk-bundle";
+import { buildTallyStagingBundles, buildTallyXmlBundle, hashTallyFile } from "./tally-bulk-bundle";
 import { archiveTallyStaging } from "./tally-bulk-archive";
 import { sha256, TALLY_SOURCES } from "./tally-bulk";
 import { unzipSync } from "fflate";
@@ -38,5 +38,29 @@ describe("four-company bundle preparation", () => {
   });
   it("rejects incomplete four-company selection", async () => {
     await expect(buildTallyStagingBundles([], () => {})).rejects.toThrow(/four company/);
+  });
+  it("hashes source streams without requesting a whole-file buffer", async () => {
+    const blob = new Blob(["original bytes"]);
+    const expected = await sha256(await blob.arrayBuffer());
+    Object.defineProperty(blob, "arrayBuffer", { value: () => { throw new Error("unbounded read"); } });
+    expect(await hashTallyFile(blob)).toBe(expected);
+  });
+  it("accepts a direct UTF-16 ESTIMATE XML without guessing a company GUID", async () => {
+    const xml = '<ENVELOPE><BODY><IMPORTDATA><REQUESTDESC><STATICVARIABLES><SVCURRENTCOMPANY>ESTIMATE</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE><GROUP><GUID>g1</GUID><ALTERID>1</ALTERID></GROUP></TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>';
+    const bytes = new Uint8Array(2 + xml.length * 2); bytes[0] = 255; bytes[1] = 254;
+    const view = new DataView(bytes.buffer);
+    for (let i = 0; i < xml.length; i++) view.setUint16(2 + i * 2, xml.charCodeAt(i), true);
+    const result = await buildTallyXmlBundle(new File([bytes], "Master.xml"), () => {});
+    expect(result.summaries[0]).toMatchObject({ company: "ESTIMATE", companyGuid: null, rows: 1 });
+    expect(result.summaries[0].blockers.join(" ")).toContain("not eligible for official");
+    expect(result.files.some((entry) => entry.name === "generated-local-manifest.json")).toBe(true);
+  });
+  it("rejects direct ZIP archives and XML without explicit source identity", async () => {
+    await expect(buildTallyXmlBundle(new File(["zip"], "165MB.zip"), () => {})).rejects.toThrow(/Extract/);
+    await expect(buildTallyXmlBundle(new File(['<ENVELOPE><BODY><DATA><TALLYMESSAGE><GROUP /></TALLYMESSAGE></DATA></BODY></ENVELOPE>'], "unknown.xml"), () => {})).rejects.toThrow(/SVCURRENTCOMPANY/);
+  });
+  it("rejects duplicated paths rather than selecting an arbitrary source", async () => {
+    const files = await fixture();
+    await expect(buildTallyStagingBundles([...files, files[0]], () => {})).rejects.toThrow(/Duplicate source file paths/);
   });
 });

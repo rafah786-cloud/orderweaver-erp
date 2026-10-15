@@ -33,6 +33,7 @@ import {
 } from "@/lib/tally-migration.functions";
 import { useCompany } from "@/lib/company-context";
 import { Progress } from "@/components/ui/progress";
+import { TallyBulkStaging } from "@/components/TallyBulkStaging";
 
 export const Route = createFileRoute("/_app/tally-import")({
   head: () => ({
@@ -552,6 +553,7 @@ function TallyImportPage() {
         description="Upload a Tally Masters XML export to bring in customers, vendors, raw materials and finished goods."
       />
       <PageBody>
+        <TallyBulkStaging />
         <Card className="mb-4">
           <CardHeader>
             <CardTitle className="text-base">Migration control plane</CardTitle>

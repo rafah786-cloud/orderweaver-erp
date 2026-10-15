@@ -1,8 +1,43 @@
-import { type BulkSummary, NORMALIZATION_VERSION, TALLY_SOURCES, hashText, newBulkSummary, prepareTallyMessage, sha256, sourceCompleteness, tallyMessages } from "./tally-bulk";
+import { type BulkSummary, NORMALIZATION_VERSION, TALLY_SOURCES, hashText, newBulkSummary, prepareTallyMessage, sourceCompleteness, tallyMessages } from "./tally-bulk";
+import { sha256 as streamingSha256 } from "@noble/hashes/sha2.js";
 
 type Segment = { path?: string; sha256?: string; bytes?: number; name?: string };
 export type BulkBundleResult = { summaries: BulkSummary[]; files: Array<{ company: string; name: string; blob: Blob }> };
 const relative = (file: File) => file.webkitRelativePath || file.name;
+
+export async function hashTallyFile(file: Blob): Promise<string> {
+  const hash = streamingSha256.create();
+  const reader = file.stream().getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      hash.update(value);
+    }
+    return Array.from(hash.digest(), (b) => b.toString(16).padStart(2, "0")).join("");
+  } finally { reader.releaseLock(); }
+}
+
+/** Direct XML is local evidence only: never infer a destination or company GUID. */
+export async function buildTallyXmlBundle(file: File, progress: (label: string) => void): Promise<BulkBundleResult> {
+  if (!file.name.toLowerCase().endsWith(".xml")) throw new Error("ZIP archives cannot be ingested directly. Extract the archive, then select its XML export or snapshot folder.");
+  if (file.size > 256 * 1024 * 1024) throw new Error("XML exceeds the 256 MB local preparation limit. Re-export smaller periods.");
+  progress("Hashing original XML…");
+  const hash = await hashTallyFile(file);
+  let company: string | undefined;
+  for await (const part of tallyMessages(decoded(file))) {
+    if (part.header) {
+      company = part.header.match(/<SVCURRENTCOMPANY(?:\s[^>]*)?>([^<]+)<\/SVCURRENTCOMPANY>/)?.[1]?.trim().toUpperCase();
+      break;
+    }
+  }
+  if (!company || !TALLY_SOURCES.some((source) => source === company)) throw new Error("XML must explicitly identify one of the four source companies through SVCURRENTCOMPANY. No company is inferred from its filename.");
+  const manifest = new File([JSON.stringify({ company, segments: [{ path: file.name, bytes: file.size, sha256: hash }] })], "manifest.json");
+  const result = await buildTallyStagingBundles([file, manifest], progress, false);
+  const evidence = result.files.find((entry) => entry.name.endsWith("source-evidence.json"));
+  if (evidence) result.files.push({ company, name: "generated-local-manifest.json", blob: manifest });
+  return result;
+}
 
 async function* decoded(file: File): AsyncGenerator<string> {
   const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
@@ -18,10 +53,11 @@ async function* decoded(file: File): AsyncGenerator<string> {
   if (tail) yield tail;
 }
 
-export async function buildTallyStagingBundles(files: File[], progress: (label: string) => void): Promise<BulkBundleResult> {
+export async function buildTallyStagingBundles(files: File[], progress: (label: string) => void, requireFourCompanies = true): Promise<BulkBundleResult> {
   if (files.reduce((sum, file) => sum + file.size, 0) > 512 * 1024 * 1024) throw new Error("Snapshot folder exceeds the 512 MB browser preparation limit. Use smaller source export periods; no partial bundle was staged.");
   const manifests = files.filter((f) => relative(f).toLowerCase().endsWith("manifest.json"));
-  if (manifests.length !== TALLY_SOURCES.length) throw new Error("Select the TallyBridge folder containing exactly the four company manifest.json files.");
+  if (manifests.length !== (requireFourCompanies ? TALLY_SOURCES.length : 1)) throw new Error("Select the TallyBridge folder containing exactly the four company manifest.json files.");
+  if (new Set(files.map(relative)).size !== files.length) throw new Error("Duplicate source file paths are not allowed.");
   const result: BulkBundleResult = { summaries: [], files: [] };
   const seenCompanies = new Set<string>();
   for (const manifestFile of manifests) {
@@ -56,7 +92,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       if (!name || !file || !segment.sha256 || seenSegments.has(name)) throw new Error(`${company}: manifest segment missing or repeated.`);
       seenSegments.add(name);
       if (file.size > 256 * 1024 * 1024) throw new Error(`${company}: split ${name} into exports below 256 MB.`);
-      const fileHash = await sha256(await file.arrayBuffer());
+      const fileHash = await hashTallyFile(file);
       if (fileHash !== segment.sha256.toLowerCase() || (segment.bytes != null && segment.bytes !== file.size)) throw new Error(`${company}: ${name} differs from its manifest hash or size.`);
       evidence.push({ name, bytes: file.size, sha256: fileHash }); summary.files++;
       let messageNo = 0;

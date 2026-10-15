@@ -1,24 +1,26 @@
 import { useRef, useState } from "react";
-import { Download, FolderUp, ShieldAlert } from "lucide-react";
+import { Download, FolderUp, FileUp, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buildTallyStagingBundles, type BulkBundleResult } from "@/lib/tally-bulk-bundle";
+import { buildTallyStagingBundles, buildTallyXmlBundle, type BulkBundleResult } from "@/lib/tally-bulk-bundle";
 import { archiveTallyStaging } from "@/lib/tally-bulk-archive";
 
 export function TallyBulkStaging() {
   const input = useRef<HTMLInputElement>(null);
+  const xmlInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BulkBundleResult | null>(null);
   const [archive, setArchive] = useState<Blob | null>(null);
-  const choose = async (files: File[]) => {
+  const choose = async (files: File[], directXml = false) => {
     setBusy(true); setError(null); setResult(null); setArchive(null); setStatus("Checking manifests and file hashes…");
     try {
-      const prepared = await buildTallyStagingBundles(files, setStatus);
-      setStatus("Preserving originals in the staging archive…");
-      setArchive(await archiveTallyStaging(prepared, files)); setResult(prepared);
-      setStatus("Local staging files prepared. Nothing was transferred to cloud books.");
+      const prepared = directXml ? await buildTallyXmlBundle(files[0], setStatus) : await buildTallyStagingBundles(files, setStatus);
+      setResult(prepared);
+      // Avoid duplicating all original/derivative data in memory for large sources.
+      if (files.reduce((total, file) => total + file.size, 0) <= 32 * 1024 * 1024) setArchive(await archiveTallyStaging(prepared, files));
+      setStatus("Local evidence prepared. Database rows were not transferred. Keep the original XML alongside the downloaded evidence.");
     }
     catch (e) { setError(e instanceof Error ? e.message : "Bundle staging failed."); setStatus(""); }
     finally { setBusy(false); }
@@ -28,9 +30,11 @@ export function TallyBulkStaging() {
     a.href = url; a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return <section className="space-y-4 border-b pb-6">
-    <div><h2 className="text-xl font-semibold">Four-company TallyBridge bundle</h2><p className="text-sm text-muted-foreground">TallyBridge 1.0.9 · original hashes checked · separate source books</p></div>
+    <div><h2 className="text-xl font-semibold">Tally source preparation</h2><p className="text-sm text-muted-foreground">Local evidence only · XML up to 256 MB · ZIP archives must be extracted first</p></div>
+    <input ref={xmlInput} type="file" accept=".xml,.zip" className="hidden" aria-label="Tally XML export" onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) void choose(files, true); e.target.value = ""; }} />
     <input ref={input} type="file" multiple className="hidden" aria-label="TallyBridge snapshot folder" {...{ webkitdirectory: "" }} onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) void choose(files); e.target.value = ""; }} />
     <Button onClick={() => input.current?.click()} disabled={busy}><FolderUp className="mr-2 h-4 w-4" />{busy ? "Preparing…" : "Select snapshot folder"}</Button>
+    <Button variant="outline" onClick={() => xmlInput.current?.click()} disabled={busy}><FileUp className="mr-2 h-4 w-4" />Select XML export</Button>
     {archive && <Button variant="outline" onClick={() => download({ company: "all", name: "Tally-four-company-staging.zip", blob: archive })}><Download className="mr-2 h-4 w-4" />Download all originals & staging</Button>}
     {status && <p className="text-sm" role="status">{status}</p>}
     {error && <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Bundle rejected</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
