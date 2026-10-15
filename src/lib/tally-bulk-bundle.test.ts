@@ -63,4 +63,39 @@ describe("four-company bundle preparation", () => {
     const files = await fixture();
     await expect(buildTallyStagingBundles([...files, files[0]], () => {})).rejects.toThrow(/Duplicate source file paths/);
   });
+  it("accepts repository schema v1 without claiming installed 1.0.9 provenance", async () => {
+    const files = await fixture();
+    const manifest = JSON.parse(await files[1].text());
+    delete manifest.bridgeVersion; manifest.schemaVersion = 1;
+    files[1] = file("manifest.json", JSON.stringify(manifest), "snapshots/0/manifest.json");
+    const result = await buildTallyStagingBundles(files, () => {});
+    expect(result.summaries[0].blockers.join(" ")).toContain("does not establish TallyBridge 1.0.9");
+  });
+  it("requires exact integer bytes, a valid checksum and known schema version", async () => {
+    for (const patch of [{ bytes: undefined }, { bytes: -1 }, { bytes: "12" }, { sha256: "abc" }]) {
+      const files = await fixture(); const manifest = JSON.parse(await files[1].text());
+      Object.assign(manifest.segments[0], patch);
+      files[1] = file("manifest.json", JSON.stringify(manifest), "snapshots/0/manifest.json");
+      await expect(buildTallyStagingBundles(files, () => {})).rejects.toThrow(/exact bytes/);
+    }
+    const files = await fixture(); const manifest = JSON.parse(await files[1].text()); manifest.schemaVersion = 2;
+    files[1] = file("manifest.json", JSON.stringify(manifest), "snapshots/0/manifest.json");
+    await expect(buildTallyStagingBundles(files, () => {})).rejects.toThrow(/Unsupported/);
+  });
+  it("resolves relative subdirectories without silently using another file's basename", async () => {
+    const files = await fixture(); const manifest = JSON.parse(await files[1].text()); manifest.segments[0].path = "nested/masters.xml";
+    files[1] = file("manifest.json", JSON.stringify(manifest), "snapshots/0/manifest.json");
+    await expect(buildTallyStagingBundles(files, () => {})).rejects.toThrow(/missing/);
+    files[0] = file("masters.xml", await files[0].text(), "snapshots/0/nested/masters.xml");
+    expect((await buildTallyStagingBundles(files, () => {})).summaries[0].rows).toBe(1);
+    manifest.segments[0].path = "../masters.xml";
+    files[1] = file("manifest.json", JSON.stringify(manifest), "snapshots/0/manifest.json");
+    await expect(buildTallyStagingBundles(files, () => {})).rejects.toThrow(/Unsafe/);
+  });
+  it("reproduces evidence independent of the browser's file selection order", async () => {
+    const files = await fixture();
+    const a = await buildTallyStagingBundles(files, () => {}), b = await buildTallyStagingBundles([...files].reverse(), () => {});
+    expect(a.summaries).toEqual(b.summaries);
+    expect(await Promise.all(a.files.map((f) => f.blob.text()))).toEqual(await Promise.all(b.files.map((f) => f.blob.text())));
+  });
 });

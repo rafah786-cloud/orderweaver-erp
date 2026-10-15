@@ -14,12 +14,14 @@ export function TallyBulkStaging() {
   const [result, setResult] = useState<BulkBundleResult | null>(null);
   const [archive, setArchive] = useState<Blob | null>(null);
   const choose = async (files: File[], directXml = false) => {
+    const first = files[0];
+    if (!first) return;
     setBusy(true); setError(null); setResult(null); setArchive(null); setStatus("Checking manifests and file hashes…");
     try {
-      const prepared = directXml ? await buildTallyXmlBundle(files[0], setStatus) : await buildTallyStagingBundles(files, setStatus);
-      setResult(prepared);
+      const prepared = directXml ? await buildTallyXmlBundle(first, setStatus) : await buildTallyStagingBundles(files, setStatus);
       // Avoid duplicating all original/derivative data in memory for large sources.
       if (files.reduce((total, file) => total + file.size, 0) <= 32 * 1024 * 1024) setArchive(await archiveTallyStaging(prepared, files));
+      setResult(prepared);
       setStatus("Local evidence prepared. Database rows were not transferred. Keep the original XML alongside the downloaded evidence.");
     }
     catch (e) { setError(e instanceof Error ? e.message : "Bundle staging failed."); setStatus(""); }
@@ -37,6 +39,7 @@ export function TallyBulkStaging() {
     <Button variant="outline" onClick={() => xmlInput.current?.click()} disabled={busy}><FileUp className="mr-2 h-4 w-4" />Select XML export</Button>
     {archive && <Button variant="outline" onClick={() => download({ company: "all", name: "Tally-four-company-staging.zip", blob: archive })}><Download className="mr-2 h-4 w-4" />Download all originals & staging</Button>}
     {status && <p className="text-sm" role="status">{status}</p>}
+    {result?.summaries.some((s) => s.blockers.length > 0) && <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Incomplete or quarantined source — not import-ready</AlertTitle><AlertDescription>Evidence is retained for review only. The company report lists missing masters, source identity gaps and rejected records.</AlertDescription></Alert>}
     {error && <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Bundle rejected</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
     {result && <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b">{["Company", "Rows", "Vouchers", "Debit", "Credit", "Missing IDs", "Duplicates", "Rejects", "Blockers", "Files"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{result.summaries.map((s) => <tr key={s.company} className="border-b align-top"><td className="p-2 font-medium">{s.company}</td><td className="p-2">{s.rows}</td><td className="p-2">{s.vouchers}</td><td className="p-2">{s.debit.toFixed(2)}</td><td className="p-2">{s.credit.toFixed(2)}</td><td className="p-2">{s.missingIds}</td><td className="p-2">{s.duplicates}</td><td className="p-2">{s.rejects}</td><td className="p-2"><ul className="list-disc pl-4">{s.blockers.map((b) => <li key={b}>{b}</li>)}</ul></td><td className="p-2">{result.files.filter((f) => f.company === s.company).map((f) => <Button key={f.name} variant="ghost" size="sm" onClick={() => download(f)}><Download className="mr-1 h-3 w-3" />{f.name.endsWith(".jsonl") ? f.name.match(/rows-(\d+)/)?.[1] : "Evidence"}</Button>)}</td></tr>)}</tbody></table></div>}
     <Alert><ShieldAlert className="h-4 w-4" /><AlertTitle>Cloud staging remains blocked</AlertTitle><AlertDescription>Local staging files only; no cloud transfer, posting, approval or cutover. Approved chunked cross-company staging and a dedicated ESTIMATE destination are required.</AlertDescription></Alert>
