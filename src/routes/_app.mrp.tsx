@@ -33,6 +33,11 @@ type BomRevisionLine = { bom_revision_id: string; raw_material_id: string | null
 type LegacyBomLine = { model_id: string; raw_material_id: string; quantity_per_unit: number };
 
 type PageResponse = { data: unknown[] | null; error: { message: string } | null };
+function chunksOf<T>(values: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < values.length; i += size) out.push(values.slice(i, i + size));
+  return out;
+}
 async function readAllRows<T>(
   fetchPage: (from: number, to: number) => PromiseLike<PageResponse>,
 ): Promise<T[]> {
