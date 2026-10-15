@@ -1,3 +1,9 @@
+## 2026-10-15 Tally bulk staging
+- [ ] Add one manifest-folder upload with immutable originals, import-only normalization, full source rows, chunking and deterministic retries
+- [ ] Report four-company identity/completeness/control totals and keep ESTIMATE out of official books
+- [ ] Run focused/full tests and lint; verify automatic build and browser staging
+- [ ] Transfer and reconcile actual four-company bundles (blocked until complete source bundles and an approved atomic cross-company staging contract are available)
+
 ## 2026-10-14 ERP audit continuation
 
 - [x] Route authorization regression coverage now checks route-boundary matching, nested paths, trailing slashes, unknown-route denial, and that every top-level private route has an explicit role policy.
