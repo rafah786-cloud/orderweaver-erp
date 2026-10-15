@@ -33,4 +33,25 @@ describe("Tally bulk staging", () => {
     expect(() => normalizeTallyImportXml("<!DOCTYPE a>" + voucher)).toThrow(/forbidden/);
     expect(() => normalizeTallyImportXml(voucher.replaceAll("UDF:", "OTHER:"))).toThrow(/Undeclared/);
   });
+  it("does not multiply totals when a message contains multiple vouchers", () => {
+    const pair = voucher.replace("</TALLYMESSAGE>", voucher.slice("<TALLYMESSAGE>".length).replace("<GUID>v1</GUID>", "<GUID>v2</GUID>"));
+    const rows = prepareTallyMessage(pair);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => [r.debit, r.credit, r.billAllocations])).toEqual([[10, 10, 1], [10, 10, 1]]);
+  });
+  it("preserves inherited UDF namespaces and valid whitespace controls", () => {
+    const normalized = normalizeTallyImportXml(voucher.replace("x&#4;y", "x&#9;&#10;&#13;y"), 'xmlns:UDF="CustomSourceNamespace"');
+    expect(normalized.xml).toContain('xmlns:UDF="CustomSourceNamespace"');
+    expect(normalized.xml).toContain("&#9;&#10;&#13;");
+  });
+  it("ignores boundary-looking tags in CDATA and comments across byte-sized chunks", async () => {
+    const message = '<TALLYMESSAGE><GROUP><GUID>g1</GUID><NOTE><![CDATA[</TALLYMESSAGE>]]></NOTE><!-- <TALLYMESSAGE> --></GROUP></TALLYMESSAGE>';
+    const source = "<ENVELOPE><BODY><DATA>" + message + "</DATA></BODY></ENVELOPE>";
+    const out: string[] = [];
+    for await (const p of tallyMessages(chunks(...source.split("")))) if (p.message) out.push(p.message);
+    expect(out).toEqual([message]);
+  });
+  it("rejects malformed envelope structure even when its tail looks valid", async () => {
+    await expect(async () => { for await (const p of tallyMessages(chunks("<ENVELOPE><BODY><IMPORTDATA><DATA>" + voucher + "</DATA></BODY></ENVELOPE>"))) void p; }).rejects.toThrow(/Malformed source envelope/);
+  });
 });
