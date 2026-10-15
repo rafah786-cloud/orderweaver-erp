@@ -1,6 +1,8 @@
 ## 2026-10-15 Tally bulk staging
 - [x] Inspect completed commit and confirm database staging counts; add direct large-XML preparation to both upload pages and incremental source hashing
-- [ ] Verify signed-in direct upload of actual Master.xml (blocked: no requester auth account; source processing can be checked separately)
+- [x] Run direct upload domain logic against actual 122,916,286-byte Master.xml: 7,021 local rows, zero vouchers, 142 duplicates, 144 rejects; no database writes
+- [x] Run 14 focused / 268 full regression tests and lint (0 errors, 14 existing warnings)
+- [ ] Verify signed-in direct upload of actual Master.xml (blocked: no requester auth account; sandbox source processing passed but is not a browser test)
 - [x] Add one manifest-folder preparation with immutable originals, import-only normalization, full source rows, chunking and deterministic retries; cloud upload remains disabled
 - [x] Report four-company identity/completeness/control totals and keep ESTIMATE out of official books
 - [x] Run focused/full tests and lint; verify automatic build
