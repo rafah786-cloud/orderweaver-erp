@@ -111,7 +111,7 @@ async function main() {
   const manifestArg = process.argv[2];
   const outputArg = process.argv[3];
   if (!manifestArg || !outputArg) {
-    throw new Error("Usage: node --import tsx src/staging-bundle.ts <manifest.json> <output-directory>");
+    throw new Error("Usage: node --import tsx scripts/tally-staging-bundle.ts <manifest.json> <output-directory>");
   }
   const manifestPath = path.resolve(manifestArg);
   const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Manifest;
