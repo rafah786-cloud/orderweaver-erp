@@ -34,6 +34,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
     const summary = newBulkSummary(company);
     summary.companyGuid = manifest.companyGuid?.trim() || null;
     const keys = new Set<string>(), alters = new Set<string>();
+    const identityErrors: string[] = [];
     const evidence: Array<{ name: string; bytes: number; sha256: string }> = [];
     const safe = company.replace(/[^A-Z0-9]+/g, "-");
     let rows: string[] = [], size = 0, chunk = 0;
@@ -61,6 +62,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       let messageNo = 0;
       for await (const part of tallyMessages(decoded(file))) {
         if (part.header) {
+          if (!/<ENVELOPE\b[^>]*>/.test(part.header) || !/<BODY\b[^>]*>/.test(part.header) || !/(?:<DATA\b[^>]*>|<REQUESTDATA\b[^>]*>)\s*$/.test(part.header)) throw new Error(`${company}: unsupported source envelope header.`);
           const selected = part.header.match(/<SVCURRENTCOMPANY(?:\s[^>]*)?>([^<]+)<\/SVCURRENTCOMPANY>/)?.[1]?.trim().toUpperCase();
           if (selected && selected !== company) throw new Error(`${company}: selected source company in ${name} does not match manifest.`);
         }
@@ -71,10 +73,10 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
           for (const row of prepareTallyMessage(part.message)) {
             const identity = row.sourceId ? `${row.recordType}:${row.sourceId}` : `${row.recordType}:missing:${await hashText(row.rawXml)}`;
             const alterKey = row.alterId && /^\d+$/.test(row.alterId) ? `${row.recordType}:${BigInt(row.alterId)}` : null;
-            const duplicate = keys.has(identity) || Boolean(alterKey && alters.has(alterKey));
+            let duplicate = keys.has(identity) || Boolean(alterKey && alters.has(alterKey));
             if (row.masterId) {
               const masterKey = `MASTERID:${row.recordType}:${row.masterId}`;
-              if (keys.has(masterKey)) row.errors.push("Duplicate MASTERID within record type.");
+              if (keys.has(masterKey)) { duplicate = true; row.errors.push("Duplicate MASTERID within record type."); }
               keys.add(masterKey);
             }
             keys.add(identity); if (alterKey) alters.add(alterKey);
@@ -82,8 +84,8 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
             summary.lifecycle[row.lifecycle] = (summary.lifecycle[row.lifecycle] ?? 0) + 1;
             if (row.recordType === "VOUCHER") summary.vouchers++;
             if (row.recordType === "COMPANY" && row.sourceId) {
-              if (summary.companyGuid && summary.companyGuid !== row.sourceId) throw new Error("Source COMPANY GUID differs from manifest.");
-              summary.companyGuid = row.sourceId;
+              if (summary.companyGuid && summary.companyGuid !== row.sourceId) identityErrors.push("Source COMPANY GUID differs from manifest.");
+              else summary.companyGuid = row.sourceId;
             }
             summary.debit += row.debit; summary.credit += row.credit;
             summary.inventoryLines += row.inventoryLines; summary.billAllocations += row.billAllocations;
@@ -101,7 +103,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       }
     }
     flush();
-    summary.blockers = sourceCompleteness(summary);
+    summary.blockers = [...sourceCompleteness(summary), ...identityErrors];
     summary.blockers.push("TallyBridge 1.0.9 export contract is not verified from repository version alone; original manifests must be reviewed against the installed exporter.");
     if (company === "ESTIMATE" || company === "ABZ - EST") summary.blockers.unshift("Estimate source isolated: not eligible for official company staging, approval or cutover.");
     result.summaries.push(summary);
