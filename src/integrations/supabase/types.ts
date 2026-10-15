@@ -9254,6 +9254,10 @@ export type Database = {
           title: string
         }[]
       }
+      match_bank_lines: {
+        Args: { p_book: string; p_statement: string }
+        Returns: undefined
+      }
       next_voucher_number: {
         Args: { _type: Database["public"]["Enums"]["voucher_type"] }
         Returns: string

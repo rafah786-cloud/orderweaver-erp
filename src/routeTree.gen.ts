@@ -25,6 +25,7 @@ import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppBankingRouteImport } from './routes/_app.banking'
 import { Route as AppBoqRouteImport } from './routes/_app.boq'
+import { Route as AppCapacityRouteImport } from './routes/_app.capacity'
 import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
@@ -37,6 +38,7 @@ import { Route as AppMrpRouteImport } from './routes/_app.mrp'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppPrintRouteImport } from './routes/_app.print'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
@@ -181,6 +183,11 @@ const AppBoqRoute = AppBoqRouteImport.update({
   path: '/boq',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCapacityRoute = AppCapacityRouteImport.update({
+  id: '/capacity',
+  path: '/capacity',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCommunicationsRoute = AppCommunicationsRouteImport.update({
   id: '/communications',
   path: '/communications',
@@ -239,6 +246,11 @@ const AppPartiesRoute = AppPartiesRouteImport.update({
 const AppPayslipsRoute = AppPayslipsRouteImport.update({
   id: '/payslips',
   path: '/payslips',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrintRoute = AppPrintRouteImport.update({
+  id: '/print',
+  path: '/print',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProductionRoute = AppProductionRouteImport.update({
@@ -530,25 +542,25 @@ const AppGstReturnsIdRoute = AppGstReturnsIdRouteImport.update({
   getParentRoute: () => AppGstReturnsRoute,
 } as any)
 const AppPrintInvoiceIdRoute = AppPrintInvoiceIdRouteImport.update({
-  id: '/print/invoice/$id',
-  path: '/print/invoice/$id',
-  getParentRoute: () => AppRoute,
+  id: '/invoice/$id',
+  path: '/invoice/$id',
+  getParentRoute: () => AppPrintRoute,
 } as any)
 const AppPrintPartyLedgerIdRoute = AppPrintPartyLedgerIdRouteImport.update({
-  id: '/print/party-ledger/$id',
-  path: '/print/party-ledger/$id',
-  getParentRoute: () => AppRoute,
+  id: '/party-ledger/$id',
+  path: '/party-ledger/$id',
+  getParentRoute: () => AppPrintRoute,
 } as any)
 const AppPrintPurchaseIdRoute = AppPrintPurchaseIdRouteImport.update({
-  id: '/print/purchase/$id',
-  path: '/print/purchase/$id',
-  getParentRoute: () => AppRoute,
+  id: '/purchase/$id',
+  path: '/purchase/$id',
+  getParentRoute: () => AppPrintRoute,
 } as any)
 const AppPrintSupplierLedgerIdRoute =
   AppPrintSupplierLedgerIdRouteImport.update({
-    id: '/print/supplier-ledger/$id',
-    path: '/print/supplier-ledger/$id',
-    getParentRoute: () => AppRoute,
+    id: '/supplier-ledger/$id',
+    path: '/supplier-ledger/$id',
+    getParentRoute: () => AppPrintRoute,
   } as any)
 const AppVendorPurchaseOrdersIdRoute =
   AppVendorPurchaseOrdersIdRouteImport.update({
@@ -584,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
+  '/capacity': typeof AppCapacityRoute
   '/communications': typeof AppCommunicationsRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
@@ -596,6 +609,7 @@ export interface FileRoutesByFullPath {
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
+  '/print': typeof AppPrintRouteWithChildren
   '/production': typeof AppProductionRoute
   '/purchases': typeof AppPurchasesRoute
   '/sales-orders': typeof AppSalesOrdersRoute
@@ -675,6 +689,7 @@ export interface FileRoutesByTo {
   '/attendance': typeof AppAttendanceRoute
   '/banking': typeof AppBankingRouteWithChildren
   '/boq': typeof AppBoqRoute
+  '/capacity': typeof AppCapacityRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
@@ -686,6 +701,7 @@ export interface FileRoutesByTo {
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
   '/payslips': typeof AppPayslipsRoute
+  '/print': typeof AppPrintRouteWithChildren
   '/production': typeof AppProductionRoute
   '/purchases': typeof AppPurchasesRoute
   '/sales-orders': typeof AppSalesOrdersRoute
@@ -767,6 +783,7 @@ export interface FileRoutesById {
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/banking': typeof AppBankingRouteWithChildren
   '/_app/boq': typeof AppBoqRoute
+  '/_app/capacity': typeof AppCapacityRoute
   '/_app/communications': typeof AppCommunicationsRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
@@ -779,6 +796,7 @@ export interface FileRoutesById {
   '/_app/operations': typeof AppOperationsRoute
   '/_app/parties': typeof AppPartiesRoute
   '/_app/payslips': typeof AppPayslipsRoute
+  '/_app/print': typeof AppPrintRouteWithChildren
   '/_app/production': typeof AppProductionRoute
   '/_app/purchases': typeof AppPurchasesRoute
   '/_app/sales-orders': typeof AppSalesOrdersRoute
@@ -861,6 +879,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/banking'
     | '/boq'
+    | '/capacity'
     | '/communications'
     | '/dashboard'
     | '/employees'
@@ -873,6 +892,7 @@ export interface FileRouteTypes {
     | '/operations'
     | '/parties'
     | '/payslips'
+    | '/print'
     | '/production'
     | '/purchases'
     | '/sales-orders'
@@ -952,6 +972,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/banking'
     | '/boq'
+    | '/capacity'
     | '/dashboard'
     | '/employees'
     | '/enterprise-workbench'
@@ -963,6 +984,7 @@ export interface FileRouteTypes {
     | '/operations'
     | '/parties'
     | '/payslips'
+    | '/print'
     | '/production'
     | '/purchases'
     | '/sales-orders'
@@ -1043,6 +1065,7 @@ export interface FileRouteTypes {
     | '/_app/attendance'
     | '/_app/banking'
     | '/_app/boq'
+    | '/_app/capacity'
     | '/_app/communications'
     | '/_app/dashboard'
     | '/_app/employees'
@@ -1055,6 +1078,7 @@ export interface FileRouteTypes {
     | '/_app/operations'
     | '/_app/parties'
     | '/_app/payslips'
+    | '/_app/print'
     | '/_app/production'
     | '/_app/purchases'
     | '/_app/sales-orders'
@@ -1250,6 +1274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBoqRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/capacity': {
+      id: '/_app/capacity'
+      path: '/capacity'
+      fullPath: '/capacity'
+      preLoaderRoute: typeof AppCapacityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/communications': {
       id: '/_app/communications'
       path: '/communications'
@@ -1332,6 +1363,13 @@ declare module '@tanstack/react-router' {
       path: '/payslips'
       fullPath: '/payslips'
       preLoaderRoute: typeof AppPayslipsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/print': {
+      id: '/_app/print'
+      path: '/print'
+      fullPath: '/print'
+      preLoaderRoute: typeof AppPrintRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/production': {
@@ -1728,31 +1766,31 @@ declare module '@tanstack/react-router' {
     }
     '/_app/print/invoice/$id': {
       id: '/_app/print/invoice/$id'
-      path: '/print/invoice/$id'
+      path: '/invoice/$id'
       fullPath: '/print/invoice/$id'
       preLoaderRoute: typeof AppPrintInvoiceIdRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppPrintRoute
     }
     '/_app/print/party-ledger/$id': {
       id: '/_app/print/party-ledger/$id'
-      path: '/print/party-ledger/$id'
+      path: '/party-ledger/$id'
       fullPath: '/print/party-ledger/$id'
       preLoaderRoute: typeof AppPrintPartyLedgerIdRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppPrintRoute
     }
     '/_app/print/purchase/$id': {
       id: '/_app/print/purchase/$id'
-      path: '/print/purchase/$id'
+      path: '/purchase/$id'
       fullPath: '/print/purchase/$id'
       preLoaderRoute: typeof AppPrintPurchaseIdRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppPrintRoute
     }
     '/_app/print/supplier-ledger/$id': {
       id: '/_app/print/supplier-ledger/$id'
-      path: '/print/supplier-ledger/$id'
+      path: '/supplier-ledger/$id'
       fullPath: '/print/supplier-ledger/$id'
       preLoaderRoute: typeof AppPrintSupplierLedgerIdRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppPrintRoute
     }
     '/_app/vendor/purchase-orders/$id': {
       id: '/_app/vendor/purchase-orders/$id'
@@ -1944,6 +1982,24 @@ const AppInventoryRouteWithChildren = AppInventoryRoute._addFileChildren(
   AppInventoryRouteChildren,
 )
 
+interface AppPrintRouteChildren {
+  AppPrintInvoiceIdRoute: typeof AppPrintInvoiceIdRoute
+  AppPrintPartyLedgerIdRoute: typeof AppPrintPartyLedgerIdRoute
+  AppPrintPurchaseIdRoute: typeof AppPrintPurchaseIdRoute
+  AppPrintSupplierLedgerIdRoute: typeof AppPrintSupplierLedgerIdRoute
+}
+
+const AppPrintRouteChildren: AppPrintRouteChildren = {
+  AppPrintInvoiceIdRoute: AppPrintInvoiceIdRoute,
+  AppPrintPartyLedgerIdRoute: AppPrintPartyLedgerIdRoute,
+  AppPrintPurchaseIdRoute: AppPrintPurchaseIdRoute,
+  AppPrintSupplierLedgerIdRoute: AppPrintSupplierLedgerIdRoute,
+}
+
+const AppPrintRouteWithChildren = AppPrintRoute._addFileChildren(
+  AppPrintRouteChildren,
+)
+
 interface AppVendorPurchaseOrdersRouteChildren {
   AppVendorPurchaseOrdersIdRoute: typeof AppVendorPurchaseOrdersIdRoute
 }
@@ -1981,6 +2037,7 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBankingRoute: typeof AppBankingRouteWithChildren
   AppBoqRoute: typeof AppBoqRoute
+  AppCapacityRoute: typeof AppCapacityRoute
   AppCommunicationsRoute: typeof AppCommunicationsRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
@@ -1993,6 +2050,7 @@ interface AppRouteChildren {
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
+  AppPrintRoute: typeof AppPrintRouteWithChildren
   AppProductionRoute: typeof AppProductionRoute
   AppPurchasesRoute: typeof AppPurchasesRoute
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
@@ -2000,10 +2058,6 @@ interface AppRouteChildren {
   AppTallyImportRoute: typeof AppTallyImportRoute
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppWhatsappRoute: typeof AppWhatsappRoute
-  AppPrintInvoiceIdRoute: typeof AppPrintInvoiceIdRoute
-  AppPrintPartyLedgerIdRoute: typeof AppPrintPartyLedgerIdRoute
-  AppPrintPurchaseIdRoute: typeof AppPrintPurchaseIdRoute
-  AppPrintSupplierLedgerIdRoute: typeof AppPrintSupplierLedgerIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -2013,6 +2067,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppBankingRoute: AppBankingRouteWithChildren,
   AppBoqRoute: AppBoqRoute,
+  AppCapacityRoute: AppCapacityRoute,
   AppCommunicationsRoute: AppCommunicationsRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
@@ -2025,6 +2080,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
+  AppPrintRoute: AppPrintRouteWithChildren,
   AppProductionRoute: AppProductionRoute,
   AppPurchasesRoute: AppPurchasesRoute,
   AppSalesOrdersRoute: AppSalesOrdersRoute,
@@ -2032,10 +2088,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppTallyImportRoute: AppTallyImportRoute,
   AppVendorRoute: AppVendorRouteWithChildren,
   AppWhatsappRoute: AppWhatsappRoute,
-  AppPrintInvoiceIdRoute: AppPrintInvoiceIdRoute,
-  AppPrintPartyLedgerIdRoute: AppPrintPartyLedgerIdRoute,
-  AppPrintPurchaseIdRoute: AppPrintPurchaseIdRoute,
-  AppPrintSupplierLedgerIdRoute: AppPrintSupplierLedgerIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

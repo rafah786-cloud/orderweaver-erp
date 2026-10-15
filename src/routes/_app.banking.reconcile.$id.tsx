@@ -284,6 +284,7 @@ function Reconcile() {
           sel={stmtSel}
           setSel={setStmtSel}
           onUnreconcile={unreconcile}
+          actionsDisabled={loading || !!loadError || matching || addingLine || unreconcilingId !== null}
         />
       </div>
         </>
