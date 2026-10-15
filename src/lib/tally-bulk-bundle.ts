@@ -19,6 +19,7 @@ async function* decoded(file: File): AsyncGenerator<string> {
 }
 
 export async function buildTallyStagingBundles(files: File[], progress: (label: string) => void): Promise<BulkBundleResult> {
+  if (files.reduce((sum, file) => sum + file.size, 0) > 512 * 1024 * 1024) throw new Error("Snapshot folder exceeds the 512 MB browser preparation limit. Use smaller source export periods; no partial bundle was staged.");
   const manifests = files.filter((f) => relative(f).toLowerCase().endsWith("manifest.json"));
   if (manifests.length !== TALLY_SOURCES.length) throw new Error("Select the TallyBridge folder containing exactly the four company manifest.json files.");
   const result: BulkBundleResult = { summaries: [], files: [] };
@@ -47,6 +48,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       rows.push(line); size += bytes;
     };
     const seenSegments = new Set<string>();
+    if (!Array.isArray(manifest.segments) || !manifest.segments.length) throw new Error(`${company}: manifest has no source segments.`);
     for (const segment of manifest.segments ?? []) {
       const name = segment.path?.split(/[\\/]/).pop();
       const file = files.find((f) => relative(f) === dir + name);
@@ -70,11 +72,19 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
             const identity = row.sourceId ? `${row.recordType}:${row.sourceId}` : `${row.recordType}:missing:${await hashText(row.rawXml)}`;
             const alterKey = row.alterId && /^\d+$/.test(row.alterId) ? `${row.recordType}:${BigInt(row.alterId)}` : null;
             const duplicate = keys.has(identity) || Boolean(alterKey && alters.has(alterKey));
+            if (row.masterId) {
+              const masterKey = `MASTERID:${row.recordType}:${row.masterId}`;
+              if (keys.has(masterKey)) row.errors.push("Duplicate MASTERID within record type.");
+              keys.add(masterKey);
+            }
             keys.add(identity); if (alterKey) alters.add(alterKey);
             summary.rows++; summary.byType[row.recordType] = (summary.byType[row.recordType] ?? 0) + 1;
             summary.lifecycle[row.lifecycle] = (summary.lifecycle[row.lifecycle] ?? 0) + 1;
             if (row.recordType === "VOUCHER") summary.vouchers++;
-            if (row.recordType === "COMPANY" && row.sourceId) summary.companyGuid ??= row.sourceId;
+            if (row.recordType === "COMPANY" && row.sourceId) {
+              if (summary.companyGuid && summary.companyGuid !== row.sourceId) throw new Error("Source COMPANY GUID differs from manifest.");
+              summary.companyGuid = row.sourceId;
+            }
             summary.debit += row.debit; summary.credit += row.credit;
             summary.inventoryLines += row.inventoryLines; summary.billAllocations += row.billAllocations;
             summary.missingIds += row.sourceId ? 0 : 1; summary.duplicates += duplicate ? 1 : 0;
@@ -92,6 +102,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
     }
     flush();
     summary.blockers = sourceCompleteness(summary);
+    summary.blockers.push("TallyBridge 1.0.9 export contract is not verified from repository version alone; original manifests must be reviewed against the installed exporter.");
     if (company === "ESTIMATE" || company === "ABZ - EST") summary.blockers.unshift("Estimate source isolated: not eligible for official company staging, approval or cutover.");
     result.summaries.push(summary);
     result.files.push({ company, name: `${safe}-source-evidence.json`, blob: new Blob([JSON.stringify({ company, summary, originals: evidence, manifest }, null, 2)], { type: "application/json" }) });

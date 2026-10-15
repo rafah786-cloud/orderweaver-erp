@@ -12,6 +12,7 @@ const forbidden = (code: number) => code <= 8 || code === 11 || code === 12 || (
 export function normalizeTallyImportXml(original: string) {
   if (/<!DOCTYPE|<!ENTITY/i.test(original)) throw new Error("Document types and external entities are forbidden.");
   const changes: NormalizationChange[] = [];
+  // eslint-disable-next-line no-control-regex -- intentional import-only detection, with every replacement audited
   let xml = original.replace(/&#(?:x([0-9a-f]+)|(\d+));|[\u0000-\u0008\u000b\u000c\u000e-\u001f]/gi, (match, hex, decimal, offset) => {
     const code = hex ? parseInt(hex, 16) : decimal ? Number(decimal) : match.charCodeAt(0);
     if (!forbidden(code)) return match;
