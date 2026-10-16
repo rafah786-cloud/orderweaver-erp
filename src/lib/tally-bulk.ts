@@ -138,38 +138,56 @@ export function sourceCompleteness(summary: BulkSummary): string[] {
 
 /** Streaming message extraction keeps memory bounded by a source message, not a complete file. */
 export async function* tallyMessages(chunks: AsyncIterable<string>): AsyncGenerator<{ message?: string; header?: string; footer?: string }> {
+  // Supports TALLYMESSAGE envelopes and Tally COLLECTION exports (each direct child of COLLECTION is one bounded record).
   let buffer = "", started = false, found = false, cursor = 0, header = "";
+  let inCollection = false, depth = 0, recordTag = "", collectionMode = false;
   for await (const chunk of chunks) {
     buffer += chunk;
-    if (/<!DOCTYPE|<!ENTITY/i.test(buffer)) throw new Error("Document entities are forbidden.");
+    if (/<!DOCTYPE|<!ENTITY/i.test(buffer.slice(0, 4096)) || /<!DOCTYPE|<!ENTITY/i.test(chunk)) throw new Error("Document entities are forbidden.");
     while (true) {
       const start = buffer.indexOf("<", cursor);
       if (start < 0) { cursor = buffer.length; break; }
-      const tail = buffer.slice(start);
-      // Comments/CDATA may contain tag-looking text; never use them as boundaries.
-      const token = tail.startsWith("<!--") ? tail.match(/^<!--[\s\S]*?-->/)?.[0]
-        : tail.startsWith("<![CDATA[") ? tail.match(/^<!\[CDATA\[[\s\S]*?\]\]>/)?.[0]
-        : tail.match(/^<(?:[^>"']|"[^"]*"|'[^']*')*>/)?.[0];
+      const tail = buffer.slice(start, start + 8);
+      let token: string | undefined;
+      if (tail.startsWith("<!--")) { const e = buffer.indexOf("-->", start); token = e < 0 ? undefined : buffer.slice(start, e + 3); }
+      else if (tail.startsWith("<![CDATA[")) { const e = buffer.indexOf("]]>", start); token = e < 0 ? undefined : buffer.slice(start, e + 3); }
+      else token = buffer.slice(start).match(/^<(?:[^>"']|"[^"]*"|'[^']*')*>/)?.[0];
       if (!token) { cursor = start; break; }
       cursor = start + token.length;
-      if (/^<TALLYMESSAGE\b/.test(token)) {
-        if (started) throw new Error("Nested TALLYMESSAGE is unsupported.");
-        if (token.endsWith("/>")) throw new Error("Empty TALLYMESSAGE is not source data.");
+      const name = token.match(/^<\/?([A-Za-z_][\w.:-]*)/)?.[1] ?? "";
+      const closing = token.startsWith("</"), selfClose = token.endsWith("/>"), isTag = !!name;
+      if (!started && !collectionMode && /^<TALLYMESSAGE\b/.test(token)) {
+        if (selfClose) throw new Error("Empty TALLYMESSAGE is not source data.");
         const outside = buffer.slice(0, start);
         if (!found) { header = outside; yield { header }; }
         else if (outside.trim()) throw new Error("Unexpected content between Tally messages.");
         buffer = buffer.slice(start); cursor -= start; started = true; found = true;
-      } else if (/^<\/TALLYMESSAGE\s*>$/.test(token)) {
-        if (!started) throw new Error("Unexpected TALLYMESSAGE closing tag.");
-        yield { message: buffer.slice(0, cursor) };
-        buffer = buffer.slice(cursor); cursor = 0; started = false;
+      } else if (started && !collectionMode) {
+        if (/^<TALLYMESSAGE\b/.test(token)) throw new Error("Nested TALLYMESSAGE is unsupported.");
+        if (/^<\/TALLYMESSAGE\s*>$/.test(token)) { yield { message: buffer.slice(0, cursor) }; buffer = buffer.slice(cursor); cursor = 0; started = false; }
+      } else if (!found && !inCollection && isTag && !closing && name === "COLLECTION" && !selfClose) {
+        inCollection = true;
+      } else if (inCollection && !started && isTag && !closing && !token.startsWith("<!") && !token.startsWith("<?")) {
+        const outside = buffer.slice(0, start);
+        if (!found) { header = outside; yield { header }; collectionMode = true; found = true; }
+        else if (outside.trim()) throw new Error("Unexpected content between Tally collection records.");
+        buffer = buffer.slice(start); cursor -= start;
+        if (selfClose) { yield { message: `<TALLYMESSAGE>${buffer.slice(0, cursor)}</TALLYMESSAGE>` }; buffer = buffer.slice(cursor); cursor = 0; }
+        else { started = true; recordTag = name; depth = 1; }
+      } else if (inCollection && !started && closing && name === "COLLECTION") {
+        inCollection = false; cursor = start; break;
+      } else if (collectionMode && started && isTag && name === recordTag && !selfClose) {
+        depth += closing ? -1 : 1;
+        if (depth === 0) { yield { message: `<TALLYMESSAGE>${buffer.slice(0, cursor)}</TALLYMESSAGE>` }; buffer = buffer.slice(cursor); cursor = 0; started = false; }
       }
+      if (!found && cursor > MAX_MESSAGE_BYTES) throw new Error("Source header exceeds bounded parser limit before any record (no TALLYMESSAGE or COLLECTION records found).");
     }
-    if (new TextEncoder().encode(buffer).length > MAX_MESSAGE_BYTES) throw new Error("Source message/header exceeds bounded parser limit.");
+    if (buffer.length > MAX_MESSAGE_BYTES) throw new Error(found ? `A single ${recordTag || "TALLYMESSAGE"} record exceeds the 16 MB bounded parser limit.` : "Source header exceeds bounded parser limit before any record (no TALLYMESSAGE or COLLECTION records found).");
   }
-  if (started) throw new Error("Truncated TALLYMESSAGE; file quarantined.");
+  if (started) throw new Error("Truncated source record; file quarantined.");
   if (!found) throw new Error("No masters/vouchers: Tally Import Data settings screen is not an export.");
-  if (!/^\s*(?:<\/REQUESTDATA>\s*<\/IMPORTDATA>|<\/DATA>)\s*<\/BODY>\s*<\/ENVELOPE>\s*$/.test(buffer)) throw new Error("Incomplete or unsupported Tally export envelope.");
+  const footerRe = collectionMode ? /^\s*<\/COLLECTION>\s*<\/DATA>\s*<\/BODY>\s*<\/ENVELOPE>\s*$/ : /^\s*(?:<\/REQUESTDATA>\s*<\/IMPORTDATA>|<\/DATA>)\s*<\/BODY>\s*<\/ENVELOPE>\s*$/;
+  if (!footerRe.test(buffer)) throw new Error("Incomplete or unsupported Tally export envelope.");
   if (XMLValidator.validate(header + buffer) !== true) throw new Error("Malformed source envelope.");
   yield { footer: buffer };
 }
