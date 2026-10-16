@@ -41,7 +41,6 @@ describe("ERP route security policy", () => {
   });
 });
 
-
 describe("route boundary matching", () => {
   it("matches a route and its nested screens, normalizing trailing slashes", () => {
     expect(routePathMatches("/accounting", "/accounting")).toBe(true);
@@ -56,7 +55,6 @@ describe("route boundary matching", () => {
     expect(isRouteDenied("/unknown-app-module", ["admin"])).toBe(true);
   });
 });
-
 
 describe("top-level route and permission inventory", () => {
   it("maps every role policy to an existing top-level route file", async () => {
@@ -76,6 +74,17 @@ describe("top-level route and permission inventory", () => {
     const configured = new Set(ROUTE_ROLES.map(({ prefix }) => prefix));
     for (const path of routeFiles) {
       expect(configured.has(path), `Missing role policy for route ${path}`).toBe(true);
+    }
+  });
+
+  it("ensures every nested private route inherits a registered parent policy", async () => {
+    const { readdirSync } = await import("node:fs");
+    const routeFiles = readdirSync(new URL("../routes/", import.meta.url))
+      .filter((file) => file.startsWith("_app.") && file.endsWith(".tsx"))
+      .map((file) => `/${file.slice(5, -4).replaceAll(".", "/")}`);
+
+    for (const path of routeFiles) {
+      expect(allowedRolesFor(path), `Missing role policy for private route ${path}`).not.toBeNull();
     }
   });
 });
