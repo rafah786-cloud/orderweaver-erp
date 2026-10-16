@@ -8,6 +8,9 @@ import { CompanyProvider, useCompany } from "@/lib/company-context";
 import { AccountMenu } from "@/components/AccountMenu";
 import { FirstLaunchPermissionSetup } from "@/components/FirstLaunchPermissionSetup";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { countMyUnreadNotifications } from "@/lib/notification-engine.functions";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -68,6 +71,13 @@ function AppFrame({
   const { activeCompany } = useCompany();
 
   const managementBook = activeCompany?.code.endsWith("_MGMT") ?? false;
+  const unreadCountFn = useServerFn(countMyUnreadNotifications);
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["in-app-unread-count"],
+    queryFn: () => unreadCountFn(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
 
   return (
     <div className="app-shell relative flex h-dvh overflow-hidden">
@@ -93,8 +103,18 @@ function AppFrame({
                 <Search aria-hidden="true" />
               </Link>
             )}
-            <Link to="/communications/inbox" aria-label="Notifications" title="Notifications">
+            <Link
+              to="/communications/inbox"
+              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+              title={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
+              className="relative"
+            >
               <Bell aria-hidden="true" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground" aria-hidden="true">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
             <AccountMenu />
           </nav>
