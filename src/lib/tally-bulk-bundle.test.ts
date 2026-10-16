@@ -106,4 +106,16 @@ describe("four-company bundle preparation", () => {
     expect(s.segments[0]).toMatchObject({ name: "masters.xml", messages: 1, byType: { GROUP: 1 } });
     expect(s.blockers.join(" ")).toContain("not listed in manifest.json");
   });
+  it("hashes large files incrementally with progress and yields", async () => {
+    const big = new Blob([new Uint8Array(40 * 1024 * 1024).fill(7)]);
+    const seen: number[] = [];
+    const hex = await hashTallyFile(big, (b) => seen.push(b));
+    expect(hex).toBe(await sha256(await big.arrayBuffer()));
+    expect(seen.at(-1)).toBe(big.size); expect(seen.length).toBeGreaterThan(1);
+  });
+  it("rejects with a clear error (not a hang) when a file differs from its manifest", async () => {
+    const files = await fixture();
+    files[0] = file("masters.xml", "<changed/>", files[0].webkitRelativePath);
+    await expect(buildTallyStagingBundles(files, () => {})).rejects.toThrow(/differs from its manifest/);
+  });
 });

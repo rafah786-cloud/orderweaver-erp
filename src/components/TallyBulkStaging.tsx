@@ -36,6 +36,7 @@ export function TallyBulkStaging() {
       }
     } else setDetected(null);
     try {
+      await new Promise((r) => setTimeout(r, 0)); // let the status paint before work starts
       const prepared = directXml ? await buildTallyXmlBundle(first, setStatus) : await buildTallyStagingBundles(files, setStatus);
       // Avoid duplicating all original/derivative data in memory for large sources.
       if (files.reduce((total, file) => total + file.size, 0) <= 32 * 1024 * 1024) setArchive(await archiveTallyStaging(prepared, files));
