@@ -12,7 +12,7 @@ describe("Supabase migration version integrity", () => {
     }));
 
     for (const entry of versions) {
-      expect(entry.version, `Invalid migration version: ${entry.file}`).toMatch(/^\\d{14}$/);
+      expect(entry.version, `Invalid migration version: ${entry.file}`).toMatch(/^\d{14}$/);
     }
 
     const seen = new Map<string, string>();
