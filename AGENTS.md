@@ -19,3 +19,4 @@
 - Velocity requests use a server-only bounded transport and official-schema read/quote allowlist; approved-admin diagnostics never expose raw errors or tokens, and undocumented warehouse sync and shipment booking remain disabled.
 - Sales-order reads require a restrictive approved-account RLS gate alongside existing role and company policies, because permissive ALL policies also authorize SELECT and must not bypass rejection.
 - MRP availability remains unknown through the master-only availability gate until a tested company-scoped as-of ledger, dated reservation lifecycle and confirmed supply contract exist; current stock projections and current-only RPCs cannot safely support netting.
+- Tally cloud staging writes only to the dedicated `tally_source_staging_*` boundary (admin-only, insert/select, idempotent by chunk and row hash) and never links rows to ERP companies or books, so estimate sources cannot enter official books and retries cannot duplicate.
