@@ -2,7 +2,7 @@ name: ERP CI
 
 on:
   push:
-    branches: ["main", "feat/**"]
+    branches: ["main", "feat/**", "audit/**", "fix/**"]
   workflow_dispatch:
   pull_request:
 
@@ -62,3 +62,42 @@ jobs:
         run: |
           export PATH="$(pg_config --bindir):$PATH"
           python security-tests/bank_reconciliation_rpc.py supabase/migrations/20261007210000_harden_bank_reconciliation.sql supabase/migrations/20261014210000_fix_bank_reconciliation_live_schema.sql
+
+  sales-orders-approved-read:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test sales-order approved-account read gate
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/sales_orders_approved_read.py
+
+  selected-table-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test selected table RLS boundaries
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/selected_table_rls.py
+
+  enterprise-domain-permissions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test enterprise domain permissions SQL contract
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/test_enterprise_domain_permissions.py
