@@ -13,6 +13,8 @@ import {
   Lock,
   ShieldCheck,
   Network,
+  Hourglass,
+  CalendarCheck2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/accounting")({
@@ -62,6 +64,18 @@ const TILES = [
     label: "Balance Sheet",
     desc: "Assets vs liabilities",
     Icon: ClipboardList,
+  },
+  {
+    to: "/accounting/receivables-ageing",
+    label: "Receivables Ageing",
+    desc: "Collections buckets from open bills",
+    Icon: Hourglass,
+  },
+  {
+    to: "/accounting/month-end",
+    label: "Month-end Close",
+    desc: "Period-close checklist before lock",
+    Icon: CalendarCheck2,
   },
   { to: "/accounting/periods", label: "Financial Years", desc: "Lock/unlock periods", Icon: Lock },
   {
