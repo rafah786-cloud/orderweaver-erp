@@ -136,6 +136,18 @@ export function sourceCompleteness(summary: BulkSummary): string[] {
   ];
 }
 
+/** Index of the closing ">" of the tag starting at `start`, honouring quoted attribute values; -1 if not yet buffered. Linear, no whole-buffer copies. */
+export function tagEnd(buffer: string, start: number): number {
+  let quote = "";
+  for (let i = start + 1; i < buffer.length; i++) {
+    const c = buffer[i];
+    if (quote) { if (c === quote) quote = ""; }
+    else if (c === '"' || c === "'") quote = c;
+    else if (c === ">") return i;
+  }
+  return -1;
+}
+
 /** Streaming message extraction keeps memory bounded by a source message, not a complete file. */
 export async function* tallyMessages(chunks: AsyncIterable<string>): AsyncGenerator<{ message?: string; header?: string; footer?: string }> {
   // Supports TALLYMESSAGE envelopes and Tally COLLECTION exports (each direct child of COLLECTION is one bounded record).
@@ -147,11 +159,10 @@ export async function* tallyMessages(chunks: AsyncIterable<string>): AsyncGenera
     while (true) {
       const start = buffer.indexOf("<", cursor);
       if (start < 0) { cursor = buffer.length; break; }
-      const tail = buffer.slice(start, start + 8);
       let token: string | undefined;
-      if (tail.startsWith("<!--")) { const e = buffer.indexOf("-->", start); token = e < 0 ? undefined : buffer.slice(start, e + 3); }
-      else if (tail.startsWith("<![CDATA[")) { const e = buffer.indexOf("]]>", start); token = e < 0 ? undefined : buffer.slice(start, e + 3); }
-      else token = buffer.slice(start).match(/^<(?:[^>"']|"[^"]*"|'[^']*')*>/)?.[0];
+      if (buffer.startsWith("<!--", start)) { const e = buffer.indexOf("-->", start); token = e < 0 ? undefined : buffer.slice(start, e + 3); }
+      else if (buffer.startsWith("<![CDATA[", start)) { const e = buffer.indexOf("]]>", start); token = e < 0 ? undefined : buffer.slice(start, e + 3); }
+      else { const e = tagEnd(buffer, start); token = e < 0 ? undefined : buffer.slice(start, e + 1); }
       if (!token) { cursor = start; break; }
       cursor = start + token.length;
       const name = token.match(/^<\/?([A-Za-z_][\w.:-]*)/)?.[1] ?? "";

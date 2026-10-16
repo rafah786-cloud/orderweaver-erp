@@ -19,6 +19,17 @@ const safePath = (path: string) => {
 };
 export type BulkBundleResult = { summaries: BulkSummary[]; files: Array<{ company: string; name: string; blob: Blob }> };
 const relative = (file: File) => file.webkitRelativePath || file.name;
+/** Yield to the browser event loop so progress paints and the page stays responsive during long parsing. */
+let lastYield = 0;
+export async function yieldToUi(force = false) {
+  const now = Date.now();
+  if (!force && now - lastYield < 40) return;
+  await new Promise<void>((resolve) => {
+    if (typeof MessageChannel !== "undefined") { const ch = new MessageChannel(); ch.port1.onmessage = () => { ch.port1.close(); resolve(); }; ch.port2.postMessage(null); }
+    else setTimeout(resolve, 0);
+  });
+  lastYield = Date.now();
+}
 
 export async function hashTallyFile(file: Blob): Promise<string> {
   const hash = streamingSha256.create();
@@ -130,7 +141,8 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
         }
         if (!part.message) continue;
         messageNo++;
-        if (messageNo % 100 === 0) progress(`${company}: ${name} message ${messageNo}`);
+        if (messageNo % 50 === 0) progress(`${company}: ${name} message ${messageNo} (processing…)`);
+        await yieldToUi();
         try {
           for (const row of prepareTallyMessage(part.message, inheritedNamespaces)) {
             const identity = row.sourceId ? `${row.recordType}:${row.sourceId}` : `${row.recordType}:missing:${await hashText(row.rawXml)}`;
@@ -167,7 +179,9 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
           append({ company, segment: name, message_no: messageNo, record_type: "REJECTED_MESSAGE", rejects: [(error as Error).message], original_message_xml: part.message });
         }
       }
-      } catch (error) { throw new Error(`${company} / ${name}: ${(error as Error).message}`); }
+      } catch (error) { throw new Error(`${company} / ${name} (after message ${messageNo}): ${(error as Error).message}`); }
+      progress(`${company}: ${name} parsed ${messageNo} messages`);
+      await yieldToUi(true);
     }
     flush();
     summary.blockers = [...sourceCompleteness(summary), ...identityErrors];
