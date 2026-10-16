@@ -54,8 +54,10 @@ export async function hashTallyFile(file: Blob, onProgress?: (bytes: number) => 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      for (let i = 0; i < value.byteLength; i += 1024 * 1024) { hash.update(value.subarray(i, i + 1024 * 1024)); await yieldToUi(); }
-      bytes += value.byteLength; onProgress?.(bytes);
+      for (let i = 0; i < value.byteLength; i += 4 * 1024 * 1024) {
+        const part = value.subarray(i, i + 4 * 1024 * 1024);
+        hash.update(part); bytes += part.byteLength; onProgress?.(bytes); await yieldToUi();
+      }
     }
     return Array.from(hash.digest(), (b) => b.toString(16).padStart(2, "0")).join("");
   } finally { reader.releaseLock(); }
