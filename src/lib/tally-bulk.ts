@@ -122,9 +122,10 @@ export type BulkSummary = {
   company: string; companyGuid: string | null; files: number; rows: number; vouchers: number; debit: number; credit: number;
   inventoryLines: number; billAllocations: number; missingIds: number; duplicates: number; rejects: number;
   normalized: number; byType: Record<string, number>; lifecycle: Record<string, number>; blockers: string[];
+  segments: Array<{ name: string; messages: number; byType: Record<string, number> }>; unlistedFiles: string[];
 };
 export function newBulkSummary(company: string): BulkSummary {
-  return { company, companyGuid: null, files: 0, rows: 0, vouchers: 0, debit: 0, credit: 0, inventoryLines: 0, billAllocations: 0, missingIds: 0, duplicates: 0, rejects: 0, normalized: 0, byType: {}, lifecycle: {}, blockers: [] };
+  return { company, companyGuid: null, files: 0, rows: 0, vouchers: 0, debit: 0, credit: 0, inventoryLines: 0, billAllocations: 0, missingIds: 0, duplicates: 0, rejects: 0, normalized: 0, byType: {}, lifecycle: {}, blockers: [], segments: [], unlistedFiles: [] };
 }
 export function sourceCompleteness(summary: BulkSummary): string[] {
   const gaps = ["GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE", "UNIT"].filter((kind) => !summary.byType[kind]);
