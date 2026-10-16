@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { scanTallyFolder, type FolderScan } from "@/lib/tally-folder-scan";
 import { useServerFn } from "@tanstack/react-start";
 import { CloudUpload, Download, FolderUp, FileUp, ShieldAlert } from "lucide-react";
 import { stageTallySourceChunk } from "@/lib/tally-source-staging.functions";
@@ -17,10 +18,23 @@ export function TallyBulkStaging() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BulkBundleResult | null>(null);
   const [archive, setArchive] = useState<Blob | null>(null);
+  const [detected, setDetected] = useState<FolderScan | null>(null);
+  // Set directory attributes on the DOM node so every browser receives them verbatim (no accept filter on folder mode).
+  useEffect(() => {
+    const el = input.current; if (!el) return;
+    el.setAttribute("webkitdirectory", ""); el.setAttribute("directory", ""); el.setAttribute("mozdirectory", "");
+  }, []);
   const choose = async (files: File[], directXml = false) => {
     const first = files[0];
     if (!first) return;
     setBusy(true); setError(null); setResult(null); setArchive(null); setStatus("Checking manifests and file hashes…");
+    if (!directXml) {
+      const scan = scanTallyFolder(files); setDetected(scan);
+      if (scan.missing.length || scan.unsupported.length) {
+        setError(`Folder not ready: ${scan.missing.length ? `missing ${scan.missing.join(", ")}` : ""}${scan.missing.length && scan.unsupported.length ? "; " : ""}${scan.unsupported.length ? `unrecognised folders ${scan.unsupported.join(", ")}` : ""}. Nothing was staged.`);
+        setStatus(""); setBusy(false); return;
+      }
+    } else setDetected(null);
     try {
       const prepared = directXml ? await buildTallyXmlBundle(first, setStatus) : await buildTallyStagingBundles(files, setStatus);
       // Avoid duplicating all original/derivative data in memory for large sources.
@@ -58,11 +72,13 @@ export function TallyBulkStaging() {
   return <section className="space-y-4 border-b pb-6">
     <div><h2 className="text-xl font-semibold">Tally source preparation</h2><p className="text-sm text-muted-foreground">Local evidence only · XML up to 256 MB · ZIP archives must be extracted first</p></div>
     <input ref={xmlInput} type="file" accept=".xml,.zip" className="hidden" aria-label="Tally XML export" onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) void choose(files, true); e.target.value = ""; }} />
-    <input ref={input} type="file" multiple className="hidden" aria-label="TallyBridge snapshot folder" {...{ webkitdirectory: "" }} onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) void choose(files); e.target.value = ""; }} />
+    <input ref={input} type="file" multiple className="hidden" aria-label="TallyBridge snapshot folder" onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) void choose(files); e.target.value = ""; }} />
     <Button onClick={() => input.current?.click()} disabled={busy}><FolderUp className="mr-2 h-4 w-4" />{busy ? "Preparing…" : "Select snapshot folder"}</Button>
     <Button variant="outline" onClick={() => xmlInput.current?.click()} disabled={busy}><FileUp className="mr-2 h-4 w-4" />Select XML export</Button>
     {archive && <Button variant="outline" onClick={() => download({ company: "all", name: "Tally-four-company-staging.zip", blob: archive })}><Download className="mr-2 h-4 w-4" />Download all originals & staging</Button>}
     {result && <Button variant="secondary" onClick={() => void stageToCloud()} disabled={busy}><CloudUpload className="mr-2 h-4 w-4" />Stage to cloud (staging only, resumable)</Button>}
+    <p className="text-xs text-muted-foreground">Folder mode: choose the parent folder holding ABOOD_TRADINGS, ABRAZ_SLEEPING_SOLUTIONS, ABZ_EST and ESTIMATE, then press Upload. Your system dialog hides files in folder mode — that is expected.</p>
+    {detected && <div className="text-sm"><p className="font-medium">Detected company folders</p><ul className="list-disc pl-5">{detected.companies.map((c) => <li key={c.folder}>{c.company} — {c.folder}: {c.files} files ({c.xml} XML, {c.manifests} manifest)</li>)}{detected.missing.map((m) => <li key={m} className="text-destructive">{m}: missing</li>)}{detected.unsupported.map((u) => <li key={u} className="text-destructive">{u}: not a recognised source company</li>)}</ul></div>}
     {status && <p className="text-sm" role="status">{status}</p>}
     {result?.summaries.some((s) => s.blockers.length > 0) && <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Incomplete or quarantined source — not import-ready</AlertTitle><AlertDescription>Evidence is retained for review only. The company report lists missing masters, source identity gaps and rejected records.</AlertDescription></Alert>}
     {error && <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Bundle rejected</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
