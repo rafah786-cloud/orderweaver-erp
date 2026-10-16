@@ -93,11 +93,9 @@ function AppFrame({
                 <Search aria-hidden="true" />
               </Link>
             )}
-            {hasAnyRole(["admin"]) && (
-              <Link to="/communications/inbox" aria-label="Notifications" title="Notifications">
-                <Bell aria-hidden="true" />
-              </Link>
-            )}
+            <Link to="/communications/inbox" aria-label="Notifications" title="Notifications">
+              <Bell aria-hidden="true" />
+            </Link>
             <AccountMenu />
           </nav>
         </header>
