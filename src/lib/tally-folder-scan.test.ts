@@ -11,4 +11,14 @@ describe("scanTallyFolder", () => {
     const s = scanTallyFolder(["exports/ESTIMATE/a.xml", "exports/OTHER/b.xml"].map(f));
     expect(s.missing).toHaveLength(3); expect(s.unsupported).toEqual(["exports/OTHER"]);
   });
+  it("ignores the selected root and wrapper folders", () => {
+    const r = "tally-staging-source/tally-staging-source";
+    const s = scanTallyFolder([
+      `${r}/readme.txt`,
+      ...["ABOOD_TRADINGS", "ABRAZ_SLEEPING_SOLUTIONS", "ABZ_EST", "ESTIMATE"].flatMap((c) => [`${r}/${c}/manifest.json`, `${r}/${c}/vouchers/daybook-0001.xml`]),
+    ].map(f));
+    expect(s.unsupported).toEqual([]); expect(s.missing).toEqual([]); expect(s.companies).toHaveLength(4);
+    expect(s.companies.every((c) => c.manifests === 1 && c.xml === 1)).toBe(true);
+    expect(scanTallyFolder([`${r}/ESTIMATE/manifest.json`, `${r}/OTHER/x.xml`].map(f)).unsupported).toEqual([`${r}/OTHER`]);
+  });
 });
