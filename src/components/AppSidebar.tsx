@@ -1,11 +1,14 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ROUTE_ROLES } from "@/lib/permissions";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { countMyUnreadNotifications } from "@/lib/notification-engine.functions";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 import { AccountMenu } from "@/components/AccountMenu";
 
@@ -114,6 +117,13 @@ export function AppSidebar() {
 export function MobileTopBar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const unreadCountFn = useServerFn(countMyUnreadNotifications);
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["in-app-unread-count"],
+    queryFn: () => unreadCountFn(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
   useEffect(() => { setOpen(false); }, [location.pathname]);
   return (
     <header className="glass sticky top-0 z-20 flex items-center justify-between gap-2 rounded-none border-0 border-b px-3 py-2 md:hidden">
@@ -121,7 +131,20 @@ export function MobileTopBar() {
         <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
         <SheetContent side="left" className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"><SheetTitle className="sr-only">Navigation</SheetTitle><SidebarBody collapsed={false} setCollapsed={() => {}} onNavigate={() => setOpen(false)} /></SheetContent>
       </Sheet>
-      <CompanySwitcher /><AccountMenu mobile />
+      <CompanySwitcher />
+      <Link
+        to="/communications/inbox"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md hover:bg-accent"
+      >
+        <Bell className="h-5 w-5" aria-hidden="true" />
+        {unreadCount > 0 && (
+          <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground" aria-hidden="true">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </Link>
+      <AccountMenu mobile />
     </header>
   );
 }
