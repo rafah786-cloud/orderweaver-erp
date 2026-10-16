@@ -8062,6 +8062,158 @@ export type Database = {
           },
         ]
       }
+      tally_source_staging_chunks: {
+        Row: {
+          chunk_name: string
+          chunk_sha256: string
+          id: string
+          normalization_version: string
+          row_count: number
+          source_id: string
+          staged_at: string
+          staged_by: string
+        }
+        Insert: {
+          chunk_name: string
+          chunk_sha256: string
+          id?: string
+          normalization_version: string
+          row_count: number
+          source_id: string
+          staged_at?: string
+          staged_by: string
+        }
+        Update: {
+          chunk_name?: string
+          chunk_sha256?: string
+          id?: string
+          normalization_version?: string
+          row_count?: number
+          source_id?: string
+          staged_at?: string
+          staged_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tally_source_staging_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "tally_source_staging_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tally_source_staging_rows: {
+        Row: {
+          alter_id: string | null
+          chunk_id: string
+          id: string
+          idempotency_key: string
+          is_duplicate: boolean
+          lifecycle_state: string | null
+          master_id: string | null
+          message_no: number | null
+          normalization: Json
+          normalized_message_xml: string | null
+          original_message_xml: string
+          payload: Json | null
+          record_type: string
+          rejects: Json
+          row_sha256: string
+          segment: string | null
+          segment_sha256: string | null
+          source_guid: string | null
+          source_id: string
+          staged_at: string
+        }
+        Insert: {
+          alter_id?: string | null
+          chunk_id: string
+          id?: string
+          idempotency_key: string
+          is_duplicate?: boolean
+          lifecycle_state?: string | null
+          master_id?: string | null
+          message_no?: number | null
+          normalization?: Json
+          normalized_message_xml?: string | null
+          original_message_xml: string
+          payload?: Json | null
+          record_type: string
+          rejects?: Json
+          row_sha256: string
+          segment?: string | null
+          segment_sha256?: string | null
+          source_guid?: string | null
+          source_id: string
+          staged_at?: string
+        }
+        Update: {
+          alter_id?: string | null
+          chunk_id?: string
+          id?: string
+          idempotency_key?: string
+          is_duplicate?: boolean
+          lifecycle_state?: string | null
+          master_id?: string | null
+          message_no?: number | null
+          normalization?: Json
+          normalized_message_xml?: string | null
+          original_message_xml?: string
+          payload?: Json | null
+          record_type?: string
+          rejects?: Json
+          row_sha256?: string
+          segment?: string | null
+          segment_sha256?: string | null
+          source_guid?: string | null
+          source_id?: string
+          staged_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tally_source_staging_rows_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "tally_source_staging_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tally_source_staging_rows_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "tally_source_staging_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tally_source_staging_sources: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          isolation_class: string
+          source_company: string
+          source_company_guid: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          isolation_class: string
+          source_company: string
+          source_company_guid?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          isolation_class?: string
+          source_company?: string
+          source_company_guid?: string
+        }
+        Relationships: []
+      }
       three_way_match_results: {
         Row: {
           company_id: string

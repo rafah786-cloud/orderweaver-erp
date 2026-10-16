@@ -29,6 +29,13 @@
       "when": 1791955207747,
       "tag": "0003_sales_orders_approved_read",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792152754275,
+      "tag": "0004_tally_source_staging_boundary",
+      "breakpoints": true
     }
   ]
 }
