@@ -63,6 +63,23 @@ export async function hashTallyFile(file: Blob, onProgress?: (bytes: number) => 
   } finally { reader.releaseLock(); }
 }
 
+/** Read-only inventory of a file missing from manifest.json. Results are diagnostic only and never staged or trusted. */
+export async function peekUnlisted(file: File, name: string) {
+  const out = { name, bytes: file.size, messages: 0, byType: {} as Record<string, number>, companyGuidPresent: false, error: undefined as string | undefined };
+  if (file.size > 256 * 1024 * 1024) { out.error = "Larger than 256 MB; not inspected."; return out; }
+  try {
+    for await (const part of tallyMessages(decoded(file))) {
+      if (!part.message) continue;
+      out.messages++;
+      const type = part.message.match(/^<TALLYMESSAGE\b[^>]*>\s*<([A-Za-z_][\w.:-]*)/)?.[1] ?? "UNKNOWN";
+      out.byType[type] = (out.byType[type] ?? 0) + 1;
+      if (type === "COMPANY" && /<GUID>[^<]+<\/GUID>/.test(part.message)) out.companyGuidPresent = true;
+      await yieldToUi();
+    }
+  } catch (error) { out.error = (error as Error).message; }
+  return out;
+}
+
 /** Direct XML is local evidence only: never infer a destination or company GUID. */
 export async function buildTallyXmlBundle(file: File, progress: (label: string) => void): Promise<BulkBundleResult> {
   if (!file.name.toLowerCase().endsWith(".xml")) throw new Error("ZIP archives cannot be ingested directly. Extract the archive, then select its XML export or snapshot folder.");
@@ -190,14 +207,19 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
             summary.debit = Number(debitMinor) / 100; summary.credit = Number(creditMinor) / 100;
             summary.inventoryLines += row.inventoryLines; summary.billAllocations += row.billAllocations;
             summary.missingIds += row.sourceId ? 0 : 1; summary.duplicates += duplicate ? 1 : 0;
-            summary.rejects += row.errors.length || duplicate ? 1 : 0; summary.normalized += row.normalization.length ? 1 : 0;
+            summary.rejects += row.errors.length || duplicate ? 1 : 0;
+            for (const reason of new Set(row.errors)) summary.rejectReasons[reason] = (summary.rejectReasons[reason] ?? 0) + 1;
+            if (row.errors.some((e) => e.includes("monetary control totals unavailable"))) summary.amountsUnavailable++;
+            summary.normalized += row.normalization.length ? 1 : 0;
             append({ company, segment: name, segment_sha256: fileHash, message_no: messageNo,
               idempotency_key: `${company}|${identity}|${row.alterId ?? "no-alter"}`, record_type: row.recordType, source_id: row.sourceId, alter_id: row.alterId, master_id: row.masterId,
               lifecycle_state: row.lifecycle, normalization_version: NORMALIZATION_VERSION, normalization: row.normalization, duplicate, rejects: row.errors,
               original_message_xml: row.rawXml, normalized_message_xml: row.normalizedXml, payload: row.payload });
           }
         } catch (error) {
-          summary.rejects++;
+          summary.rejectedMessages++;
+          const reason = `Unparseable message: ${(error as Error).message}`;
+          summary.rejectReasons[reason] = (summary.rejectReasons[reason] ?? 0) + 1;
           append({ company, segment: name, message_no: messageNo, record_type: "REJECTED_MESSAGE", rejects: [(error as Error).message], original_message_xml: part.message });
         }
       }
@@ -209,6 +231,11 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
     flush();
     // Files present in the company folder but absent from its manifest are never read; report them so missing masters are traceable.
     summary.unlistedFiles = files.map((f) => safePath(relative(f))).filter((p) => p.startsWith(dir) && p !== dir + "manifest.json" && !seenSegments.has(p.slice(dir.length))).map((p) => p.slice(dir.length)).sort();
+    for (const unlisted of summary.unlistedFiles) {
+      const f = files.find((x) => safePath(relative(x)) === dir + unlisted)!;
+      progress(`${company}: inspecting unlisted ${unlisted} (read-only)…`);
+      summary.unlistedInventory.push(await peekUnlisted(f, unlisted));
+    }
     summary.blockers = [...sourceCompleteness(summary), ...identityErrors];
     if (summary.unlistedFiles.length) summary.blockers.push(`${summary.unlistedFiles.length} file(s) in this company folder are not listed in manifest.json and were not read: ${summary.unlistedFiles.slice(0, 5).join(", ")}${summary.unlistedFiles.length > 5 ? "…" : ""}`);
     if (!manifest.bridgeVersion) summary.blockers.push("Manifest matches repository schema v1 but does not establish TallyBridge 1.0.9 provenance; actual installed-exporter evidence is required.");
