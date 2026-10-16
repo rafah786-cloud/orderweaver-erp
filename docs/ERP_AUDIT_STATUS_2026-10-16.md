@@ -57,19 +57,21 @@ Located primarily under `src/lib/**/*.test.ts`, including:
 - Banking admin security
 - Accountant invoice read policy
 - AI assistant / audit / documents / forecast
-- MRP-related pure functions (explosion, availability, BOM source)
-- Enterprise workbench / CAPA / maintenance guards (where present)
+- MRP availability fail-closed gate (`mrp-availability.test.ts`)
+- **Added on this branch:** multi-level explosion, BOM revision selection, scrap factor (`mrp-explosion.test.ts`)
+- **Added on this branch:** quality inspection, CAPA completion, maintenance completion, workbench status/date/field guards (`enterprise-guards.test.ts`)
 
 ### Python security / RLS (CI jobs)
+Wired on this branch:
+
 - `enterprise_workbench_admin_rls.py`
 - `bank_reconciliation_rpc.py`
-- Additional scripts present but **not yet all wired into CI**:  
-  `sales_orders_approved_read.py`, `selected_table_rls.py`, `test_enterprise_domain_permissions.py`
+- `sales_orders_approved_read.py` (with migration arg)
+- `selected_table_rls.py` (with migration arg)
+- `test_enterprise_domain_permissions.py`
 
 ### Accounting SQL suites
 - `accounting-phase1/tests`, `accounting-phase2/tests` (require configured Postgres target)
-
-**CI gap addressed in this branch:** expand branch triggers and add jobs for the remaining security scripts so regressions are caught on every PR.
 
 ## 5. Residual P0 / P1 gaps (still open)
 
@@ -78,13 +80,15 @@ These match the 2026-10-08 gap audit and remain only partially closed by later m
 ### P0 — do not claim readiness until closed
 
 1. **MRP netting & supply**  
-   Gross requirements only. No verified as-of stock, dated reservation lifecycle, or confirmed open supply. Correctly fails closed today — **do not invent availability**.
+   Gross requirements only. No verified as-of stock, dated reservation lifecycle, or confirmed open supply. Correctly fails closed today — **do not invent availability**.  
+   **Progress:** recovery contract documented in `docs/MRP_NETTING_RECOVERY_CONTRACT.md` (design only).
 
 2. **Shop-floor execution depth**  
    Operations table exists; operator job cards, finite capacity scheduling, OEE, variance accounting, subcontracting flows are incomplete.
 
 3. **Quality end-to-end**  
-   Plans / inspections / NC / CAPA present with guards. Full control plans, supplier quality scorecards, quarantine stock linkage, and customer-return quality still thin.
+   Plans / inspections / NC / CAPA present with guards. Full control plans, supplier quality scorecards, quarantine stock linkage, and customer-return quality still thin.  
+   **Progress:** pure-function tests for inspection and CAPA completion gates.
 
 4. **Warehouse execution**  
    Ledger strong; bin/zone, put-away/pick strategies, cycle-count approval, barcode workflows incomplete.
@@ -123,9 +127,9 @@ Every new or changed module must:
 
 ## 7. Recommended execution sequence (decided priority)
 
-1. **CI & security coverage** (this branch) — wire remaining Python RLS tests; broaden branch triggers.  
-2. **Production-readiness checklist closure** — canonical posting paths, reconciliation reports, opening-stock valuation flags.  
-3. **MRP recovery design only** — dated reservation + as-of ledger contract + isolated tests *before* any netting UI.  
+1. ~~**CI & security coverage**~~ — done on this branch.  
+2. ~~**MRP recovery design only**~~ — contract + pure tests done; SQL contracts still future work.  
+3. **Production-readiness checklist closure** — canonical posting paths, reconciliation reports, opening-stock valuation flags.  
 4. **Quality / Maintenance / PLM workflow completeness** on primary screens (not only workbench).  
 5. **Warehouse bins + cycle count** foundations.  
 6. **Fixed assets + budgets**.  
@@ -137,9 +141,10 @@ Every new or changed module must:
 - That every UI page was clicked in a live authenticated session.  
 - That the production Supabase schema is 100% in sync with every migration file (requires your environment).  
 - That Tally retirement is complete (explicitly not, per `ERP_PRODUCTION_READINESS.md`).
+- That MRP netting is enabled (explicitly blocked by design).
 
-## 9. Next concrete commits expected on this branch / follow-ups
+## 9. Commits on this branch
 
-- CI expansion (done in companion commit).  
-- Any pure-function / guard unit-test gaps found while inspecting workbench and MRP.  
-- Documentation of residual blockers remains the single source of truth until each P0 item is closed with tests.
+1. Audit status document + CI expansion (branch triggers + security jobs).  
+2. CI migration-arg fix for sales-order and selected-table RLS scripts.  
+3. `docs/MRP_NETTING_RECOVERY_CONTRACT.md` + `mrp-explosion.test.ts` + `enterprise-guards.test.ts`.
