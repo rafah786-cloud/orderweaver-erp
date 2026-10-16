@@ -31,14 +31,31 @@ export async function yieldToUi(force = false) {
   lastYield = Date.now();
 }
 
-export async function hashTallyFile(file: Blob): Promise<string> {
+/** Streaming SHA-256: a Web Worker in browsers; elsewhere chunked with event-loop yields. Never reads whole files. */
+export async function hashTallyFile(file: Blob, onProgress?: (bytes: number) => void): Promise<string> {
+  if (typeof window !== "undefined" && typeof Worker !== "undefined") {
+    const worker = new Worker(new URL("./tally-hash.worker.ts", import.meta.url), { type: "module" });
+    try {
+      return await new Promise<string>((resolve, reject) => {
+        worker.onmessage = (e: MessageEvent<{ hex?: string; error?: string; progress?: number }>) => {
+          if (e.data.progress != null) onProgress?.(e.data.progress);
+          else if (e.data.hex) resolve(e.data.hex);
+          else reject(new Error(e.data.error ?? "Hashing failed."));
+        };
+        worker.onerror = (e) => reject(new Error(e.message || "Hash worker failed to start."));
+        worker.postMessage({ file });
+      });
+    } finally { worker.terminate(); }
+  }
   const hash = streamingSha256.create();
   const reader = file.stream().getReader();
+  let bytes = 0;
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      hash.update(value);
+      for (let i = 0; i < value.byteLength; i += 1024 * 1024) { hash.update(value.subarray(i, i + 1024 * 1024)); await yieldToUi(); }
+      bytes += value.byteLength; onProgress?.(bytes);
     }
     return Array.from(hash.digest(), (b) => b.toString(16).padStart(2, "0")).join("");
   } finally { reader.releaseLock(); }
@@ -49,7 +66,7 @@ export async function buildTallyXmlBundle(file: File, progress: (label: string) 
   if (!file.name.toLowerCase().endsWith(".xml")) throw new Error("ZIP archives cannot be ingested directly. Extract the archive, then select its XML export or snapshot folder.");
   if (file.size > 256 * 1024 * 1024) throw new Error("XML exceeds the 256 MB local preparation limit. Re-export smaller periods.");
   progress("Hashing original XML…");
-  const hash = await hashTallyFile(file);
+  const hash = await hashTallyFile(file, (b) => progress(`Hashing original XML ${Math.round((b / Math.max(file.size, 1)) * 100)}%`));
   let company: string | undefined;
   for await (const part of tallyMessages(decoded(file))) {
     if (part.header) {
@@ -127,7 +144,8 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       if (!name || !file || !segment.sha256 || seenSegments.has(name)) throw new Error(`${company}: manifest segment missing or repeated.`);
       seenSegments.add(name);
       if (file.size > 256 * 1024 * 1024) throw new Error(`${company}: split ${name} into exports below 256 MB.`);
-      const fileHash = await hashTallyFile(file);
+      progress(`${company}: checking ${name} fingerprint…`); await yieldToUi(true);
+      const fileHash = await hashTallyFile(file, (b) => progress(`${company}: checking ${name} fingerprint ${Math.round((b / Math.max(file.size, 1)) * 100)}%`));
       if (fileHash !== segment.sha256.toLowerCase() || (segment.bytes != null && segment.bytes !== file.size)) throw new Error(`${company}: ${name} differs from its manifest hash or size.`);
       evidence.push({ name, bytes: file.size, sha256: fileHash }); summary.files++;
       let messageNo = 0, inheritedNamespaces = "";
