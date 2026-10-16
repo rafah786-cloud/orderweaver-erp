@@ -98,4 +98,12 @@ describe("four-company bundle preparation", () => {
     expect(a.summaries).toEqual(b.summaries);
     expect(await Promise.all(a.files.map((f) => f.blob.text()))).toEqual(await Promise.all(b.files.map((f) => f.blob.text())));
   });
+  it("reports per-file record types and folder files missing from the manifest", async () => {
+    const files = [...await fixture(), file("source-x.xml", "<x/>", "snapshots/0/source-x.xml")];
+    const r = await buildTallyStagingBundles(files, () => {});
+    const s = r.summaries.find((x) => x.unlistedFiles.length)!;
+    expect(s.unlistedFiles).toEqual(["source-x.xml"]);
+    expect(s.segments[0]).toMatchObject({ name: "masters.xml", messages: 1, byType: { GROUP: 1 } });
+    expect(s.blockers.join(" ")).toContain("not listed in manifest.json");
+  });
 });

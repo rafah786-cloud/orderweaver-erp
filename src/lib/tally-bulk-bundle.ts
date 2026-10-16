@@ -131,6 +131,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       if (fileHash !== segment.sha256.toLowerCase() || (segment.bytes != null && segment.bytes !== file.size)) throw new Error(`${company}: ${name} differs from its manifest hash or size.`);
       evidence.push({ name, bytes: file.size, sha256: fileHash }); summary.files++;
       let messageNo = 0, inheritedNamespaces = "";
+      const segmentTypes: Record<string, number> = {};
       try {
       for await (const part of tallyMessages(decoded(file))) {
         if (part.header) {
@@ -156,6 +157,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
             }
             keys.add(identity); if (alterKey) alters.add(alterKey);
             summary.rows++; summary.byType[row.recordType] = (summary.byType[row.recordType] ?? 0) + 1;
+            segmentTypes[row.recordType] = (segmentTypes[row.recordType] ?? 0) + 1;
             summary.lifecycle[row.lifecycle] = (summary.lifecycle[row.lifecycle] ?? 0) + 1;
             if (row.recordType === "VOUCHER") summary.vouchers++;
             if (row.recordType === "COMPANY" && row.sourceId) {
@@ -180,11 +182,15 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
         }
       }
       } catch (error) { throw new Error(`${company} / ${name} (after message ${messageNo}): ${(error as Error).message}`); }
+      summary.segments.push({ name, messages: messageNo, byType: segmentTypes });
       progress(`${company}: ${name} parsed ${messageNo} messages`);
       await yieldToUi(true);
     }
     flush();
+    // Files present in the company folder but absent from its manifest are never read; report them so missing masters are traceable.
+    summary.unlistedFiles = files.map((f) => safePath(relative(f))).filter((p) => p.startsWith(dir) && p !== dir + "manifest.json" && !seenSegments.has(p.slice(dir.length))).map((p) => p.slice(dir.length)).sort();
     summary.blockers = [...sourceCompleteness(summary), ...identityErrors];
+    if (summary.unlistedFiles.length) summary.blockers.push(`${summary.unlistedFiles.length} file(s) in this company folder are not listed in manifest.json and were not read: ${summary.unlistedFiles.slice(0, 5).join(", ")}${summary.unlistedFiles.length > 5 ? "…" : ""}`);
     if (!manifest.bridgeVersion) summary.blockers.push("Manifest matches repository schema v1 but does not establish TallyBridge 1.0.9 provenance; actual installed-exporter evidence is required.");
     if (company === "ESTIMATE" || company === "ABZ - EST") summary.blockers.unshift("Estimate source isolated: not eligible for official company staging, approval or cutover.");
     result.summaries.push(summary);
