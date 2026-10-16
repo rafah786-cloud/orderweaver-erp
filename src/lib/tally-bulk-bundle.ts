@@ -120,9 +120,10 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
       if (fileHash !== segment.sha256.toLowerCase() || (segment.bytes != null && segment.bytes !== file.size)) throw new Error(`${company}: ${name} differs from its manifest hash or size.`);
       evidence.push({ name, bytes: file.size, sha256: fileHash }); summary.files++;
       let messageNo = 0, inheritedNamespaces = "";
+      try {
       for await (const part of tallyMessages(decoded(file))) {
         if (part.header) {
-          if (!/<ENVELOPE\b[^>]*>/.test(part.header) || !/<BODY\b[^>]*>/.test(part.header) || !/(?:<DATA\b[^>]*>|<REQUESTDATA\b[^>]*>)\s*$/.test(part.header)) throw new Error(`${company}: unsupported source envelope header.`);
+          if (!/<ENVELOPE\b[^>]*>/.test(part.header) || !/<BODY\b[^>]*>/.test(part.header) || !/(?:<DATA\b[^>]*>|<REQUESTDATA\b[^>]*>|<COLLECTION\b[^>]*>)\s*$/.test(part.header)) throw new Error(`${company}: unsupported source envelope header.`);
           const selected = part.header.match(/<SVCURRENTCOMPANY(?:\s[^>]*)?>([^<]+)<\/SVCURRENTCOMPANY>/)?.[1]?.trim().toUpperCase();
           if (selected && selected !== company) throw new Error(`${company}: selected source company in ${name} does not match manifest.`);
           inheritedNamespaces = [...part.header.matchAll(/xmlns:[\w.-]+\s*=\s*(?:"[^"]*"|'[^']*')/g)].map((m) => m[0]).join(" ");
@@ -166,6 +167,7 @@ export async function buildTallyStagingBundles(files: File[], progress: (label: 
           append({ company, segment: name, message_no: messageNo, record_type: "REJECTED_MESSAGE", rejects: [(error as Error).message], original_message_xml: part.message });
         }
       }
+      } catch (error) { throw new Error(`${company} / ${name}: ${(error as Error).message}`); }
     }
     flush();
     summary.blockers = [...sourceCompleteness(summary), ...identityErrors];
