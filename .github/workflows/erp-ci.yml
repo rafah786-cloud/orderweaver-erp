@@ -74,7 +74,7 @@ jobs:
       - name: Test sales-order approved-account read gate
         run: |
           export PATH="$(pg_config --bindir):$PATH"
-          python security-tests/sales_orders_approved_read.py
+          python security-tests/sales_orders_approved_read.py drizzle/migrations/0003_sales_orders_approved_read.sql
 
   selected-table-rls:
     runs-on: ubuntu-latest
@@ -87,17 +87,11 @@ jobs:
       - name: Test selected table RLS boundaries
         run: |
           export PATH="$(pg_config --bindir):$PATH"
-          python security-tests/selected_table_rls.py
+          python security-tests/selected_table_rls.py drizzle/migrations/0002_protect_selected_crm_finance_shipping_tables.sql
 
   enterprise-domain-permissions:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install isolated PostgreSQL test runtime
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql
       - name: Test enterprise domain permissions SQL contract
-        run: |
-          export PATH="$(pg_config --bindir):$PATH"
-          python security-tests/test_enterprise_domain_permissions.py
+        run: python security-tests/test_enterprise_domain_permissions.py
