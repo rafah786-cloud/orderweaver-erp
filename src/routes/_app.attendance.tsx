@@ -157,7 +157,16 @@ function AttendancePage() {
       "Early Exit",
     ];
     const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .map((row) =>
+        row
+          .map((cell) => {
+            let text = String(cell ?? "");
+            // Neutralize spreadsheet formula injection.
+            if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+            return `"${text.replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      )
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
