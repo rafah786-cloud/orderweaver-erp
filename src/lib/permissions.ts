@@ -23,6 +23,8 @@ export const ROUTE_ROLES: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/payslips", roles: ["admin", "hr", "employee"] },
   { prefix: "/approvals", roles: ["admin"] },
   { prefix: "/whatsapp", roles: ["admin", "accountant", "sales", "production", "hr", "employee", "customer", "vendor"] },
+  // Personal inbox is available to every signed-in role; provider/configuration routes remain admin-only.
+  { prefix: "/communications/inbox", roles: ["admin", "accountant", "sales", "production", "hr", "customer", "employee", "vendor"] },
   { prefix: "/communications", roles: ["admin"] },
   { prefix: "/tally-import", roles: ["admin"] },
   { prefix: "/local-tally-accounts", roles: ["admin"] },
@@ -56,7 +58,10 @@ export function routePathMatches(pathname: string, prefix: string): boolean {
 }
 
 export function allowedRolesFor(pathname: string): AppRole[] | null {
-  const match = ROUTE_ROLES.find((r) => routePathMatches(pathname, r.prefix));
+  // Prefer the most specific policy so a public-to-role child screen cannot inherit
+  // a broader admin-only parent policy just because it appears later in the registry.
+  const match = ROUTE_ROLES.filter((r) => routePathMatches(pathname, r.prefix))
+    .sort((a, b) => b.prefix.length - a.prefix.length)[0];
   return match ? match.roles : null;
 }
 

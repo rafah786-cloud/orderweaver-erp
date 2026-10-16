@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -26,7 +26,7 @@ const LABELS: Record<string, string> = {
   "/local-tally-accounts": "Tally Data Import", "/print": "Print Hub",
 };
 // The enterprise workbench is a privileged generic CRUD surface; keep it off the general navigation.
-const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/enterprise-workbench").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
+const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/enterprise-workbench" && r.prefix !== "/communications/inbox").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
@@ -111,7 +111,7 @@ export function AppSidebar() {
   return <TooltipProvider><aside className={"relative z-10 hidden h-screen flex-col rounded-none border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out md:flex " + (collapsed ? "w-16" : "w-64")}><SidebarBody collapsed={collapsed} setCollapsed={setCollapsed} /></aside></TooltipProvider>;
 }
 
-export function MobileTopBar() {
+export function MobileTopBar({ unreadCount = 0 }: { unreadCount?: number }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   useEffect(() => { setOpen(false); }, [location.pathname]);
@@ -121,7 +121,20 @@ export function MobileTopBar() {
         <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
         <SheetContent side="left" className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"><SheetTitle className="sr-only">Navigation</SheetTitle><SidebarBody collapsed={false} setCollapsed={() => {}} onNavigate={() => setOpen(false)} /></SheetContent>
       </Sheet>
-      <CompanySwitcher /><AccountMenu mobile />
+      <CompanySwitcher />
+      <Link
+        to="/communications/inbox"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md hover:bg-accent"
+      >
+        <Bell className="h-5 w-5" aria-hidden="true" />
+        {unreadCount > 0 && (
+          <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground" aria-hidden="true">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </Link>
+      <AccountMenu mobile />
     </header>
   );
 }

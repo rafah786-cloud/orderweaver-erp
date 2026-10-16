@@ -24,7 +24,12 @@ function InboxPage() {
   });
   const mark = useMutation({
     mutationFn: (v: { id?: string; all?: boolean }) => markFn({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["in-app-inbox"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["in-app-inbox"] }),
+        qc.invalidateQueries({ queryKey: ["in-app-unread-count"] }),
+      ]);
+    },
   });
 
   const unread = data.filter((n: any) => !n.read_at).length;
