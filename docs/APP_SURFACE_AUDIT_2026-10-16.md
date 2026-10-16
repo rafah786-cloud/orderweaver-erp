@@ -11,6 +11,9 @@
 - Checked the latest merged mobile-layout fix and its post-merge GitHub Actions run.
 - Existing automated gates: ESLint, Vitest, production build, TallyBridge build/tests, isolated PostgreSQL tests for enterprise-workbench RLS and bank-reconciliation RPC.
 - Route authorization is fail-closed: unknown private paths have no policy; nested paths inherit a registered top-level policy. The enterprise workbench is deliberately omitted from ordinary navigation and restricted to administrators.
+- Added a regression test enumerating every private route file and confirming that each has a registered route policy. PR #91 was merged after all four CI checks passed.
+- Added a role-specific personal inbox policy, user-scoped unread count, and desktop/mobile unread badge. PR #92 was merged after all four CI checks passed.
+- Post-merge main CI for commit `c530627f8e11612522bccaf3b7fac3d42b38487e` passed: app (lint/tests/build), TallyBridge, enterprise-workbench RLS and bank-reconciliation RPC.
 
 ## Module inventory and status
 
