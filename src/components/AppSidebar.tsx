@@ -6,9 +6,6 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ROUTE_ROLES } from "@/lib/permissions";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { countMyUnreadNotifications } from "@/lib/notification-engine.functions";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 import { AccountMenu } from "@/components/AccountMenu";
 
@@ -114,16 +111,9 @@ export function AppSidebar() {
   return <TooltipProvider><aside className={"relative z-10 hidden h-screen flex-col rounded-none border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out md:flex " + (collapsed ? "w-16" : "w-64")}><SidebarBody collapsed={collapsed} setCollapsed={setCollapsed} /></aside></TooltipProvider>;
 }
 
-export function MobileTopBar() {
+export function MobileTopBar({ unreadCount = 0 }: { unreadCount?: number }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const unreadCountFn = useServerFn(countMyUnreadNotifications);
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ["in-app-unread-count"],
-    queryFn: () => unreadCountFn(),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
   useEffect(() => { setOpen(false); }, [location.pathname]);
   return (
     <header className="glass sticky top-0 z-20 flex items-center justify-between gap-2 rounded-none border-0 border-b px-3 py-2 md:hidden">
