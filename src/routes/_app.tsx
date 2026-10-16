@@ -87,7 +87,7 @@ function AppFrame({
       </div>
       <div className="app-shell-content relative flex min-w-0 flex-1 flex-col">
         <div className="app-shell-mobile-bar">
-          <MobileTopBar />
+          <MobileTopBar unreadCount={unreadCount} />
         </div>
         <header className="app-shell-topbar corporate-topbar hidden md:flex">
           <div className="corporate-wordmark">
