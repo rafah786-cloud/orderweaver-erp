@@ -23,6 +23,14 @@ describe("ERP route security policy", () => {
     expect(allowedRolesFor("/accounting-old")).toBeNull();
   });
 
+  it("allows each role to open only its own personal inbox while keeping communication administration restricted", () => {
+    for (const role of ["admin", "accountant", "sales", "production", "hr", "customer", "employee", "vendor"] as const) {
+      expect(isRouteDenied("/communications/inbox", [role]), `${role} should access its personal inbox`).toBe(false);
+    }
+    expect(allowedRolesFor("/communications/providers")).toEqual(["admin"]);
+    expect(isRouteDenied("/communications/providers", ["sales"])).toBe(true);
+  });
+
   it("applies the parent screen policy to nested routes", () => {
     expect(allowedRolesFor("/gst/returns")).toEqual(["admin", "accountant"]);
     expect(allowedRolesFor("/tally-import/validate")).toEqual(["admin"]);
