@@ -63,4 +63,13 @@ describe("Tally bulk staging", () => {
     const [imbalance] = prepareTallyMessage(voucher.replace("-10</AMOUNT>", "-10.01</AMOUNT>"));
     expect(imbalance.errors.join(" ")).toContain("Exact minor-unit");
   });
+  it("streams large exports in linear time with CDATA and quoted '>' safely", async () => {
+    const msg = (i: number) => `<TALLYMESSAGE><VOUCHER REMOTEID="g${i}" VCHTYPE="a>b"><NARRATION><![CDATA[x > <y> ${i}]]></NARRATION><ALTERID>${i}</ALTERID></VOUCHER></TALLYMESSAGE>`;
+    const body = Array.from({ length: 20000 }, (_, i) => msg(i)).join("");
+    const src = `<ENVELOPE><BODY><DATA>${body}</DATA></BODY></ENVELOPE>`;
+    const parts: string[] = []; for (let i = 0; i < src.length; i += 65536) parts.push(src.slice(i, i + 65536));
+    const t = Date.now(); let n = 0;
+    for await (const p of tallyMessages(chunks(...parts))) if (p.message) n++;
+    expect(n).toBe(20000); expect(Date.now() - t).toBeLessThan(5000);
+  });
 });
