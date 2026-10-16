@@ -26,7 +26,7 @@ const LABELS: Record<string, string> = {
   "/local-tally-accounts": "Tally Data Import", "/print": "Print Hub",
 };
 // The enterprise workbench is a privileged generic CRUD surface; keep it off the general navigation.
-const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/enterprise-workbench").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
+const NAV = ROUTE_ROLES.filter((r) => r.prefix !== "/enterprise-workbench" && r.prefix !== "/communications/inbox").map((r) => ({ to: r.prefix, label: LABELS[r.prefix] ?? r.prefix, icon: ICONS[r.prefix] ?? LayoutDashboard, roles: r.roles }));
 const SIDEBAR_COLLAPSED_KEY = "abood-sidebar-collapsed";
 const GROUPS = [
   { label: "Workspace", prefixes: ["/dashboard"] },
