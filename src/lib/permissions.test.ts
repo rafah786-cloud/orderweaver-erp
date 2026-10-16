@@ -80,7 +80,7 @@ describe("top-level route and permission inventory", () => {
   it("ensures every nested private route inherits a registered parent policy", async () => {
     const { readdirSync } = await import("node:fs");
     const routeFiles = readdirSync(new URL("../routes/", import.meta.url))
-      .filter((file) => file.startsWith("_app.") && file.endsWith(".tsx"))
+      .filter((file) => file !== "_app.tsx" && file.startsWith("_app.") && file.endsWith(".tsx"))
       .map((file) => `/${file.slice(5, -4).replaceAll(".", "/")}`);
 
     for (const path of routeFiles) {
