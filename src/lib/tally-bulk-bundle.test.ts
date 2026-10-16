@@ -118,4 +118,12 @@ describe("four-company bundle preparation", () => {
     files[0] = file("masters.xml", "<changed/>", files[0].webkitRelativePath);
     await expect(buildTallyStagingBundles(files, () => {})).rejects.toThrow(/differs from its manifest/);
   });
+  it("peeks unlisted source files read-only and counts unparseable messages separately from rows", async () => {
+    const src = `<ENVELOPE><BODY><DATA><TALLYMESSAGE><COMPANY NAME="X"><GUID>c1</GUID></COMPANY></TALLYMESSAGE><TALLYMESSAGE><GROUP NAME="A"><GUID>g</GUID></GROUP></TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
+    const files = [...await fixture(), file("source-ABOOD.xml", src, "snapshots/0/source-ABOOD.xml")];
+    const s = (await buildTallyStagingBundles(files, () => {})).summaries.find((x) => x.unlistedInventory.length)!;
+    expect(s.unlistedInventory[0]).toMatchObject({ messages: 2, byType: { COMPANY: 1, GROUP: 1 }, companyGuidPresent: true });
+    expect(s.companyGuid).toBeNull(); // never trusted as identity
+    expect(s.rejectedMessages).toBe(0); expect(s.rows).toBe(1);
+  });
 });

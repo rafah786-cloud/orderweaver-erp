@@ -123,9 +123,13 @@ export type BulkSummary = {
   inventoryLines: number; billAllocations: number; missingIds: number; duplicates: number; rejects: number;
   normalized: number; byType: Record<string, number>; lifecycle: Record<string, number>; blockers: string[];
   segments: Array<{ name: string; messages: number; byType: Record<string, number> }>; unlistedFiles: string[];
+  /** Messages that failed to parse at all (never counted in rows). `rejects` counts parsed rows with errors. */
+  rejectedMessages: number; rejectReasons: Record<string, number>; amountsUnavailable: number;
+  /** Read-only peek at files absent from manifest.json: not hash-verified, never staged, never used as identity. */
+  unlistedInventory: Array<{ name: string; bytes: number; messages: number; byType: Record<string, number>; companyGuidPresent: boolean; error?: string }>;
 };
 export function newBulkSummary(company: string): BulkSummary {
-  return { company, companyGuid: null, files: 0, rows: 0, vouchers: 0, debit: 0, credit: 0, inventoryLines: 0, billAllocations: 0, missingIds: 0, duplicates: 0, rejects: 0, normalized: 0, byType: {}, lifecycle: {}, blockers: [], segments: [], unlistedFiles: [] };
+  return { company, companyGuid: null, files: 0, rows: 0, vouchers: 0, debit: 0, credit: 0, inventoryLines: 0, billAllocations: 0, missingIds: 0, duplicates: 0, rejects: 0, normalized: 0, byType: {}, lifecycle: {}, blockers: [], segments: [], unlistedFiles: [], rejectedMessages: 0, rejectReasons: {}, amountsUnavailable: 0, unlistedInventory: [] };
 }
 export function sourceCompleteness(summary: BulkSummary): string[] {
   const gaps = ["GROUP", "LEDGER", "STOCKITEM", "GODOWN", "COSTCENTRE", "UNIT"].filter((kind) => !summary.byType[kind]);
@@ -133,7 +137,7 @@ export function sourceCompleteness(summary: BulkSummary): string[] {
     ...gaps.map((kind) => `Complete ${kind} masters export missing (empty collections require verified source evidence).`),
     ...(!summary.companyGuid ? ["Source company GUID is not verified."] : []),
     ...(!summary.vouchers ? ["No voucher history supplied; a masters-only bundle is not a complete accounting migration."] : []),
-    ...(summary.rejects || summary.duplicates || summary.missingIds ? ["Resolve source rejects, duplicate identities and missing identifiers before cloud staging."] : []),
+    ...(summary.rejects || summary.rejectedMessages || summary.duplicates || summary.missingIds ? ["Resolve source rejects, duplicate identities and missing identifiers before cloud staging."] : []),
   ];
 }
 
