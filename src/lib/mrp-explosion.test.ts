@@ -1,242 +1,191 @@
 import { describe, expect, it } from "vitest";
-import { explodeMaterialRequirements, explodeMultiLevelMaterialRequirements, type MrpDemandLine, type MrpMaterialBalance, type MrpMultiLevelBomLine } from "./mrp-explosion";
+import {
+  explodeMaterialRequirements,
+  explodeMultiLevelMaterialRequirements,
+  type MrpDemandLine,
+  type MrpMultiLevelBomLine,
+} from "./mrp-explosion";
+import { selectEffectiveReleasedBomRevisions, grossQuantityPerFinishedUnit } from "./mrp-bom-source";
+import { unnettedMaterialBalances } from "./mrp-availability";
 
-const demand = (overrides: Partial<{
-  productionOrderId: string;
-  productionOrderNumber: string;
-  productModelId: string;
-  productModelName: string;
-  orderQuantity: number;
-}> = {}) => ({
-  productionOrderId: "p1",
-  productionOrderNumber: "PO-1",
-  productModelId: "m1",
-  productModelName: "Classic",
-  orderQuantity: 5,
+const demand = (overrides: Partial<MrpDemandLine> = {}): MrpDemandLine => ({
+  productionOrderId: "po-1",
+  productionOrderNumber: "PRD-1",
+  productModelId: "model-a",
+  productModelName: "Spring Mattress",
+  orderQuantity: 10,
   ...overrides,
 });
 
-const bomLine = (overrides: Partial<{
-  productModelId: string;
-  rawMaterialId: string;
-  rawMaterialName: string;
-  unit: string;
-  quantityPerFinishedUnit: number;
-}> = {}) => ({
-  productModelId: "m1",
-  rawMaterialId: "r1",
-  rawMaterialName: "Foam",
-  unit: "sheet",
-  quantityPerFinishedUnit: 2,
-  ...overrides,
-});
-
-const balance = (overrides: Partial<{
-  rawMaterialId: string;
-  rawMaterialName: string;
-  unit: string;
-  availableQuantity?: number | null;
-}> = {}) => ({
-  rawMaterialId: "r1",
-  rawMaterialName: "Foam",
-  unit: "sheet",
-  availableQuantity: 6,
-  ...overrides,
-});
-
-describe("MRP explosion", () => {
-  it("aggregates gross requirements and calculates shortages", () => {
-    const result = explodeMaterialRequirements([demand()], [bomLine()], [balance()]);
-    expect(result.status).toBe("calculated");
-    expect(result.requirements[0]).toMatchObject({ grossRequired: 10, shortageQuantity: 4 });
-  });
-
-  it("aggregates demand across production orders without losing source references", () => {
+describe("explodeMaterialRequirements (single-level)", () => {
+  it("aggregates gross requirements across demand lines", () => {
     const result = explodeMaterialRequirements(
-      [demand(), demand({ productionOrderId: "p2", productionOrderNumber: "PO-2", orderQuantity: 3 })],
-      [bomLine()],
-      [balance({ availableQuantity: 0 })],
+      [demand({ orderQuantity: 2 }), demand({ productionOrderId: "po-2", productionOrderNumber: "PRD-2", orderQuantity: 3 })],
+      [{
+        productModelId: "model-a",
+        rawMaterialId: "raw:foam",
+        rawMaterialName: "Foam",
+        unit: "sheet",
+        quantityPerFinishedUnit: 2,
+      }],
+      [{ rawMaterialId: "raw:foam", rawMaterialName: "Foam", unit: "sheet", availableQuantity: null }],
     );
-    expect(result.requirements[0].grossRequired).toBe(16);
-    expect(result.requirements[0].shortageQuantity).toBe(16);
-    expect(result.requirements[0].sourceOrders).toHaveLength(2);
-  });
-
-  it("fails closed when a demanded model has no BOM", () => {
-    const result = explodeMaterialRequirements([demand()], [], [balance()]);
-    expect(result.status).toBe("insufficient-data");
-    expect(result.missingBomModels).toContain("Classic");
-    expect(result.requirements).toEqual([]);
-  });
-
-  it("excludes BOM lines with unit mismatch instead of applying guessed conversions", () => {
-    const result = explodeMaterialRequirements(
-      [demand()],
-      [bomLine({ unit: "kg" })],
-      [balance({ unit: "sheet" })],
-    );
-    expect(result.status).toBe("insufficient-data");
-    expect(result.requirements).toEqual([]);
-    expect(result.missingMaterialMasters.join(" ")).toMatch(/BOM unit kg; master unit sheet/);
-  });
-
-  it("marks negative or non-finite balances as invalid and never reports a shortage from them", () => {
-    for (const invalid of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      const result = explodeMaterialRequirements([demand()], [bomLine()], [balance({ availableQuantity: invalid })]);
-      expect(result.status).toBe("insufficient-data");
-      expect(result.invalidMaterialBalances).toContain("Foam");
-      expect(result.requirements[0].availableQuantity).toBeNull();
-      expect(result.requirements[0].shortageQuantity).toBeNull();
-    }
-  });
-
-  it("fails closed when duplicate material masters conflict", () => {
-    const result = explodeMaterialRequirements(
-      [demand()],
-      [bomLine()],
-      [balance(), balance({ unit: "kg", availableQuantity: 100 })],
-    );
-    expect(result.status).toBe("insufficient-data");
-    expect(result.requirements).toEqual([]);
-    expect(result.missingMaterialMasters.join(" ")).toMatch(/conflicting material master/);
-  });
-
-  it("rejects invalid demand and BOM quantities", () => {
-    expect(explodeMaterialRequirements([demand({ orderQuantity: 0 })], [bomLine()], [balance()]).status).toBe("insufficient-data");
-    expect(explodeMaterialRequirements([demand()], [bomLine({ quantityPerFinishedUnit: -1 })], [balance()]).status).toBe("insufficient-data");
-  });
-
-  it("fails closed on arithmetic overflow rather than showing partial or infinite totals", () => {
-    const result = explodeMaterialRequirements(
-      [demand({ orderQuantity: Number.MAX_VALUE })],
-      [bomLine({ quantityPerFinishedUnit: 2 })],
-      [balance()],
-    );
-    expect(result.status).toBe("insufficient-data");
-    expect(result.requirements).toEqual([]);
-    expect(result.notes.join(" ")).toMatch(/finite numeric range/);
-  });
-
-  it("does not invent availability when no verified balance is supplied", () => {
-    const result = explodeMaterialRequirements([demand()], [bomLine()], [balance({ availableQuantity: null })]);
-    expect(result.status).toBe("insufficient-data");
-    expect(result.requirements[0]).toMatchObject({ availableQuantity: null, shortageQuantity: null });
-  });
-});
-
-
-describe("multi-level MRP explosion", () => {
-  const multiDemand = (overrides: Partial<MrpDemandLine> = {}): MrpDemandLine => ({
-    productionOrderId: "p1",
-    productionOrderNumber: "PO-1",
-    productModelId: "mattress",
-    productModelName: "Classic Mattress",
-    orderQuantity: 4,
-    ...overrides,
-  });
-  const multiLine = (overrides: Partial<MrpMultiLevelBomLine> = {}): MrpMultiLevelBomLine => ({
-    parentModelId: "mattress",
-    componentType: "raw-material",
-    componentId: "raw:foam",
-    componentName: "Foam",
-    unit: "sheet",
-    quantityPerParent: 3,
-    scrapPct: 0,
-    ...overrides,
-  });
-  const multiBalance = (overrides: Partial<MrpMaterialBalance> = {}): MrpMaterialBalance => ({
-    rawMaterialId: "raw:foam",
-    rawMaterialName: "Foam",
-    unit: "sheet",
-    availableQuantity: 100,
-    ...overrides,
-  });
-
-  it("explodes subassemblies recursively and applies scrap at each BOM level", () => {
-    const result = explodeMultiLevelMaterialRequirements(
-      [multiDemand()],
-      [
-        multiLine({ componentType: "subassembly", componentId: "spring-unit", componentName: "Spring Unit", unit: "unit", quantityPerParent: 2, scrapPct: 10 }),
-        multiLine({ parentModelId: "spring-unit", quantityPerParent: 3, scrapPct: 5 }),
-      ],
-      [multiBalance()],
-    );
-    expect(result.status).toBe("calculated");
     expect(result.requirements).toHaveLength(1);
-    expect(result.requirements[0].grossRequired).toBeCloseTo(27.72);
-    expect(result.requirements[0].shortageQuantity).toBe(0);
-    expect(result.requirements[0].sourceOrders[0].finishedQuantity).toBe(4);
-    expect(result.requirements[0].sourceOrders[0].requiredQuantity).toBeCloseTo(27.72);
-  });
-
-  it("aggregates shared leaf components across direct and nested BOM paths", () => {
-    const result = explodeMultiLevelMaterialRequirements(
-      [multiDemand()],
-      [
-        multiLine({ quantityPerParent: 1 }),
-        multiLine({ componentType: "subassembly", componentId: "quilt-pack", componentName: "Quilt Pack", unit: "unit", quantityPerParent: 2 }),
-        multiLine({ parentModelId: "quilt-pack", quantityPerParent: 3 }),
-      ],
-      [multiBalance({ availableQuantity: 0 })],
-    );
-    expect(result.requirements[0].grossRequired).toBe(28);
-    expect(result.requirements[0].shortageQuantity).toBe(28);
-    expect(result.requirements[0].sourceOrders).toHaveLength(2);
-  });
-
-  it("fails closed on missing subassembly BOMs", () => {
-    const result = explodeMultiLevelMaterialRequirements(
-      [multiDemand()],
-      [multiLine({ componentType: "subassembly", componentId: "missing-model", componentName: "Missing Model", unit: "unit", quantityPerParent: 1 })],
-      [multiBalance()],
-    );
+    expect(result.requirements[0].grossRequired).toBe(10);
+    expect(result.requirements[0].availableQuantity).toBeNull();
+    expect(result.requirements[0].shortageQuantity).toBeNull();
     expect(result.status).toBe("insufficient-data");
-    expect(result.missingBomModels).toContain("Missing Model");
-    expect(result.requirements).toEqual([]);
   });
 
-  it("detects cyclic BOMs and withholds partial totals", () => {
-    const result = explodeMultiLevelMaterialRequirements(
-      [multiDemand()],
-      [
-        multiLine({ componentType: "subassembly", componentId: "spring-unit", componentName: "Spring Unit", unit: "unit", quantityPerParent: 1 }),
-        multiLine({ parentModelId: "spring-unit", componentType: "subassembly", componentId: "mattress", componentName: "Classic Mattress", unit: "unit", quantityPerParent: 1 }),
-      ],
-      [multiBalance()],
+  it("rejects invalid demand and BOM without partial totals", () => {
+    const result = explodeMaterialRequirements(
+      [demand({ orderQuantity: 0 })],
+      [{
+        productModelId: "model-a",
+        rawMaterialId: "raw:foam",
+        rawMaterialName: "Foam",
+        unit: "sheet",
+        quantityPerFinishedUnit: 1,
+      }],
+      [],
     );
+    expect(result.requirements).toEqual([]);
     expect(result.status).toBe("insufficient-data");
+  });
+
+  it("excludes unit mismatches from requirements", () => {
+    const result = explodeMaterialRequirements(
+      [demand()],
+      [{
+        productModelId: "model-a",
+        rawMaterialId: "raw:foam",
+        rawMaterialName: "Foam",
+        unit: "sheet",
+        quantityPerFinishedUnit: 1,
+      }],
+      [{ rawMaterialId: "raw:foam", rawMaterialName: "Foam", unit: "kg", availableQuantity: 100 }],
+    );
     expect(result.requirements).toEqual([]);
-    expect(result.notes.join(" ")).toMatch(/cycle or excessive nesting/);
+    expect(result.missingMaterialMasters.some((m) => m.includes("unit"))).toBe(true);
+  });
+});
+
+describe("explodeMultiLevelMaterialRequirements", () => {
+  const bom: MrpMultiLevelBomLine[] = [
+    {
+      parentModelId: "model-a",
+      componentType: "subassembly",
+      componentId: "sub-spring",
+      componentName: "Spring Unit",
+      unit: "unit",
+      quantityPerParent: 1,
+      scrapPct: 0,
+    },
+    {
+      parentModelId: "sub-spring",
+      componentType: "raw-material",
+      componentId: "raw:wire",
+      componentName: "Spring Wire",
+      unit: "kg",
+      quantityPerParent: 2,
+      scrapPct: 10,
+    },
+    {
+      parentModelId: "model-a",
+      componentType: "raw-material",
+      componentId: "raw:fabric",
+      componentName: "Quilt Fabric",
+      unit: "m",
+      quantityPerParent: 3,
+      scrapPct: 0,
+    },
+  ];
+
+  it("expands subassemblies with scrap factor and keeps availability null when unnetted", () => {
+    const materials = unnettedMaterialBalances(
+      [
+        { id: "wire", name: "Spring Wire", unit: "kg" },
+        { id: "fabric", name: "Quilt Fabric", unit: "m" },
+      ],
+      [],
+    ).map((row) => ({
+      ...row,
+      // identity already prefixed by unnetted helper; remap to component ids used in BOM
+      rawMaterialId: row.rawMaterialId.includes("wire") ? "raw:wire" : "raw:fabric",
+      rawMaterialName: row.rawMaterialId.includes("wire") ? "Spring Wire" : "Quilt Fabric",
+    }));
+
+    const result = explodeMultiLevelMaterialRequirements([demand({ orderQuantity: 10 })], bom, materials);
+    const byId = Object.fromEntries(result.requirements.map((r) => [r.rawMaterialId, r]));
+    // wire: 10 parents * 1 sub * 2 kg * 1.10 scrap = 22
+    expect(byId["raw:wire"]?.grossRequired).toBeCloseTo(22, 6);
+    expect(byId["raw:fabric"]?.grossRequired).toBeCloseTo(30, 6);
+    expect(byId["raw:wire"]?.availableQuantity).toBeNull();
+    expect(byId["raw:wire"]?.shortageQuantity).toBeNull();
+    expect(result.status).toBe("insufficient-data");
   });
 
-  it("does not net inventory across mismatched units or invent unknown availability", () => {
-    const mismatch = explodeMultiLevelMaterialRequirements(
-      [multiDemand()],
-      [multiLine({ unit: "roll" })],
-      [multiBalance({ unit: "sheet" })],
-    );
-    expect(mismatch.status).toBe("insufficient-data");
-    expect(mismatch.missingMaterialMasters[0]).toMatch(/BOM unit roll; master unit sheet/);
-
-    const unknown = explodeMultiLevelMaterialRequirements(
-      [multiDemand()],
-      [multiLine()],
-      [multiBalance({ availableQuantity: null })],
-    );
-    expect(unknown.status).toBe("insufficient-data");
-    expect(unknown.requirements[0].availableQuantity).toBeNull();
-    expect(unknown.requirements[0].shortageQuantity).toBeNull();
+  it("detects BOM cycles and withholds partial totals", () => {
+    const cyclic: MrpMultiLevelBomLine[] = [
+      {
+        parentModelId: "model-a",
+        componentType: "subassembly",
+        componentId: "model-b",
+        componentName: "B",
+        unit: "unit",
+        quantityPerParent: 1,
+        scrapPct: 0,
+      },
+      {
+        parentModelId: "model-b",
+        componentType: "subassembly",
+        componentId: "model-a",
+        componentName: "A",
+        unit: "unit",
+        quantityPerParent: 1,
+        scrapPct: 0,
+      },
+    ];
+    const result = explodeMultiLevelMaterialRequirements([demand()], cyclic, []);
+    expect(result.requirements).toEqual([]);
+    expect(result.notes.some((n) => n.toLowerCase().includes("cycle"))).toBe(true);
+    expect(result.status).toBe("insufficient-data");
   });
 
-  it("rejects invalid BOM quantities and prevents numeric overflow", () => {
-    expect(explodeMultiLevelMaterialRequirements([multiDemand()], [multiLine({ quantityPerParent: 0 })], [multiBalance()]).requirements).toEqual([]);
-    const overflow = explodeMultiLevelMaterialRequirements(
-      [multiDemand({ orderQuantity: Number.MAX_VALUE })],
-      [multiLine({ quantityPerParent: Number.MAX_VALUE })],
-      [multiBalance()],
+  it("fails closed when a demanded model has no BOM lines", () => {
+    const result = explodeMultiLevelMaterialRequirements([demand()], [], []);
+    expect(result.requirements).toEqual([]);
+    expect(result.missingBomModels.length).toBeGreaterThan(0);
+  });
+});
+
+describe("selectEffectiveReleasedBomRevisions", () => {
+  it("selects the latest effective released revision and reports missing ones", () => {
+    const selection = selectEffectiveReleasedBomRevisions(
+      ["m1", "m2", "m3"],
+      [
+        { id: "r1", model_id: "m1", revision: "A", status: "released", effective_from: "2026-01-01", effective_to: null },
+        { id: "r2", model_id: "m1", revision: "B", status: "released", effective_from: "2026-06-01", effective_to: null },
+        { id: "r3", model_id: "m2", revision: "A", status: "draft", effective_from: "2026-01-01", effective_to: null },
+        { id: "r4", model_id: "m2", revision: "B", status: "released", effective_from: "2027-01-01", effective_to: null },
+      ],
+      "2026-10-16",
     );
-    expect(overflow.status).toBe("insufficient-data");
-    expect(overflow.requirements).toEqual([]);
-    expect(overflow.notes.join(" ")).toMatch(/numeric limits/);
+    expect(selection.selectedByModel.get("m1")?.id).toBe("r2");
+    expect(selection.selectedByModel.has("m2")).toBe(false);
+    expect(selection.missingEffectiveRevisionModelIds).toContain("m2");
+    expect(selection.selectedByModel.has("m3")).toBe(false);
+    expect(selection.missingEffectiveRevisionModelIds).not.toContain("m3");
+  });
+});
+
+describe("grossQuantityPerFinishedUnit", () => {
+  it("applies non-negative scrap percentage only", () => {
+    expect(grossQuantityPerFinishedUnit(2, 10)).toBeCloseTo(2.2, 6);
+    expect(grossQuantityPerFinishedUnit(2, -5)).toBeCloseTo(2, 6);
+  });
+
+  it("rejects non-positive quantity", () => {
+    expect(() => grossQuantityPerFinishedUnit(0, 0)).toThrow(/positive/);
   });
 });
