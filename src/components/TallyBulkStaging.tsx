@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { scanTallyFolder, type FolderScan } from "@/lib/tally-folder-scan";
 import { useServerFn } from "@tanstack/react-start";
 import { CloudUpload, Download, FolderUp, FileUp, ShieldAlert } from "lucide-react";
 import { stageTallySourceChunk } from "@/lib/tally-source-staging.functions";
@@ -17,10 +18,23 @@ export function TallyBulkStaging() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BulkBundleResult | null>(null);
   const [archive, setArchive] = useState<Blob | null>(null);
+  const [detected, setDetected] = useState<FolderScan | null>(null);
+  // Set directory attributes on the DOM node so every browser receives them verbatim (no accept filter on folder mode).
+  useEffect(() => {
+    const el = input.current; if (!el) return;
+    el.setAttribute("webkitdirectory", ""); el.setAttribute("directory", ""); el.setAttribute("mozdirectory", "");
+  }, []);
   const choose = async (files: File[], directXml = false) => {
     const first = files[0];
     if (!first) return;
     setBusy(true); setError(null); setResult(null); setArchive(null); setStatus("Checking manifests and file hashes…");
+    if (!directXml) {
+      const scan = scanTallyFolder(files); setDetected(scan);
+      if (scan.missing.length || scan.unsupported.length) {
+        setError(`Folder not ready: ${scan.missing.length ? `missing ${scan.missing.join(", ")}` : ""}${scan.missing.length && scan.unsupported.length ? "; " : ""}${scan.unsupported.length ? `unrecognised folders ${scan.unsupported.join(", ")}` : ""}. Nothing was staged.`);
+        setStatus(""); setBusy(false); return;
+      }
+    } else setDetected(null);
     try {
       const prepared = directXml ? await buildTallyXmlBundle(first, setStatus) : await buildTallyStagingBundles(files, setStatus);
       // Avoid duplicating all original/derivative data in memory for large sources.
