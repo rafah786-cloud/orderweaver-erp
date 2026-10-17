@@ -230,14 +230,25 @@ function ZizzHome() {
                 ["brands", "Our Brands"],
                 ["support", "Help & Support"],
               ].map(([id, label]) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
-                >
-                  {label}
-                </a>
+                id === "shop" ? (
+                  <Link
+                    key={id}
+                    to="/shop"
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
+                  >
+                    {label}
+                  </Link>
+                ) : (
+                  <a
+                    key={id}
+                    href={`#${id}`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
+                  >
+                    {label}
+                  </a>
+                )
               ))}
               <div className="pt-2"><LoginMenu mobile /></div>
             </nav>
@@ -261,9 +272,9 @@ function ZizzHome() {
                   Discover mattresses designed around the way you sleep — from spring and foam to latex and coir comfort.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <a href="#shop" className="inline-flex items-center gap-2 rounded-full bg-[#17324d] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#17324d]/15 transition hover:-translate-y-0.5 hover:bg-[#10283d]">
+                  <Link to="/shop" className="inline-flex items-center gap-2 rounded-full bg-[#17324d] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#17324d]/15 transition hover:-translate-y-0.5 hover:bg-[#10283d]">
                     Shop mattresses <ArrowRight className="h-4 w-4" />
-                  </a>
+                  </Link>
                   <a href="#find-your-mattress" className="inline-flex items-center gap-2 rounded-full border border-[#bcb6ab] bg-white/70 px-6 py-3.5 text-sm font-bold text-[#263e52] transition hover:bg-white">
                     Find my mattress
                   </a>
@@ -504,7 +515,13 @@ function ZizzHome() {
             <div key={String(title)}>
               <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-white">{String(title)}</h3>
               <div className="mt-4 space-y-2.5">
-                {(items as string[]).map((item) => <a key={item} href="#support" className="block text-sm hover:text-white">{item}</a>)}
+                {(items as string[]).map((item) =>
+                  item === "Mattresses" ? (
+                    <Link key={item} to="/shop" className="block text-sm hover:text-white">{item}</Link>
+                  ) : (
+                    <a key={item} href="#support" className="block text-sm hover:text-white">{item}</a>
+                  )
+                )}
               </div>
             </div>
           ))}
