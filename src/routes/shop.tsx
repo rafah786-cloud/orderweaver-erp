@@ -38,7 +38,6 @@ function MattressArtwork({ index }: { index: number }) {
 
 function ShopPage() {
   const [query, setQuery] = useState("");
-  const [availability, setAvailability] = useState("all");
   const [sort, setSort] = useState("name");
   const models = useMemo(() => {
     const filtered = mattressModels.filter((model) => model.name.toLowerCase().includes(query.trim().toLowerCase()));
