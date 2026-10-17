@@ -84,7 +84,12 @@ export const createCheque = createServerFn({ method: "POST" })
     if (!account) throw new Error("Bank account is outside the active company");
     const { data: row, error } = await context.supabase
       .from("cheques")
-      .insert({ ...data, status: "pending", created_by: context.userId })
+      .insert({
+        direction: data.direction, bank_account_id: data.bank_account_id, cheque_number: data.cheque_number,
+        cheque_date: data.cheque_date, amount: data.amount, party_name: data.party_name,
+        bank_name: data.bank_name ?? null, branch: data.branch ?? null, narration: data.narration ?? null,
+        status: "pending", created_by: context.userId,
+      })
       .select("id")
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to create cheque");

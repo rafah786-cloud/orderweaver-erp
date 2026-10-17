@@ -18,7 +18,7 @@ export const createStockItem=createServerFn({method:"POST"}).middleware([require
   await assertInventoryRole(context.supabase,context.userId);
   const {data:companyId,error:ce}=await context.supabase.rpc("current_company_id");
   if(ce||!companyId) throw new Error("No active company selected");
-  const {data:row,error}=await context.supabase.from("stock_items").insert({...data,valuation_method:data.valuation_method === "standard" ? "standard_cost" : data.valuation_method,company_id:companyId}).select("id").single();
+  const {data:row,error}=await context.supabase.from("stock_items").insert({name:data.name,code:data.code??null,unit:data.unit,hsn_code:data.hsn_code??null,gst_rate:data.gst_rate,reorder_level:data.reorder_level,standard_cost:data.standard_cost,valuation_method:data.valuation_method === "standard" ? "standard_cost" : data.valuation_method,company_id:companyId}).select("id").single();
   if(error||!row) throw new Error(error?.message??"Failed to create stock item");
   return row.id;
  });
@@ -28,7 +28,7 @@ export const createGodown=createServerFn({method:"POST"}).middleware([requireSup
   await assertInventoryRole(context.supabase,context.userId);
   const {data:companyId,error:ce}=await context.supabase.rpc("current_company_id");
   if(ce||!companyId) throw new Error("No active company selected");
-  const {data:row,error}=await context.supabase.from("godowns").insert({...data,company_id:companyId}).select("id").single();
+  const {data:row,error}=await context.supabase.from("godowns").insert({name:data.name,code:data.code??null,address:data.address??null,company_id:companyId}).select("id").single();
   if(error||!row) throw new Error(error?.message??"Failed to create godown");
   return row.id;
  });
