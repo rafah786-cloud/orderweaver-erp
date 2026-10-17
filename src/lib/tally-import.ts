@@ -103,6 +103,8 @@ export type TallyVoucher = {
   voucher_number: string | null;
   voucher_date: string;
   alter_id?: string | null;
+  /** Complete parsed source voucher retained for later lossless normalization. */
+  source_payload?: Record<string, unknown>;
   entries: Array<{ ledger_name: string; debit: number; credit: number }>;
   inventory_entries: Array<{
     stock_item_name: string;
@@ -599,15 +601,24 @@ export function parseTallyMasters(
       const altLines = arr<Record<string, unknown>>(
         v["LEDGERENTRIES.LIST"] as Record<string, unknown> | Record<string, unknown>[] | undefined,
       );
-      const lines = [...ledgerLines, ...altLines];
+      // Tally may emit the same postings under legacy and ALL* aliases.
+      // Prefer one complete family and ignore empty XML list containers.
+      const hasLedgerLine = (line: Record<string, unknown>) => !!text(line.LEDGERNAME) || !!text(line.AMOUNT);
+      const selectedLedgerLines = ledgerLines.filter(hasLedgerLine).length
+        ? ledgerLines.filter(hasLedgerLine)
+        : altLines.filter(hasLedgerLine);
+      const lines = selectedLedgerLines;
       const accountingLines = [...lines];
 
       const inventoryEntries: TallyVoucher["inventory_entries"] = [];
-      const rawInventoryEntries = [
-        ...arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never),
-        ...arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never),
-      ];
+      const allInventoryEntries = arr<Record<string, unknown>>(v["ALLINVENTORYENTRIES.LIST"] as never)
+        .filter((entry) => !!text(entry.STOCKITEMNAME));
+      const regularInventoryEntries = arr<Record<string, unknown>>(v["INVENTORYENTRIES.LIST"] as never)
+        .filter((entry) => !!text(entry.STOCKITEMNAME));
+      // Tally may serialize equivalent inventory aliases. Never count both families.
+      const rawInventoryEntries = allInventoryEntries.length ? allInventoryEntries : regularInventoryEntries;
       for (const inv of rawInventoryEntries) {
+        if (!text(inv.STOCKITEMNAME)) continue; // ignore empty XML list containers
         accountingLines.push(...arr<Record<string, unknown>>(inv["ACCOUNTINGALLOCATIONS.LIST"] as never));
         const actual = parseQtyUnit(text(inv.ACTUALQTY));
         const billed = parseQtyUnit(text(inv.BILLEDQTY));
@@ -651,6 +662,7 @@ export function parseTallyMasters(
       vouchersOut.push({
         source_id: guid,
         alter_id: alterIdOf(v),
+        source_payload: v,
         has_stable_id: !!text(v.GUID ?? v.REMOTEID ?? v["@_REMOTEID"]),
         voucher_type,
         voucher_number,

@@ -268,6 +268,30 @@ describe("Tally import — TallyPrime 4/5 format", () => {
   });
 });
 
+describe("Tally import — migration source preservation", () => {
+  it("preserves ALTERID and source payload while choosing one ledger alias family", () => {
+    const xml = `<ENVELOPE><BODY><DATA><TALLYMESSAGE>
+      <LEDGER NAME="Alias Customer"><PARENT>Sundry Debtors</PARENT></LEDGER>
+      <VOUCHER VCHTYPE="Journal" REMOTEID="alias-guid">
+        <DATE>20261001</DATE><GUID>alias-guid</GUID><ALTERID>456</ALTERID><VOUCHERNUMBER>J-1</VOUCHERNUMBER>
+        <ALLLEDGERENTRIES.LIST><LEDGERNAME>Alias Customer</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-100</AMOUNT></ALLLEDGERENTRIES.LIST>
+        <ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>100</AMOUNT></ALLLEDGERENTRIES.LIST>
+        <LEDGERENTRIES.LIST><LEDGERNAME>Alias Customer</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-100</AMOUNT></LEDGERENTRIES.LIST>
+        <LEDGERENTRIES.LIST><LEDGERNAME>Sales</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>100</AMOUNT></LEDGERENTRIES.LIST>
+        <ALLINVENTORYENTRIES.LIST><STOCKITEMNAME>Foam</STOCKITEMNAME><ACTUALQTY>2 Nos</ACTUALQTY><BILLEDQTY>2 Nos</BILLEDQTY><RATE>50/Nos</RATE><AMOUNT>100</AMOUNT></ALLINVENTORYENTRIES.LIST>
+        <INVENTORYENTRIES.LIST><STOCKITEMNAME>Foam</STOCKITEMNAME><ACTUALQTY>2 Nos</ACTUALQTY><BILLEDQTY>2 Nos</BILLEDQTY><RATE>50/Nos</RATE><AMOUNT>100</AMOUNT></INVENTORYENTRIES.LIST>
+      </VOUCHER>
+    </TALLYMESSAGE></DATA></BODY></ENVELOPE>`;
+    const parsed = parseTallyMasters(xml, { rawGroups: [], finishedGroups: [], preserveLifecycle: true });
+    expect(parsed.vouchers).toHaveLength(1);
+    expect(parsed.vouchers[0].entries).toHaveLength(2);
+    expect(parsed.vouchers[0].alter_id).toBe("456");
+    expect(parsed.vouchers[0].source_payload).toBeDefined();
+    expect(parsed.vouchers[0].inventory_entries).toHaveLength(1);
+    expect(parsed.vouchers[0].inventory_entries[0].stock_item_name).toBe("Foam");
+  });
+});
+
 describe("Tally import — bill-wise references", () => {
   it("preserves opening, settlement type, dates, signs, and stable identities", () => {
     const xml = `<?xml version="1.0"?><ENVELOPE><BODY><DATA><TALLYMESSAGE>
