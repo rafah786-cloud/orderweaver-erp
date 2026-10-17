@@ -218,32 +218,23 @@ function ZizzHome() {
           <div className="border-t border-[#e1e3e2] bg-[#17324d] px-4 py-4 lg:hidden">
             <nav className="space-y-1">
               {[
-                ["shop", "Shop Mattresses"],
-                ["collections", "Collections"],
-                ["find-your-mattress", "Find Your Mattress"],
-                ["custom", "Custom Mattress"],
-                ["brands", "Our Brands"],
-                ["support", "Help & Support"],
-              ].map(([id, label]) => (
-                id === "shop" ? (
-                  <Link
-                    key={id}
-                    to="/shop"
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
-                  >
-                    {label}
-                  </Link>
-                ) : (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
-                  >
-                    {label}
-                  </a>
-                )
+                ["shop", "Shop Mattresses", "/shop"],
+                ["collections", "Collections", "#collections"],
+                ["find-your-mattress", "Find Your Mattress", "/sleep-finder"],
+                ["custom", "Custom Mattress", "/contact?type=custom"],
+                ["brands", "Our Brands", "#brands"],
+                ["support", "Help & Support", "/contact"],
+                ["wishlist", "Saved Mattresses", "/wishlist"],
+                ["cart", "Cart", "/cart"],
+              ].map(([id, label, href]) => (
+                <a
+                  key={id}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
+                >
+                  {label}
+                </a>
               ))}
               <div className="pt-2"><LoginMenu mobile /></div>
             </nav>
