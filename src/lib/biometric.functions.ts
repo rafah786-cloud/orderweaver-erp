@@ -49,7 +49,10 @@ export const createDevice = createServerFn({ method: "POST" })
     const api_key_hash = await bcrypt.hash(apiKey, 10);
     const { error } = await supabaseAdmin
       .from("device_settings")
-      .insert({ ...data, company_id: companyId, api_key_hash });
+      .insert({
+        device_id: data.device_id, name: data.name, ip_address: data.ip_address, port: data.port,
+        poll_interval_ms: data.poll_interval_ms, is_active: data.is_active, company_id: companyId, api_key_hash,
+      });
     if (error) fail("createDevice", error, "Failed to create device. Please try again.");
     return { apiKey };
   });
