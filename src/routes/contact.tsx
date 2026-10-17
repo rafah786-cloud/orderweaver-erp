@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 const CUSTOMER_CARE_EMAIL = "customercare@aboodtradings.in";
 const CUSTOMER_CARE_PHONE = "+91 92880 22477";
 const WHATSAPP_NUMBER = "919288022477";
-const MAP_QUERY = "Abood Tradings, ALFA Tower, Athanikkal, Valluvambram, Kerala 673642";
+const MAP_QUERY = "Abood Tradings, Build No 2/53-A Alfa Tower, Malappuram Road, Valluvambram, Malappuram, Kerala";
 
 const enquiryLabels: Record<string, string> = {
   general: "General enquiry",
@@ -105,7 +105,7 @@ function ContactPage() {
             <h2 className="mt-2 text-2xl font-semibold">Send an enquiry</h2>
             <div className="mt-4 grid gap-2 text-sm text-[#66706d]">
               <a className="inline-flex items-center gap-2 hover:text-[#9b6c2d]" href={"mailto:" + CUSTOMER_CARE_EMAIL}><Mail className="h-4 w-4" /> {CUSTOMER_CARE_EMAIL}</a>
-              <a className="inline-flex items-center gap-2 hover:text-[#9b6c2d]" href={"tel:" + CUSTOMER_CARE_PHONE.replace(/\\s/g, "")}><Phone className="h-4 w-4" /> {CUSTOMER_CARE_PHONE}</a>
+              <a className="inline-flex items-center gap-2 hover:text-[#9b6c2d]" href={"tel:" + CUSTOMER_CARE_PHONE.replaceAll(" ", "")}><Phone className="h-4 w-4" /> {CUSTOMER_CARE_PHONE}</a>
               <a className="inline-flex items-center gap-2 hover:text-[#9b6c2d]" href={"https://wa.me/" + WHATSAPP_NUMBER} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4" /> WhatsApp customer care</a>
             </div>
 
