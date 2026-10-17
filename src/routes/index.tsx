@@ -183,20 +183,15 @@ function ZizzHome() {
           </nav>
 
           <div className="ml-auto hidden items-center gap-2 sm:flex">
-            <button
-              type="button"
-              aria-label="Search"
-              className="rounded-full p-2.5 text-[#344b5d] hover:bg-white"
-              onClick={() => document.getElementById("shop-search")?.focus()}
-            >
+            <Link to="/shop" aria-label="Search mattresses" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <Search className="h-5 w-5" />
-            </button>
-            <a href="#support" aria-label="Help" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
+            </Link>
+            <a href="/contact?type=guidance" aria-label="Help and buying guidance" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <CircleHelp className="h-5 w-5" />
             </a>
-            <a href="#wishlist" aria-label="Wishlist" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
+            <Link to="/wishlist" aria-label="Wishlist" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <Heart className="h-5 w-5" />
-            </a>
+            </Link>
             <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <ShoppingBag className="h-5 w-5" />
               <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c78c31] px-1 text-[9px] font-bold text-white">0</span>
@@ -223,32 +218,23 @@ function ZizzHome() {
           <div className="border-t border-[#e1e3e2] bg-[#17324d] px-4 py-4 lg:hidden">
             <nav className="space-y-1">
               {[
-                ["shop", "Shop Mattresses"],
-                ["collections", "Collections"],
-                ["find-your-mattress", "Find Your Mattress"],
-                ["custom", "Custom Mattress"],
-                ["brands", "Our Brands"],
-                ["support", "Help & Support"],
-              ].map(([id, label]) => (
-                id === "shop" ? (
-                  <Link
-                    key={id}
-                    to="/shop"
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
-                  >
-                    {label}
-                  </Link>
-                ) : (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
-                  >
-                    {label}
-                  </a>
-                )
+                ["shop", "Shop Mattresses", "/shop"],
+                ["collections", "Collections", "#collections"],
+                ["find-your-mattress", "Find Your Mattress", "/sleep-finder"],
+                ["custom", "Custom Mattress", "/contact?type=custom"],
+                ["brands", "Our Brands", "#brands"],
+                ["support", "Help & Support", "/contact"],
+                ["wishlist", "Saved Mattresses", "/wishlist"],
+                ["cart", "Cart", "/cart"],
+              ].map(([id, label, href]) => (
+                <a
+                  key={id}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
+                >
+                  {label}
+                </a>
               ))}
               <div className="pt-2"><LoginMenu mobile /></div>
             </nav>
@@ -275,9 +261,9 @@ function ZizzHome() {
                   <Link to="/shop" className="inline-flex items-center gap-2 rounded-full bg-[#17324d] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#17324d]/15 transition hover:-translate-y-0.5 hover:bg-[#10283d]">
                     Shop mattresses <ArrowRight className="h-4 w-4" />
                   </Link>
-                  <a href="#find-your-mattress" className="inline-flex items-center gap-2 rounded-full border border-[#bcb6ab] bg-white/70 px-6 py-3.5 text-sm font-bold text-[#263e52] transition hover:bg-white">
+                  <Link to="/sleep-finder" className="inline-flex items-center gap-2 rounded-full border border-[#bcb6ab] bg-white/70 px-6 py-3.5 text-sm font-bold text-[#263e52] transition hover:bg-white">
                     Find my mattress
-                  </a>
+                  </Link>
                 </div>
                 <div className="mt-9 grid max-w-lg grid-cols-2 gap-x-6 gap-y-3 border-t border-[#c9c1b3] pt-6 text-xs font-semibold text-[#62665f] sm:grid-cols-4">
                   {["Spring", "Foam", "Latex", "Coir"].map((item) => (
@@ -326,18 +312,19 @@ function ZizzHome() {
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#17324d] sm:text-4xl">Find the feel that fits you.</h2>
               </div>
               <div className="flex items-center gap-3">
-                <label className="sr-only" htmlFor="shop-search">Search mattresses</label>
-                <div className="hidden items-center gap-2 rounded-full border border-[#d9d7d1] bg-white px-4 py-2.5 sm:flex">
+                <form action="/shop" method="get" className="hidden items-center gap-2 rounded-full border border-[#d9d7d1] bg-white px-4 py-2.5 sm:flex">
+                  <label className="sr-only" htmlFor="shop-search">Search mattresses</label>
                   <Search className="h-4 w-4 text-[#8b918d]" />
-                  <input id="shop-search" className="w-48 bg-transparent text-sm outline-none placeholder:text-[#9aa09c]" placeholder="Search mattresses..." />
-                </div>
-                <a href="#collections" className="inline-flex items-center gap-1 text-sm font-bold text-[#17324d]">View collection <ChevronRight className="h-4 w-4" /></a>
+                  <input id="shop-search" name="q" className="w-48 bg-transparent text-sm outline-none placeholder:text-[#9aa09c]" placeholder="Search mattresses..." />
+                  <button type="submit" className="sr-only">Search</button>
+                </form>
+                <a href="/shop" className="inline-flex items-center gap-1 text-sm font-bold text-[#17324d]">View collection <ChevronRight className="h-4 w-4" /></a>
               </div>
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {categories.map(({ title, subtitle, icon: Icon }, index) => (
-                <a key={title} href="#collections" className={`group relative overflow-hidden rounded-2xl border p-5 transition hover:-translate-y-1 hover:shadow-xl ${index === 0 ? "border-[#cba66e] bg-[#efe3d0]" : "border-[#e1e1dc] bg-white"}`}>
+                <a key={title} href="/shop" className={`group relative overflow-hidden rounded-2xl border p-5 transition hover:-translate-y-1 hover:shadow-xl ${index === 0 ? "border-[#cba66e] bg-[#efe3d0]" : "border-[#e1e1dc] bg-white"}`}>
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#17324d] shadow-sm ring-1 ring-black/5"><Icon className="h-6 w-6" /></div>
                   <h3 className="mt-8 text-lg font-bold text-[#20384d]">{title}</h3>
                   <p className="mt-1 text-xs text-[#737a76]">{subtitle}</p>
@@ -373,7 +360,7 @@ function ZizzHome() {
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-[#20384d]">{item.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-[#737a76]">{item.text}</p>
-                    <a href="#find-your-mattress" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#a16f2c]">Explore <ArrowRight className="h-4 w-4" /></a>
+                    <a href="/shop" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#a16f2c]">Explore mattresses <ArrowRight className="h-4 w-4" /></a>
                   </div>
                 </article>
               ))}
@@ -392,7 +379,7 @@ function ZizzHome() {
                   <div key={item} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white/85"><Check className="h-4 w-4 text-[#d7b06e]" />{item}</div>
                 ))}
               </div>
-              <button type="button" className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#17324d]">Start finding my mattress <ArrowRight className="h-4 w-4" /></button>
+              <Link to="/sleep-finder" className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#17324d]">Start finding my mattress <ArrowRight className="h-4 w-4" /></Link>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 sm:p-7">
               <div className="rounded-2xl bg-[#f5f1e9] p-6 text-[#17324d] sm:p-8">
@@ -431,7 +418,7 @@ function ZizzHome() {
                     </div>
                   ))}
                 </div>
-                <a href="#support" className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#17324d] px-6 py-3.5 text-sm font-bold text-white">Start a custom enquiry <ArrowRight className="h-4 w-4" /></a>
+                <a href="/contact?type=custom" className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#17324d] px-6 py-3.5 text-sm font-bold text-white">Start a custom enquiry <ArrowRight className="h-4 w-4" /></a>
               </div>
               <div className="relative min-h-[300px]">
                 <img src={zizzBedroom.url} alt="Zizz bedroom" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
@@ -476,15 +463,16 @@ function ZizzHome() {
               <p className="mt-4 text-sm leading-6 text-[#707772]">The new storefront is designed around discovery first, then product comparison, size selection and purchase.</p>
             </div>
             {[
-              [MapPin, "Visit / enquire", "Talk to our team about fit, size and product requirements."],
-              [CircleHelp, "Buying guidance", "Use the sleep finder and comparison journey before you buy."],
-              [Mail, "Business enquiries", "Retail, wholesale, hospitality and project requirements."],
-            ].map(([Icon, title, text]) => (
-              <div key={String(title)} className="rounded-2xl border border-[#deded9] bg-white p-6">
+              [MapPin, "Visit / enquire", "Talk to our team about fit, size and product requirements.", "/contact"],
+              [CircleHelp, "Buying guidance", "Use the sleep finder and comparison journey before you buy.", "/sleep-finder"],
+              [Mail, "Business enquiries", "Retail, wholesale, hospitality and project requirements.", "/contact?type=business"],
+            ].map(([Icon, title, text, href]) => (
+              <a key={String(title)} href={String(href)} className="group rounded-2xl border border-[#deded9] bg-white p-6 transition hover:-translate-y-1 hover:border-[#c6a26e] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b17b2c]">
                 <Icon className="h-6 w-6 text-[#a16f2c]" />
                 <h3 className="mt-5 text-lg font-bold text-[#243b4e]">{String(title)}</h3>
                 <p className="mt-2 text-sm leading-6 text-[#747a76]">{String(text)}</p>
-              </div>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#a16f2c]">Continue <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+              </a>
             ))}
           </div>
         </section>
@@ -496,7 +484,7 @@ function ZizzHome() {
               <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Retailer, wholesaler, hotel or project?</h2>
               <p className="mt-2 text-sm text-white/65">Connect with House of Abood Tradings for supply and manufacturing enquiries.</p>
             </div>
-            <a href="mailto:gm@zizzmattress.com" className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#17324d]">Talk to us <ArrowRight className="h-4 w-4" /></a>
+            <a href="/contact?type=business" className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#17324d]">Talk to us <ArrowRight className="h-4 w-4" /></a>
           </div>
         </section>
       </main>
@@ -519,7 +507,20 @@ function ZizzHome() {
                   item === "Mattresses" ? (
                     <Link key={item} to="/shop" className="block text-sm hover:text-white">{item}</Link>
                   ) : (
-                    <a key={item} href="#support" className="block text-sm hover:text-white">{item}</a>
+                    <a key={item} href={({
+                    Mattresses: "/shop",
+                    Collections: "/#collections",
+                    "Find Your Mattress": "/sleep-finder",
+                    "Custom Mattress": "/contact?type=custom",
+                    "Buying Guide": "/sleep-finder",
+                    Contact: "/contact",
+                    Warranty: "/contact?type=warranty",
+                    "Track Order": "/contact?type=tracking",
+                    Wholesale: "/contact?type=business",
+                    Projects: "/contact?type=business",
+                    Hospitality: "/contact?type=business",
+                    Enquiries: "/contact?type=business",
+                  } as Record<string, string>)[item] ?? "/contact"} className="block text-sm hover:text-white">{item}</a>
                   )
                 )}
               </div>
