@@ -1,7 +1,8 @@
 import { createFileRoute, Navigate, Outlet, useLocation, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar, MobileTopBar } from "@/components/AppSidebar";
-import { defaultRouteForRoles, isRouteDenied } from "@/lib/permissions";
+import { defaultRouteForRoles } from "@/lib/permissions";
+import { decideAppAccess } from "@/lib/app-access";
 import { Bell, Search, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider, useCompany } from "@/lib/company-context";
@@ -19,8 +20,16 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const { loading, session, profile, roles } = useAuth();
   const location = useLocation();
+  const decision = decideAppAccess({
+    loading,
+    sessionUserId: session?.user.id ?? null,
+    profile,
+    roles,
+    pathname: location.pathname,
+    href: location.href,
+  });
 
-  if (loading) {
+  if (decision.kind === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <div className="space-y-2 text-center">
@@ -31,12 +40,12 @@ function AppLayout() {
     );
   }
 
-  if (!session) {
-    return <Navigate to="/login" search={{ redirect: location.href }} replace />;
+  if (decision.kind === "login") {
+    return <Navigate to="/login" search={{ redirect: decision.redirect }} replace />;
   }
 
   // Do not treat a temporarily unloaded profile as a rejected user.
-  if (!profile) {
+  if (decision.kind === "profile-loading" || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <div className="space-y-2 text-center">
@@ -47,9 +56,9 @@ function AppLayout() {
     );
   }
 
-  if (profile.status !== "approved") return <Navigate to="/pending" />;
+  if (decision.kind === "pending") return <Navigate to="/pending" replace />;
 
-  const denied = isRouteDenied(location.pathname, roles);
+  const denied = decision.kind === "denied";
 
   return (
     <CompanyProvider>
