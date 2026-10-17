@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BedDouble, Search, ShoppingBag, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowRight, BedDouble, Heart, Search, ShoppingBag, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { readZizzWishlist, subscribeZizzWishlist, toggleZizzWishlist } from "@/lib/zizz-wishlist";
 import { mattressModels } from "@/lib/zizz-store-catalog";
 
 export const Route = createFileRoute("/shop")({
+  validateSearch: (search: Record<string, unknown>) => ({ q: typeof search.q === "string" ? search.q : "" }),
   head: () => ({
     meta: [
       { title: "Shop Mattresses | Zizz Mattress" },
@@ -37,9 +39,16 @@ function MattressArtwork({ index }: { index: number }) {
 }
 
 function ShopPage() {
-  const [query, setQuery] = useState("");
-  const [availability, setAvailability] = useState("all");
+  const { q } = Route.useSearch();
+  const [query, setQuery] = useState(q);
+  const [savedSlugs, setSavedSlugs] = useState<string[]>([]);
   const [sort, setSort] = useState("name");
+  useEffect(() => setQuery(q), [q]);
+  useEffect(() => {
+    const sync = () => setSavedSlugs(readZizzWishlist());
+    sync();
+    return subscribeZizzWishlist(sync);
+  }, []);
   const models = useMemo(() => {
     const filtered = mattressModels.filter((model) => model.name.toLowerCase().includes(query.trim().toLowerCase()));
     return [...filtered].sort((a, b) => sort === "code" ? a.code.localeCompare(b.code) : a.name.localeCompare(b.name));
@@ -52,6 +61,7 @@ function ShopPage() {
           <Link to="/" className="text-sm font-bold tracking-tight text-[#18334b]">ZIZZ <span className="font-normal text-[#8a8176]">/ Home</span></Link>
           <div className="flex items-center gap-3">
             <Link to="/shop" className="text-sm font-semibold text-[#9b6c2d]">Shop</Link>
+            <Link to="/wishlist" className="text-sm font-semibold text-[#6f777a]">Saved</Link>
             <Link to="/cart" className="inline-flex items-center gap-2 rounded-full border border-[#e2ddd3] bg-[#faf8f4] px-4 py-2 text-sm font-semibold hover:bg-white"><ShoppingBag className="h-4 w-4" /> Cart</Link>
           </div>
         </div>
@@ -91,7 +101,7 @@ function ShopPage() {
           <div className="text-sm text-[#7b7c78]">{models.length} models listed</div>
         </div>
         <div className="mt-7 grid gap-3 rounded-2xl border border-[#e5dfd5] bg-white p-3 sm:grid-cols-[1fr_190px] sm:p-4">
-          <label className="flex min-w-0 items-center gap-3 rounded-xl bg-[#f8f6f1] px-4 py-3"><Search className="h-4 w-4 shrink-0 text-[#8d918c]" /><span className="sr-only">Search models</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by mattress model…" className="w-full bg-transparent text-sm outline-none placeholder:text-[#9a9b96]" /></label>
+          <label className="flex min-w-0 items-center gap-3 rounded-xl bg-[#f8f6f1] px-4 py-3"><Search className="h-4 w-4 shrink-0 text-[#8d918c]" /><span className="sr-only">Search models</span><input name="q" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by mattress model…" className="w-full bg-transparent text-sm outline-none placeholder:text-[#9a9b96]" /></label>
           <label className="flex items-center gap-3 rounded-xl bg-[#f8f6f1] px-4 py-3"><SlidersHorizontal className="h-4 w-4 text-[#8d918c]" /><span className="sr-only">Sort models</span><select value={sort} onChange={(event) => setSort(event.target.value)} className="w-full bg-transparent text-sm outline-none"><option value="name">Sort: A–Z</option><option value="code">Sort: Model code</option></select></label>
         </div>
         <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -99,7 +109,7 @@ function ShopPage() {
             <article key={model.code} className="group overflow-hidden rounded-2xl border border-[#e4dfd5] bg-white transition duration-300 hover:-translate-y-1 hover:border-[#c8b18e] hover:shadow-[0_20px_45px_-28px_rgba(31,46,58,.4)]">
               <Link to="/shop/$slug" params={{ slug: model.slug }} aria-label={`View ${model.name} details`}><MattressArtwork index={index} /></Link>
               <div className="p-5">
-                <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a87838]">{model.code}</p><h3 className="mt-1.5 text-lg font-semibold tracking-tight">{model.name}</h3></div><span className="rounded-full bg-[#f6f1e7] px-2.5 py-1 text-[10px] font-semibold text-[#816744]">Preparing</span></div>
+                <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a87838]">{model.code}</p><h3 className="mt-1.5 text-lg font-semibold tracking-tight">{model.name}</h3></div><button type="button" aria-label={savedSlugs.includes(model.slug) ? "Remove " + model.name + " from wishlist" : "Save " + model.name + " to wishlist"} aria-pressed={savedSlugs.includes(model.slug)} onClick={() => setSavedSlugs(toggleZizzWishlist(model.slug))} className="rounded-full border border-[#e4dfd5] p-2 text-[#9b6c2d] transition hover:bg-[#f8f2e8] focus:outline-none focus:ring-2 focus:ring-[#b17b2c]"><Heart className={"h-4 w-4 " + (savedSlugs.includes(model.slug) ? "fill-current" : "")} /></button></div>
                 <p className="mt-3 min-h-10 text-xs leading-5 text-[#777d7b]">Specifications and size-wise pricing will be published after confirmation.</p>
                 <Link to="/shop/$slug" params={{ slug: model.slug }} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#19364f] hover:text-[#9b6c2d]">View model <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></Link>
               </div>
