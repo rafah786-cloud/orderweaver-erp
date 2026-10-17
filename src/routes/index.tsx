@@ -200,7 +200,7 @@ function ZizzHome() {
             <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <ShoppingBag className="h-5 w-5" />
               <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c78c31] px-1 text-[9px] font-bold text-white">0</span>
-            </a>
+            </Link>
             {session && (
               <Link to="/dashboard" className="rounded-full px-3 py-2 text-sm font-semibold text-[#17324d] hover:bg-white">
                 ERP
