@@ -175,7 +175,7 @@ function ZizzHome() {
           </Link>
 
           <nav className="ml-3 hidden items-center gap-6 lg:flex" aria-label="Main navigation">
-            <a href="#shop" className="text-sm font-semibold text-[#32495d] hover:text-[#b07d2b]">Shop</a>
+            <Link to="/shop" className="text-sm font-semibold text-[#32495d] hover:text-[#b07d2b]">Shop Mattresses</Link>
             <a href="#collections" className="text-sm font-semibold text-[#32495d] hover:text-[#b07d2b]">Collections</a>
             <a href="#find-your-mattress" className="text-sm font-semibold text-[#32495d] hover:text-[#b07d2b]">Find Your Mattress</a>
             <a href="#custom" className="text-sm font-semibold text-[#32495d] hover:text-[#b07d2b]">Custom Mattress</a>
@@ -197,7 +197,7 @@ function ZizzHome() {
             <a href="#wishlist" aria-label="Wishlist" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <Heart className="h-5 w-5" />
             </a>
-            <a href="#cart" aria-label="Cart" className="relative rounded-full p-2.5 text-[#344b5d] hover:bg-white">
+            <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <ShoppingBag className="h-5 w-5" />
               <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c78c31] px-1 text-[9px] font-bold text-white">0</span>
             </a>
