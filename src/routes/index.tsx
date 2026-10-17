@@ -325,18 +325,18 @@ function ZizzHome() {
                   <input id="shop-search" name="q" className="w-48 bg-transparent text-sm outline-none placeholder:text-[#9aa09c]" placeholder="Search mattresses..." />
                   <button type="submit" className="sr-only">Search</button>
                 </form>
-                <a href="/shop" className="inline-flex items-center gap-1 text-sm font-bold text-[#17324d]">View collection <ChevronRight className="h-4 w-4" /></a>
+                <Link to="/shop" className="inline-flex items-center gap-1 text-sm font-bold text-[#17324d]">View collection <ChevronRight className="h-4 w-4" /></Link>
               </div>
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {categories.map(({ title, subtitle, icon: Icon }, index) => (
-                <a key={title} href="/shop" className={`group relative overflow-hidden rounded-2xl border p-5 transition hover:-translate-y-1 hover:shadow-xl ${index === 0 ? "border-[#cba66e] bg-[#efe3d0]" : "border-[#e1e1dc] bg-white"}`}>
+                <Link key={title} to="/shop" className={`group relative overflow-hidden rounded-2xl border p-5 transition hover:-translate-y-1 hover:shadow-xl ${index === 0 ? "border-[#cba66e] bg-[#efe3d0]" : "border-[#e1e1dc] bg-white"}`}>
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#17324d] shadow-sm ring-1 ring-black/5"><Icon className="h-6 w-6" /></div>
                   <h3 className="mt-8 text-lg font-bold text-[#20384d]">{title}</h3>
                   <p className="mt-1 text-xs text-[#737a76]">{subtitle}</p>
                   <div className="mt-6 flex items-center gap-1 text-xs font-bold text-[#a16f2c]">Explore <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" /></div>
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -367,7 +367,7 @@ function ZizzHome() {
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-[#20384d]">{item.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-[#737a76]">{item.text}</p>
-                    <a href="/shop" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#a16f2c]">Explore mattresses <ArrowRight className="h-4 w-4" /></a>
+                    <Link to="/shop" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#a16f2c]">Explore mattresses <ArrowRight className="h-4 w-4" /></Link>
                   </div>
                 </article>
               ))}
