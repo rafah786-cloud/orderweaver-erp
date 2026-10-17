@@ -520,7 +520,7 @@ function ZizzHome() {
                   if (item === "Track Order") return <Link key={item} to="/contact" search={{ type: "tracking" }} className={className}>{item}</Link>;
                   if (item === "Wholesale" || item === "Projects" || item === "Hospitality" || item === "Enquiries") return <Link key={item} to="/contact" search={{ type: "business" }} className={className}>{item}</Link>;
                   return <Link key={item} to="/contact" className={className}>{item}</Link>;
-                })
+                })}
               </div>
             </div>
           ))}
