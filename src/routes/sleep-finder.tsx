@@ -32,7 +32,7 @@ function SleepFinderPage() {
     "Additional requirements: " + (extra || "None provided"),
   ].join("\n");
 
-  const contactHref = "/contact?type=guidance&details=" + encodeURIComponent(summary);
+  const contactDetails = summary;
 
   return (
     <main className="min-h-screen bg-[#f8f6f1] text-[#19364f]">
@@ -75,7 +75,7 @@ function SleepFinderPage() {
             <textarea value={extra} onChange={(event) => { setExtra(event.target.value); setShowSummary(false); }} rows={3} className="mt-2 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-4 py-3 font-normal" placeholder="Room for two sleepers, custom size, preferred fabric, etc." />
           </label>
           <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#19364f] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#294c67]">Prepare my guidance request <ArrowRight className="h-4 w-4" /></button>
-          {showSummary && <div className="rounded-2xl border border-[#e7dfd1] bg-[#faf6ef] p-4" aria-live="polite"><p className="flex items-center gap-2 text-sm font-semibold"><CheckCircle2 className="h-4 w-4 text-[#9b6c2d]" /> Your preferences are ready.</p><p className="mt-2 text-sm leading-6 text-[#707976]">Because verified product specifications and prices are not yet published in the store, this tool won’t guess or auto-select a model. Send your preferences to customer care for a real recommendation.</p><a href={contactHref} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#19364f] px-5 py-3 text-sm font-bold text-white">Continue to enquiry <ArrowRight className="h-4 w-4" /></a></div>}
+          {showSummary && <div className="rounded-2xl border border-[#e7dfd1] bg-[#faf6ef] p-4" aria-live="polite"><p className="flex items-center gap-2 text-sm font-semibold"><CheckCircle2 className="h-4 w-4 text-[#9b6c2d]" /> Your preferences are ready.</p><p className="mt-2 text-sm leading-6 text-[#707976]">Because verified product specifications and prices are not yet published in the store, this tool won’t guess or auto-select a model. Send your preferences to customer care for a real recommendation.</p><Link to="/contact" search={{ type: "guidance", details: contactDetails }} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#19364f] px-5 py-3 text-sm font-bold text-white">Continue to enquiry <ArrowRight className="h-4 w-4" /></Link></div>}
         </form>
       </div>
     </main>
