@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0D7377">
+  <title>Connection required | Mattress Maestro</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f0eb; color: #1f2933; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+    main { width: min(100%, 520px); border: 1px solid #ded8d1; background: #fff; border-radius: 22px; padding: 28px; box-sizing: border-box; }
+    .eyebrow { font-size: 12px; letter-spacing: .13em; text-transform: uppercase; color: #0d7377; font-weight: 700; }
+    h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.1; margin: 12px 0; }
+    p { line-height: 1.6; color: #59636e; }
+    button { min-height: 44px; border: 0; border-radius: 10px; background: #0d7377; color: white; font: inherit; font-weight: 600; padding: 0 18px; cursor: pointer; }
+    .privacy { font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 22px; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Mattress Maestro</div>
+    <h1>You’re offline</h1>
+    <p>The app shell is available, but current business information requires a secure connection to the live company database.</p>
+    <p>Reconnect to continue with orders, inventory, accounting, production and customer records.</p>
+    <button type="button" onclick="window.location.reload()">Try again</button>
+    <p class="privacy">For data integrity and confidentiality, this app does not cache private ERP records for offline viewing. Offline capture workflows will be enabled only where secure device storage and conflict handling are implemented.</p>
+  </main>
+</body>
+</html>

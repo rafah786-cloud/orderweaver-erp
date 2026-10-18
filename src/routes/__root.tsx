@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Outlet,
   Link,
@@ -155,6 +156,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    // Share the existing root-scoped worker with web push so push subscriptions are not replaced.
+    void navigator.serviceWorker.register("/push-service-worker.js", { scope: "/" }).catch(() => {
+      // Installation is optional; all ERP data remains online-only.
+    });
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
