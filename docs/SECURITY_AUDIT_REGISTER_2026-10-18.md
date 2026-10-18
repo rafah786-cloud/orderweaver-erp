@@ -56,7 +56,13 @@ These references are benchmarks, not an assertion that this ERP already implemen
 
 **Severity:** Medium–High; exploit requires a valid authenticated account whose profile row is missing, but that account could recreate the row as approved.  
 **Evidence:** The live permissive INSERT policy allowed `public.has_role(auth.uid(),'admin') OR id=auth.uid()`. Normal signup already creates profiles through the SECURITY DEFINER trigger on `auth.users`, so the self-insert branch is not required by the application signup path. The profile status defaults to pending, but a direct self-insert can supply a different value if a profile row does not exist.  
-**Fix proposed in PR #107:** Replace the policy with admin-only INSERT while preserving the existing auth.users signup trigger. An isolated PostgreSQL test attempts self-insertion as approved, checks that a non-admin cannot create profiles for others, and verifies that an approved admin can still provision profiles. Do not deploy until the exact CI run passes and live policy/trigger readback is confirmed.
+**Fix and verification:** PR #107 merged after all CI jobs passed; its migration was applied live on 18 October 2026. Readback confirms the INSERT policy now requires the approved Admin role and the existing auth.users signup trigger remains present. The isolated PostgreSQL regression test verifies self-approval denial, non-admin provisioning denial and admin provisioning success.
+
+### SEC-2026-011 — Vendor can update their supplier master record, including balance fields
+
+**Severity:** High — an external vendor account could directly change supplier-master values used by the buyer's ERP.  
+**Evidence:** The connected database has a permissive `sup_vendor_update_own` UPDATE policy on `public.suppliers` that permits vendors to update their linked supplier row. The table includes `opening_balance`, `current_balance`, `gstin`, name and contact fields. The live Vendor portal provides purchase-order review/acknowledgement and ledger viewing, but no supplier-master edit workflow. The RLS scope stops company/user reassignment, but it does not prevent a vendor from changing their own financial/profile fields.  
+**Fix proposed in PR:** Drop only `sup_vendor_update_own`. Keep the existing vendor read policy and Admin/Production supplier maintenance policy. Add isolated PostgreSQL checks for vendor own-row balance/GST/contact changes, another vendor's row, cross-company scope, and continued staff maintenance. Do not deploy before the exact CI passes and live policy readback confirms the direct vendor UPDATE policy is absent.
 
 ### SEC-2026-010 — Excess non-row table privileges on public ERP tables
 

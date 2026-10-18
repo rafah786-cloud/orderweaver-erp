@@ -53,6 +53,10 @@ jobs:
         run: |
           export PATH="$(pg_config --bindir):$PATH"
           python security-tests/vendor_purchase_bill_ack.py supabase/migrations/20261018160000_harden_vendor_purchase_bill_ack.sql
+      - name: Test vendor supplier-master write restrictions
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/vendor_supplier_master_access.py supabase/migrations/20261018190000_restrict_vendor_supplier_master_updates.sql
       - name: Test approved-profile database access boundary
         run: |
           export PATH="$(pg_config --bindir):$PATH"
