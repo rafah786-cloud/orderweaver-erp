@@ -90,3 +90,41 @@ CREATE POLICY website_enquiries_sales_admin_update
 
 COMMENT ON TABLE public.website_enquiries IS
   'Website enquiry inbox. Public submissions are accepted only by the server-side validated endpoint; authenticated access is restricted to approved Admin/Sales users in the active company.';
+
+
+-- Route new website leads to the existing in-app notification inbox.
+INSERT INTO public.notification_events (event_key, label, description, category, is_active)
+VALUES (
+  'website.enquiry.created',
+  'New Website Enquiry',
+  'A visitor submits the Zizz Mattress website enquiry form.',
+  'crm',
+  true
+)
+ON CONFLICT (event_key) DO UPDATE SET
+  label = EXCLUDED.label,
+  description = EXCLUDED.description,
+  category = EXCLUDED.category,
+  is_active = true,
+  updated_at = now();
+
+INSERT INTO public.notification_event_channels
+  (event_key, channel, is_enabled, template_name, subject_template, body_template)
+VALUES (
+  'website.enquiry.created',
+  'in_app',
+  true,
+  'Website Enquiry',
+  'New Zizz website enquiry',
+  'Reference: {{reference_number}}' || E'\n' ||
+  'Customer: {{customer_name}}' || E'\n' ||
+  'Type: {{enquiry_type}}' || E'\n' ||
+  'Model: {{model_name}}' || E'\n' ||
+  'Open /website-enquiries in Mattress Maestro to review and follow up.'
+)
+ON CONFLICT (event_key, channel) DO UPDATE SET
+  is_enabled = true,
+  template_name = EXCLUDED.template_name,
+  subject_template = EXCLUDED.subject_template,
+  body_template = EXCLUDED.body_template,
+  updated_at = now();
