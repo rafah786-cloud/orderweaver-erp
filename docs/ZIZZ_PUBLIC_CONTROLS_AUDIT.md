@@ -13,12 +13,13 @@ The homepage had multiple visible controls with no action or a generic homepage 
 - “Business enquiries”, custom enquiries, warranty/service and order-tracking footer items are routed to the enquiry form with the matching enquiry type.
 - Footer routes now differ by intent; they no longer all jump to the same help section.
 - Header help, wishlist, cart, and mobile menu destinations have working routes. The wishlist persists in browser storage and can be removed from the saved list.
-- Model detail pages let customers enquire about a model and save it to the wishlist instead of presenting a dead disabled purchase button.
+- Model detail and catalogue cards let customers add models to a persistent enquiry list; the list supports quantity changes, removal, clearing and a pre-filled multi-model quotation request. Model detail pages also support direct model enquiries and wishlist saves.
+- The homepage enquiry-list badge reflects its current saved quantity instead of always showing `0`.
 
 ## Exact limits / launch gates
 
 - The map address uses the business address already configured in `src/lib/print-config.ts` and a public Valluvambram business listing. The sources reviewed do **not** confirm that the ALFA Tower address is the production factory entrance. The page explicitly tells visitors to confirm factory access with customer care until the owner confirms the exact factory pin.
-- Customer enquiries are prepared for `customercare@aboodtradings.in` and the publicly listed WhatsApp number +91 92880 22477. The browser opens the user's mail or WhatsApp app; the user must confirm/send there. No new server-side email provider, WhatsApp Business API, or credential was configured.
+- Customer enquiries are prepared for `customercare@aboodtradings.in` and the publicly listed WhatsApp number +91 92880 22477. The browser opens the visitor's email or WhatsApp app; the visitor must confirm/send there. A server-side email submission/notification service is not configured yet.
 - The 23 mattress names in the repository are draft records only. Approved variants, size-specific prices, specifications, stock/lead times, real product images, tax behavior, delivery dimensions/rates, serviceability, payment onboarding, policy text, persistent orders, secure callbacks/webhooks, and fulfilment are still missing or unverified.
 - For those reasons, checkout and paid ordering remain deliberately disabled. Enabling purchases without these details could accept incorrect prices or promise unavailable products. The new pages improve navigation, customer enquiries and model selection; they do not falsely claim that the live payment/order system is complete.
 - This change makes no database, Supabase, inventory, accounting or ERP data changes. No Lovable credits were used.
