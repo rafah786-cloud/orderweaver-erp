@@ -11,7 +11,7 @@ import { AccountMenu } from "@/components/AccountMenu";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard": LayoutDashboard, "/parties": Users, "/website-enquiries": Inbox, "/invoices": FileText, "/sales-orders": ShoppingCart, "/boq": Package,
-  "/purchases": Truck, "/fleet": Fuel, "/marketing": Megaphone, "/maintenance": Wrench, "/quality": ShieldCheck, "/smart-sleeptec": Cpu, "/production": Factory, "/mrp": ClipboardList, "/capacity": Gauge, "/operations": Network, "/employees": UserCog, "/attendance": CalendarCheck,
+  "/purchases": Truck, "/fleet": Fuel, "/marketing": Megaphone, "/maintenance": Wrench, "/quality": ShieldCheck, "/smart-sleeptec": Cpu, "/shop-floor": Factory, "/shipments": Truck, "/production": Factory, "/mrp": ClipboardList, "/capacity": Gauge, "/operations": Network, "/employees": UserCog, "/attendance": CalendarCheck,
   "/payslips": Receipt, "/approvals": ShieldCheck, "/whatsapp": MessageCircle, "/communications": MessageCircle,
   "/tally-import": Database, "/accounting": BookOpen, "/gst": FileSpreadsheet, "/inventory": Boxes, "/banking": Landmark,
   "/ai": Sparkles, "/vendor": Truck, "/settings": Settings,
@@ -19,7 +19,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 const LABELS: Record<string, string> = {
   "/dashboard": "Dashboard", "/parties": "Parties", "/website-enquiries": "Website Enquiries", "/invoices": "Invoices", "/sales-orders": "Sales Orders", "/boq": "BOQ",
-  "/purchases": "Purchases", "/fleet": "Fleet & Fuel", "/marketing": "Marketing & Campaigns", "/maintenance": "Maintenance & Assets", "/quality": "Quality Management", "/smart-sleeptec": "Smart SleepTec Studio", "/production": "Production", "/mrp": "Material Planning", "/capacity": "Capacity Preview", "/operations": "Enterprise Operations", "/employees": "Employees",
+  "/purchases": "Purchases", "/fleet": "Fleet & Fuel", "/marketing": "Marketing & Campaigns", "/maintenance": "Maintenance & Assets", "/quality": "Quality Management", "/smart-sleeptec": "Smart SleepTec Studio", "/shop-floor": "Shop Floor", "/shipments": "Shipments & Delivery", "/production": "Production", "/mrp": "Material Planning", "/capacity": "Capacity Preview", "/operations": "Enterprise Operations", "/employees": "Employees",
   "/attendance": "Attendance", "/payslips": "Payslips", "/approvals": "User Approvals", "/whatsapp": "WhatsApp",
   "/communications": "Communications", "/tally-import": "Tally Import", "/accounting": "Accounting", "/gst": "GST",
   "/inventory": "Inventory", "/banking": "Banking", "/ai": "AI Intelligence", "/vendor": "Vendor Portal", "/settings": "Settings",
@@ -34,8 +34,8 @@ const GROUPS = [
   { label: "Sales & Customers", prefixes: ["/parties", "/website-enquiries", "/sales-orders", "/invoices"] },
   { label: "Growth & Marketing", prefixes: ["/marketing"] },
   { label: "Purchasing & Inventory", prefixes: ["/purchases", "/inventory", "/boq"] },
-  { label: "Logistics & Fleet", prefixes: ["/fleet"] },
-  { label: "Production & Engineering", prefixes: ["/production", "/mrp", "/capacity", "/operations", "/maintenance", "/quality", "/smart-sleeptec"] },
+  { label: "Logistics & Fleet", prefixes: ["/fleet", "/shipments"] },
+  { label: "Production & Engineering", prefixes: ["/production", "/mrp", "/capacity", "/operations", "/maintenance", "/quality", "/smart-sleeptec", "/shop-floor"] },
   { label: "Finance", prefixes: ["/accounting", "/banking", "/gst", "/local-tally-accounts"] },
   { label: "People", prefixes: ["/employees", "/attendance", "/payslips"] },
   { label: "Automation & Admin", prefixes: ["/ai", "/whatsapp", "/communications", "/approvals", "/tally-import", "/vendor", "/settings"] },
