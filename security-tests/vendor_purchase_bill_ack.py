@@ -260,18 +260,18 @@ def main() -> None:
             )
             expect("vendor cannot update another company's bill", cross_company_update.stdout.strip() == "")
 
-            internal_edit = sql(
-                f"UPDATE public.purchase_bills SET total_amount=1100 WHERE id='{BILL_A}' RETURNING total_amount",
-                role="production",
-            )
-            expect("authorized production role retains its existing bill editing path", internal_edit.stdout.strip() == "1100")
-
             final = sql(
                 f"SELECT total_amount::text || ':' || cgst_amount::text || ':' || receipt_status "
                 f"FROM public.purchase_bills WHERE id='{BILL_A}'",
                 caller=False,
             ).stdout.strip()
             expect("vendor attack attempts left the accepted bill's commercial/tax/receipt fields unchanged", final == "1000:50:draft")
+
+            internal_edit = sql(
+                f"UPDATE public.purchase_bills SET total_amount=1100 WHERE id='{BILL_A}' RETURNING total_amount",
+                role="production",
+            )
+            expect("authorized production role retains its existing bill editing path", internal_edit.stdout.strip() == "1100")
 
             print(f"PASS: {checks} isolated PostgreSQL vendor-boundary checks.")
         finally:
