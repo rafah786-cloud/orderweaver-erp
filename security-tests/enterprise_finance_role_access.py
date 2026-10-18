@@ -37,7 +37,13 @@ def main() -> None:
         env.update(PGHOST=str(socket), PGPORT="55448", PGDATABASE="postgres", PGUSER="postgres")
 
         def run(args, check=True):
-            return subprocess.run(args, env=env, text=True, capture_output=True, check=check)
+            result = subprocess.run(args, env=env, text=True, capture_output=True, check=False)
+            if check and result.returncode != 0:
+                raise RuntimeError(
+                    f"Command failed ({result.returncode}): {args[0]}\n"
+                    f"stdout: {result.stdout[-3000:]}\nstderr: {result.stderr[-5000:]}"
+                )
+            return result
 
         def local(args):
             if os.geteuid() == 0:
