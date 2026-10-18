@@ -11,6 +11,7 @@ from pathlib import Path
 
 USER_PENDING = "00000000-0000-0000-0000-000000000001"
 USER_APPROVED = "00000000-0000-0000-0000-000000000002"
+USER_MISSING_PROFILE = "00000000-0000-0000-0000-000000000003"
 COMPANY_A = "10000000-0000-0000-0000-000000000001"
 COMPANY_B = "10000000-0000-0000-0000-000000000002"
 ROW_A = "20000000-0000-0000-0000-000000000001"
@@ -106,6 +107,9 @@ def main() -> None:
                 GRANT SELECT ON public.profiles TO authenticated;
                 CREATE POLICY users_read_own_profile ON public.profiles
                   FOR SELECT TO authenticated USING (id=auth.uid());
+                CREATE POLICY "admin insert profiles" ON public.profiles
+                  FOR INSERT TO authenticated
+                  WITH CHECK (public.has_role(auth.uid(),'admin'::public.app_role) OR id=auth.uid());
                 CREATE FUNCTION public.is_approved(_user_id uuid) RETURNS boolean
                   LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT _user_id=auth.uid()
@@ -200,6 +204,11 @@ def main() -> None:
                 """, caller=False)
 
             sql(migration.read_text(encoding="utf-8"), caller=False)
+            if len(sys.argv) > 2:
+                extra_migration = Path(sys.argv[2]).resolve()
+                if not extra_migration.is_file():
+                    raise FileNotFoundError(extra_migration)
+                sql(extra_migration.read_text(encoding="utf-8"), caller=False)
 
             # Pending accounts can still see their own profile/status so the
             # application can render the pending-approval screen.
@@ -226,6 +235,32 @@ def main() -> None:
             expect("approved user retains active company context through shared helper",
                    sql("SELECT public.current_company_id()::text",
                        user=USER_APPROVED, company=COMPANY_A, approved=True).stdout.strip() == COMPANY_A)
+
+            # The second migration removes the unnecessary self-insert
+            # branch from the profile policy. Signup itself is still created by
+            # the SECURITY DEFINER auth.users trigger, not by client profile INSERT.
+            self_approval = sql(
+                f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
+                f"('{USER_MISSING_PROFILE}','approved','{COMPANY_A}')",
+                user=USER_MISSING_PROFILE,
+                check=False,
+            )
+            expect("a user without a profile cannot self-insert an approved profile",
+                   self_approval.returncode != 0)
+            expect("a non-admin cannot create a profile row for another user",
+                   sql(
+                       f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
+                       f"('{ROW_B}','pending','{COMPANY_A}')",
+                       user=USER_APPROVED,
+                       check=False,
+                   ).returncode != 0)
+            expect("approved admin retains profile provisioning capability",
+                   sql(
+                       f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
+                       f"('{USER_MISSING_PROFILE}','pending','{COMPANY_A}')",
+                       user=USER_APPROVED,
+                       check=False,
+                   ).returncode == 0)
 
             # The new restrictive policy must neutralize existing permissive
             # policies on normal company-scoped data, including writes.
