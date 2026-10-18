@@ -37,7 +37,7 @@ describe("Zizz public route hierarchy", () => {
 
   it("keeps homepage hash links attached to real sections and uses GET search to reach the shop", () => {
     const home = source("index.tsx");
-    const ids = new Set([...home.matchAll(/\\bid=["']([^"']+)["']/g)].map((match) => match[1]));
+    const ids = new Set([...home.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]));
     const hashLinks = [...home.matchAll(/href=["']#([^"']+)["']/g)].map((match) => match[1]);
 
     expect(home).not.toMatch(/href=["']#["']/);
