@@ -93,8 +93,9 @@ def main() -> None:
                 CREATE SCHEMA auth;
                 CREATE TYPE public.app_role AS ENUM
                   ('admin','accountant','sales','production','hr','employee','customer','vendor');
-                CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
-                  $ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $;
+                CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $fn$
+                  SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+                $fn$;
                 CREATE TABLE public.profiles(
                   id uuid PRIMARY KEY, status text NOT NULL, active_company_id uuid
                 );
