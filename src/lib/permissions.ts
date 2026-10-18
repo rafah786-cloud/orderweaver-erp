@@ -10,6 +10,7 @@ export const ROUTE_ROLES: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/dashboard", roles: ["admin", "accountant", "sales", "production", "hr", "customer", "employee"] },
   { prefix: "/parties", roles: ["admin", "sales"] },
   { prefix: "/website-enquiries", roles: ["admin", "sales"] },
+  { prefix: "/marketing", roles: ["admin", "sales"] },
   { prefix: "/invoices", roles: ["admin", "sales", "accountant", "customer"] },
   { prefix: "/sales-orders", roles: ["admin", "sales", "customer"] },
   { prefix: "/boq", roles: ["admin", "sales", "production"] },
