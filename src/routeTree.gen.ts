@@ -54,6 +54,8 @@ import { Route as AppSmartSleepTecRouteImport } from './routes/_app.smart-sleept
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppShipmentsRouteImport } from './routes/_app.shipments'
+import { Route as AppShopFloorRouteImport } from './routes/_app.shop-floor'
 import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
 import { Route as AppVendorRouteImport } from './routes/_app.vendor'
 import { Route as AppWebsiteEnquiriesRouteImport } from './routes/_app.website-enquiries'
@@ -301,6 +303,16 @@ const AppQualityRoute = AppQualityRouteImport.update({
 const AppSmartSleepTecRoute = AppSmartSleepTecRouteImport.update({
   id: '/smart-sleeptec',
   path: '/smart-sleeptec',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShipmentsRoute = AppShipmentsRouteImport.update({
+  id: '/shipments',
+  path: '/shipments',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShopFloorRoute = AppShopFloorRouteImport.update({
+  id: '/shop-floor',
+  path: '/shop-floor',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -2291,6 +2303,8 @@ interface AppRouteChildren {
   AppMaintenanceRoute: typeof AppMaintenanceRoute
   AppQualityRoute: typeof AppQualityRoute
   AppSmartSleepTecRoute: typeof AppSmartSleepTecRoute
+  AppShipmentsRoute: typeof AppShipmentsRoute
+  AppShopFloorRoute: typeof AppShopFloorRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -2327,6 +2341,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppMaintenanceRoute: AppMaintenanceRoute,
   AppQualityRoute: AppQualityRoute,
   AppSmartSleepTecRoute: AppSmartSleepTecRoute,
+  AppShipmentsRoute: AppShipmentsRoute,
+  AppShopFloorRoute: AppShopFloorRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
