@@ -111,6 +111,8 @@ function DashboardPage() {
         { label: "Maintenance & Assets", detail: "Factory equipment and maintenance work orders", to: "/maintenance", icon: Factory },
         { label: "Quality Management", detail: "Inspections, defects and corrective actions", to: "/quality", icon: ClipboardList },
         { label: "Smart SleepTec Studio", detail: "Smart product masters, BOM revisions and engineering changes", to: "/smart-sleeptec", icon: Package },
+        { label: "Shop Floor", detail: "Routing-based operation execution and measured output", to: "/shop-floor", icon: Factory },
+        { label: "Shipments & Delivery", detail: "Dispatch milestones and proof of delivery", to: "/shipments", icon: Truck },
       ]
     : sales
       ? [
