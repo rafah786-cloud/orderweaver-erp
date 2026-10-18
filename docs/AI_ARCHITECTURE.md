@@ -46,3 +46,19 @@ For five genuinely BOM-grounded recommendations to be possible in a company, tha
 - purchase or configured standard costs for the BOM components.
 
 If those ERP inputs are incomplete, the AI must say so rather than invent specifications or costs.
+
+## Capability-based specialist agents
+
+The agent registry in src/lib/ai/agent-router.server.ts separates business reasoning, fast classification, document vision, semantic retrieval, marketing copy, marketing image generation, forecasting and mattress specification. Model names remain environment-configurable; no provider credentials are sent to the browser.
+
+- The ERP analyst uses the configured reasoning model and the planner uses the fast classification model. Both operate over deterministic, RLS-scoped retrievals; they do not execute arbitrary SQL or post transactions.
+- Document image extraction uses the dedicated vision model; extracted fields remain proposals until a person confirms them.
+- Marketing copy uses the server-side AI gateway. Marketing image generation uses a separate image endpoint/model so the visual task can be optimized independently.
+- Marketing creatives are drafts, stored with company ownership and private image assets. Publishing to social platforms and direct customer delivery are separate workflows and are never triggered by generation.
+- Forecasts are calculated from ERP evidence and require human review before operational commitments; mattress specification recommendations remain constrained to existing BOM/material/cost data.
+
+### Marketing image provider configuration
+
+Set server-side IMAGE_API_KEY (or OPENAI_API_KEY) to enable the default OpenAI-compatible image provider. Optionally configure IMAGE_PROVIDER, IMAGE_API_BASE_URL and IMAGE_MODEL for another compatible image service. The default model is gpt-image-1. These variables must be set in the hosting environment's server secrets; do not add keys to source files, Vite client variables or the database. Copy generation remains available when image generation is not configured.
+
+The AI status endpoint exposes only agent labels, model names, provider labels, configured/not-configured status, write-access class and human-review requirement. It never returns credentials. Generated images are stored in a private marketing-creatives bucket under the active company UUID, with short-lived signed preview URLs.
