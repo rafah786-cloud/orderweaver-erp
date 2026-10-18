@@ -199,6 +199,27 @@ def main() -> None:
             profile = sql("SELECT status FROM public.profiles WHERE id=auth.uid()").stdout.strip()
             expect("pending user can read own profile status", profile == "pending")
 
+            expect("pending role assignment is ignored by SECURITY DEFINER has_role",
+                   sql("SELECT public.has_role(auth.uid(),'admin'::public.app_role)::text").stdout.strip() == "false")
+            expect("pending membership cannot resolve an active company",
+                   sql("SELECT coalesce(public.current_company_id()::text,'null')").stdout.strip() == "null")
+            expect("pending membership cannot pass SECURITY DEFINER company access",
+                   sql(f"SELECT public.has_company_access('{COMPANY_A}')::text").stdout.strip() == "false")
+            expect("pending user roles are not returned by the SECURITY DEFINER role-list RPC",
+                   sql("SELECT count(*) FROM public.current_user_roles()").stdout.strip() == "0")
+            pending_switch = sql(
+                f"SELECT public.set_active_company('{COMPANY_B}')",
+                check=False,
+            )
+            expect("pending user cannot switch active company through SECURITY DEFINER RPC",
+                   pending_switch.returncode != 0)
+            expect("approved admin role remains available through shared helper",
+                   sql("SELECT public.has_role(auth.uid(),'admin'::public.app_role)::text",
+                       user=USER_APPROVED, company=COMPANY_A, approved=True).stdout.strip() == "true")
+            expect("approved user retains active company context through shared helper",
+                   sql("SELECT public.current_company_id()::text",
+                       user=USER_APPROVED, company=COMPANY_A, approved=True).stdout.strip() == COMPANY_A)
+
             # The new restrictive policy must neutralize existing permissive
             # policies on normal company-scoped data, including writes.
             expect("pending user sees no invoices despite company membership",
