@@ -167,7 +167,7 @@ def main() -> None:
                     CREATE TABLE public.{table}(
                       id uuid PRIMARY KEY, company_id uuid NOT NULL, payload text NOT NULL
                     );
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON public.{table}
+                    GRANT ALL PRIVILEGES ON TABLE public.{table}
                       TO authenticated, anon, service_role;
                     ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY;
                     ALTER TABLE public.{table} FORCE ROW LEVEL SECURITY;
@@ -261,6 +261,32 @@ def main() -> None:
             )
             expect("approved user retains existing same-company create permission",
                    approved_insert.returncode == 0)
+
+            # Client roles must not have non-row privileges that bypass RLS.
+            # Service-role/database maintenance access remains intact.
+            for db_role in ("anon", "authenticated"):
+                for privilege in ("TRUNCATE", "REFERENCES", "TRIGGER"):
+                    expect(
+                        f"{db_role} cannot use {privilege} on invoices",
+                        sql(
+                            f"SELECT has_table_privilege('{db_role}','public.invoices','{privilege}')",
+                            caller=False,
+                        ).stdout.strip() == "f",
+                    )
+            for privilege in ("TRUNCATE", "REFERENCES", "TRIGGER"):
+                expect(
+                    f"service_role retains {privilege} on invoices",
+                    sql(
+                        f"SELECT has_table_privilege('service_role','public.invoices','{privilege}')",
+                        caller=False,
+                    ).stdout.strip() == "t",
+                )
+            truncate_attack = sql(
+                "TRUNCATE TABLE public.invoices",
+                db_role="authenticated",
+                check=False,
+            )
+            expect("authenticated direct TRUNCATE is denied", truncate_attack.returncode != 0)
 
             # The ten unimplemented HR/AI governance tables become inaccessible
             # to browser/API roles until tailored policies are supplied.
