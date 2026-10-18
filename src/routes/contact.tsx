@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 const CUSTOMER_CARE_EMAIL = "customercare@aboodtradings.in";
 const CUSTOMER_CARE_PHONE = "+91 92880 22477";
@@ -40,6 +40,10 @@ function ContactPage() {
   const [topic, setTopic] = useState(type);
   const [message, setMessage] = useState("");
   const [readyToSend, setReadyToSend] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [submissionReference, setSubmissionReference] = useState<string | null>(null);
+  const [companyWebsite, setCompanyWebsite] = useState("");
 
   useEffect(() => {
     setTopic(type);
@@ -62,6 +66,47 @@ function ContactPage() {
 
   const emailHref = "mailto:" + CUSTOMER_CARE_EMAIL + "?subject=" + encodeURIComponent("Zizz Mattress website enquiry") + "&body=" + encodeURIComponent(enquiryText);
   const whatsappHref = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(enquiryText);
+
+  const clearSubmissionState = () => {
+    setReadyToSend(false);
+    setSubmissionError("");
+    setSubmissionReference(null);
+  };
+
+  async function submitEnquiry(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setSubmissionError("");
+    setSubmissionReference(null);
+    setReadyToSend(false);
+    try {
+      const response = await fetch("/api/public/website-enquiry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phone,
+          email,
+          type: topic,
+          model,
+          message,
+          companyWebsite,
+        }),
+      });
+      const result = await response.json().catch(() => null) as { ok?: boolean; referenceNumber?: string | null; error?: string } | null;
+      if (!response.ok || !result?.ok) {
+        throw new Error(result?.error || "We could not save your enquiry right now.");
+      }
+      setSubmissionReference(result.referenceNumber ?? null);
+      setReadyToSend(true);
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : "We could not save your enquiry right now.");
+      // Always leave direct email and WhatsApp options available as a fallback.
+      setReadyToSend(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#f8f6f1] text-[#19364f]">
@@ -109,31 +154,36 @@ function ContactPage() {
               <a className="inline-flex items-center gap-2 hover:text-[#9b6c2d]" href={"https://wa.me/" + WHATSAPP_NUMBER} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4" /> WhatsApp customer care</a>
             </div>
 
-            <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); setReadyToSend(true); }}>
+            <form className="mt-6 space-y-4" onSubmit={submitEnquiry}>
+              <div className="pointer-events-none absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                <label>Leave this field blank<input tabIndex={-1} autoComplete="off" name="companyWebsite" value={companyWebsite} onChange={(event) => setCompanyWebsite(event.target.value)} /></label>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm font-semibold">Your name
-                  <input required autoComplete="name" value={name} onChange={(event) => { setName(event.target.value); setReadyToSend(false); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="Full name" />
+                  <input required autoComplete="name" value={name} onChange={(event) => { setName(event.target.value); clearSubmissionState(); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="Full name" />
                 </label>
                 <label className="block text-sm font-semibold">Phone number
-                  <input required type="tel" autoComplete="tel" value={phone} onChange={(event) => { setPhone(event.target.value); setReadyToSend(false); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="Your contact number" />
+                  <input required type="tel" autoComplete="tel" value={phone} onChange={(event) => { setPhone(event.target.value); clearSubmissionState(); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="Your contact number" />
                 </label>
               </div>
               <label className="block text-sm font-semibold">Email (optional)
-                <input type="email" autoComplete="email" value={email} onChange={(event) => { setEmail(event.target.value); setReadyToSend(false); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="you@example.com" />
+                <input type="email" autoComplete="email" value={email} onChange={(event) => { setEmail(event.target.value); clearSubmissionState(); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="you@example.com" />
               </label>
               <label className="block text-sm font-semibold">What can we help with?
-                <select value={topic} onChange={(event) => { setTopic(event.target.value); setReadyToSend(false); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15">
+                <select value={topic} onChange={(event) => { setTopic(event.target.value); clearSubmissionState(); }} className="mt-1.5 w-full rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15">
                   {Object.entries(enquiryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
               <label className="block text-sm font-semibold">Message
-                <textarea rows={4} value={message} onChange={(event) => { setMessage(event.target.value); setReadyToSend(false); }} className="mt-1.5 w-full resize-y rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="Tell us your mattress size, requirements, order number or project details." />
+                <textarea rows={4} value={message} onChange={(event) => { setMessage(event.target.value); clearSubmissionState(); }} className="mt-1.5 w-full resize-y rounded-xl border border-[#ddd8cf] bg-[#fcfbf8] px-3.5 py-3 font-normal outline-none focus:border-[#a77a3b] focus:ring-2 focus:ring-[#a77a3b]/15" placeholder="Tell us your mattress size, requirements, order number or project details." />
               </label>
-              <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#19364f] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#294c67]"><Send className="h-4 w-4" /> Prepare my enquiry</button>
+              <button type="submit" disabled={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#19364f] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#294c67] disabled:cursor-wait disabled:opacity-60"><Send className="h-4 w-4" /> {isSubmitting ? "Submitting enquiry…" : "Submit enquiry"}</button>
+              {submissionError && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">{submissionError} You can still contact customer care directly below.</p>}
               {readyToSend && (
                 <div className="rounded-2xl border border-[#e7dfd1] bg-[#faf6ef] p-4" aria-live="polite">
-                  <p className="text-sm font-semibold">Your message is ready. Choose how to send it.</p>
-                  <p className="mt-1 text-xs leading-5 text-[#737a76]">Your email or WhatsApp app will open with these details pre-filled. Nothing is sent until you confirm in that app.</p>
+                  <p className="text-sm font-semibold">{submissionReference ? "Your enquiry has been recorded." : submissionError ? "Use a direct customer-care option." : "Your request is ready."}</p>
+                  {submissionReference && <p className="mt-1 text-sm font-bold text-[#8b6a3e]">Reference: {submissionReference}</p>}
+                  <p className="mt-1 text-xs leading-5 text-[#737a76]">{submissionReference ? "The enquiry is saved in the Mattress Maestro website-enquiry inbox. For immediate follow-up, you can also send the details to customer care by email or WhatsApp." : "The website could not confirm that the enquiry was saved. Use email or WhatsApp below; your message will be pre-filled and must be sent from that app."}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <a href={emailHref} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-[#19364f] ring-1 ring-[#d9d1c4]"><Mail className="h-4 w-4" /> Send by email</a>
                     <a href={whatsappHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#19364f] px-4 py-2.5 text-sm font-bold text-white"><MessageCircle className="h-4 w-4" /> Send on WhatsApp</a>
