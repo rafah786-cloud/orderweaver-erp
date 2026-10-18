@@ -120,7 +120,7 @@ export const Route = createFileRoute("/api/public/website-enquiry")({
             message,
             source: "zizz_website",
           })
-          .select("reference_number")
+          .select("id, reference_number")
           .single();
 
         if (insertError || !enquiry) {
@@ -170,11 +170,7 @@ export const Route = createFileRoute("/api/public/website-enquiry")({
                   party_kind: "staff",
                   party_id: null,
                   ref_table: "website_enquiries",
-                  ref_id: (await supabaseAdmin
-                    .from("website_enquiries")
-                    .select("id")
-                    .eq("reference_number", enquiry.reference_number)
-                    .maybeSingle()).data?.id ?? null,
+                  ref_id: enquiry.id,
                   payload: { source: "zizz_website" },
                 },
               });
