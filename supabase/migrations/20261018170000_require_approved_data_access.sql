@@ -96,6 +96,29 @@ BEGIN
 END
 $function$;
 
+-- Browser/API roles need row-scoped DML only. PostgreSQL RLS does not
+-- filter TRUNCATE, and table-trigger/foreign-key privileges are not required
+-- by application screens. Remove these excess ACLs across public base tables
+-- while preserving service_role/postgres maintenance privileges.
+DO $acl$
+DECLARE
+  t record;
+BEGIN
+  FOR t IN
+    SELECT c.relname
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r', 'p')
+  LOOP
+    EXECUTE format(
+      'REVOKE TRUNCATE, REFERENCES, TRIGGER ON TABLE public.%I FROM PUBLIC, anon, authenticated',
+      t.relname
+    );
+  END LOOP;
+END
+$acl$;
+
 -- Defense in depth: a valid Supabase token is not enough to access ERP data.
 -- Every authenticated query/mutation against an RLS-protected public table
 -- must also belong to an approved profile. Pending users still need to read
