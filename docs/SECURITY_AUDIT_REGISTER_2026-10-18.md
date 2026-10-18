@@ -73,6 +73,18 @@ These references are benchmarks, not an assertion that this ERP already implemen
 - SoD controls for supplier maintenance vs. receipt/payment, payroll changes vs. approval, and voucher preparation vs. period reopening have not been confirmed end-to-end.
 - Browser-visible navigation and the complete website→enquiry→ERP and customer order→payment→fulfilment journeys still require direct end-to-end smoke tests.
 
+## Rollout verification and fail-closed rollback
+
+Before the database migration is applied:
+1. Preserve the current definitions of current_company_id(), has_company_access(), has_role(), current_user_roles(), set_active_company(), and the current policy list as a read-only deployment record.
+2. Confirm CI is green for the exact head commit and that no production rows are included in the disposable test fixture.
+3. Apply the approval-gate migration as one transaction; it changes helper/policy definitions and grants, not business rows.
+4. Read back the count of RLS-protected public tables, the number with approved_profile_required (all except profiles), the five helper definitions, and privileges/policies for the ten disabled HR/AI tables.
+5. Confirm pending users can still read only their own profile status; confirm approved roles can access their usual active-company pages; verify direct API/RPC denial for pending profiles and that service_role retains explicit privileges for server maintenance.
+6. Smoke-test key approved-role workflows: company switch, dashboard, invoices/accounting for Admin/Accountant, sales orders for Sales, production for Production, employee/payslip views for HR/Employee, customer-owned order/invoice pages, vendor-owned purchase-order acknowledgement and Admin settings.
+
+**Rollback principle:** this is a security-tightening migration; do not drop approved_profile_required, restore old company-only HR/AI CRUD policies, or grant the ten locked tables back to authenticated/public clients as an emergency workaround. It changes no business records. If an approved workflow regresses, keep the access boundary in place, temporarily disable the affected UI/API workflow, capture the failing role+route and database error, and ship a forward-compatible policy/helper correction with an adversarial regression test. A migration that restores the old access is not an acceptable rollback.
+
 ## Release discipline
 
 No live database migration is authorized by this report. All security migrations must first pass disposable PostgreSQL adversarial tests. Never weaken accounting, inventory or company-isolation rules to pass CI. Keep live checkout disabled until authoritative product/price/tax, stock, order persistence, webhook validation/idempotency, reconciliation, delivery and fulfilment are complete. Mark a finding “fixed” only after the commit is integrated, CI passes, deployed policy/function definitions are read back, and the real intended workflow plus negative authorization cases are re-tested.
