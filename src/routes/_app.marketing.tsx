@@ -86,7 +86,7 @@ function MarketingPage() {
   });
   const leadsQuery = useQuery({
     queryKey: ["marketing-attribution-leads", activeCompany?.id],
-    enabled: attributionOpen && attributionForm.source_type === "lead" && !companyLoading && Boolean(activeCompany?.id),
+    enabled: !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
       const { data, error } = await db.from("crm_leads").select("id,lead_number,name,status,source").eq("company_id", activeCompany!.id).order("created_at", { ascending: false }).limit(500);
       if (error) throw error;
@@ -95,7 +95,7 @@ function MarketingPage() {
   });
   const invoicesQuery = useQuery({
     queryKey: ["marketing-attribution-invoices", activeCompany?.id],
-    enabled: attributionOpen && attributionForm.source_type === "invoice" && !companyLoading && Boolean(activeCompany?.id),
+    enabled: !companyLoading && Boolean(activeCompany?.id),
     queryFn: async () => {
       const { data, error } = await db.from("invoices").select("id,invoice_number,invoice_date,total_amount,status,party_id").eq("company_id", activeCompany!.id).neq("status", "cancelled").order("invoice_date", { ascending: false }).limit(500);
       if (error) throw error;
@@ -124,7 +124,7 @@ function MarketingPage() {
     conversions: a.conversions + r.conversionCount, revenue: a.revenue + r.revenue,
   }), { campaigns: 0, spend: 0, leads: 0, conversions: 0, revenue: 0 });
   const loading = companyLoading || campaignsQuery.isLoading || costsQuery.isLoading || attributionsQuery.isLoading;
-  const loadError = campaignsQuery.error || costsQuery.error || attributionsQuery.error;
+  const loadError = campaignsQuery.error || costsQuery.error || attributionsQuery.error || leadsQuery.error || invoicesQuery.error;
 
   const createCampaign = useMutation({
     mutationFn: async () => {
