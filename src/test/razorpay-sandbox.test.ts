@@ -25,7 +25,7 @@ describe("Razorpay sandbox checkout safety", () => {
     expect(verifyPayment).toContain("timingSafeEqual(expected, supplied)");
     expect(verifyPayment).toContain('return jsonError("Payment signature verification failed.", 400)');
     expect(verifyPayment).toContain('keyId.startsWith("rzp_test_")');
-    expect(verifyPayment).toContain("No authoritative website order");
+    expect(verifyPayment).toContain("no authoritative website order");
   });
 
   it("handles modal dismissal, payment failure, and server verification", () => {
