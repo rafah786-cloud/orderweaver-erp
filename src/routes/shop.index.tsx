@@ -40,7 +40,7 @@ function MattressArtwork({ index }: { index: number }) {
 }
 
 function ShopPage() {
-  const { q } = Route.useSearch();
+  const { q = "" } = Route.useSearch();
   const [query, setQuery] = useState(q);
   const [savedSlugs, setSavedSlugs] = useState<string[]>([]);
   const [quoteSlugs, setQuoteSlugs] = useState<string[]>([]);
