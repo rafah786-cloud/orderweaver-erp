@@ -12,6 +12,7 @@ import {
   LayoutDashboard, MessageSquareText, Package, Plus, ShoppingBag, ShoppingCart, Sparkles, Truck, Users, Wallet,
 } from "lucide-react";
 import { formatDate, inr } from "@/lib/format";
+import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | Mattress Maestro ERP" }] }),
@@ -223,6 +224,8 @@ function DashboardPage() {
           </CardContent>
         </Card>
       </section>}
+
+      <PwaInstallPrompt />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Your key metrics">
         {metricsForRole.map((item) => {
