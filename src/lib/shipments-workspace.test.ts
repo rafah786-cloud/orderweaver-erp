@@ -19,6 +19,13 @@ describe("Shipment and proof-of-delivery safeguards", () => {
     expect(source).toContain('patch.delivered_at=new Date().toISOString()');
   });
 
+  it("records item-level quantities and blocks over-shipping beyond remaining ordered quantities", () => {
+    expect(source).toContain('from("sales_order_items")');
+    expect(source).toContain('from("shipment_lines").insert');
+    expect(source).toContain("remainingForItem(item)");
+    expect(source).toContain("shipment quantity must be between zero and the remaining ordered quantity");
+  });
+
   it("keeps shipment status separate from stock and accounting posting", () => {
     expect(source).toContain("does not silently post stock movement or invoice/accounting changes");
     expect(source).not.toContain('from("stock_movements").insert');
