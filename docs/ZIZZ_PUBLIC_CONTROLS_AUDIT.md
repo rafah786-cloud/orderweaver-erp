@@ -25,3 +25,10 @@ The homepage had multiple visible controls with no action or a generic homepage 
 - For those reasons, checkout and paid ordering remain deliberately disabled. Enabling purchases without these details could accept incorrect prices or promise unavailable products. The new pages improve navigation, customer enquiries and model selection; they do not falsely claim that the live payment/order system is complete.
 - This branch adds an additive migration for a separate website-enquiry table, company-scoped Admin/Sales read/update access and in-app notification routing. The migration has not been applied to production by this code change, and no existing accounting, inventory, sales-order or finance records are changed. No Lovable credits were used.
 - The repository CI and build must pass before merging. The live website must still be synced/published via the existing deployment workflow and clicked through on the actual domain; GitHub changes alone do not publish the site.
+
+
+## Follow-up audit — 18 October 2026
+
+- Removed generated `ZIZZ-001`-style placeholder codes from the public mattress catalogue, model pages, wishlist, enquiry list and prepared quotation text. Those identifiers were derived from array order, not approved product-master data, and must not be presented as official SKUs.
+- Catalogue search now searches model names only. Sorting is by name in either direction until authoritative model codes are supplied.
+- Added regression coverage to ensure the draft catalogue retains all 23 model names with unique slugs while exposing no fabricated code field.

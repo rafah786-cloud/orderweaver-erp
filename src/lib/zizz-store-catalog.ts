@@ -1,7 +1,6 @@
 export type MattressModel = {
   name: string;
   slug: string;
-  code: string;
   tier: "unassigned";
   status: "draft";
 };
@@ -32,10 +31,9 @@ const names = [
   "ZIZZ FOAMY",
 ] as const;
 
-export const mattressModels: MattressModel[] = names.map((name, index) => ({
+export const mattressModels: MattressModel[] = names.map((name) => ({
   name,
   slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-  code: `ZIZZ-${String(index + 1).padStart(3, "0")}`,
   tier: "unassigned",
   status: "draft",
 }));

@@ -33,7 +33,7 @@ function CartPage() {
   const quoteDetails = useMemo(() => [
     "I would like a quotation for these Zizz Mattress models:",
     "",
-    ...models.map(({ model, quantity }) => `• ${model!.name} (${model!.code}) — Quantity: ${quantity}`),
+    ...models.map(({ model, quantity }) => `• ${model!.name} — Quantity: ${quantity}`),
     "",
     "Please confirm available sizes, verified specifications, current price including applicable taxes, manufacturing lead time and delivery charges before I place an order.",
   ].join("\n"), [models]);
@@ -70,7 +70,7 @@ function CartPage() {
             <div className="mt-8 space-y-3">
               {models.map(({ slug, quantity, model }) => (
                 <article key={slug} className="flex flex-col gap-4 rounded-2xl border border-[#e5dfd5] bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                  <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a87838]">{model!.code}</p><h2 className="mt-1 text-lg font-semibold">{model!.name}</h2><p className="mt-1 text-sm text-[#737a78]">Price, size variants and availability will be confirmed by customer care.</p></div>
+                  <div className="min-w-0"><h2 className="text-lg font-semibold">{model!.name}</h2><p className="mt-1 text-sm text-[#737a78]">Price, size variants and availability will be confirmed by customer care.</p></div>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="inline-flex items-center rounded-full border border-[#e1dbd0] bg-[#fcfbf8] p-1" aria-label={`Quantity for ${model!.name}`}>
                       <button type="button" disabled={quantity <= 1} onClick={() => updateQuantity(slug, quantity - 1)} aria-label={`Decrease ${model!.name} quantity`} className="rounded-full p-2 disabled:opacity-30"><Minus className="h-4 w-4" /></button>
