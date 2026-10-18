@@ -19,7 +19,7 @@ const enquiryLabels: Record<string, string> = {
 
 export const Route = createFileRoute("/contact")({
   validateSearch: (search: Record<string, unknown>) => ({
-    type: typeof search.type === "string" && search.type in enquiryLabels ? search.type : "general",
+    type: typeof search.type === "string" && Object.prototype.hasOwnProperty.call(enquiryLabels, search.type) ? search.type : "general",
     model: typeof search.model === "string" ? search.model : "",
     details: typeof search.details === "string" ? search.details : "",
   }),
