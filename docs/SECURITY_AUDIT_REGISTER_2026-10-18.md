@@ -56,7 +56,7 @@ These references are benchmarks, not an assertion that this ERP already implemen
 
 **Severity:** Medium–High; exploit requires a valid authenticated account whose profile row is missing, but that account could recreate the row as approved.  
 **Evidence:** The live permissive INSERT policy allowed `public.has_role(auth.uid(),'admin') OR id=auth.uid()`. Normal signup already creates profiles through the SECURITY DEFINER trigger on `auth.users`, so the self-insert branch is not required by the application signup path. The profile status defaults to pending, but a direct self-insert can supply a different value if a profile row does not exist.  
-**Fix proposed in PR #107:** Replace the policy with admin-only INSERT while preserving the existing auth.users signup trigger. An isolated PostgreSQL test attempts self-insertion as approved, checks that a non-admin cannot create profiles for others, and verifies that an approved admin can still provision profiles. Do not deploy until the exact CI run passes and live policy/trigger readback is confirmed.
+**Fix and verification:** PR #107 merged after all CI jobs passed; its migration was applied live on 18 October 2026. Readback confirms the INSERT policy now requires the approved Admin role and the existing `auth.users` signup trigger is still present. The isolated PostgreSQL regression test verifies self-approval denial, non-admin provisioning denial and admin provisioning success.
 
 ### SEC-2026-010 — Excess non-row table privileges on public ERP tables
 
