@@ -24,7 +24,7 @@ describe("Smart SleepTec product lifecycle safeguards", () => {
     expect(source).toContain("Change-line reason is required");
     expect(source).toContain("createEco");
     expect(source).toContain("the requester cannot approve their own change");
-    expect(source).toContain("ECO release requires");
+    expect(source).toContain("Release requires an approved ECO");
   });
 
   it("does not bypass the verified live schema's BOM-to-ECO release gate", () => {
