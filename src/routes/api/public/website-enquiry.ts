@@ -129,6 +129,61 @@ export const Route = createFileRoute("/api/public/website-enquiry")({
           return jsonError("We could not record your enquiry just now. Please use the direct customer-care links.", 503);
         }
 
+        // Notify only approved Admin/Sales users who can view this company.
+        // Notification failure must never discard a successfully recorded enquiry.
+        try {
+          const { data: accessRows } = await supabaseAdmin
+            .from("user_company_access")
+            .select("user_id")
+            .eq("company_id", company.id)
+            .eq("can_view", true);
+          const candidateIds = [...new Set((accessRows ?? []).map((row) => row.user_id))];
+          if (candidateIds.length > 0) {
+            const [{ data: roleRows }, { data: profiles }] = await Promise.all([
+              supabaseAdmin
+                .from("user_roles")
+                .select("user_id, role")
+                .in("user_id", candidateIds)
+                .in("role", ["admin", "sales"]),
+              supabaseAdmin
+                .from("profiles")
+                .select("id")
+                .in("id", candidateIds)
+                .eq("status", "approved"),
+            ]);
+            const approvedIds = new Set((profiles ?? []).map((profile) => profile.id));
+            const userIds = [...new Set((roleRows ?? [])
+              .filter((row) => approvedIds.has(row.user_id))
+              .map((row) => row.user_id))];
+            if (userIds.length > 0) {
+              const { dispatchNotificationEvent } = await import("@/lib/notifications/engine.server");
+              await dispatchNotificationEvent({
+                eventKey: "website.enquiry.created",
+                recipients: { userIds },
+                variables: {
+                  reference_number: enquiry.reference_number,
+                  customer_name: input.name.trim(),
+                  enquiry_type: input.type,
+                  model_name: modelName ?? "Not specified",
+                },
+                context: {
+                  party_kind: "staff",
+                  party_id: null,
+                  ref_table: "website_enquiries",
+                  ref_id: (await supabaseAdmin
+                    .from("website_enquiries")
+                    .select("id")
+                    .eq("reference_number", enquiry.reference_number)
+                    .maybeSingle()).data?.id ?? null,
+                  payload: { source: "zizz_website" },
+                },
+              });
+            }
+          }
+        } catch {
+          console.error("[website-enquiry] Notification dispatch failed");
+        }
+
         return Response.json({ ok: true, referenceNumber: enquiry.reference_number });
       },
     },
