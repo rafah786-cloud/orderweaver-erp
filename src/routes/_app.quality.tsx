@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_app/quality")({ component: QualityPage }
 function QualityPage() {
   const { activeCompany, loading: companyLoading } = useCompany();
   const { hasAnyRole, user } = useAuth();
-  const canManage = hasAnyRole(["admin", "production"]);
+  const canManage = hasAnyRole(["admin"]);
   const qc = useQueryClient();
   const [inspectionOpen, setInspectionOpen] = useState(false);
   const [resultInspection, setResultInspection] = useState<Inspection | null>(null);
@@ -308,6 +308,7 @@ function QualityPage() {
         </Dialog>
       </div> : undefined} />
       <PageBody>
+        {!canManage && <div role="note" className="mb-4 rounded-lg border border-amber-300/50 bg-amber-50/50 p-3 text-sm text-amber-950 dark:bg-amber-950/10 dark:text-amber-100"><strong>Read-only for this role.</strong> The live database currently restricts writes in this workspace to approved administrators. The workspace remains visible, but editing actions are disabled until a reviewed database-policy migration is safely deployed.</div>}
         {loadError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 p-4 text-sm"><AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" /><span>Quality data could not be loaded. Check active-company access and retry.</span></div>}
         {loading && <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading quality records…</div>}
         {!loading && !loadError && <>
