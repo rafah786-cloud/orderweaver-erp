@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Fuel, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge, Bell, Inbox, Megaphone, Wrench, Cpu, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShoppingCart, Factory, ClipboardList, UserCog, CalendarCheck, Receipt, ShieldCheck, LogOut, Building2, Settings, MessageCircle, Package, Truck, Fuel, Database, BookOpen, FileSpreadsheet, Boxes, Landmark, Menu, PanelLeft, ChevronRight, Sparkles, Network, Printer, Gauge, Bell, Inbox, Megaphone, Wrench, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
