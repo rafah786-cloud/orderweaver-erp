@@ -35,6 +35,7 @@ import { Route as AppCapacityRouteImport } from './routes/_app.capacity'
 import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
+import { Route as AppFleetRouteImport } from './routes/_app.fleet'
 import { Route as AppEnterpriseWorkbenchRouteImport } from './routes/_app.enterprise-workbench'
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
@@ -241,6 +242,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppEmployeesRoute = AppEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFleetRoute = AppFleetRouteImport.update({
+  id: '/fleet',
+  path: '/fleet',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEnterpriseWorkbenchRoute = AppEnterpriseWorkbenchRouteImport.update({
@@ -2250,6 +2256,7 @@ interface AppRouteChildren {
   AppCommunicationsRoute: typeof AppCommunicationsRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
+  AppFleetRoute: typeof AppFleetRoute
   AppEnterpriseWorkbenchRoute: typeof AppEnterpriseWorkbenchRoute
   AppGstRoute: typeof AppGstRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
@@ -2281,6 +2288,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCommunicationsRoute: AppCommunicationsRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
+  AppFleetRoute: AppFleetRoute,
   AppEnterpriseWorkbenchRoute: AppEnterpriseWorkbenchRoute,
   AppGstRoute: AppGstRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
