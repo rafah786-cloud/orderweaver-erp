@@ -1,0 +1,136 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const WebsiteEnquirySchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  phone: z.string().trim().min(8).max(32),
+  email: z.string().trim().max(255).optional().default(""),
+  type: z.enum(["general", "guidance", "product", "custom", "business", "warranty", "tracking"]),
+  model: z.string().trim().max(120).optional().default(""),
+  message: z.string().trim().max(4000).optional().default(""),
+  companyWebsite: z.string().max(200).optional().default(""),
+});
+
+function normalizePhone(raw: string): string | null {
+  const compact = raw.trim().replace(/[\s().-]/g, "");
+  let digits = compact.replace(/\D/g, "");
+
+  // Common Indian trunk-prefix format: 0XXXXXXXXXX.
+  if (!compact.startsWith("+") && digits.length === 11 && digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+
+  if (/^[6-9][0-9]{9}$/.test(digits)) return `+91${digits}`;
+  if (/^91[6-9][0-9]{9}$/.test(digits)) return `+${digits}`;
+  if (compact.startsWith("+") && digits.length >= 8 && digits.length <= 15 && !digits.startsWith("0")) {
+    return `+${digits}`;
+  }
+  return null;
+}
+
+function jsonError(message: string, status: number) {
+  return Response.json({ ok: false, error: message }, { status });
+}
+
+export const Route = createFileRoute("/api/public/website-enquiry")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const contentType = request.headers.get("content-type") ?? "";
+        if (!contentType.toLowerCase().includes("application/json")) {
+          return jsonError("Send the enquiry as JSON.", 415);
+        }
+
+        let rawBody = "";
+        try {
+          rawBody = await request.text();
+        } catch {
+          return jsonError("Unable to read the enquiry.", 400);
+        }
+        if (rawBody.length > 12_000) return jsonError("The enquiry is too large.", 413);
+
+        let body: unknown;
+        try {
+          body = JSON.parse(rawBody);
+        } catch {
+          return jsonError("The enquiry was not valid JSON.", 400);
+        }
+        const parsed = WebsiteEnquirySchema.safeParse(body);
+        if (!parsed.success) {
+          return jsonError("Check the name, phone number and enquiry details, then try again.", 400);
+        }
+
+        const input = parsed.data;
+        // Honeypot field: silently accept bot traffic without creating an ERP record.
+        if (input.companyWebsite.trim()) {
+          return Response.json({ ok: true, referenceNumber: null });
+        }
+
+        const phone = normalizePhone(input.phone);
+        if (!phone) {
+          return jsonError("Enter a valid mobile/telephone number, including the country code if outside India.", 400);
+        }
+        const email = input.email.trim();
+        if (email && !z.string().email().max(255).safeParse(email).success) {
+          return jsonError("Enter a valid email address or leave it blank.", 400);
+        }
+
+        const { data: company, error: companyError } = await supabaseAdmin
+          .from("companies")
+          .select("id")
+          .eq("code", "ABOOD")
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (companyError || !company) {
+          console.error("[website-enquiry] Abood company could not be resolved");
+          return jsonError("Enquiry submission is temporarily unavailable. Please use the direct customer-care links.", 503);
+        }
+
+        // Limit repeated submissions from the same contact details without storing an IP address.
+        const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+        const { data: recent, error: rateLimitError } = await supabaseAdmin
+          .from("website_enquiries")
+          .select("id")
+          .eq("company_id", company.id)
+          .eq("phone", phone)
+          .gte("created_at", since)
+          .limit(3);
+
+        if (rateLimitError) {
+          console.error("[website-enquiry] Rate-limit query failed");
+          return jsonError("Enquiry submission is temporarily unavailable. Please use the direct customer-care links.", 503);
+        }
+        if ((recent ?? []).length >= 3) {
+          return jsonError("Several requests were received from this number recently. Please wait a little or contact customer care directly.", 429);
+        }
+
+        const message = input.message.trim() || "Please contact me about my enquiry.";
+        const modelName = input.model.trim() || null;
+        const { data: enquiry, error: insertError } = await supabaseAdmin
+          .from("website_enquiries")
+          .insert({
+            company_id: company.id,
+            customer_name: input.name.trim(),
+            phone,
+            email: email || null,
+            enquiry_type: input.type,
+            model_name: modelName,
+            message,
+            source: "zizz_website",
+          })
+          .select("reference_number")
+          .single();
+
+        if (insertError || !enquiry) {
+          // Do not log the submitted name, phone, email or message.
+          console.error("[website-enquiry] Enquiry insert failed");
+          return jsonError("We could not record your enquiry just now. Please use the direct customer-care links.", 503);
+        }
+
+        return Response.json({ ok: true, referenceNumber: enquiry.reference_number });
+      },
+    },
+  },
+});
