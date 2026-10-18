@@ -11,7 +11,6 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { APP_RELEASE_CHECKPOINT } from "@/lib/release-checkpoint";
-import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 
 import appCss from "../styles.css?url";
 import corporateCss from "../corporate.css?url";
@@ -168,7 +167,6 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
-        <PwaInstallPrompt />
         <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
