@@ -160,12 +160,12 @@ function DashboardPage() {
       : production
         ? [
             { label: "Sales orders", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
-            { label: "Inventory records", key: "inventory_items", icon: Boxes, to: "/inventory" },
+            { label: "Inventory records", key: "stock_items", icon: Boxes, to: "/inventory" },
           ]
         : accountant
           ? [
               { label: "Invoices", key: "invoices", icon: FileText, to: "/invoices" },
-              { label: "Purchase records", key: "purchases", icon: Truck, to: "/purchases" },
+              { label: "Purchase records", key: "purchase_bills", icon: Truck, to: "/purchases" },
               { label: "Parties", key: "parties", icon: Users, to: "/parties" },
             ]
           : hr
@@ -178,7 +178,7 @@ function DashboardPage() {
                   { label: "My order records", key: "sales_orders", icon: ShoppingCart, to: "/sales-orders" },
                   { label: "Invoice records", key: "invoices", icon: FileText, to: "/invoices" },
                 ]
-              : [{ label: "Attendance records", key: "attendance_records", icon: CalendarClock, to: "/attendance" }];
+              : [{ label: "Attendance records", key: "attendance", icon: CalendarClock, to: "/attendance" }];
 
   return (
     <PageBody className="space-y-6 lg:space-y-7">
