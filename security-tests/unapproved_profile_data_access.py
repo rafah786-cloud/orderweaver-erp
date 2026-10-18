@@ -11,6 +11,8 @@ from pathlib import Path
 
 USER_PENDING = "00000000-0000-0000-0000-000000000001"
 USER_APPROVED = "00000000-0000-0000-0000-000000000002"
+USER_APPROVED_NONADMIN = "00000000-0000-0000-0000-000000000004"
+USER_MISSING_PROFILE = "00000000-0000-0000-0000-000000000003"
 COMPANY_A = "10000000-0000-0000-0000-000000000001"
 COMPANY_B = "10000000-0000-0000-0000-000000000002"
 ROW_A = "20000000-0000-0000-0000-000000000001"
@@ -103,7 +105,7 @@ def main() -> None:
                 CREATE TABLE public.user_company_access(user_id uuid, company_id uuid, can_view boolean NOT NULL DEFAULT true);
                 CREATE TABLE public.user_roles(user_id uuid, role public.app_role);
                 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-                GRANT SELECT ON public.profiles TO authenticated;
+                GRANT SELECT, INSERT ON public.profiles TO authenticated;
                 CREATE POLICY users_read_own_profile ON public.profiles
                   FOR SELECT TO authenticated USING (id=auth.uid());
                 CREATE FUNCTION public.is_approved(_user_id uuid) RETURNS boolean
@@ -132,6 +134,9 @@ def main() -> None:
                     SELECT _user_id=auth.uid()
                       AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=auth.uid() AND role=_role)
                   $fn$;
+                CREATE POLICY "admin insert profiles" ON public.profiles
+                  FOR INSERT TO authenticated
+                  WITH CHECK (public.has_role(auth.uid(),'admin'::public.app_role) OR id=auth.uid());
                 CREATE FUNCTION public.current_user_roles() RETURNS SETOF public.app_role
                   LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT role FROM public.user_roles WHERE user_id=auth.uid()
@@ -149,15 +154,18 @@ def main() -> None:
                   ('10000000-0000-0000-0000-000000000002',true);
                 INSERT INTO public.profiles(id,status,active_company_id) VALUES
                   ('00000000-0000-0000-0000-000000000001','pending','10000000-0000-0000-0000-000000000001'),
-                  ('00000000-0000-0000-0000-000000000002','approved','10000000-0000-0000-0000-000000000001');
+                  ('00000000-0000-0000-0000-000000000002','approved','10000000-0000-0000-0000-000000000001'),
+                  ('00000000-0000-0000-0000-000000000004','approved','10000000-0000-0000-0000-000000000001');
                 INSERT INTO public.user_company_access(user_id,company_id,can_view) VALUES
                   ('00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001',true),
                   ('00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002',true),
                   ('00000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001',true),
-                  ('00000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002',true);
+                  ('00000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002',true),
+                  ('00000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000001',true);
                 INSERT INTO public.user_roles(user_id,role) VALUES
                   ('00000000-0000-0000-0000-000000000001','admin'),
-                  ('00000000-0000-0000-0000-000000000002','admin');
+                  ('00000000-0000-0000-0000-000000000002','admin'),
+                  ('00000000-0000-0000-0000-000000000004','sales');
                 GRANT USAGE ON SCHEMA public, auth TO authenticated, anon, service_role;
             """, caller=False)
 
@@ -200,6 +208,11 @@ def main() -> None:
                 """, caller=False)
 
             sql(migration.read_text(encoding="utf-8"), caller=False)
+            if len(sys.argv) > 2:
+                extra_migration = Path(sys.argv[2]).resolve()
+                if not extra_migration.is_file():
+                    raise FileNotFoundError(extra_migration)
+                sql(extra_migration.read_text(encoding="utf-8"), caller=False)
 
             # Pending accounts can still see their own profile/status so the
             # application can render the pending-approval screen.
@@ -226,6 +239,32 @@ def main() -> None:
             expect("approved user retains active company context through shared helper",
                    sql("SELECT public.current_company_id()::text",
                        user=USER_APPROVED, company=COMPANY_A, approved=True).stdout.strip() == COMPANY_A)
+
+            # The second migration removes the unnecessary self-insert
+            # branch from the profile policy. Signup itself is still created by
+            # the SECURITY DEFINER auth.users trigger, not by client profile INSERT.
+            self_approval = sql(
+                f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
+                f"('{USER_MISSING_PROFILE}','approved','{COMPANY_A}')",
+                user=USER_MISSING_PROFILE,
+                check=False,
+            )
+            expect("a user without a profile cannot self-insert an approved profile",
+                   self_approval.returncode != 0)
+            expect("a non-admin cannot create a profile row for another user",
+                   sql(
+                       f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
+                       f"('{ROW_B}','pending','{COMPANY_A}')",
+                       user=USER_APPROVED_NONADMIN,
+                       check=False,
+                   ).returncode != 0)
+            expect("approved admin retains profile provisioning capability",
+                   sql(
+                       f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
+                       f"('{USER_MISSING_PROFILE}','pending','{COMPANY_A}')",
+                       user=USER_APPROVED,
+                       check=False,
+                   ).returncode == 0)
 
             # The new restrictive policy must neutralize existing permissive
             # policies on normal company-scoped data, including writes.

@@ -56,7 +56,7 @@ jobs:
       - name: Test approved-profile database access boundary
         run: |
           export PATH="$(pg_config --bindir):$PATH"
-          python security-tests/unapproved_profile_data_access.py supabase/migrations/20261018170000_require_approved_data_access.sql
+          python security-tests/unapproved_profile_data_access.py supabase/migrations/20261018170000_require_approved_data_access.sql supabase/migrations/20261018180000_restrict_profile_self_insert.sql
 
   bank-reconciliation-rpc:
     runs-on: ubuntu-latest
