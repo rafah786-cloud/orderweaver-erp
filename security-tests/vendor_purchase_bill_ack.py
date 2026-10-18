@@ -56,11 +56,11 @@ def main() -> None:
         ]))
         checks = 0
         try:
-            def sql(query, *, role="vendor", company=COMPANY_A, user=USER, caller=True, check=True):
+            def sql(query, *, role="vendor", company=COMPANY_A, user=USER, db_role="authenticated", caller=True, check=True):
                 prefix = ""
                 if caller:
                     prefix = (
-                        f"SET ROLE authenticated; "
+                        f"SET ROLE {db_role}; "
                         f"SET request.jwt.claim.sub='{user}'; "
                         f"SET test.role='{role}'; "
                         f"SET test.company='{company}';"
@@ -177,8 +177,7 @@ def main() -> None:
             expect("vendor cannot read another supplier's bill by guessed UUID",
                    sql(f"SELECT count(*) FROM public.purchase_bills WHERE id='{BILL_OTHER_SUPPLIER}'").stdout.strip() == "0")
             expect("anonymous caller cannot read purchase bills",
-                   sql(f"SELECT count(*) FROM public.purchase_bills", role="vendor", caller=True, check=True)
-                   .stdout.strip() == "2")  # authenticated client context only
+                   sql("SELECT count(*) FROM public.purchase_bills", db_role="anon").stdout.strip() == "0")
 
             ack = sql(
                 f"UPDATE public.purchase_bills SET vendor_ack_status='accepted', "
