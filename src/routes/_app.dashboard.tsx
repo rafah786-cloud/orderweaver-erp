@@ -108,6 +108,7 @@ function DashboardPage() {
         { label: "Reports & Intelligence", detail: "Business insights and analysis", to: "/ai/insights", icon: Activity },
         { label: "Marketing & Campaigns", detail: "Campaign budget, spend and attributable sales", to: "/marketing", icon: Activity },
         { label: "Fleet & Fuel", detail: "Vehicle register, fuel and compliance reminders", to: "/fleet", icon: Truck },
+        { label: "Shipments & Delivery", detail: "Carrier status, delivery dates and proof of delivery", to: "/shipments", icon: Truck },
         { label: "Maintenance & Assets", detail: "Factory equipment and maintenance work orders", to: "/maintenance", icon: Factory },
         { label: "Quality Management", detail: "Inspections, defects and corrective actions", to: "/quality", icon: ClipboardList },
         { label: "Smart SleepTec Studio", detail: "Smart product masters, BOM revisions and engineering changes", to: "/smart-sleeptec", icon: Package },
