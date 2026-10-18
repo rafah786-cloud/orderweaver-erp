@@ -21,7 +21,7 @@ describe("Quality management workflow safeguards", () => {
 
   it("uses database-supported quality-result and non-conformance states", () => {
     expect(source).toContain('"not_tested"');
-    expect(source).toContain('value="return_to_supplier"');
+    expect(source).toContain('["return_to_supplier","Return to supplier"]');
     expect(source).toContain('value="concession"');
     expect(source).toContain('value="verification"');
   });
