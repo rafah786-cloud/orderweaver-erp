@@ -127,6 +127,20 @@ def main() -> None:
 
             sql(migration.read_text(encoding="utf-8"), caller=False)
 
+            helper = sql(
+                "SELECT prosecdef::text || '|' || array_to_string(proconfig, ',') "
+                "FROM pg_proc WHERE oid = 'public.can_access_enterprise_finance(uuid)'::regprocedure",
+                caller=False,
+            ).stdout.strip()
+            expect("finance authorization helper is SECURITY DEFINER with fixed search_path",
+                   helper == "true|search_path=public")
+            expect("finance authorization helper is not executable by anon",
+                   sql("SELECT has_function_privilege('anon', 'public.can_access_enterprise_finance(uuid)', 'EXECUTE')",
+                       caller=False).stdout.strip() == "f")
+            expect("finance authorization helper is executable by authenticated",
+                   sql("SELECT has_function_privilege('authenticated', 'public.can_access_enterprise_finance(uuid)', 'EXECUTE')",
+                       caller=False).stdout.strip() == "t")
+
             for table in TABLES:
                 expect(f"{table}: Admin can read finance rows",
                        sql(f"SELECT count(*) FROM public.{table}", role="admin").stdout.strip() == "1")
