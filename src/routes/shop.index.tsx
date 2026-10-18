@@ -6,7 +6,7 @@ import { addZizzQuoteItem, readZizzQuoteCart, subscribeZizzQuoteCart } from "@/l
 import { mattressModels } from "@/lib/zizz-store-catalog";
 
 export const Route = createFileRoute("/shop/")({
-  validateSearch: (search: Record<string, unknown>) => ({ q: typeof search.q === "string" ? search.q : "" }),
+  validateSearch: (search: Record<string, unknown>): { q?: string } => ({ q: typeof search.q === "string" ? search.q : undefined }),
   head: () => ({
     meta: [
       { title: "Shop Mattresses | Zizz Mattress" },
