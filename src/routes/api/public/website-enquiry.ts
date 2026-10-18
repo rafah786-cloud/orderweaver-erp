@@ -1,33 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const WebsiteEnquirySchema = z.object({
-  name: z.string().trim().min(2).max(100),
-  phone: z.string().trim().min(8).max(32),
-  email: z.string().trim().max(255).optional().default(""),
-  type: z.enum(["general", "guidance", "product", "custom", "business", "warranty", "tracking"]),
-  model: z.string().trim().max(120).optional().default(""),
-  message: z.string().trim().max(4000).optional().default(""),
-  companyWebsite: z.string().max(200).optional().default(""),
-});
-
-function normalizePhone(raw: string): string | null {
-  const compact = raw.trim().replace(/[\s().-]/g, "");
-  let digits = compact.replace(/\D/g, "");
-
-  // Common Indian trunk-prefix format: 0XXXXXXXXXX.
-  if (!compact.startsWith("+") && digits.length === 11 && digits.startsWith("0")) {
-    digits = digits.slice(1);
-  }
-
-  if (/^[6-9][0-9]{9}$/.test(digits)) return `+91${digits}`;
-  if (/^91[6-9][0-9]{9}$/.test(digits)) return `+${digits}`;
-  if (compact.startsWith("+") && digits.length >= 8 && digits.length <= 15 && !digits.startsWith("0")) {
-    return `+${digits}`;
-  }
-  return null;
-}
+import { normalizeZizzEnquiryPhone, WebsiteEnquirySchema } from "@/lib/zizz-website-enquiry";
 
 function jsonError(message: string, status: number) {
   return Response.json({ ok: false, error: message }, { status });
@@ -67,7 +41,7 @@ export const Route = createFileRoute("/api/public/website-enquiry")({
           return Response.json({ ok: true, referenceNumber: null });
         }
 
-        const phone = normalizePhone(input.phone);
+        const phone = normalizeZizzEnquiryPhone(input.phone);
         if (!phone) {
           return jsonError("Enter a valid mobile/telephone number, including the country code if outside India.", 400);
         }
