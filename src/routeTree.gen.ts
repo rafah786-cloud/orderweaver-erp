@@ -11,13 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as CartRouteImport } from './routes/cart'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ShopRouteRouteImport } from './routes/shop.route'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SleepFinderRouteImport } from './routes/sleep-finder'
 import { Route as VendorSignupRouteImport } from './routes/vendor-signup'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AppAccountingRouteImport } from './routes/_app.accounting'
 import { Route as AppAiRouteImport } from './routes/_app.ai'
@@ -45,7 +51,10 @@ import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
 import { Route as AppVendorRouteImport } from './routes/_app.vendor'
+import { Route as AppWebsiteEnquiriesRouteImport } from './routes/_app.website-enquiries'
 import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
+import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AppAccountingAuditLogRouteImport } from './routes/_app.accounting.audit-log'
 import { Route as AppAccountingBalanceSheetRouteImport } from './routes/_app.accounting.balance-sheet'
@@ -89,6 +98,7 @@ import { Route as AppInventoryValuationRouteImport } from './routes/_app.invento
 import { Route as AppVendorIndexRouteImport } from './routes/_app.vendor.index'
 import { Route as AppVendorLedgerRouteImport } from './routes/_app.vendor.ledger'
 import { Route as AppVendorPurchaseOrdersRouteImport } from './routes/_app.vendor.purchase-orders'
+import { Route as ApiPublicWebsiteEnquiryRouteImport } from './routes/api/public/website-enquiry'
 import { Route as AppAccountingLedgerIdRouteImport } from './routes/_app.accounting.ledger.$id'
 import { Route as AppAccountingVoucherIdRouteImport } from './routes/_app.accounting.voucher.$id'
 import { Route as AppAccountingVouchersNewRouteImport } from './routes/_app.accounting.vouchers.new'
@@ -110,6 +120,21 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -137,14 +162,29 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopRouteRoute = ShopRouteRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SleepFinderRoute = SleepFinderRouteImport.update({
+  id: '/sleep-finder',
+  path: '/sleep-finder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendorSignupRoute = VendorSignupRouteImport.update({
   id: '/vendor-signup',
   path: '/vendor-signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
@@ -283,10 +323,25 @@ const AppVendorRoute = AppVendorRouteImport.update({
   path: '/vendor',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWebsiteEnquiriesRoute = AppWebsiteEnquiriesRouteImport.update({
+  id: '/website-enquiries',
+  path: '/website-enquiries',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWhatsappRoute = AppWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
   getParentRoute: () => AppRoute,
+} as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShopRouteRoute,
+} as any)
+const ShopSlugRoute = ShopSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ShopRouteRoute,
 } as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
@@ -510,6 +565,11 @@ const AppVendorPurchaseOrdersRoute = AppVendorPurchaseOrdersRouteImport.update({
   path: '/purchase-orders',
   getParentRoute: () => AppVendorRoute,
 } as any)
+const ApiPublicWebsiteEnquiryRoute = ApiPublicWebsiteEnquiryRouteImport.update({
+  id: '/api/public/website-enquiry',
+  path: '/api/public/website-enquiry',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppAccountingLedgerIdRoute = AppAccountingLedgerIdRouteImport.update({
   id: '/ledger/$id',
   path: '/ledger/$id',
@@ -582,13 +642,19 @@ const ApiPublicWhatsappInteraktRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/shop': typeof ShopRouteRouteWithChildren
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/contact': typeof ContactRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/sleep-finder': typeof SleepFinderRoute
   '/vendor-signup': typeof VendorSignupRoute
+  '/wishlist': typeof WishlistRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/accounting': typeof AppAccountingRouteWithChildren
   '/ai': typeof AppAiRouteWithChildren
@@ -616,7 +682,10 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
   '/vendor': typeof AppVendorRouteWithChildren
+  '/website-enquiries': typeof AppWebsiteEnquiriesRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/shop/$slug': typeof ShopSlugRoute
+  '/shop/': typeof ShopIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -657,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/api/public/website-enquiry': typeof ApiPublicWebsiteEnquiryRoute
   '/ai/': typeof AppAiIndexRoute
   '/communications/': typeof AppCommunicationsIndexRoute
   '/vendor/': typeof AppVendorIndexRoute
@@ -676,13 +746,18 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/contact': typeof ContactRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/sleep-finder': typeof SleepFinderRoute
   '/vendor-signup': typeof VendorSignupRoute
+  '/wishlist': typeof WishlistRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/accounting': typeof AppAccountingRouteWithChildren
   '/approvals': typeof AppApprovalsRoute
@@ -707,7 +782,10 @@ export interface FileRoutesByTo {
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/tally-import': typeof AppTallyImportRoute
+  '/website-enquiries': typeof AppWebsiteEnquiriesRoute
   '/whatsapp': typeof AppWhatsappRoute
+  '/shop/$slug': typeof ShopSlugRoute
+  '/shop': typeof ShopIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -748,6 +826,7 @@ export interface FileRoutesByTo {
   '/inventory/valuation': typeof AppInventoryValuationRoute
   '/vendor/ledger': typeof AppVendorLedgerRoute
   '/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/api/public/website-enquiry': typeof ApiPublicWebsiteEnquiryRoute
   '/ai': typeof AppAiIndexRoute
   '/communications': typeof AppCommunicationsIndexRoute
   '/vendor': typeof AppVendorIndexRoute
@@ -768,14 +847,20 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/shop': typeof ShopRouteRouteWithChildren
   '/_app': typeof AppRouteWithChildren
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/contact': typeof ContactRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/sleep-finder': typeof SleepFinderRoute
   '/vendor-signup': typeof VendorSignupRoute
+  '/wishlist': typeof WishlistRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_app/accounting': typeof AppAccountingRouteWithChildren
   '/_app/ai': typeof AppAiRouteWithChildren
@@ -803,7 +888,10 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/vendor': typeof AppVendorRouteWithChildren
+  '/_app/website-enquiries': typeof AppWebsiteEnquiriesRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
+  '/shop/$slug': typeof ShopSlugRoute
+  '/shop/': typeof ShopIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_app/accounting/audit-log': typeof AppAccountingAuditLogRoute
   '/_app/accounting/balance-sheet': typeof AppAccountingBalanceSheetRoute
@@ -844,6 +932,7 @@ export interface FileRoutesById {
   '/_app/inventory/valuation': typeof AppInventoryValuationRoute
   '/_app/vendor/ledger': typeof AppVendorLedgerRoute
   '/_app/vendor/purchase-orders': typeof AppVendorPurchaseOrdersRouteWithChildren
+  '/api/public/website-enquiry': typeof ApiPublicWebsiteEnquiryRoute
   '/_app/ai/': typeof AppAiIndexRoute
   '/_app/communications/': typeof AppCommunicationsIndexRoute
   '/_app/vendor/': typeof AppVendorIndexRoute
@@ -865,13 +954,19 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/shop'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
     | '/forgot-password'
     | '/login'
     | '/mcp'
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/sleep-finder'
     | '/vendor-signup'
+    | '/wishlist'
     | '/.well-known/oauth-protected-resource'
     | '/accounting'
     | '/ai'
@@ -899,7 +994,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tally-import'
     | '/vendor'
+    | '/website-enquiries'
     | '/whatsapp'
+    | '/shop/$slug'
+    | '/shop/'
     | '/.lovable/oauth/consent'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
@@ -940,6 +1038,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/api/public/website-enquiry'
     | '/ai/'
     | '/communications/'
     | '/vendor/'
@@ -959,13 +1058,18 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
     | '/forgot-password'
     | '/login'
     | '/mcp'
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/sleep-finder'
     | '/vendor-signup'
+    | '/wishlist'
     | '/.well-known/oauth-protected-resource'
     | '/accounting'
     | '/approvals'
@@ -990,7 +1094,10 @@ export interface FileRouteTypes {
     | '/sales-orders'
     | '/settings'
     | '/tally-import'
+    | '/website-enquiries'
     | '/whatsapp'
+    | '/shop/$slug'
+    | '/shop'
     | '/.lovable/oauth/consent'
     | '/accounting/audit-log'
     | '/accounting/balance-sheet'
@@ -1031,6 +1138,7 @@ export interface FileRouteTypes {
     | '/inventory/valuation'
     | '/vendor/ledger'
     | '/vendor/purchase-orders'
+    | '/api/public/website-enquiry'
     | '/ai'
     | '/communications'
     | '/vendor'
@@ -1050,14 +1158,20 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/shop'
     | '/_app'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
     | '/forgot-password'
     | '/login'
     | '/mcp'
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/sleep-finder'
     | '/vendor-signup'
+    | '/wishlist'
     | '/.well-known/oauth-protected-resource'
     | '/_app/accounting'
     | '/_app/ai'
@@ -1085,7 +1199,10 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tally-import'
     | '/_app/vendor'
+    | '/_app/website-enquiries'
     | '/_app/whatsapp'
+    | '/shop/$slug'
+    | '/shop/'
     | '/.lovable/oauth/consent'
     | '/_app/accounting/audit-log'
     | '/_app/accounting/balance-sheet'
@@ -1126,6 +1243,7 @@ export interface FileRouteTypes {
     | '/_app/inventory/valuation'
     | '/_app/vendor/ledger'
     | '/_app/vendor/purchase-orders'
+    | '/api/public/website-enquiry'
     | '/_app/ai/'
     | '/_app/communications/'
     | '/_app/vendor/'
@@ -1146,16 +1264,23 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ShopRouteRoute: typeof ShopRouteRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
+  CartRoute: typeof CartRoute
+  CheckoutRoute: typeof CheckoutRoute
+  ContactRoute: typeof ContactRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
   PendingRoute: typeof PendingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  SleepFinderRoute: typeof SleepFinderRoute
   VendorSignupRoute: typeof VendorSignupRoute
+  WishlistRoute: typeof WishlistRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  ApiPublicWebsiteEnquiryRoute: typeof ApiPublicWebsiteEnquiryRoute
   ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
   ApiPublicWhatsappInteraktRoute: typeof ApiPublicWhatsappInteraktRoute
 }
@@ -1174,6 +1299,27 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1211,6 +1357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -1218,11 +1371,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sleep-finder': {
+      id: '/sleep-finder'
+      path: '/sleep-finder'
+      fullPath: '/sleep-finder'
+      preLoaderRoute: typeof SleepFinderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vendor-signup': {
       id: '/vendor-signup'
       path: '/vendor-signup'
       fullPath: '/vendor-signup'
       preLoaderRoute: typeof VendorSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/oauth-protected-resource': {
@@ -1414,12 +1581,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/website-enquiries': {
+      id: '/_app/website-enquiries'
+      path: '/website-enquiries'
+      fullPath: '/website-enquiries'
+      preLoaderRoute: typeof AppWebsiteEnquiriesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/whatsapp': {
       id: '/_app/whatsapp'
       path: '/whatsapp'
       fullPath: '/whatsapp'
       preLoaderRoute: typeof AppWhatsappRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/shop/': {
+      id: '/shop/'
+      path: '/'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof ShopRouteRoute
+    }
+    '/shop/$slug': {
+      id: '/shop/$slug'
+      path: '/$slug'
+      fullPath: '/shop/$slug'
+      preLoaderRoute: typeof ShopSlugRouteImport
+      parentRoute: typeof ShopRouteRoute
     }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
@@ -1722,6 +1910,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorPurchaseOrdersRouteImport
       parentRoute: typeof AppVendorRoute
     }
+    '/api/public/website-enquiry': {
+      id: '/api/public/website-enquiry'
+      path: '/api/public/website-enquiry'
+      fullPath: '/api/public/website-enquiry'
+      preLoaderRoute: typeof ApiPublicWebsiteEnquiryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/accounting/ledger/$id': {
       id: '/_app/accounting/ledger/$id'
       path: '/ledger/$id'
@@ -1815,6 +2010,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ShopRouteRouteChildren {
+  ShopSlugRoute: typeof ShopSlugRoute
+  ShopIndexRoute: typeof ShopIndexRoute
+}
+
+const ShopRouteRouteChildren: ShopRouteRouteChildren = {
+  ShopSlugRoute: ShopSlugRoute,
+  ShopIndexRoute: ShopIndexRoute,
+}
+
+const ShopRouteRouteWithChildren = ShopRouteRoute._addFileChildren(
+  ShopRouteRouteChildren,
+)
 
 interface AppAccountingRouteChildren {
   AppAccountingAuditLogRoute: typeof AppAccountingAuditLogRoute
@@ -2057,6 +2266,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
   AppVendorRoute: typeof AppVendorRouteWithChildren
+  AppWebsiteEnquiriesRoute: typeof AppWebsiteEnquiriesRoute
   AppWhatsappRoute: typeof AppWhatsappRoute
 }
 
@@ -2087,6 +2297,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppTallyImportRoute: AppTallyImportRoute,
   AppVendorRoute: AppVendorRouteWithChildren,
+  AppWebsiteEnquiriesRoute: AppWebsiteEnquiriesRoute,
   AppWhatsappRoute: AppWhatsappRoute,
 }
 
@@ -2094,17 +2305,24 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ShopRouteRoute: ShopRouteRouteWithChildren,
   AppRoute: AppRouteWithChildren,
+  CartRoute: CartRoute,
+  CheckoutRoute: CheckoutRoute,
+  ContactRoute: ContactRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
   PendingRoute: PendingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  SleepFinderRoute: SleepFinderRoute,
   VendorSignupRoute: VendorSignupRoute,
+  WishlistRoute: WishlistRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  ApiPublicWebsiteEnquiryRoute: ApiPublicWebsiteEnquiryRoute,
   ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
   ApiPublicWhatsappInteraktRoute: ApiPublicWhatsappInteraktRoute,
 }
