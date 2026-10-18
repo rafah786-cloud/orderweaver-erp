@@ -108,9 +108,6 @@ def main() -> None:
                 GRANT SELECT ON public.profiles TO authenticated;
                 CREATE POLICY users_read_own_profile ON public.profiles
                   FOR SELECT TO authenticated USING (id=auth.uid());
-                CREATE POLICY "admin insert profiles" ON public.profiles
-                  FOR INSERT TO authenticated
-                  WITH CHECK (public.has_role(auth.uid(),'admin'::public.app_role) OR id=auth.uid());
                 CREATE FUNCTION public.is_approved(_user_id uuid) RETURNS boolean
                   LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT _user_id=auth.uid()
@@ -137,6 +134,9 @@ def main() -> None:
                     SELECT _user_id=auth.uid()
                       AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=auth.uid() AND role=_role)
                   $fn$;
+                CREATE POLICY "admin insert profiles" ON public.profiles
+                  FOR INSERT TO authenticated
+                  WITH CHECK (public.has_role(auth.uid(),'admin'::public.app_role) OR id=auth.uid());
                 CREATE FUNCTION public.current_user_roles() RETURNS SETOF public.app_role
                   LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT role FROM public.user_roles WHERE user_id=auth.uid()
