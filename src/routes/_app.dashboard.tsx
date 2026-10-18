@@ -105,6 +105,11 @@ function DashboardPage() {
         { label: "Inventory", detail: "Stock and material visibility", to: "/inventory", icon: Boxes },
         { label: "Production", detail: "Factory and order execution", to: "/production", icon: Factory },
         { label: "Reports & Intelligence", detail: "Business insights and analysis", to: "/ai/insights", icon: Activity },
+        { label: "Marketing & Campaigns", detail: "Campaign budget, spend and attributable sales", to: "/marketing", icon: Activity },
+        { label: "Fleet & Fuel", detail: "Vehicle register, fuel and compliance reminders", to: "/fleet", icon: Truck },
+        { label: "Maintenance & Assets", detail: "Factory equipment and maintenance work orders", to: "/maintenance", icon: Factory },
+        { label: "Quality Management", detail: "Inspections, defects and corrective actions", to: "/quality", icon: ClipboardList },
+        { label: "Smart SleepTec Studio", detail: "Smart product masters, BOM revisions and engineering changes", to: "/smart-sleeptec", icon: Package },
       ]
     : sales
       ? [
