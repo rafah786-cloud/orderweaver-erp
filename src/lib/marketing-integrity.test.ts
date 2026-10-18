@@ -32,6 +32,8 @@ describe("Marketing campaign security and evidence contract", () => {
 
   it("reports only recorded ERP leads, invoices and spend instead of fabricated channel analytics", () => {
     expect(route).toContain('from("crm_leads")');
+    expect(route).toContain('select("id,lead_number,title,status,source")');
+    expect(route).toContain("lead?.title");
     expect(route).toContain('from("invoices")');
     expect(route).toContain('from("marketing_campaign_costs")');
     expect(route).toContain("Spend records, not ledger postings");
