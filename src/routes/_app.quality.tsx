@@ -189,7 +189,7 @@ function QualityPage() {
           characteristic_code: resultForm.characteristic_code.trim().toUpperCase(),
           characteristic_name: resultForm.characteristic_name.trim(), target_value: target,
           lower_limit: low, upper_limit: high, measured_value: measured, unit: resultForm.unit.trim() || null,
-          result: resultForm.status === "passed" ? "pass" : resultForm.status === "failed" ? "fail" : "conditional",
+          result: resultForm.status === "passed" ? "pass" : resultForm.status === "failed" ? "fail" : "not_tested",
           evidence: { note: resultForm.notes.trim() || null, entered_via: "quality_workspace" },
         });
         if (resultError) throw resultError;
