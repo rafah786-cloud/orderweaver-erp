@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Outlet,
   Link,
@@ -10,6 +11,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { APP_RELEASE_CHECKPOINT } from "@/lib/release-checkpoint";
+import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 
 import appCss from "../styles.css?url";
 import corporateCss from "../corporate.css?url";
@@ -155,10 +157,18 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    // Share the existing root-scoped worker with web push so push subscriptions are not replaced.
+    void navigator.serviceWorker.register("/push-service-worker.js", { scope: "/" }).catch(() => {
+      // Installation is optional; all ERP data remains online-only.
+    });
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
+        <PwaInstallPrompt />
         <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
