@@ -88,15 +88,15 @@ def main() -> None:
                 CREATE SCHEMA auth;
                 CREATE TYPE public.app_role AS ENUM
                   ('admin','accountant','sales','production','hr','employee','customer','vendor');
-                CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS
+                CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER AS
                   $$ SELECT current_setting('request.jwt.claim.sub', true)::uuid $$;
-                CREATE FUNCTION public.is_approved(uuid) RETURNS boolean LANGUAGE sql AS
+                CREATE FUNCTION public.is_approved(uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS
                   $$ SELECT coalesce(current_setting('test.approved', true), 'true')::boolean $$;
-                CREATE FUNCTION public.current_company_id() RETURNS uuid LANGUAGE sql AS
+                CREATE FUNCTION public.current_company_id() RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER AS
                   $$ SELECT coalesce(nullif(current_setting('test.company', true), ''), '10000000-0000-0000-0000-000000000001')::uuid $$;
-                CREATE FUNCTION public.has_company_access(uuid) RETURNS boolean LANGUAGE sql AS
+                CREATE FUNCTION public.has_company_access(uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS
                   $$ SELECT $1 = public.current_company_id() $$;
-                CREATE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS boolean LANGUAGE sql AS
+                CREATE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS
                   $$ SELECT _user_id = auth.uid() AND coalesce(current_setting('test.role', true), 'sales') = _role::text $$;
                 GRANT USAGE ON SCHEMA public, auth TO authenticated, anon;
             """, caller=False)
