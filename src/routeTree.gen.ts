@@ -43,12 +43,14 @@ import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppLocalTallyAccountsRouteImport } from './routes/_app.local-tally-accounts'
 import { Route as AppMrpRouteImport } from './routes/_app.mrp'
 import { Route as AppMarketingRouteImport } from './routes/_app.marketing'
+import { Route as AppQualityRouteImport } from './routes/_app.quality'
 import { Route as AppMaintenanceRouteImport } from './routes/_app.maintenance'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppPrintRouteImport } from './routes/_app.print'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
+import { Route as AppSmartSleepTecRouteImport } from './routes/_app.smart-sleeptec'
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -289,6 +291,16 @@ const AppMarketingRoute = AppMarketingRouteImport.update({
 const AppMaintenanceRoute = AppMaintenanceRouteImport.update({
   id: '/maintenance',
   path: '/maintenance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQualityRoute = AppQualityRouteImport.update({
+  id: '/quality',
+  path: '/quality',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSmartSleepTecRoute = AppSmartSleepTecRouteImport.update({
+  id: '/smart-sleeptec',
+  path: '/smart-sleeptec',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -2277,6 +2289,8 @@ interface AppRouteChildren {
   AppMrpRoute: typeof AppMrpRoute
   AppMarketingRoute: typeof AppMarketingRoute
   AppMaintenanceRoute: typeof AppMaintenanceRoute
+  AppQualityRoute: typeof AppQualityRoute
+  AppSmartSleepTecRoute: typeof AppSmartSleepTecRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -2311,6 +2325,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppMrpRoute: AppMrpRoute,
   AppMarketingRoute: AppMarketingRoute,
   AppMaintenanceRoute: AppMaintenanceRoute,
+  AppQualityRoute: AppQualityRoute,
+  AppSmartSleepTecRoute: AppSmartSleepTecRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
