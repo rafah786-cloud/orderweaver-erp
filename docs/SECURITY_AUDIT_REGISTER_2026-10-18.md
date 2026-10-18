@@ -45,6 +45,13 @@ These references are benchmarks, not an assertion that this ERP already implemen
 
 **Fix proposed in PR:** Remove broad company-only policies and revoke direct PUBLIC, anon and authenticated table privileges for these ten tables until each has a documented role/record-owner workflow and adversarial tests. Preserve data and existing service_role privileges. This is intentionally fail-closed: these capabilities are not to be exposed directly to client users before policy and functional coverage is ready.
 
+### SEC-2026-008 — Elevated RPC helper functions could bypass the profile-approval screen
+
+**Severity:** High when a previously privileged profile is marked pending/rejected but its role assignment remains.  
+**Evidence:** A catalog/source scan found 35 executable SECURITY DEFINER functions whose source did not mention is_approved(). Several correctly checked roles, but role checks alone do not confirm the profile is approved. SECURITY DEFINER operations can bypass RLS policies on the underlying tables; the global RESTRICTIVE table policy alone is therefore not sufficient for those function calls.  
+**Fix proposed in PR:** Harden current_company_id(), has_company_access(), has_role(), current_user_roles(), and set_active_company() to require an approved profile. Add disposable-PostgreSQL tests proving a pending profile with a lingering admin role and company membership cannot resolve an active company, pass role/company helper checks, list its roles, or switch company; approved users retain the existing helper behavior. Other role-checked SECURITY DEFINER functions inherit the stricter shared helper decisions.  
+**Residual review:** Continue checking functions that perform mutations without these shared helper checks, anonymous/public endpoints and service integrations; do not treat the helper update as complete audit coverage.
+
 ## Role and data-domain matrix (initial, not exhaustive)
 
 | Domain | Expected authorization | Required negative tests |
