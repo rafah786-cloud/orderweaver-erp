@@ -105,7 +105,7 @@ def main() -> None:
                 CREATE TABLE public.user_company_access(user_id uuid, company_id uuid, can_view boolean NOT NULL DEFAULT true);
                 CREATE TABLE public.user_roles(user_id uuid, role public.app_role);
                 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-                GRANT SELECT ON public.profiles TO authenticated;
+                GRANT SELECT, INSERT ON public.profiles TO authenticated;
                 CREATE POLICY users_read_own_profile ON public.profiles
                   FOR SELECT TO authenticated USING (id=auth.uid());
                 CREATE FUNCTION public.is_approved(_user_id uuid) RETURNS boolean
