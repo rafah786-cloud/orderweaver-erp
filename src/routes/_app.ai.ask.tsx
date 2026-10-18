@@ -81,6 +81,31 @@ function AskPage() {
         description="Natural-language questions answered from your live ERP data. The assistant reads only — it never changes records."
       />
 
+      {status?.agents && (
+        <details className="mx-4 mb-3 rounded-lg border bg-background">
+          <summary className="cursor-pointer list-none px-4 py-3">
+            <span className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium">Specialist AI agent directory</span>
+              <span className="text-xs text-muted-foreground">{status.agents.filter((agent) => agent.configured).length} of {status.agents.length} agents configured · expand details</span>
+            </span>
+          </summary>
+          <div className="grid gap-2 border-t p-3 sm:grid-cols-2 xl:grid-cols-4">
+            {status.agents.map((agent) => (
+              <div key={agent.id} className="min-w-0 rounded-lg border p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium">{agent.label}</p>
+                  <Badge variant={agent.configured ? "secondary" : "outline"}>{agent.configured ? "Ready" : "Needs key"}</Badge>
+                </div>
+                <p className="mt-2 break-all text-xs text-muted-foreground">{agent.model}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Provider: {agent.provider}</p>
+                <p className="mt-2 text-xs">{agent.writeAccess === "none" ? "Read / analysis only" : "Draft generation only"}</p>
+                {agent.humanApprovalRequired && <p className="mt-1 text-xs text-muted-foreground">Human review required for resulting action.</p>}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
       {status && !status.configured && (
         <div className="mx-4 mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
           The AI service is not configured yet. Add the <code>AI_API_KEY</code> secret (or keep <code>NVIDIA_API_KEY</code> for the default NVIDIA gateway) to enable
