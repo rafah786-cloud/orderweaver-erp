@@ -54,6 +54,7 @@ import { Route as AppSmartSleepTecRouteImport } from './routes/_app.smart-sleept
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppShipmentsRouteImport } from './routes/_app.shipments'
 import { Route as AppShopFloorRouteImport } from './routes/_app.shop-floor'
 import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
 import { Route as AppVendorRouteImport } from './routes/_app.vendor'
@@ -347,6 +348,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppShopFloorRoute = AppShopFloorRouteImport.update({
   id: '/shop-floor',
   path: '/shop-floor',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShipmentsRoute = AppShipmentsRouteImport.update({
+  id: '/shipments',
+  path: '/shipments',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTallyImportRoute = AppTallyImportRouteImport.update({
@@ -2306,6 +2312,7 @@ interface AppRouteChildren {
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShopFloorRoute: typeof AppShopFloorRoute
+  AppShipmentsRoute: typeof AppShipmentsRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppWebsiteEnquiriesRoute: typeof AppWebsiteEnquiriesRoute
@@ -2343,6 +2350,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShopFloorRoute: AppShopFloorRoute,
+  AppShipmentsRoute: AppShipmentsRoute,
   AppTallyImportRoute: AppTallyImportRoute,
   AppVendorRoute: AppVendorRouteWithChildren,
   AppWebsiteEnquiriesRoute: AppWebsiteEnquiriesRoute,
