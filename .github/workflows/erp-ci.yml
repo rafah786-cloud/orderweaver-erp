@@ -49,6 +49,10 @@ jobs:
         run: |
           export PATH="$(pg_config --bindir):$PATH"
           python security-tests/enterprise_workbench_admin_rls.py supabase/migrations/20261014140000_enterprise_workbench_admin_dml_guard.sql
+      - name: Test vendor purchase-bill acknowledgement boundary
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/vendor_purchase_bill_ack.py supabase/migrations/20261018160000_harden_vendor_purchase_bill_ack.sql
 
   bank-reconciliation-rpc:
     runs-on: ubuntu-latest
