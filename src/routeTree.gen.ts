@@ -43,6 +43,7 @@ import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppLocalTallyAccountsRouteImport } from './routes/_app.local-tally-accounts'
 import { Route as AppMrpRouteImport } from './routes/_app.mrp'
 import { Route as AppMarketingRouteImport } from './routes/_app.marketing'
+import { Route as AppMaintenanceRouteImport } from './routes/_app.maintenance'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
@@ -283,6 +284,11 @@ const AppMrpRoute = AppMrpRouteImport.update({
 const AppMarketingRoute = AppMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaintenanceRoute = AppMaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -2270,6 +2276,7 @@ interface AppRouteChildren {
   AppLocalTallyAccountsRoute: typeof AppLocalTallyAccountsRoute
   AppMrpRoute: typeof AppMrpRoute
   AppMarketingRoute: typeof AppMarketingRoute
+  AppMaintenanceRoute: typeof AppMaintenanceRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
@@ -2303,6 +2310,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLocalTallyAccountsRoute: AppLocalTallyAccountsRoute,
   AppMrpRoute: AppMrpRoute,
   AppMarketingRoute: AppMarketingRoute,
+  AppMaintenanceRoute: AppMaintenanceRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
