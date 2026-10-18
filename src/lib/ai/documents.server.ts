@@ -1,5 +1,9 @@
 import { aiChatJson, aiEmbed, AI_MODELS, isAiConfigured } from "./nvidia.server";
 import type { Db } from "./erp-data.server";
+import { agentForCapability } from "./agent-router.server";
+
+const documentVisionAgent = agentForCapability("document_vision");
+const documentVisionModel = process.env[documentVisionAgent.modelEnv] || AI_MODELS.vision;
 
 /**
  * AI document reading, matching and semantic search (server-only).
@@ -75,7 +79,7 @@ export async function extractDocument(input: {
           ],
         },
       ],
-      { model: AI_MODELS.vision, maxTokens: 2500, temperature: 0 },
+      { model: documentVisionModel, maxTokens: 2500, temperature: 0 },
     );
   }
   const text = (input.text ?? "").slice(0, 40_000);
