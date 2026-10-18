@@ -11,6 +11,7 @@ from pathlib import Path
 
 USER_PENDING = "00000000-0000-0000-0000-000000000001"
 USER_APPROVED = "00000000-0000-0000-0000-000000000002"
+USER_APPROVED_NONADMIN = "00000000-0000-0000-0000-000000000004"
 USER_MISSING_PROFILE = "00000000-0000-0000-0000-000000000003"
 COMPANY_A = "10000000-0000-0000-0000-000000000001"
 COMPANY_B = "10000000-0000-0000-0000-000000000002"
@@ -153,15 +154,18 @@ def main() -> None:
                   ('10000000-0000-0000-0000-000000000002',true);
                 INSERT INTO public.profiles(id,status,active_company_id) VALUES
                   ('00000000-0000-0000-0000-000000000001','pending','10000000-0000-0000-0000-000000000001'),
-                  ('00000000-0000-0000-0000-000000000002','approved','10000000-0000-0000-0000-000000000001');
+                  ('00000000-0000-0000-0000-000000000002','approved','10000000-0000-0000-0000-000000000001'),
+                  ('00000000-0000-0000-0000-000000000004','approved','10000000-0000-0000-0000-000000000001');
                 INSERT INTO public.user_company_access(user_id,company_id,can_view) VALUES
                   ('00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001',true),
                   ('00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002',true),
                   ('00000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001',true),
-                  ('00000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002',true);
+                  ('00000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002',true),
+                  ('00000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000001',true);
                 INSERT INTO public.user_roles(user_id,role) VALUES
                   ('00000000-0000-0000-0000-000000000001','admin'),
-                  ('00000000-0000-0000-0000-000000000002','admin');
+                  ('00000000-0000-0000-0000-000000000002','admin'),
+                  ('00000000-0000-0000-0000-000000000004','sales');
                 GRANT USAGE ON SCHEMA public, auth TO authenticated, anon, service_role;
             """, caller=False)
 
@@ -251,7 +255,7 @@ def main() -> None:
                    sql(
                        f"INSERT INTO public.profiles(id,status,active_company_id) VALUES "
                        f"('{ROW_B}','pending','{COMPANY_A}')",
-                       user=USER_APPROVED,
+                       user=USER_APPROVED_NONADMIN,
                        check=False,
                    ).returncode != 0)
             expect("approved admin retains profile provisioning capability",
