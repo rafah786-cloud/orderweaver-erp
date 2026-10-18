@@ -1944,6 +1944,68 @@ export type Database = {
         }
         Relationships: []
       }
+      website_enquiries: {
+        Row: {
+          id: string
+          reference_number: string
+          company_id: string
+          customer_name: string
+          phone: string
+          email: string | null
+          enquiry_type: string
+          model_name: string | null
+          message: string
+          status: string
+          response_notes: string | null
+          assigned_to: string | null
+          source: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reference_number?: string
+          company_id: string
+          customer_name: string
+          phone: string
+          email?: string | null
+          enquiry_type: string
+          model_name?: string | null
+          message?: string
+          status?: string
+          response_notes?: string | null
+          assigned_to?: string | null
+          source?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          reference_number?: string
+          company_id?: string
+          customer_name?: string
+          phone?: string
+          email?: string | null
+          enquiry_type?: string
+          model_name?: string | null
+          message?: string
+          status?: string
+          response_notes?: string | null
+          assigned_to?: string | null
+          source?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_enquiries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_opportunities: {
         Row: {
           amount: number

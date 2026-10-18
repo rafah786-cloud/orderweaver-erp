@@ -7,8 +7,10 @@ The storefront is part of the existing `rafah786-cloud/orderweaver-erp` applicat
 - All 23 supplied mattress model names are represented as draft catalogue entries in `src/lib/zizz-store-catalog.ts`.
 - Draft pages deliberately do not display guessed prices, materials, comfort claims, warranty terms or reviews.
 - The mattress illustration is generic and explicitly labelled illustrative; exact fabric patterns are not promised.
-- Checkout is intentionally disabled. The current cart is a safe placeholder and does not create a real order or collect payment.
+- The `/cart` route is a browser-persisted enquiry list: visitors can add model drafts, adjust quantities, remove items, and send a prepared multi-model quote request to customer care by email or WhatsApp. It does not create a sales order or collect payment.
+- Checkout remains intentionally disabled until authoritative prices, tax treatment, fulfilment, payment and policy requirements are verified.
 - The catalogue currently uses local draft metadata. It is not yet connected to a production product, inventory, order, payment or shipping database.
+- The website enquiry form now has a server-side validation/storage path and a company-scoped ERP inbox. The additive website-enquiry schema/policy/notification migration was applied to the connected Lovable ERP database on 18 October 2026. The current source branch must still be merged/synced and the public website republished before the website form can use it end-to-end; this intake route does not create orders or accept payment.
 
 ## Before accepting orders
 

@@ -27,6 +27,7 @@ import ortho from "@/assets/brands/orthomedic.jpeg.asset.json";
 import drspine from "@/assets/brands/drspine.jpeg.asset.json";
 import zizzBedroom from "@/assets/zizz-flagship-bedroom.jpg.asset.json";
 import { useAuth } from "@/hooks/useAuth";
+import { readZizzQuoteCart, subscribeZizzQuoteCart } from "@/lib/zizz-quote-cart";
 
 const SITE_URL = "https://www.zizzmattress.com";
 
@@ -148,6 +149,13 @@ function LoginMenu({ mobile = false }: { mobile?: boolean }) {
 function ZizzHome() {
   const { session } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [quoteItemCount, setQuoteItemCount] = useState(0);
+
+  useEffect(() => {
+    const syncQuoteCount = () => setQuoteItemCount(readZizzQuoteCart().reduce((total, item) => total + item.quantity, 0));
+    syncQuoteCount();
+    return subscribeZizzQuoteCart(syncQuoteCount);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-[#182b3c]">
@@ -192,9 +200,9 @@ function ZizzHome() {
             <Link to="/wishlist" aria-label="Wishlist" className="rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <Heart className="h-5 w-5" />
             </Link>
-            <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2.5 text-[#344b5d] hover:bg-white">
+            <Link to="/cart" aria-label="Enquiry list" title="Enquiry list" className="relative rounded-full p-2.5 text-[#344b5d] hover:bg-white">
               <ShoppingBag className="h-5 w-5" />
-              <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c78c31] px-1 text-[9px] font-bold text-white">0</span>
+              {quoteItemCount > 0 && <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c78c31] px-1 text-[9px] font-bold text-white" aria-label={`${quoteItemCount} mattress units in enquiry list`}>{quoteItemCount > 99 ? "99+" : quoteItemCount}</span>}
             </Link>
             {session && (
               <Link to="/dashboard" className="rounded-full px-3 py-2 text-sm font-semibold text-[#17324d] hover:bg-white">
@@ -225,7 +233,7 @@ function ZizzHome() {
                 ["brands", "Our Brands", "#brands"],
                 ["support", "Help & Support", "/contact"],
                 ["wishlist", "Saved Mattresses", "/wishlist"],
-                ["cart", "Cart", "/cart"],
+                ["cart", "Enquiry list", "/cart"],
               ].map(([id, label, href]) => (
                 id === "collections" || id === "brands" ? (
                   <a key={id} href={href} onClick={() => setMobileOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10">{label}</a>
