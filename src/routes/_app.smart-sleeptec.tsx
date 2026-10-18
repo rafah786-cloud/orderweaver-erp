@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_app/smart-sleeptec")({ component: SmartS
 function SmartSleepTecPage() {
   const { activeCompany, loading: companyLoading } = useCompany();
   const { hasAnyRole, hasRole, user } = useAuth();
-  const canManage = hasAnyRole(["admin", "production"]);
+  const canManage = hasAnyRole(["admin"]);
   const isAdmin = hasRole("admin");
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -421,6 +421,7 @@ function SmartSleepTecPage() {
         </Dialog>
       </div> : undefined} />
       <PageBody>
+        {!canManage && <div role="note" className="mb-4 rounded-lg border border-amber-300/50 bg-amber-50/50 p-3 text-sm text-amber-950 dark:bg-amber-950/10 dark:text-amber-100"><strong>Read-only for this role.</strong> The live database currently restricts writes in this workspace to approved administrators. The workspace remains visible, but editing actions are disabled until a reviewed database-policy migration is safely deployed.</div>}
         {loadError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 p-4 text-sm"><AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" /><span>Engineering records could not be loaded. Verify active-company access and refresh.</span></div>}
         {loading && <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading product engineering records…</div>}
         {!loading && !loadingError && <>
