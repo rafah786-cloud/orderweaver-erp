@@ -42,7 +42,13 @@ def main() -> None:
         env.update(PGHOST=str(socket), PGPORT="55451", PGDATABASE="postgres", PGUSER="postgres")
 
         def run(args, check=True):
-            return subprocess.run(args, env=env, text=True, capture_output=True, check=check)
+            result = subprocess.run(args, env=env, text=True, capture_output=True, check=False)
+            if check and result.returncode != 0:
+                raise RuntimeError(
+                    "Command failed: " + " ".join(args) + "\\n"
+                    + "stdout:\\n" + result.stdout + "\\nstderr:\\n" + result.stderr
+                )
+            return result
 
         def local(args):
             if os.geteuid() == 0:
@@ -100,13 +106,13 @@ def main() -> None:
                 CREATE POLICY users_read_own_profile ON public.profiles
                   FOR SELECT TO authenticated USING (id=auth.uid());
                 CREATE FUNCTION public.is_approved(_user_id uuid) RETURNS boolean
-                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT _user_id=auth.uid()
                       AND EXISTS (SELECT 1 FROM public.profiles p
                                   WHERE p.id=auth.uid() AND p.status='approved')
-                  $;
+                  $fn$;
                 CREATE FUNCTION public.current_company_id() RETURNS uuid
-                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT p.active_company_id
                     FROM public.profiles p JOIN public.companies c
                       ON c.id=p.active_company_id AND c.is_active
@@ -114,29 +120,29 @@ def main() -> None:
                       AND EXISTS (SELECT 1 FROM public.user_company_access a
                                   WHERE a.user_id=auth.uid() AND a.company_id=p.active_company_id
                                     AND a.can_view)
-                  $;
+                  $fn$;
                 CREATE FUNCTION public.has_company_access(_company_id uuid) RETURNS boolean
-                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT EXISTS (SELECT 1 FROM public.user_company_access
                                    WHERE user_id=auth.uid() AND company_id=_company_id AND can_view)
-                  $;
+                  $fn$;
                 CREATE FUNCTION public.has_role(_user_id uuid,_role public.app_role) RETURNS boolean
-                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT _user_id=auth.uid()
                       AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=auth.uid() AND role=_role)
-                  $;
+                  $fn$;
                 CREATE FUNCTION public.current_user_roles() RETURNS SETOF public.app_role
-                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+                  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
                     SELECT role FROM public.user_roles WHERE user_id=auth.uid()
-                  $;
+                  $fn$;
                 CREATE FUNCTION public.set_active_company(_company_id uuid) RETURNS uuid
-                  LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $
+                  LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $fn$
                   BEGIN
                     IF NOT public.has_company_access(_company_id) THEN RAISE EXCEPTION 'No company access'; END IF;
                     UPDATE public.profiles SET active_company_id=_company_id WHERE id=auth.uid();
                     RETURN _company_id;
                   END
-                  $;
+                  $fn$;
                 INSERT INTO public.companies(id,is_active) VALUES
                   ('10000000-0000-0000-0000-000000000001',true),
                   ('10000000-0000-0000-0000-000000000002',true);
