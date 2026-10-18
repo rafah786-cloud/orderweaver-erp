@@ -18,7 +18,7 @@ const enquiryLabels: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/contact")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { type?: string; model?: string; details?: string } => ({
     type: typeof search.type === "string" && Object.prototype.hasOwnProperty.call(enquiryLabels, search.type) ? search.type : "general",
     model: typeof search.model === "string" ? search.model : "",
     details: typeof search.details === "string" ? search.details : "",
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
-  const { type, model, details } = Route.useSearch();
+  const { type = "general", model = "", details = "" } = Route.useSearch();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");

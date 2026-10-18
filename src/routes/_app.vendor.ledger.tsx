@@ -52,13 +52,18 @@ function VendorLedger() {
 
   const downloadCSV = () => {
     const header = ["Date", "Voucher Type", "Voucher #", "Narration", "Debit", "Credit", "Balance"];
-    const lines = [header.join(",")].concat(
+    const cell = (v: unknown) => {
+      let s = String(v ?? "");
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const lines = [header.map(cell).join(",")].concat(
       rows.map((r) =>
         [
-          r.entry_date,
-          r.voucher_type ?? "",
-          r.voucher_number ?? "",
-          `"${(r.narration ?? "").replace(/"/g, '""')}"`,
+          cell(r.entry_date),
+          cell(r.voucher_type),
+          cell(r.voucher_number),
+          cell(r.narration),
           r.debit,
           r.credit,
           r.balance,
