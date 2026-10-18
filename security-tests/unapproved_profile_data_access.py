@@ -177,9 +177,9 @@ def main() -> None:
             expect("approved user retains access to own-company invoices",
                    sql("SELECT count(*) FROM public.invoices", user=USER_APPROVED,
                        company=COMPANY_A, approved=True).stdout.strip() == "1")
-            expect("approved user cannot read another company's rows",
-                   sql("SELECT count(*) FROM public.invoices", user=USER_APPROVED,
-                       company=COMPANY_B, approved=True).stdout.strip() == "1")
+            expect("approved user cannot read company B rows while company A is active",
+                   sql(f"SELECT count(*) FROM public.invoices WHERE id='{ROW_B}'",
+                       user=USER_APPROVED, company=COMPANY_A, approved=True).stdout.strip() == "0")
             approved_insert = sql(
                 f"INSERT INTO public.invoices(id,company_id,payload) VALUES "
                 f"('30000000-0000-0000-0000-000000000002','{COMPANY_A}','approved')",
