@@ -91,9 +91,23 @@ function SmartSleepTecPage() {
         const safe = search.trim().replace(/[,%()]/g, " ").slice(0, 80);
         request = request.or(`name.ilike.%${safe}%,code.ilike.%${safe}%`);
       }
-      const { data, error } = await request;
-      if (error) throw error;
-      return (data ?? []) as Model[];
+      if (!search.trim()) {
+        const { data, error } = await request.filter("extra_specs->>product_line", "eq", "smart_sleeptec").limit(1000);
+        if (error) throw error;
+        return (data ?? []) as Model[];
+      }
+      const safe = search.trim().replace(/[,%()]/g, " ").slice(0, 80);
+      const [tagged, matching] = await Promise.all([
+        db.from("product_models").select("id,company_id,code,name,size,thickness,cover_fabric,foam_density,warranty,default_price,extra_specs,notes")
+          .eq("company_id", activeCompany.id).filter("extra_specs->>product_line", "eq", "smart_sleeptec").order("name").limit(1000),
+        db.from("product_models").select("id,company_id,code,name,size,thickness,cover_fabric,foam_density,warranty,default_price,extra_specs,notes")
+          .eq("company_id", activeCompany.id).or(`name.ilike.%${safe}%,code.ilike.%${safe}%`).order("name").limit(500),
+      ]);
+      if (tagged.error) throw tagged.error;
+      if (matching.error) throw matching.error;
+      const combined = new Map<string, Model>();
+      for (const row of [...(tagged.data ?? []), ...(matching.data ?? [])]) combined.set(row.id, row as Model);
+      return [...combined.values()];
     },
   });
   const revisionsQuery = useQuery({
