@@ -24,18 +24,19 @@ export function normalizeZizzQuoteCart(value: unknown): ZizzQuoteCartItem[] {
   if (!Array.isArray(value)) return [];
   const quantities = new Map<string, number>();
   for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const candidate = item as { slug?: unknown; quantity?: unknown };
     if (
-      !item ||
-      typeof item !== "object" ||
-      typeof item.slug !== "string" ||
-      !knownSlugs.has(item.slug) ||
-      !Number.isInteger(item.quantity) ||
-      item.quantity < 1 ||
-      item.quantity > 10
+      typeof candidate.slug !== "string" ||
+      !knownSlugs.has(candidate.slug) ||
+      typeof candidate.quantity !== "number" ||
+      !Number.isInteger(candidate.quantity) ||
+      candidate.quantity < 1 ||
+      candidate.quantity > 10
     ) {
       continue;
     }
-    quantities.set(item.slug, Math.min(10, (quantities.get(item.slug) ?? 0) + item.quantity));
+    quantities.set(candidate.slug, Math.min(10, (quantities.get(candidate.slug) ?? 0) + candidate.quantity));
   }
   return [...quantities].map(([slug, quantity]) => ({ slug, quantity }));
 }
