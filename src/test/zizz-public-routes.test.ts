@@ -25,11 +25,29 @@ describe("Zizz public route hierarchy", () => {
       "wishlist.tsx": 'createFileRoute("/wishlist")',
       "cart.tsx": 'createFileRoute("/cart")',
       "checkout.tsx": 'createFileRoute("/checkout")',
+      "api/public/website-enquiry.ts": 'createFileRoute("/api/public/website-enquiry")',
     };
 
     for (const [file, routeDeclaration] of Object.entries(expected)) {
-      expect(existsSync(resolve(routesDir, file)), `${file} exists`).toBe(true);
-      expect(source(file), `${file} declares its intended route`).toContain(routeDeclaration);
+      const path = resolve(routesDir, file);
+      expect(existsSync(path), `${file} exists`).toBe(true);
+      expect(readFileSync(path, "utf8"), `${file} declares its intended route`).toContain(routeDeclaration);
     }
+  });
+
+  it("keeps homepage hash links attached to real sections and uses GET search to reach the shop", () => {
+    const home = source("index.tsx");
+    const ids = new Set([...home.matchAll(/\\bid=["']([^"']+)["']/g)].map((match) => match[1]));
+    const hashLinks = [...home.matchAll(/href=["']#([^"']+)["']/g)].map((match) => match[1]);
+
+    expect(home).not.toMatch(/href=["']#["']/);
+    for (const target of hashLinks) {
+      expect(ids.has(target), `#${target} should point to an existing section`).toBe(true);
+    }
+    for (const match of home.matchAll(/hash=["']([^"']+)["']/g)) {
+      expect(ids.has(match[1]), `hash ${match[1]} should point to an existing section`).toBe(true);
+    }
+    expect(home).toContain('action="/shop" method="get"');
+    expect(home).toContain('id="shop-search" name="q"');
   });
 });
