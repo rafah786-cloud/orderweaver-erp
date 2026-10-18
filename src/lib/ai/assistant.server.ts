@@ -20,6 +20,12 @@ import { semanticSearch } from "./documents.server";
 import { todayIndia } from "@/lib/format";
 import { mattressBudgetRecommendations } from "./mattress-recommendation.server";
 import { costMattressSpecification, type MattressSpecComponent } from "./mattress-spec-costing.server";
+import { agentForCapability } from "./agent-router.server";
+
+const plannerAgent = agentForCapability("fast_classification");
+const reasonerAgent = agentForCapability("business_reasoning");
+const plannerModel = process.env[plannerAgent.modelEnv] || AI_MODELS.fast;
+const reasonerModel = process.env[reasonerAgent.modelEnv] || process.env["NVIDIA_CHAT_MODEL"] || AI_MODELS.chat;
 
 /**
  * "Ask Mattress Maestro" — a retrieval-first assistant.
@@ -77,7 +83,7 @@ async function planTools(
         content: `Today is ${todayIndia()}. Question: ${question}`,
       },
     ],
-    { model: AI_MODELS.fast, maxTokens: 500, temperature: 0 },
+    { model: plannerModel, maxTokens: 500, temperature: 0 },
   );
 
   if (!Array.isArray(plan?.steps) || !plan.steps.length || plan.steps.length > 3) {
@@ -211,7 +217,7 @@ export async function askMaestro(
         ...history,
         { role: "user", content: question },
       ],
-      { model: AI_MODELS.fast, maxTokens: 600, temperature: 0 },
+      { model: plannerModel, maxTokens: 600, temperature: 0 },
     );
     const rawComponents = Array.isArray(parsed?.components) ? parsed.components : [];
     const incomplete = rawComponents.some((c) => !c.materialName?.trim() || typeof c.quantity !== "number" || !Number.isFinite(c.quantity) || c.quantity <= 0 || !c.unit?.trim());
@@ -221,7 +227,7 @@ export async function askMaestro(
         usedRetrievers: [],
         evidence: { costingStatus: "insufficient-input", extractedComponents: rawComponents },
         evidenceMeta: { complete: false, truncatedSources: [], answerState: "insufficient-data" },
-        model: AI_MODELS.fast,
+        model: plannerModel,
       };
     }
     steps = [{ tool: "mattress_spec_costing", args: { components: rawComponents } }];
@@ -288,7 +294,7 @@ export async function askMaestro(
         content: `Question: ${question}\n\nERP DATA (authoritative):\n${serialised}`,
       },
     ],
-    { maxTokens: 1400, temperature: 0.15 },
+    { model: reasonerModel, maxTokens: 1400, temperature: 0.15 },
   );
 
   const answerState =
@@ -346,7 +352,7 @@ export async function contextualAnalysis(
         content: `Area: ${topic}${focus ? `\nFocus: ${focus}` : ""}\n\nERP DATA:\n${JSON.stringify(evidence).slice(0, 40_000)}`,
       },
     ],
-    { maxTokens: 900, temperature: 0.2 },
+    { model: reasonerModel, maxTokens: 900, temperature: 0.2 },
   );
 
   return {
