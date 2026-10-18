@@ -86,6 +86,17 @@ function ShipmentsPage() {
   const partyById=useMemo(()=>new Map((parties.data??[]).map(p=>[p.id,p])),[parties.data]);
   const openDeliveries=(shipments.data??[]).filter(s=>!["delivered","cancelled","returned"].includes(s.status));
   const linesByShipment=useMemo(()=>{const map=new Map<string,ShipmentLine[]>();for(const line of shipmentLines.data??[])map.set(line.shipment_id,[...(map.get(line.shipment_id)??[]),line]);return map;},[shipmentLines.data]);
+  const shipmentById=useMemo(()=>new Map((shipments.data??[]).map(s=>[s.id,s])),[shipments.data]);
+  const shippedByOrderItem=useMemo(()=>{
+    const map=new Map<string,number>();
+    for(const line of shipmentLines.data??[]){
+      const shipment=shipmentById.get(line.shipment_id);
+      if(!shipment||["cancelled","returned"].includes(shipment.status)||!line.sales_order_item_id) continue;
+      map.set(line.sales_order_item_id,(map.get(line.sales_order_item_id)??0)+Number(line.quantity||0));
+    }
+    return map;
+  },[shipmentLines.data,shipmentById]);
+  const remainingForItem=(item:OrderItem)=>Math.max(0,Number(item.quantity)-(shippedByOrderItem.get(item.id)??0));
   const overdue=(shipments.data??[]).filter(s=>s.expected_delivery&&s.expected_delivery<new Date().toISOString().slice(0,10)&&!["delivered","cancelled","returned"].includes(s.status));
   const loading=companyLoading||orders.isLoading||parties.isLoading||shipments.isLoading||shipmentLines.isLoading;
   const loadError=orders.error||parties.error||shipments.error||shipmentLines.error;
@@ -99,9 +110,10 @@ function ShipmentsPage() {
       if(form.expected_delivery&&form.expected_delivery<form.shipment_date) throw new Error("Expected delivery cannot precede the shipment date.");
       const selectedItems=orderItems.data??[];
       if(!selectedItems.length) throw new Error("The selected order has no item lines in this company; shipment creation is blocked.");
-      const lines=selectedItems.map(item=>({item,quantity:Number(lineQty[item.id]??item.quantity)})).filter(x=>x.quantity>0);
+      const requestedLines=selectedItems.map(item=>({item,quantity:Number(lineQty[item.id]??remainingForItem(item)),remaining:remainingForItem(item)}));
+      if(requestedLines.some(line=>!Number.isFinite(line.quantity)||line.quantity<0||line.quantity>line.remaining)) throw new Error("Shipment quantity must be between zero and the remaining ordered quantity for each item.");
+      const lines=requestedLines.filter(line=>line.quantity>0);
       if(!lines.length) throw new Error("At least one positive shipment quantity is required.");
-      for(const line of lines) if(!Number.isFinite(line.quantity)||line.quantity<0||line.quantity>Number(line.item.quantity)) throw new Error("Shipment quantity must be between zero and the remaining ordered quantity for each item.");
       const stamp=new Date().toISOString().slice(0,10).replaceAll("-","");
       const number="SHP-"+stamp+"-"+crypto.randomUUID().slice(0,8).toUpperCase();
       const {data:shipment,error}=await db.from("shipments").insert({
@@ -174,7 +186,7 @@ function ShipmentsPage() {
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"><DialogHeader><DialogTitle>Create shipment record</DialogTitle></DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-1"><Label>Sales order</Label><Select value={form.sales_order_id} onValueChange={value=>{setForm(s=>({...s,sales_order_id:value}));setLineQty({});}}><SelectTrigger><SelectValue placeholder="Select sales order"/></SelectTrigger><SelectContent>{(orders.data??[]).filter(o=>o.fulfillment_status!=="dispatched").map(o=><SelectItem key={o.id} value={o.id}>{o.order_number} · {partyById.get(o.party_id)?.name??"Customer"}</SelectItem>)}</SelectContent></Select></div>
-            {form.sales_order_id && <div className="space-y-2 rounded-lg border p-3"><Label>Shipment quantities</Label>{orderItems.isLoading?<p className="text-xs text-muted-foreground">Loading order lines…</p>:(orderItems.data??[]).map(item=><div key={item.id} className="grid grid-cols-[1fr_100px] items-center gap-3"><div className="min-w-0"><p className="text-sm font-medium">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.size??"Standard"} · ordered {item.quantity}</p></div><Input aria-label={`Shipment quantity for ${item.product_name}`} type="number" min="0" max={item.quantity} step="0.001" value={lineQty[item.id]??String(item.quantity)} onChange={e=>setLineQty(s=>({...s,[item.id]:e.target.value}))}/></div>)}</div>}
+            {form.sales_order_id && <div className="space-y-2 rounded-lg border p-3"><Label>Shipment quantities</Label>{orderItems.isLoading?<p className="text-xs text-muted-foreground">Loading order lines…</p>:(orderItems.data??[]).map(item=><div key={item.id} className="grid grid-cols-[1fr_100px] items-center gap-3"><div className="min-w-0"><p className="text-sm font-medium">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.size??"Standard"} · ordered {item.quantity} · remaining {remainingForItem(item)}</p></div><Input aria-label={`Shipment quantity for ${item.product_name}`} type="number" min="0" max={item.quantity} step="0.001" value={lineQty[item.id]??String(remainingForItem(item))} onChange={e=>setLineQty(s=>({...s,[item.id]:e.target.value}))}/></div>)}</div>}
             <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Shipment date</Label><Input type="date" value={form.shipment_date} onChange={e=>setForm(s=>({...s,shipment_date:e.target.value}))}/></div><div className="space-y-1"><Label>Expected delivery</Label><Input type="date" value={form.expected_delivery} onChange={e=>setForm(s=>({...s,expected_delivery:e.target.value}))}/></div></div>
             <div className="space-y-1"><Label>Transporter / driver</Label><Input value={form.transporter_name} onChange={e=>setForm(s=>({...s,transporter_name:e.target.value}))}/></div>
             <div className="space-y-1"><Label>Tracking number</Label><Input value={form.tracking_number} onChange={e=>setForm(s=>({...s,tracking_number:e.target.value}))}/></div>
