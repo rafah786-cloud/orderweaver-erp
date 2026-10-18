@@ -1063,3 +1063,23 @@ export const listMarketingCreatives = createServerFn({ method: "GET" })
     if (error) throw new Error("Marketing creative history could not be loaded.");
     return (data ?? []).map((row: any) => ({ ...row, creative: row.creative_payload, image_path: undefined }));
   });
+
+
+export const getMarketingCreative = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertRole(context.supabase, ["admin", "sales"]);
+    const { data: companyId, error: companyError } = await context.supabase.rpc("current_company_id");
+    if (companyError || !companyId) throw new Error("Select an active company.");
+    const { data: row, error } = await context.supabase.from("marketing_creatives")
+      .select("id,title,user_prompt,channel,language,status,created_at,creative_payload,image_path,agent_trace")
+      .eq("id", data.id).eq("company_id", companyId).maybeSingle();
+    if (error || !row) throw new Error("This creative is not available in the active company.");
+    let imageUrl: string | null = null;
+    if (row.image_path) {
+      const { data: signed } = await context.supabase.storage.from("marketing-creatives").createSignedUrl(row.image_path, 3600);
+      imageUrl = signed?.signedUrl ?? null;
+    }
+    return { ...row, creative: row.creative_payload, imageUrl, agentTrace: row.agent_trace, image_path: undefined };
+  });
