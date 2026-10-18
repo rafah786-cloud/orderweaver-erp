@@ -33,7 +33,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
-  const { type, model, details } = Route.useSearch();
+  const { type = "general", model = "", details = "" } = Route.useSearch();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
