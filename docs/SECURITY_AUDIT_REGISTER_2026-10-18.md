@@ -19,8 +19,8 @@ These references are benchmarks, not an assertion that this ERP already implemen
 
 **Severity:** High  
 **Evidence:** Connected database had pb_vendor_ack UPDATE policy for a vendor's supplier rows plus a guard_vendor_purchase_bill_update() trigger that omitted receipt_status and CGST/SGST/IGST fields. Updating receipt_status to received reaches an after-update trigger which calls ensure_purchase_bill().  
-**Fix proposed:** The guard hardening was merged to main in PR #104 after isolated PostgreSQL adversarial CI passed. It permits one-time acknowledgement and has a fail-closed rollback that disables vendor acknowledgement. The migration still needs a safe production deployment and live trigger readback.  
-**Status:** Code is proposed; do not assume production database is fixed until migration is reviewed/applied and live trigger readback confirms it.
+**Fix proposed:** The guard hardening was merged to main in PR #104 after isolated PostgreSQL adversarial CI passed. It permits one-time acknowledgement and has a fail-closed rollback that disables vendor acknowledgement. The migration was applied to the connected database on 18 October 2026; live readback confirms one BEFORE UPDATE guard trigger with protected receipt/tax fields and one-time acknowledgement.  
+**Status:** Mitigated in the live database. PR #104 and its 35-check isolated PostgreSQL suite passed.
 
 ### SEC-2026-006 — Pending profiles have company membership; legacy company-scoped RLS policies do not require approval
 
@@ -32,9 +32,9 @@ These references are benchmarks, not an assertion that this ERP already implemen
 - has_company_access() checks view membership but does not check approval status.
 - The frontend route guard sends pending/rejected profiles to the pending screen, but direct API/database requests can bypass that UI. That makes frontend-only approval insufficient.
 
-**Fix proposed in PR:** Add a RESTRICTIVE approved_profile_required policy to all RLS-enabled public tables for authenticated, requiring public.is_approved(auth.uid()). The profiles table is intentionally excluded because a pending user must be able to read their own status. Restrictive policies are ANDed with existing policies; this must not replace each table's role/company policy. Add isolated PostgreSQL tests for pending denial, own-profile status read, approved access, company isolation, and preserved service-role access.
+**Fix and verification:** PR #106 merged; the migration was applied to the connected database on 18 October 2026. Live readback confirms 155 approval gates across 156 RLS-enabled public tables, with profiles intentionally excluded so pending users can read their own status. Existing row-level role/company policies remain in place. The isolated PostgreSQL adversarial suite passed without rewriting business rows.
 
-**Release status:** Migration is proposed only. Do not run it in production until the disposable-database adversarial suite passes, app flows are reviewed, and post-deploy readback/rollback are planned.
+**Release status:** Applied and verified live. See rollout verification below; continue post-deployment smoke tests for approved roles and repeat the adversarial checks after future permission changes.
 
 ### SEC-2026-007 — Unused HR/AI governance tables expose broad company-only CRUD to authenticated members
 
@@ -43,14 +43,26 @@ These references are benchmarks, not an assertion that this ERP already implemen
 
 **Evidence:** The live pg_policies catalog shows only broad company_scope_select/insert/update/delete policies on these ten tables. They check company_id=current_company_id() and has_company_access(company_id) but do not enforce role or record ownership. The connected app source search found no operational callsites beyond the schema/migration/generated type layer, so no current approved workflow could be verified.
 
-**Fix proposed in PR:** Remove broad company-only policies and revoke direct PUBLIC, anon and authenticated table privileges for these ten tables until each has a documented role/record-owner workflow and adversarial tests. Preserve data and existing service_role privileges. This is intentionally fail-closed: these capabilities are not to be exposed directly to client users before policy and functional coverage is ready.
+**Fix and verification:** PR #106 merged and applied live. Catalog readback confirms all ten tables have no direct anon/authenticated SELECT, INSERT, UPDATE or DELETE privileges and retain service_role access. Their broad company-only policies are removed; their data remains intact.
 
 ### SEC-2026-008 — Elevated RPC helper functions could bypass the profile-approval screen
 
 **Severity:** High when a previously privileged profile is marked pending/rejected but its role assignment remains.  
 **Evidence:** A catalog/source scan found 35 executable SECURITY DEFINER functions whose source did not mention is_approved(). Several correctly checked roles, but role checks alone do not confirm the profile is approved. SECURITY DEFINER operations can bypass RLS policies on the underlying tables; the global RESTRICTIVE table policy alone is therefore not sufficient for those function calls.  
-**Fix proposed in PR:** Harden current_company_id(), has_company_access(), has_role(), current_user_roles(), and set_active_company() to require an approved profile. Add disposable-PostgreSQL tests proving a pending profile with a lingering admin role and company membership cannot resolve an active company, pass role/company helper checks, list its roles, or switch company; approved users retain the existing helper behavior. Other role-checked SECURITY DEFINER functions inherit the stricter shared helper decisions.  
-**Residual review:** Continue checking functions that perform mutations without these shared helper checks, anonymous/public endpoints and service integrations; do not treat the helper update as complete audit coverage.
+**Fix and verification:** PR #106 merged and applied live. Catalog readback confirms all five shared helpers now check approval status. The isolated PostgreSQL suite verifies pending users with a lingering admin role cannot resolve an active company, pass role/company helpers, list roles, or switch company. Continue reviewing functions that mutate data outside these shared helpers.  
+**Residual review:** Continue checking functions that perform mutations outside these shared helpers, anonymous/public endpoints and integrations; this is not a complete security certification.
+
+### SEC-2026-009 — Profile INSERT policy allowed self-creation with a caller-chosen approval status
+
+**Severity:** Medium–High; exploit requires a valid authenticated account whose profile row is missing, but that account could recreate the row as approved.  
+**Evidence:** The live permissive INSERT policy allowed `public.has_role(auth.uid(),'admin') OR id=auth.uid()`. Normal signup already creates profiles through the SECURITY DEFINER trigger on `auth.users`, so the self-insert branch is not required by the application signup path. The profile status defaults to pending, but a direct self-insert can supply a different value if a profile row does not exist.  
+**Fix proposed in PR #107:** Replace the policy with admin-only INSERT while preserving the existing auth.users signup trigger. An isolated PostgreSQL test attempts self-insertion as approved, checks that a non-admin cannot create profiles for others, and verifies that an approved admin can still provision profiles. Do not deploy until the exact CI run passes and live policy/trigger readback is confirmed.
+
+### SEC-2026-010 — Excess non-row table privileges on public ERP tables
+
+**Severity:** High potential blast-radius issue; exploitability depends on a separately available SQL/privileged execution path because ordinary Supabase REST does not itself provide TRUNCATE/DDL endpoints.  
+**Evidence:** Before PR #106 deployment, live ACL readback showed anon and authenticated had explicit TRUNCATE, TRIGGER and REFERENCES privileges on many public tables, including invoices. RLS does not filter TRUNCATE and is not a boundary for trigger/constraint privileges.  
+**Fix and verification:** PR #106's migration is live. Effective privilege checks now show zero anon/authenticated TRUNCATE, TRIGGER or REFERENCES privileges across all 156 public base tables. Normal row-level grants remain, and the migration preserves service_role maintenance privileges. CI verifies these privilege boundaries in a disposable database.
 
 ## Role and data-domain matrix (initial, not exhaustive)
 
