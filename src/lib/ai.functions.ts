@@ -44,11 +44,28 @@ export const getAiStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { isAiConfigured, AI_MODELS, AI_PROVIDER } = await import("@/lib/ai/nvidia.server");
+    const { AI_AGENT_REGISTRY, marketingImageConfig } = await import("@/lib/ai/agent-router.server");
     const roles = await rolesOf(context.supabase);
+    const imageConfig = marketingImageConfig(process.env);
+    const configured = isAiConfigured();
+    const agents = AI_AGENT_REGISTRY.map((agent) => ({
+      id: agent.id,
+      label: agent.label,
+      capability: agent.capability,
+      provider: agent.capability === "marketing_image" ? imageConfig.provider : AI_PROVIDER,
+      model: agent.capability === "marketing_image" ? imageConfig.model :
+        agent.capability === "fast_classification" || agent.capability === "forecasting" ? AI_MODELS.fast :
+        agent.capability === "document_vision" ? AI_MODELS.vision :
+        agent.capability === "semantic_retrieval" ? AI_MODELS.embedding : AI_MODELS.chat,
+      configured: agent.capability === "marketing_image" ? imageConfig.configured : configured,
+      writeAccess: agent.writeAccess,
+      humanApprovalRequired: agent.humanApprovalRequired,
+    }));
     return {
-      configured: isAiConfigured(),
+      configured,
       provider: AI_PROVIDER,
       models: { chat: AI_MODELS.chat, vision: AI_MODELS.vision, embedding: AI_MODELS.embedding },
+      agents,
       canUseAi: roles.some((r) => ANALYST_ROLES.includes(r)),
     };
   });
