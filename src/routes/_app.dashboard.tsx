@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Activity, ArrowRight, Boxes, Building2, CalendarClock,
   CheckCircle2, CircleDollarSign, ClipboardList, Factory, FileText, HandCoins,
-  LayoutDashboard, Package, Plus, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
+  LayoutDashboard, MessageSquareText, Package, Plus, ShoppingBag, ShoppingCart, Sparkles, Truck, Users, Wallet,
 } from "lucide-react";
 import { formatDate, inr } from "@/lib/format";
 
@@ -192,6 +192,32 @@ function DashboardPage() {
           </div>
         }
       />
+
+      {admin && <section aria-label="AI general manager" className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.8fr)]">
+        <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.07] via-background to-background">
+          <CardContent className="flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="h-5 w-5" /></span>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Founder · CEO</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight">Your AI general manager</h2>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">Review business performance, receivables, stock risks, production and supplier signals from the ERP. Ask follow-up questions before deciding what to do next.</p>
+              </div>
+            </div>
+            <Button asChild className="shrink-0"><Link to="/ai/brief">Open business brief <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+          </CardContent>
+        </Card>
+        <Card className="border-border/80">
+          <CardContent className="flex h-full items-center gap-3 p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground"><MessageSquareText className="h-5 w-5" /></span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold">Ask Mattress Maestro</h3>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Question the business using permission-scoped ERP data.</p>
+              <Button asChild variant="link" className="mt-1 h-auto p-0"><Link to="/ai/ask">Ask a question <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link></Button>
+            </div>
+          </CardContent>
+        </Card>
+      </section>}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Your key metrics">
         {metricsForRole.map((item) => {
