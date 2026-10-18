@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,11 +9,13 @@ import { PageHeader, PageBody } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, BarChart3, CalendarRange, Megaphone, Plus, Receipt, Target, TrendingUp } from "lucide-react";
+import { AlertTriangle, BarChart3, CalendarRange, Copy, Download, Image as ImageIcon, Loader2, Megaphone, Plus, Receipt, Sparkles, Target, TrendingUp } from "lucide-react";
+import { generateMarketingCreative, getMarketingCreative, listMarketingCreatives } from "@/lib/ai.functions";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -46,6 +49,42 @@ function MarketingPage() {
   const [campaignOpen, setCampaignOpen] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
   const [attributionOpen, setAttributionOpen] = useState(false);
+  const [creativeForm, setCreativeForm] = useState({
+    idea: "", channel: "social", language: "English", audience: "Mattress buyers and families",
+    offer: "", product: "Zizz Mattress", tone: "warm", generateImage: true, campaignId: "none",
+  });
+  const [generatedCreative, setGeneratedCreative] = useState<any>(null);
+  const generateCreativeFn = useServerFn(generateMarketingCreative);
+  const listCreativesFn = useServerFn(listMarketingCreatives);
+  const getCreativeFn = useServerFn(getMarketingCreative);
+  const creativeHistoryQuery = useQuery({
+    queryKey: ["marketing-creative-history", activeCompany?.id],
+    enabled: !companyLoading && Boolean(activeCompany?.id) && canManage,
+    queryFn: () => listCreativesFn(),
+  });
+  const creativeMutation = useMutation({
+    mutationFn: () => generateCreativeFn({ data: {
+      idea: creativeForm.idea, channel: creativeForm.channel as "social" | "whatsapp" | "email" | "website" | "print" | "direct_customer",
+      language: creativeForm.language, audience: creativeForm.audience, offer: creativeForm.offer,
+      product: creativeForm.product, tone: creativeForm.tone as "premium" | "warm" | "playful" | "professional" | "festive",
+      generateImage: creativeForm.generateImage, campaignId: creativeForm.campaignId === "none" ? null : creativeForm.campaignId,
+    } }),
+    onSuccess: (result) => {
+      setGeneratedCreative(result);
+      toast.success("Creative draft saved to the marketing library.");
+      qc.invalidateQueries({ queryKey: ["marketing-creative-history", activeCompany?.id] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const openCreativeMutation = useMutation({
+    mutationFn: (id: string) => getCreativeFn({ data: { id } }),
+    onSuccess: (result) => setGeneratedCreative({
+      creativeId: result.id, savedTitle: result.title, creative: result.creative,
+      imageUrl: result.imageUrl, agentTrace: result.agentTrace, publishState: "draft_only",
+    }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const [campaignForm, setCampaignForm] = useState({
     campaign_code: "", name: "", objective: "sales_growth", channel: "website", status: "draft",
     start_date: "", end_date: "", budget_amount: "0", target_leads: "", target_conversions: "",
@@ -257,7 +296,73 @@ function MarketingPage() {
           </Dialog>
         </div> : undefined
       } />
+
       <PageBody>
+        {canManage && <section className="mb-6 space-y-4" aria-labelledby="marketing-creative-studio-title">
+          <Card className="overflow-hidden border-primary/20">
+            <CardHeader className="border-b bg-muted/30">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1">
+                  <CardTitle id="marketing-creative-studio-title" className="text-lg">AI Marketing Creative Studio</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">Turn an idea into a ready-to-review ad pack for social media, WhatsApp, email, website or direct customer outreach. Copy and image tasks are routed to separate specialist agents.</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 p-4 sm:p-5">
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="space-y-1 lg:col-span-2"><Label>Campaign idea / brief</Label><Textarea value={creativeForm.idea} onChange={e => setCreativeForm(s => ({ ...s, idea: e.target.value }))} placeholder="Example: Create a warm Onam campaign introducing Zizz mattresses to families. Focus on comfort and restful nights. Avoid mentioning discounts unless specified." rows={4} maxLength={1200} /><p className="text-xs text-muted-foreground">{creativeForm.idea.length}/1200 characters</p></div>
+                <div className="space-y-1"><Label>Output channel</Label><Select value={creativeForm.channel} onValueChange={value => setCreativeForm(s => ({ ...s, channel: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="social">Social media ad / post</SelectItem><SelectItem value="whatsapp">WhatsApp campaign</SelectItem><SelectItem value="direct_customer">Direct customer message</SelectItem><SelectItem value="email">Email campaign</SelectItem><SelectItem value="website">Website / landing page</SelectItem><SelectItem value="print">Print / in-store creative</SelectItem></SelectContent></Select></div>
+                <div className="space-y-1"><Label>Language</Label><Select value={creativeForm.language} onValueChange={value => setCreativeForm(s => ({ ...s, language: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="English">English</SelectItem><SelectItem value="Malayalam">Malayalam</SelectItem><SelectItem value="Manglish">Manglish (Malayalam in Latin script)</SelectItem><SelectItem value="Hindi">Hindi</SelectItem><SelectItem value="Tamil">Tamil</SelectItem><SelectItem value="Kannada">Kannada</SelectItem></SelectContent></Select></div>
+                <div className="space-y-1"><Label>Product / brand</Label><Input value={creativeForm.product} onChange={e => setCreativeForm(s => ({ ...s, product: e.target.value }))} maxLength={200} /></div>
+                <div className="space-y-1"><Label>Audience</Label><Input value={creativeForm.audience} onChange={e => setCreativeForm(s => ({ ...s, audience: e.target.value }))} maxLength={300} /></div>
+                <div className="space-y-1"><Label>Offer (optional; only use what is entered)</Label><Input value={creativeForm.offer} onChange={e => setCreativeForm(s => ({ ...s, offer: e.target.value }))} placeholder="e.g. verified offer terms or leave blank" maxLength={300} /></div>
+                <div className="space-y-1"><Label>Brand tone</Label><Select value={creativeForm.tone} onValueChange={value => setCreativeForm(s => ({ ...s, tone: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="warm">Warm and relatable</SelectItem><SelectItem value="premium">Premium</SelectItem><SelectItem value="playful">Playful</SelectItem><SelectItem value="professional">Professional</SelectItem><SelectItem value="festive">Festive</SelectItem></SelectContent></Select></div>
+                <div className="space-y-1"><Label>Link to campaign (optional)</Label><Select value={creativeForm.campaignId} onValueChange={value => setCreativeForm(s => ({ ...s, campaignId: value }))}><SelectTrigger><SelectValue placeholder="No campaign linked" /></SelectTrigger><SelectContent><SelectItem value="none">No campaign linked</SelectItem>{(campaignsQuery.data ?? []).map(c => <SelectItem key={c.id} value={c.id}>{c.campaign_code} · {c.name}</SelectItem>)}</SelectContent></Select></div>
+              </div>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={creativeForm.generateImage} onChange={e => setCreativeForm(s => ({ ...s, generateImage: e.target.checked }))} />
+                <span className="min-w-0"><span className="block text-sm font-medium">Generate an original ad image</span><span className="block text-xs text-muted-foreground">Uses the dedicated image-generation agent. Requires the server-side IMAGE_API_KEY (or OPENAI_API_KEY) secret; copy generation works independently.</span></span>
+                <ImageIcon className="ml-auto mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button className="min-h-11" onClick={() => creativeMutation.mutate()} disabled={creativeMutation.isPending || creativeForm.idea.trim().length < 5 || !activeCompany?.id}>
+                  {creativeMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating draft…</> : <><Sparkles className="mr-2 h-4 w-4" />Generate creative pack</>}
+                </Button>
+                <span className="text-xs text-muted-foreground">Creates a saved draft only. Nothing is published or sent automatically.</span>
+              </div>
+              {creativeMutation.isPending && <div className="rounded-lg border p-3 text-sm text-muted-foreground" role="status">The copywriter agent is drafting campaign variants{creativeForm.generateImage ? "; the image agent will also attempt a visual." : "."}</div>}
+              {generatedCreative && <div className="space-y-4 rounded-xl border p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div><Badge variant="secondary">Saved draft</Badge><h3 className="mt-2 text-lg font-semibold">{generatedCreative.creative?.campaignTitle || generatedCreative.savedTitle || "Marketing creative"}</h3><p className="text-xs text-muted-foreground">Draft only · human review required before publishing or sending</p></div>
+                  <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText([
+                    generatedCreative.creative?.headline, generatedCreative.creative?.subheadline,
+                    generatedCreative.creative?.primaryText, generatedCreative.creative?.caption,
+                    generatedCreative.creative?.callToAction, (generatedCreative.creative?.hashtags ?? []).map((h: string) => "#" + h).join(" "),
+                    generatedCreative.creative?.whatsappMessage,
+                  ].filter(Boolean).join("\n\n")).then(() => toast.success("Creative copy copied."), () => toast.error("Could not copy automatically."))}><Copy className="mr-2 h-4 w-4" />Copy creative pack</Button>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)]">
+                  <div className="space-y-3">
+                    <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Headline</p><p className="mt-1 text-xl font-semibold">{generatedCreative.creative?.headline}</p>{generatedCreative.creative?.subheadline && <p className="mt-1 text-sm text-muted-foreground">{generatedCreative.creative.subheadline}</p>}</div>
+                    <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Primary copy</p><p className="mt-1 whitespace-pre-wrap text-sm">{generatedCreative.creative?.primaryText}</p></div>
+                    <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Social caption</p><p className="mt-1 whitespace-pre-wrap text-sm">{generatedCreative.creative?.caption}</p></div>
+                    <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Call to action</p><p className="mt-1 text-sm font-medium">{generatedCreative.creative?.callToAction}</p></div>
+                    {(generatedCreative.creative?.hashtags ?? []).length > 0 && <div className="flex flex-wrap gap-1.5">{generatedCreative.creative.hashtags.map((tag: string, index: number) => <Badge key={tag + index} variant="outline">#{tag.replace(/^#/, "")}</Badge>)}</div>}
+                    {generatedCreative.creative?.whatsappMessage && <div className="rounded-lg bg-muted/40 p-3"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">WhatsApp / direct customer draft</p><p className="mt-2 whitespace-pre-wrap text-sm">{generatedCreative.creative.whatsappMessage}</p></div>}
+                    {generatedCreative.creative?.emailSubject && <p className="text-sm"><strong>Email subject:</strong> {generatedCreative.creative.emailSubject}</p>}
+                  </div>
+                  <div className="space-y-3">
+                    {generatedCreative.imageUrl ? <div className="space-y-2"><img src={generatedCreative.imageUrl} alt="AI-generated marketing creative draft" className="w-full rounded-lg border object-contain" /><a href={generatedCreative.imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm font-medium text-primary underline"><Download className="mr-2 h-4 w-4" />Open / save generated image</a><p className="text-xs text-muted-foreground">Private preview link expires after one hour. The original image remains in this company's private creative library.</p></div> : generatedCreative.imageWarning ? <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-sm"><p className="font-medium">Image agent not completed</p><p className="mt-1 text-xs text-muted-foreground">{generatedCreative.imageWarning}</p></div> : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No image attached to this creative.</div>}
+                    {(generatedCreative.creative?.variants ?? []).length > 0 && <div><p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">A/B test variants</p><div className="space-y-2">{generatedCreative.creative.variants.map((variant: any, index: number) => <div key={index} className="rounded-lg border p-3"><Badge variant="outline">Variant {index + 1}</Badge><p className="mt-2 text-sm font-semibold">{variant.headline}</p><p className="mt-1 whitespace-pre-wrap text-sm">{variant.copy}</p><p className="mt-2 text-xs font-medium">{variant.callToAction}</p></div>)}</div></div>}
+                    <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs font-medium">Specialist agents</p><div className="mt-2 flex flex-wrap gap-1.5">{(generatedCreative.agentTrace ?? []).map((agent: any, index: number) => <Badge key={agent.agentId + index} variant={agent.status === "completed" ? "secondary" : "outline"}>{agent.agentId}: {agent.status}</Badge>)}</div></div>
+                  </div>
+                </div>
+              </div>}
+              {creativeHistoryQuery.data && creativeHistoryQuery.data.length > 0 && <div className="border-t pt-4"><div className="mb-2 flex items-center justify-between"><p className="text-sm font-medium">Saved creative library</p><p className="text-xs text-muted-foreground">Latest {creativeHistoryQuery.data.length}</p></div><div className="flex flex-wrap gap-2">{creativeHistoryQuery.data.slice(0, 12).map((item: any) => <Button key={item.id} variant="outline" size="sm" onClick={() => openCreativeMutation.mutate(item.id)} disabled={openCreativeMutation.isPending}>{item.title}<span className="ml-2 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleDateString("en-IN")}</span></Button>)}</div></div>}
+            </CardContent>
+          </Card>
+        </section>}
         {loadError && <div role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /><span>Marketing records could not be loaded. Verify your company access and retry.</span></div>}
         {loading && <div role="status" className="mb-4 rounded-lg border p-4 text-sm text-muted-foreground">Loading campaigns for {activeCompany?.display_name ?? "the active company"}…</div>}
         {!loading && !loadError && <>
