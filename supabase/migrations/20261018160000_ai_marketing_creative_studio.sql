@@ -10,6 +10,7 @@ create table if not exists public.marketing_creatives (
   audience text,
   offer text,
   creative_payload jsonb not null,
+  image_path text,
   agent_trace jsonb not null default '[]'::jsonb,
   status text not null default 'draft' check (status in ('draft','approved','archived')),
   created_by uuid not null,
@@ -40,3 +41,33 @@ drop policy if exists marketing_creatives_delete on public.marketing_creatives;
 create policy marketing_creatives_delete on public.marketing_creatives for delete
 using (public.is_approved(auth.uid()) and company_id = public.current_company_id()
   and exists (select 1 from public.user_company_access a where a.user_id = auth.uid() and a.company_id = marketing_creatives.company_id and a.can_view and a.can_delete));
+
+-- Private generated-asset storage. Paths are company UUID / creative UUID.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('marketing-creatives', 'marketing-creatives', false, 8000000, array['image/png','image/jpeg','image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 8000000,
+  allowed_mime_types = array['image/png','image/jpeg','image/webp'];
+
+drop policy if exists marketing_creative_assets_read on storage.objects;
+create policy marketing_creative_assets_read on storage.objects for select to authenticated
+using (bucket_id = 'marketing-creatives'
+  and (storage.foldername(name))[1] = public.current_company_id()::text
+  and public.is_approved(auth.uid())
+  and exists (select 1 from public.user_company_access a
+    where a.user_id = auth.uid() and a.company_id = public.current_company_id() and a.can_view));
+
+drop policy if exists marketing_creative_assets_insert on storage.objects;
+create policy marketing_creative_assets_insert on storage.objects for insert to authenticated
+with check (bucket_id = 'marketing-creatives'
+  and (storage.foldername(name))[1] = public.current_company_id()::text
+  and public.is_approved(auth.uid())
+  and exists (select 1 from public.user_company_access a
+    where a.user_id = auth.uid() and a.company_id = public.current_company_id() and a.can_view and a.can_create));
+
+drop policy if exists marketing_creative_assets_delete on storage.objects;
+create policy marketing_creative_assets_delete on storage.objects for delete to authenticated
+using (bucket_id = 'marketing-creatives'
+  and (storage.foldername(name))[1] = public.current_company_id()::text
+  and public.is_approved(auth.uid())
+  and exists (select 1 from public.user_company_access a
+    where a.user_id = auth.uid() and a.company_id = public.current_company_id() and a.can_view and a.can_delete));
