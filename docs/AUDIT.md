@@ -285,3 +285,24 @@ No application code, migration files, database, production data or deployment wa
 - Next source-only audit deliverable: produce a reproducible migration-derived table/control matrix with explicit evidence references and an `unknown/not evidenced` state wherever dynamic SQL, policy replacement, grant behavior, or migration ordering prevents a reliable static conclusion. The matrix must distinguish source declarations from live verification.
 - Live Supabase schema, RLS, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED** until the correct project is authorized and inspected read-only.
 - The exact source PDF remains not committed; preserve byte-for-byte SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` when adding `docs/blueprint.pdf` through a binary-capable Git workflow.
+
+
+## Blueprint preservation and follow-up source review — 2026-10-19
+
+### Attached blueprint checks
+
+- Attached Markdown local-file SHA-256: `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`; 137,124 characters, UTF-8, no CRLF, final newline present.
+- Committed `docs/blueprint-full.md` fetched back from GitHub reports 137,122 characters. Its content hash has not been independently computed in the current workflow, and the counts differ. **Verbatim preservation is not verified.** The connector's file read appears to have omitted two characters relative to the local attachment; exact offset has not been identified. Do not use this file as a verified byte-for-byte copy until fixed and rechecked.
+- The returned committed heading inventory contains: Sections 1 Executive Summary; 2 The AI Architecture; 3 Module-by-Module Design; 4 Agent Orchestration; 5 Trust, Safety and Governance; 6 Suggested Technology Stack; 7 Build Order by Dependency; 8 KPIs to Prove It Works; 9 Risks and How to Handle Them; 10 Quick Wins; 11 Database Design; 12 Screens and User Experience; 13 AI Agents: Runtime, Prompts and Tools; 14 Supabase and React Build Plan. Section numbering is present in the returned text, but headings alone do not establish content integrity.
+- Uploaded PDF checksum: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). Binary upload is unavailable through the current GitHub text-writing workflow. Owner must upload the PDF to `docs/blueprint.pdf` on GitHub; after confirmation, compare the repository copy's SHA-256 with this recorded value.
+
+### New documentation
+
+- `docs/blueprint.md` now says `docs/blueprint-full.md` is the intended authoritative text, `docs/blueprint.pdf` is the original PDF, and the index is navigation only. The Markdown checksum mismatch means the authority copy is not yet verified.
+- `docs/SECURITY_MATRIX.md` is a preliminary evidence register. It has source-level findings for selected tables, but explicitly remains incomplete and includes a grouped tracking row. It does **not** yet satisfy the requested exhaustive one-row-per-table matrix. Unknown remains unknown; source declarations are not live verification.
+- `docs/MIGRATION_PLAN.md` records Supabase CLI as the owner-selected migration authority and a no-destructive-change consolidation approach for Drizzle and phase folders.
+- `docs/WS0_GAP_PLAN.md` drafts additive approval, audit, status-history and number-series migrations, risks, rollback approach and staging tests. No migration files were created or edited.
+
+### Safety boundary
+
+No application code, existing migration, database or production data was changed or accessed. Live schema, policies, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED**. No merge or deployment occurred.
