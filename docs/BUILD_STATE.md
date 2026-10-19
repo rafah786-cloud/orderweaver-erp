@@ -125,3 +125,14 @@
 - [ ] Add isolated local-Supabase CI: replay current main migrations in a separate baseline job; replay all migrations including WS0 in the test job; run security/approval/audit/status/numbering tests; retain logs and schema diff as artifacts.
 - [ ] Open PR for Task 2 only after source checks are complete. Do not merge until all local CI tests pass and the owner separately approves in chat.
 - **No hosted/live Supabase access, migration application, or deployment is permitted. Live database status remains UNVERIFIED.**
+
+
+## Task 2 — WS0 additive foundation (2026-10-19)
+
+- PR #125 is already merged at `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. Its ERP CI run was observed pending with zero jobs; the workflow has a plain `pull_request` trigger and no path filters. No branch-protection/ruleset required checks were returned. A later unrelated main commit `402c0d65365c4ddf9218c3bfacd295bc090fb10e` is not part of this Task 2 work.
+- Task branch: `feature/ws0-approval-audit-foundation`. It already existed with an initial six-migration draft and non-destructive compensating scripts; this pass is auditing and correcting that draft, not creating duplicate files.
+- Authoritative blueprint sections read before this task: Sections 11.1–11.16 (database conventions, governance, key functions), 13.1–13.3 (agent approval gating), and 14.1–14.10 (database patterns, WS0 exit criteria and testing).
+- Newest existing authoritative migration before WS0: `20261018210000_ai_marketing_creative_studio.sql`. WS0 migration timestamps `20261019100000` through `20261019100500` are later.
+- Initial source review found a malformed/duplicated approval-security migration and an audit guard that could suppress updates to non-WS0 audit rows. The approval-security migration has been replaced with a single clean transaction; the audit guard now preserves existing non-WS0 update/delete behavior.
+- Still required: correct branch/role/RLS gaps; add SQL assertions and concurrent numbering tests; add a local Supabase CLI/Docker workflow that separately reports baseline replay failures, WS0 application failures and test failures; upload logs and schema diffs as artifacts; verify CI before opening/finishing the PR.
+- Strict scope: new WS0 functions and objects only. No existing domain workflows are wired into approvals/status history/numbering. No existing migrations are edited, no live or hosted database is accessed, and no deployment is authorized. Live database remains **UNVERIFIED**.
