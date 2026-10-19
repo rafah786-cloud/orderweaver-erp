@@ -38,6 +38,12 @@ supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor > "$ART
 start_rc=$?
 set -e
 if [[ $start_rc -ne 0 ]]; then
+  if grep -Eq 'ERROR:|SQLSTATE|At statement:|Try rerunning the command with --debug' "$ARTIFACT_DIR/supabase-start.log"; then
+    printf 'baseline_replay=failed during_supabase_start exit_code=%s\n' "$start_rc" >> "$ARTIFACT_DIR/summary.txt"
+    grep -E 'Applying migration .*\.sql|ERROR:|At statement:|CREATE UNIQUE INDEX|Try rerunning the command with --debug' "$ARTIFACT_DIR/supabase-start.log" | tail -12 >> "$ARTIFACT_DIR/summary.txt" || true
+    docker ps -a > "$ARTIFACT_DIR/docker-containers.txt" 2>&1 || true
+    exit 20
+  fi
   printf 'supabase_start=failed exit_code=%s\n' "$start_rc" >> "$ARTIFACT_DIR/summary.txt"
   docker ps -a > "$ARTIFACT_DIR/docker-containers.txt" 2>&1 || true
   exit 10
