@@ -164,3 +164,5 @@
 
 - [x] Added a restrictive insert policy that prevents authenticated clients from forging `module='ws0'` records in the reused `erp_domain_audit_log`; the security-definer audit trigger remains able to write them. Added a SQL assertion for direct forgery attempts.
 - [ ] Latest CI head includes the audit-integrity hardening; wait for its fresh local Supabase run before deciding pass/fail.
+
+- [x] Extended the local runner to execute all six compensating scripts after functional/concurrency tests in the disposable database, then assert all four feature controls are disabled. This validates compensations without dropping schema or data.
