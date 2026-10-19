@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readdir, realpath, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, realpath, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -151,7 +151,13 @@ export async function inspectAndExtractArchive(
   const tempRoot = options.outputDirectory
     ? path.resolve(options.outputDirectory)
     : await mkdtemp(path.join(tmpdir(), "mattress-maestro-tally-"));
-  await run(sevenZip, ["x", "-y", `-o${tempRoot}`, "--", resolvedArchive]);
+  if (options.outputDirectory) await mkdir(tempRoot, { recursive: false });
+  try {
+    await run(sevenZip, ["x", "-y", `-o${tempRoot}`, "--", resolvedArchive]);
+  } catch (error) {
+    await rm(tempRoot, { recursive: true, force: true });
+    throw error;
+  }
   const rootReal = await realpath(tempRoot);
   async function verifyTree(current: string): Promise<void> {
     for (const item of await readdir(current, { withFileTypes: true })) {
