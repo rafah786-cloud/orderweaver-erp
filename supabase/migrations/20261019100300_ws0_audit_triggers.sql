@@ -1,7 +1,7 @@
 -- Attach audit triggers only to the new WS0 foundation tables; no existing domain flow is wired.
 BEGIN;
 
-CREATE OR REPLACE FUNCTION public.ws0_audit_foundation_change()
+CREATE FUNCTION public.ws0_audit_foundation_change()
 RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, public
