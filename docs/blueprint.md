@@ -1,7 +1,8 @@
 # AI-Assisted Business Management Environment — Blueprint Source of Truth
 
-> **Source report:** `AI-Assisted Business Management Environment Complete Blueprint for a Mattress Manufacturer.pdf` (69 pages; supplied by the owner on 2026-10-19).  
-> **Authority:** The supplied PDF remains the authoritative full specification. This Markdown file is the repository's navigational/specification index, not a claim that every paragraph of the PDF has been transcribed verbatim. Do not use this index to override the PDF where details are omitted. The original PDF must be added to the repository alongside this file to make the complete source durable in Git.
+> **Source report:** Original owner-supplied 69-page PDF; reference checksum recorded in `docs/AUDIT.md` (not stored in this repository).  
+> **Authority:** `docs/blueprint-full.md` is authoritative for every implementation and audit task. Read the relevant sections directly before each task. This file is navigation only; do not use it as a substitute for the full text.  
+
 
 ## Part I — Vision and operating principles (Sections 1–10)
 
@@ -78,4 +79,4 @@ Use React/TypeScript, Vite, React Router, TanStack Query, Zustand, React Hook Fo
 - Forecasts are probabilistic; OCR/vision need local corrections; data quality and human-approved decisions remain permanent responsibilities.
 
 ## Source fidelity notice
-This index captures the structure, principal requirements and the exact WS0–WS8 dependency summary. It does **not** replace the full 69-page PDF's detailed database field lists, screen specifications, tool schemas or complete agent prompts. Those details must be copied from the supplied source report into this file (or kept as a versioned companion PDF) before it can be treated as a complete repository copy. No implementation may silently infer omitted specifications.
+This index captures the structure, principal requirements and the exact WS0–WS8 dependency summary. It does not replace the detailed database field lists, screen specifications, tool schemas or complete agent prompts in `docs/blueprint-full.md`. No implementation may silently infer omitted specifications.
