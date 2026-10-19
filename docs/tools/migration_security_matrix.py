@@ -9,7 +9,7 @@ from pathlib import Path
 import argparse, csv, re, sys
 
 ROOT = Path(__file__).resolve().parents[2]
-MIGRATIONS = ROOT / "supabase" / "migrations"
+MIGRATION_DIRS = [ROOT / "supabase" / "migrations", ROOT / "drizzle" / "migrations", ROOT / "accounting-phase1", ROOT / "accounting-phase2", ROOT / "accounting-phase3", ROOT / "manufacturing-phase1"]
 Q = r'["\x60]?'
 TABLE = re.compile(r'\bcreate\s+(?:unlogged\s+)?table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|auth|storage)\s*\.\s*)?' + Q + r'([a-zA-Z_][\w$]*)' + Q + r'\s*\(', re.I)
 RLS = re.compile(r'\balter\s+table\s+(?:only\s+)?(?:(?:public|auth|storage)\s*\.\s*)?' + Q + r'([a-zA-Z_][\w$]*)' + Q + r'\s+(?:enable|force)\s+row\s+level\s+security', re.I)
@@ -27,8 +27,9 @@ def main():
     ap.add_argument('--csv',type=Path)
     ap.add_argument('--markdown',type=Path)
     a=ap.parse_args()
-    if not MIGRATIONS.is_dir(): raise SystemExit('Missing supabase/migrations')
-    files=sorted(MIGRATIONS.glob('*.sql')); tables={}; errors=[]
+    if not (ROOT / 'supabase' / 'migrations').is_dir(): raise SystemExit('Missing supabase/migrations')
+    files=sorted(p for d in MIGRATION_DIRS if d.is_dir() for p in d.rglob('*.sql') if '/tests/' not in p.as_posix())
+    tables={}; errors=[]
     def get(name):
         name=name.lower()
         return tables.setdefault(name, {'table':name,'def':'unknown','rls':set(),'policies':set(),'grants':set(),'triggers':set(),'cols':set(),'approval':set(),'evidence':set()})
@@ -80,7 +81,7 @@ def main():
     if a.markdown:
         with a.markdown.open('w',encoding='utf-8',newline='\n') as f:
             f.write('# Migration-derived Security Matrix\n\n')
-            f.write('> Static source scan only. Regex results are leads, not proof. Unknown means not established. Review every SQL statement, including dynamic SQL, in migration order. Live database remains UNVERIFIED.\n\n')
+            f.write('> Static source scan of Supabase CLI, Drizzle, accounting-phase and manufacturing-phase SQL sources. Regex results are leads, not proof. Supabase CLI remains the approved deployment authority. Unknown means not established. Review every SQL statement, including dynamic SQL, in migration order. Live database remains UNVERIFIED.\n\n')
             cols=fields[:10]; f.write('| '+' | '.join(cols)+' |\n|'+ '|'.join(['---']*len(cols))+'|\n')
             for row in rows:
                 f.write('| '+' | '.join(str(row[k]).replace('|','\\|').replace('\n',' ') for k in cols)+' |\n')
