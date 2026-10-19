@@ -289,26 +289,25 @@ No application code, migration files, database, production data or deployment wa
 
 ## Blueprint preservation and follow-up source review — 2026-10-19
 
-### Attached blueprint checks
+### Attached Markdown verification
 
-- Attached Markdown local-file SHA-256: `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`; 137,124 characters, UTF-8, no CRLF, final newline present.
-- Committed `docs/blueprint-full.md` fetched back from GitHub reports 137,122 characters. Its content hash has not been independently computed in the current workflow, and the counts differ. **Verbatim preservation is not verified.** The connector's file read appears to have omitted two characters relative to the local attachment; exact offset has not been identified. Do not use this file as a verified byte-for-byte copy until fixed and rechecked.
-- The returned committed heading inventory contains: Sections 1 Executive Summary; 2 The AI Architecture; 3 Module-by-Module Design; 4 Agent Orchestration; 5 Trust, Safety and Governance; 6 Suggested Technology Stack; 7 Build Order by Dependency; 8 KPIs to Prove It Works; 9 Risks and How to Handle Them; 10 Quick Wins; 11 Database Design; 12 Screens and User Experience; 13 AI Agents: Runtime, Prompts and Tools; 14 Supabase and React Build Plan. Section numbering is present in the returned text, but headings alone do not establish content integrity.
-- Original PDF checksum (reference only; no repository copy is required): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
+- Original attached Markdown: 137,124 UTF-8 bytes/characters; SHA-256 `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`.
+- The original committed copy had exactly two missing newline characters: one between line 1000 (`"follow_ups": [{"task": "...", "owner": "...", "due": "..."}]`) and line 1001 (the closing `}` of the JSON example), and the final newline at EOF. No content characters differed.
+- Both missing newlines were restored. The repaired GitHub blob SHA-1 is `8603ca3271ee9114665e85d12b98f290287b8bcb`, which exactly matches the Git blob SHA-1 computed from the original attached file bytes. The source and committed text are byte-for-byte equal at 137,124 bytes.
+- Pre-fix committed-text SHA-256 reconstructed from the exact two missing newline positions: `e07ac3b82d5c979006ce441186edcb0f45a566c00930e7a57d4678de78423f48`. Original SHA-256: `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`. After repair, the committed content is byte-for-byte identical to the original, so both raw SHA-256 and normalized SHA-256 (LF line endings, trailing whitespace removed, one final newline) are `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`.
+- Split both texts at every Markdown heading: 144 heading-delimited sections were compared in order; all 144 headings and section bodies match, with zero section mismatches. This includes Sections 1–14 and all nested subsections.
+- The two-character-count difference was therefore newline loss at a chunk boundary plus a missing final newline, not a content edit. `docs/blueprint-full.md` is now verified as the authoritative blueprint. `docs/blueprint.md` is navigation only.
 
-### New documentation
+### Original PDF checksum (reference only)
 
-- `docs/blueprint.md` now says `docs/blueprint-full.md` is the intended authoritative text, the original PDF is retained only as a checksum reference, and the index is navigation only. The Markdown checksum mismatch means the authority copy is not yet verified.
-- `docs/SECURITY_MATRIX.md` is a preliminary evidence register. It has source-level findings for selected tables, but explicitly remains incomplete and includes a grouped tracking row. It does **not** yet satisfy the requested exhaustive one-row-per-table matrix. Unknown remains unknown; source declarations are not live verification.
-- `docs/MIGRATION_PLAN.md` records Supabase CLI as the owner-selected migration authority and a no-destructive-change consolidation approach for Drizzle and phase folders.
-- `docs/WS0_GAP_PLAN.md` drafts additive approval, audit, status-history and number-series migrations, risks, rollback approach and staging tests. No migration files were created or edited.
+The owner-supplied PDF's SHA-256 is `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF is not stored in this repository and is not required for any future task.
+
+### Migration security matrix and tooling
+
+- `docs/SECURITY_MATRIX.md` now has one row per table name inventoried across the Supabase CLI migration history and secondary SQL tracks; there is no grouped catch-all row. Fields not established by source review are marked `unknown`.
+- `docs/tools/migration_security_matrix.py` is a read-only static inventory script for Supabase CLI, Drizzle, accounting-phase and manufacturing-phase SQL sources. Regex output is evidence for review, not a security verdict. Effective policy composition, dynamic SQL, grants, scope, audit coverage and approval bypasses still require manual SQL review.
+- `docs/MIGRATION_PLAN.md` retains Supabase CLI as the deployment migration authority. `docs/WS0_GAP_PLAN.md` remains a draft proposal only; no migration was created or changed.
 
 ### Safety boundary
 
-No application code, existing migration, database or production data was changed or accessed. Live schema, policies, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED**. No merge or deployment occurred.
-
-
-## Original source checksum (reference only)
-
-Original source PDF checksum (reference only; PDF is not stored in this repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
-The PDF is not stored in this repository and is not required for future work. `docs/blueprint-full.md` is the authoritative blueprint text. Its source-fidelity verification is tracked separately; do not claim byte-for-byte verification until the original source and committed blob hashes match.
+No application code, existing migration, database or production data was changed or accessed. Live schema, policies, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED**. No deployment occurred.
