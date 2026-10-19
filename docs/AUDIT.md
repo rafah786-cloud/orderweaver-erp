@@ -48,7 +48,7 @@ These are source-level findings; runtime correctness has not been independently 
 - **AI platform:** assistant, retrieval and agent-router foundations exist. The repository does not yet demonstrate all Section 13 agents running through a single fully governed runner with database prompt versions, allow-listed typed tools, autonomy limits, budgets, approval/undo, run viewer and per-agent evaluations.
 - **Integrations:** some bridges exist, but live credentials and full retry/health/reconciliation contracts are not verified. Keep external actions mocked/sandboxed.
 - **Tally:** significant import/staging work exists, but a full, reliable four-company historical migration is not proven. Native Tally backup files need compatible Tally restoration/export; archive extraction alone is not accounting import.
-- **Blueprint copy:** `docs/blueprint.md` created by this audit branch is a structured index/summary, not a verbatim 69-page transcription. This limitation is called out in the file. The original PDF still needs to be committed as a binary companion or its detailed field lists/screen definitions/prompts copied in full before repository-local specification is complete.
+- **Blueprint copy:** `docs/blueprint.md` created by this audit branch is a structured index/summary, not a verbatim 69-page transcription. This limitation is called out in the file. The full Markdown specification is available in `docs/blueprint-full.md`; the PDF is not a repository deliverable.
 
 ## 4. Missing or not yet evidenced
 
@@ -107,7 +107,7 @@ Follow Section 14.6 exactly; dependencies are not dates:
 
 1. **Supabase account link:** the available connector cannot list projects/tables because no eligible linked account is selected. Please reconnect/authorize the correct Supabase account, or provide the project identifier and grant the required read-only connector access. Do not send any secret key in chat.
 2. **Migration authority:** repo has both Supabase and Drizzle migration tracks plus phase-specific SQL. Recommendation: Supabase CLI migrations are authoritative for Supabase deployment; Drizzle is retained only if actively used and CI validates parity. Confirm.
-3. **Blueprint file:** the PDF has 69 pages and detailed prompt/schema/screen text. The GitHub file-writing connector accepts UTF-8 text but not a direct PDF binary upload. This branch's `docs/blueprint.md` explicitly identifies itself as an index, not a verbatim copy. Please either (A) approve the source PDF as `docs/blueprint.pdf` via normal Git file upload, or (B) require full Markdown transcription as a separate task. Recommendation A preserves exact fidelity.
+3. **Blueprint file:** the PDF has 69 pages and detailed prompt/schema/screen text. The GitHub file-writing connector accepts UTF-8 text but not a direct PDF binary upload. This branch's `docs/blueprint.md` explicitly identifies itself as an index, not a verbatim copy. Please either (A) approve the source PDF as the original PDF source (not stored in the repository) via normal Git file upload, or (B) require full Markdown transcription as a separate task. Recommendation A preserves exact fidelity.
 4. **Multi-company data boundaries:** existing migrations show a four-company access workflow and special management/estimate books. The report's generic company model must be reconciled to the existing approved-book rules; do not infer company identities or broaden access. Recommendation: preserve current controls and map the report to them.
 5. **No code/deploy:** no application code, database or production deployment changes were made. PR #124 contained audit documentation only and has since been merged. Follow-up documentation work continues on `feature/audit-blueprint-baseline`.
 
@@ -115,7 +115,7 @@ Follow Section 14.6 exactly; dependencies are not dates:
 
 - **Q1 — Supabase read-only audit access:** reconnect the correct Supabase connector (recommended), or choose a source-level-only audit that leaves live DB findings marked unverified.
 - **Q2 — Migration policy:** approve Supabase CLI as the sole deployment migration source, with Drizzle schema either generated/validated or explicitly retired from schema ownership? Recommendation: Supabase CLI is authoritative.
-- **Q3 — Blueprint persistence:** commit the exact source PDF as `docs/blueprint.pdf` (recommended), or require the entire 69-page document to be transcribed into Markdown? No need to change any application code either way.
+- **Q3 — Blueprint persistence:** commit the exact source PDF as the original PDF source (not stored in the repository) (recommended), or require the entire 69-page document to be transcribed into Markdown? No need to change any application code either way.
 - **Q4 — Baseline:** confirm the repository's `main` at `e4658ea` is the baseline to build on; existing work in other open PRs will be audited separately before merge.
 
 **Audit status:** source-level audit and mapping documented; PR #124 merged. Owner decisions on baseline, migration authority and exact PDF persistence are received. Live database audit remains blocked by project authorization; exact PDF binary commit remains outstanding. No application code changes or production operations performed.
@@ -125,7 +125,7 @@ Follow Section 14.6 exactly; dependencies are not dates:
 
 - **Baseline confirmed:** use `main` at `e4658ea188b76095903e133df7b5669affb68a46`; review other open PRs separately. Do not merge them as part of Step 0.
 - **Migration authority confirmed:** Supabase CLI migrations are authoritative for deployed schema. Drizzle must be validated against that source; it must not act as an independent schema authority.
-- **Blueprint persistence confirmed:** commit the exact original PDF as `docs/blueprint.pdf`; `docs/blueprint.md` remains a navigational index, not a replacement.
+- **Blueprint persistence confirmed:** commit the exact original PDF as the original PDF source (not stored in the repository); `docs/blueprint.md` remains a navigational index, not a replacement.
 - **Supabase access decision confirmed, blocker unresolved:** both currently available connector links list only `orderweaver-erp` at ref `ibnacjirwnhbtqrirdsz`, while repository config names `ysaocrumxikgywdotkne`. The correct project/account must be reauthorized before live schema, RLS, function, storage and migration-state checks can be performed.
 - **PDF commit blocker:** the available GitHub file-writing action accepts UTF-8 text only and does not provide a direct binary upload action. The PDF is not committed yet; use a binary-capable Git workflow and verify the committed file is byte-for-byte identical to the supplied source.
 - **Scope guard:** no application-code changes, migration execution, production data writes, or production deployment until the remaining Step 0 blockers are resolved and the next phase is explicitly approved.
@@ -284,7 +284,7 @@ No application code, migration files, database, production data or deployment wa
 - A regex-based spot-check of early migrations shows several foundational table batches do enable RLS and define policies, but that alone cannot establish policy correctness, restrictive/permissive interaction, grants, child-row isolation, audit coverage, or live deployment state.
 - Next source-only audit deliverable: produce a reproducible migration-derived table/control matrix with explicit evidence references and an `unknown/not evidenced` state wherever dynamic SQL, policy replacement, grant behavior, or migration ordering prevents a reliable static conclusion. The matrix must distinguish source declarations from live verification.
 - Live Supabase schema, RLS, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED** until the correct project is authorized and inspected read-only.
-- The exact source PDF remains not committed; preserve byte-for-byte SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` when adding `docs/blueprint.pdf` through a binary-capable Git workflow.
+- The exact source PDF remains not committed; preserve byte-for-byte SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` when adding the original PDF source (not stored in the repository) through a binary-capable Git workflow.
 
 
 ## Blueprint preservation and follow-up source review — 2026-10-19
@@ -294,11 +294,11 @@ No application code, migration files, database, production data or deployment wa
 - Attached Markdown local-file SHA-256: `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`; 137,124 characters, UTF-8, no CRLF, final newline present.
 - Committed `docs/blueprint-full.md` fetched back from GitHub reports 137,122 characters. Its content hash has not been independently computed in the current workflow, and the counts differ. **Verbatim preservation is not verified.** The connector's file read appears to have omitted two characters relative to the local attachment; exact offset has not been identified. Do not use this file as a verified byte-for-byte copy until fixed and rechecked.
 - The returned committed heading inventory contains: Sections 1 Executive Summary; 2 The AI Architecture; 3 Module-by-Module Design; 4 Agent Orchestration; 5 Trust, Safety and Governance; 6 Suggested Technology Stack; 7 Build Order by Dependency; 8 KPIs to Prove It Works; 9 Risks and How to Handle Them; 10 Quick Wins; 11 Database Design; 12 Screens and User Experience; 13 AI Agents: Runtime, Prompts and Tools; 14 Supabase and React Build Plan. Section numbering is present in the returned text, but headings alone do not establish content integrity.
-- Uploaded PDF checksum: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). Binary upload is unavailable through the current GitHub text-writing workflow. Owner must upload the PDF to `docs/blueprint.pdf` on GitHub; after confirmation, compare the repository copy's SHA-256 with this recorded value.
+- Uploaded PDF checksum: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). Binary upload is unavailable through the current GitHub text-writing workflow. Owner must upload the PDF to the original PDF source (not stored in the repository) on GitHub; after confirmation, compare the repository copy's SHA-256 with this recorded value.
 
 ### New documentation
 
-- `docs/blueprint.md` now says `docs/blueprint-full.md` is the intended authoritative text, `docs/blueprint.pdf` is the original PDF, and the index is navigation only. The Markdown checksum mismatch means the authority copy is not yet verified.
+- `docs/blueprint.md` now says `docs/blueprint-full.md` is the intended authoritative text, the original PDF source (not stored in the repository) is the original PDF, and the index is navigation only. The Markdown checksum mismatch means the authority copy is not yet verified.
 - `docs/SECURITY_MATRIX.md` is a preliminary evidence register. It has source-level findings for selected tables, but explicitly remains incomplete and includes a grouped tracking row. It does **not** yet satisfy the requested exhaustive one-row-per-table matrix. Unknown remains unknown; source declarations are not live verification.
 - `docs/MIGRATION_PLAN.md` records Supabase CLI as the owner-selected migration authority and a no-destructive-change consolidation approach for Drizzle and phase folders.
 - `docs/WS0_GAP_PLAN.md` drafts additive approval, audit, status-history and number-series migrations, risks, rollback approach and staging tests. No migration files were created or edited.
@@ -306,3 +306,9 @@ No application code, migration files, database, production data or deployment wa
 ### Safety boundary
 
 No application code, existing migration, database or production data was changed or accessed. Live schema, policies, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED**. No merge or deployment occurred.
+
+
+## Original source checksum (reference only)
+
+Original source PDF checksum (reference only; PDF is not stored in this repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
+The PDF is not stored in this repository and is not required for future work. `docs/blueprint-full.md` is the authoritative blueprint text. Its source-fidelity verification is tracked separately; do not claim byte-for-byte verification until the original source and committed blob hashes match.
