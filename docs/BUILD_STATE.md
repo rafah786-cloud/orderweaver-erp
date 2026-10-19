@@ -101,7 +101,7 @@
 - [x] Original attachment: 137,124 bytes; SHA-256 `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`. GitHub blob SHA-1 after repair: `8603ca3271ee9114665e85d12b98f290287b8bcb`, equal to the Git blob SHA-1 computed from the original bytes.
 - [x] Located and repaired exactly two omitted newline characters: the newline between lines 1000–1001 in the Section 13.4 JSON example and the final newline at EOF. All 144 heading-delimited sections were compared; zero mismatches.
 - [x] Original PDF checksum retained as a reference only: SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF is not stored in this repository and no upload is required.
-- [x] `docs/SECURITY_MATRIX.md` has one row per table name inventoried across the migration-like SQL sources and no grouped catch-all row. Unverified fields are marked unknown; manual review of effective policies, dynamic SQL, grants, audit and approval enforcement remains an explicit follow-up.
+- [x] `docs/SECURITY_MATRIX.md` has one row per 170 table names inventoried across the migration-like SQL sources and no grouped catch-all row. Unverified fields are marked unknown; manual review of effective policies, dynamic SQL, grants, audit and approval enforcement remains an explicit follow-up.
 - [x] Added `docs/tools/migration_security_matrix.py`, a read-only source inventory script; no application source or SQL migration was edited.
 - [x] `docs/MIGRATION_PLAN.md` documents the approved Supabase CLI migration authority. `docs/WS0_GAP_PLAN.md` remains planning only.
 - [ ] CI for PR #125 must complete successfully before merge.
