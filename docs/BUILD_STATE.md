@@ -124,3 +124,8 @@
 - [ ] Run local Supabase clean replay and all subsequent migrations; report any next pre-existing failure separately. No existing migration other than the specifically approved failing migration was edited.
 - [ ] Open separate repair PR and wait for its local CI results. Do not merge PR #126 until its own complete local tests pass and owner separately approves.
 - **Safety:** no hosted/live Supabase access, migration application, production writes or deployment. Live database remains **UNVERIFIED**.
+
+
+- [x] First isolated replay confirmed the bill_allocations relation was created but then failed on its FK to missing public.bills (SQLSTATE 42P01). This exposed the same omitted authoritative dependency: the billwise schema existed only in the isolated Phase 2 track.
+- [x] Extended the separate replay repair to add the prerequisite bill enums and additive public.bills table before bill_allocations, with company-context enforcement, restrictive company RLS, role-scoped reads and indexes. The isolated Phase 2 script was used for source tracing only; it was not applied.
+- [ ] Rerun clean local Supabase replay from zero and inspect the next result. This remains source/replay validation only; hosted/live database status remains UNVERIFIED.
