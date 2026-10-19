@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ARTIFACT_DIR="\${ARTIFACT_DIR:-artifacts/ws0}"
+ARTIFACT_DIR="${ARTIFACT_DIR:-artifacts/ws0}"
 mkdir -p "$ARTIFACT_DIR"
 MIGRATION_DIR="supabase/migrations"
-TEMP_MIGRATIONS="\${RUNNER_TEMP:-/tmp}/ws0-migrations"
+TEMP_MIGRATIONS="${RUNNER_TEMP:-/tmp}/ws0-migrations"
 mkdir -p "$TEMP_MIGRATIONS"
 
 WS0_MIGRATIONS=(
@@ -18,7 +18,7 @@ WS0_MIGRATIONS=(
 
 restore_ws0_migrations() {
   local name
-  for name in "\${WS0_MIGRATIONS[@]}"; do
+  for name in "${WS0_MIGRATIONS[@]}"; do
     if [[ -f "$TEMP_MIGRATIONS/$name" ]]; then
       cp "$TEMP_MIGRATIONS/$name" "$MIGRATION_DIR/$name"
     fi
@@ -43,17 +43,17 @@ set +e
 eval "$(supabase status -o env 2> "$ARTIFACT_DIR/supabase-status.stderr")"
 status_rc=$?
 set -e
-if [[ $status_rc -ne 0 || -z "\${DB_URL:-}" ]]; then
+if [[ $status_rc -ne 0 || -z "${DB_URL:-}" ]]; then
   echo "local_db_url=unavailable" >> "$ARTIFACT_DIR/summary.txt"
   cat "$ARTIFACT_DIR/supabase-status.stderr" >> "$ARTIFACT_DIR/summary.txt" || true
   exit 11
 fi
-if [[ -n "\${GITHUB_ENV:-}" ]]; then
+if [[ -n "${GITHUB_ENV:-}" ]]; then
   echo "WS0_DB_URL=$DB_URL" >> "$GITHUB_ENV"
 fi
 
 # Phase 1: replay the untouched authoritative baseline without the six WS0 files.
-for name in "\${WS0_MIGRATIONS[@]}"; do
+for name in "${WS0_MIGRATIONS[@]}"; do
   cp "$MIGRATION_DIR/$name" "$TEMP_MIGRATIONS/$name"
   rm "$MIGRATION_DIR/$name"
 done
