@@ -99,7 +99,7 @@
 
 - [x] Added `docs/blueprint-full.md` from the attached Markdown via the file retrieval connector.
 - [ ] Exact-byte verification is NOT passed: attached file SHA-256 is `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c` (137,124 characters). The committed text fetched back from GitHub is 137,122 characters. Therefore checksum equality is unverified and the file must not be treated as verbatim yet. The retrieval connector returned two fewer characters than the local attachment; exact location has not been isolated. Correct by byte-preserving upload and compare SHA-256 before claiming success.
-- [x] Recorded PDF checksum from the uploaded 69-page original: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF has not been uploaded to the repository; owner must add the original PDF is retained only as a checksum reference in `docs/AUDIT.md`.
+- [x] Recorded PDF checksum from the uploaded 69-page original: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The original PDF is not stored in the repository; its checksum is retained in `docs/AUDIT.md` for reference only.
 - [x] Updated `docs/blueprint.md` to designate `docs/blueprint-full.md` as authoritative text, the original PDF is retained only as a checksum reference in `docs/AUDIT.md`.
 - [x] Added draft `docs/SECURITY_MATRIX.md`; it explicitly warns that it is incomplete and contains an outstanding grouped row. Do not call the requested one-row-per-every-table matrix complete yet.
 - [x] Added `docs/MIGRATION_PLAN.md` for Supabase CLI authority, Drizzle/phase-folder inventory and proposed consolidation; no migration files changed.
