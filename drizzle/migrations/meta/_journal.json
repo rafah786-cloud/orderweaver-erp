@@ -50,6 +50,13 @@
       "when": 1792391905428,
       "tag": "0006_ai_marketing_creative_studio_table",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792391933415,
+      "tag": "0007_marketing_creative_assets_storage_policies",
+      "breakpoints": true
     }
   ]
 }
