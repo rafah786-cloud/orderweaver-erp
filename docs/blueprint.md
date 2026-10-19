@@ -79,4 +79,4 @@ Use React/TypeScript, Vite, React Router, TanStack Query, Zustand, React Hook Fo
 - Forecasts are probabilistic; OCR/vision need local corrections; data quality and human-approved decisions remain permanent responsibilities.
 
 ## Source fidelity notice
-This index captures the structure, principal requirements and the exact WS0–WS8 dependency summary. It does **not** replace the full 69-page PDF's detailed database field lists, screen specifications, tool schemas or complete agent prompts. Those details must be copied from the supplied source report into this file (or kept as a versioned companion PDF) before it can be treated as a complete repository copy. No implementation may silently infer omitted specifications.
+This index captures the structure, principal requirements and the exact WS0–WS8 dependency summary. It does not replace the detailed database field lists, screen specifications, tool schemas or complete agent prompts in `docs/blueprint-full.md`. No implementation may silently infer omitted specifications.
