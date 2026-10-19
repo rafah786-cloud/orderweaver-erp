@@ -114,3 +114,14 @@
 - `main` baseline recorded before any further merge: `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
 - Original source PDF checksum (reference only; not stored in repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
 - `docs/blueprint-full.md` is authoritative. Live Supabase database remains **UNVERIFIED**. No database access, migrations, app code changes, or deployment are authorized by this source-only documentation work.
+
+
+## Task 2 — WS0 additive approval/audit foundation — 2026-10-19
+
+- [x] PR #125 was verified to change only files under `docs/`; its ERP CI workflow completed successfully. Merged by the owner-authorized assistant action as commit `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. PR #124 was already merged at `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
+- [x] Created branch `feature/ws0-approval-audit-foundation` from the post-PR #125 main commit `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`.
+- [x] Read blueprint sections 11 and 13 and `docs/WS0_GAP_PLAN.md` before preparing Task 2.
+- [ ] Add six forward-only migrations and six non-destructive compensating scripts under `supabase/rollback/`; use timestamps later than the newest existing CLI migration `20261018210000_ai_marketing_creative_studio.sql`.
+- [ ] Add isolated local-Supabase CI: replay current main migrations in a separate baseline job; replay all migrations including WS0 in the test job; run security/approval/audit/status/numbering tests; retain logs and schema diff as artifacts.
+- [ ] Open PR for Task 2 only after source checks are complete. Do not merge until all local CI tests pass and the owner separately approves in chat.
+- **No hosted/live Supabase access, migration application, or deployment is permitted. Live database status remains UNVERIFIED.**
