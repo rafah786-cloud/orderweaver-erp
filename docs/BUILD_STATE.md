@@ -175,3 +175,12 @@
 - This is a **pre-existing baseline migration replay failure**, before the six WS0 migrations were applied or WS0 tests ran. The artifact `ws0-local-supabase-39215179545` contains the full startup log.
 - The local runner was corrected to classify SQL/migration errors during `supabase start` as `baseline_replay=failed`, rather than mislabelling them as a generic container startup failure.
 - No existing migration was changed. Do not merge PR #126 while the authoritative baseline cannot replay from zero. Fixing the existing migration requires separate owner approval.
+
+
+## Latest Task 2 CI review — 2026-10-19
+
+- PR #125 is closed and merged at `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. Its changed files are documentation-only. The ERP CI workflow has a normal `pull_request` trigger and no path filters; the earlier zero-job pending display did not represent a required check. The connected status API reports no required checks. PR #125 is already merged; no second merge action is needed.
+- PR #126 remains open at `https://github.com/rafah786-cloud/orderweaver-erp/pull/126`. Its changed files are the six new WS0 migrations, six compensating scripts, SQL assertions, concurrency test, local Supabase runner/workflow, and this build-state document. No existing migration or application source is changed.
+- Latest observed Task 2 workflow run: `39215667868`, conclusion **failure**. ERP CI run `39215667915` passed. The WS0 workflow reached the local runner, then exited with code 20; its artifact is `ws0-local-supabase-39215667868`.
+- Baseline replay failure was already recorded for run `39215179545`: existing migration `20261005150000_production_accounting_inventory_hardening.sql` fails because `public.bill_allocations` does not exist when it attempts to create `bill_allocations_idempotency_key_unique` (SQLSTATE 42P01). This happens before WS0 migrations or WS0 assertions execute. The new workflow must classify this as baseline failure, separately from WS0 application/test failure.
+- Per owner instruction, do not edit/fix existing migration history without separate approval. Because the baseline cannot replay from zero, WS0 behavior has **not** yet been proven by the local Supabase test suite. Do not merge PR #126. No hosted/live database was accessed; live database remains **UNVERIFIED**. No deployment occurred.
