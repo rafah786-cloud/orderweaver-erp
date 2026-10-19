@@ -131,7 +131,7 @@ BEGIN
   BEGIN
     INSERT INTO public.approval_requests(company_id,rule_id,action_key,entity_type,entity_id,requester_id,
       amount,currency,required_approvals)
-    VALUES(v_company_a,(SELECT id FROM public.approval_rules WHERE company_id=v_company_a LIMIT 1),
+    VALUES(v_company_a,'d0000000-0000-4000-8000-000000000001'::uuid,
       'finance.payment.release','payment','a0000000-0000-4000-8000-000000000004'::uuid,v_requester,500,'INR',1);
     RAISE EXCEPTION 'TEST FAILURE: direct approval request insert unexpectedly succeeded';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
