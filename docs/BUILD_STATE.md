@@ -153,3 +153,8 @@
 
 - [x] Added six non-destructive compensating scripts under `supabase/rollback/`; they disable the corresponding new WS0 feature and preserve schema/data instead of dropping objects.
 - [ ] Review CI result. The existing migration replay must be reported independently from WS0 migration/test failures. Do not fix baseline migration failures without owner approval.
+
+
+- [x] Opened Task 2 PR #126: https://github.com/rafah786-cloud/orderweaver-erp/pull/126. Its changed-file list contains only the six new WS0 migrations, six compensating scripts, tests, local test runner, local CI workflow and this build-state document; no application source or existing migration file is changed.
+- [x] PR #126 CI started: ERP CI run `39214387158`; local Supabase WS0 workflow run `39214387160`.
+- [ ] Await baseline replay result, WS0 migration application, SQL assertions and concurrent numbering test. Merge is blocked until all local tests pass and the owner explicitly approves in chat.
