@@ -114,3 +114,13 @@
 - `main` baseline recorded before any further merge: `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
 - Original source PDF checksum (reference only; not stored in repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
 - `docs/blueprint-full.md` is authoritative. Live Supabase database remains **UNVERIFIED**. No database access, migrations, app code changes, or deployment are authorized by this source-only documentation work.
+
+
+## Separate baseline replay repair — 2026-10-19
+
+- [x] Owner approved a separate PR to repair the pre-existing clean-replay failure. Scope is isolated to `fix/bill-allocations-migration-replay`; it does not authorize changing live/hosted Supabase, deploying, or merging PR #126.
+- [x] Source trace confirmed the billwise table/type definition existed only under the non-authoritative `accounting-phase2/001_billwise_accounting.sql` track, while authoritative migrations `20261005150000`, `20261005160000`, `20261005180000`, and later SQL reference `public.bill_allocations`. The isolated Phase 2 file explicitly warns it must not be applied to the shared live database, so it was not copied or executed.
+- [x] Repair branch adds the missing `bill_allocation_type` enum (idempotent duplicate handling) and the additive `public.bill_allocations` table definition to the existing failing authoritative migration before its first index reference. Includes company context trigger, restrictive company RLS, role-scoped read policy, grants and supporting indexes so the late-created table does not miss the earlier multi-company migration's dynamic protections.
+- [ ] Run local Supabase clean replay and all subsequent migrations; report any next pre-existing failure separately. No existing migration other than the specifically approved failing migration was edited.
+- [ ] Open separate repair PR and wait for its local CI results. Do not merge PR #126 until its own complete local tests pass and owner separately approves.
+- **Safety:** no hosted/live Supabase access, migration application, production writes or deployment. Live database remains **UNVERIFIED**.
