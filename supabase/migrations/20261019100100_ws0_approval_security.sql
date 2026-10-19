@@ -133,7 +133,7 @@ BEGIN
       AND r.currency=p_currency AND r.is_active
       AND p_amount >= r.min_amount AND (r.max_amount IS NULL OR p_amount <= r.max_amount)
   )
-  SELECT count(*),min(id) INTO v_count,v_rule_id
+  SELECT count(*),(array_agg(id))[1] INTO v_count,v_rule_id
   FROM matching WHERE specificity=v_specificity AND priority=v_priority;
 
   IF v_count <> 1 THEN
