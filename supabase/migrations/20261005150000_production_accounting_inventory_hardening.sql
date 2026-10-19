@@ -44,6 +44,88 @@ CREATE UNIQUE INDEX IF NOT EXISTS stock_items_one_model
   WHERE mapped_model_id IS NOT NULL;
 
 -- The billwise accounting schema was previously kept only under the isolated
+-- accounting-phase2 track. Later authoritative migrations depend on these tables,
+-- so establish their additive foundation here before bill allocations.
+DO $ws0$
+BEGIN
+  CREATE TYPE public.bill_party_kind AS ENUM ('customer','supplier');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END
+$ws0$;
+DO $ws0$
+BEGIN
+  CREATE TYPE public.bill_reference_type AS ENUM ('opening','new_ref','on_account','advance');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END
+$ws0$;
+DO $ws0$
+BEGIN
+  CREATE TYPE public.bill_status AS ENUM ('open','partial','settled','cancelled');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END
+$ws0$;
+
+CREATE TABLE IF NOT EXISTS public.bills (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid REFERENCES public.companies(id),
+  party_kind public.bill_party_kind NOT NULL,
+  party_id uuid REFERENCES public.parties(id) ON DELETE RESTRICT,
+  supplier_id uuid REFERENCES public.suppliers(id) ON DELETE RESTRICT,
+  ledger_account_id uuid NOT NULL REFERENCES public.ledger_accounts(id) ON DELETE RESTRICT,
+  bill_reference text NOT NULL,
+  bill_date date NOT NULL,
+  due_date date,
+  reference_type public.bill_reference_type NOT NULL DEFAULT 'new_ref',
+  original_amount numeric(18,2) NOT NULL CHECK (original_amount > 0),
+  currency_code text NOT NULL DEFAULT 'INR',
+  source_voucher_id uuid NOT NULL REFERENCES public.vouchers(id) ON DELETE RESTRICT,
+  source_voucher_entry_id uuid NOT NULL REFERENCES public.voucher_entries(id) ON DELETE RESTRICT,
+  status public.bill_status NOT NULL DEFAULT 'open',
+  cancelled_on date,
+  source_voiding_voucher_id uuid REFERENCES public.vouchers(id) ON DELETE RESTRICT,
+  external_ref text,
+  created_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT bills_party_kind_identity_check CHECK (
+    (party_kind='customer' AND party_id IS NOT NULL AND supplier_id IS NULL) OR
+    (party_kind='supplier' AND supplier_id IS NOT NULL AND party_id IS NULL)
+  ),
+  CONSTRAINT bills_due_date_order CHECK (due_date IS NULL OR due_date >= bill_date),
+  CONSTRAINT bills_source_voucher_entry_unique UNIQUE (source_voucher_entry_id)
+);
+
+DROP TRIGGER IF EXISTS trg_bills_company_context ON public.bills;
+CREATE TRIGGER trg_bills_company_context
+  BEFORE INSERT OR UPDATE ON public.bills
+  FOR EACH ROW EXECUTE FUNCTION public.ensure_company_context();
+ALTER TABLE public.bills ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS company_scope_bills ON public.bills;
+CREATE POLICY company_scope_bills ON public.bills
+  AS RESTRICTIVE FOR ALL TO authenticated
+  USING (company_id = public.current_company_id() AND public.has_company_access(company_id))
+  WITH CHECK (company_id = public.current_company_id() AND public.has_company_access(company_id));
+DROP POLICY IF EXISTS "bills staff read" ON public.bills;
+CREATE POLICY "bills staff read" ON public.bills FOR SELECT TO authenticated USING (
+  company_id = public.current_company_id()
+  AND public.has_company_access(company_id)
+  AND (
+    public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'accountant')
+    OR (party_kind='customer' AND public.has_role(auth.uid(),'sales'))
+    OR (party_kind='customer' AND public.has_role(auth.uid(),'customer')
+        AND party_id IN (SELECT id FROM public.parties WHERE user_id=auth.uid()))
+    OR (party_kind='supplier' AND public.has_role(auth.uid(),'production'))
+    OR (party_kind='supplier' AND public.has_role(auth.uid(),'vendor')
+        AND supplier_id IN (SELECT id FROM public.suppliers WHERE user_id=auth.uid()))
+  )
+);
+GRANT SELECT ON public.bills TO authenticated;
+GRANT ALL ON public.bills TO service_role;
+CREATE INDEX IF NOT EXISTS bills_party_status_due_idx
+  ON public.bills(party_kind,party_id,supplier_id,status,due_date);
+CREATE INDEX IF NOT EXISTS bills_ledger_date_idx ON public.bills(ledger_account_id,bill_date);
+
+-- The billwise accounting schema was previously kept only under the isolated
 -- accounting-phase2/ track, which is not part of the authoritative Supabase CLI
 -- migration chain. Later authoritative migrations already depend on this table.
 -- Define the required table here so a clean CLI replay has the same dependency.
