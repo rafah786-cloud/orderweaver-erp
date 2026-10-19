@@ -80,10 +80,10 @@ export function parse7zListing(listing: string, limits: ArchiveLimits = {}): Arc
       if (match) fields.set(match[1].trim(), match[2]);
     }
     const name = fields.get("Path");
-    if (!name || name === "----------" || fields.get("Type") === "7z") continue;
+    if (!name || name === "----------" || (!fields.has("Folder") && !fields.has("Attributes"))) continue;
     if (isUnsafeArchivePath(name)) throw new Error(`Unsafe archive path rejected: ${name}`);
     const attributes = fields.get("Attributes") ?? "";
-    if (/\bL\b/i.test(attributes) || attributes.startsWith("L")) {
+    if (attributes.startsWith("L")) {
       throw new Error(`Symbolic link rejected in archive: ${name}`);
     }
     const sizeText = fields.get("Size") ?? "0";
@@ -116,7 +116,8 @@ export function buildInspection(archivePath: string, archiveBytes: number, entri
     .map((entry) => ({ path: entry.path, size: entry.size, kind: classify(entry.path) }));
   const xmlCount = tallyLikeFiles.filter((entry) => entry.kind === "xml-export").length;
   const nativeCount = tallyLikeFiles.filter((entry) => entry.kind === "native-data").length;
-  const topFolders = [...new Set(files.map((entry) => entry.path.replaceAll("\\", "/").split("/")[0]).filter((v) => v && v !== entryLeaf(files)))];
+  const nestedPaths = files.map((entry) => entry.path.replaceAll("\\", "/")).filter((value) => value.includes("/"));
+  const topFolders = [...new Set(nestedPaths.map((value) => value.split("/")[0]).filter(Boolean))];
   const warnings: string[] = [];
   if (!files.length) warnings.push("Archive contains no files.");
   if (!xmlCount && nativeCount) warnings.push("Native Tally data detected. Restore/open it with the compatible Tally release, then export through the read-only TallyBridge; do not parse binary files as XML.");
@@ -132,11 +133,6 @@ export function buildInspection(archivePath: string, archiveBytes: number, entri
     requiresTallyRestore: nativeCount > 0 && xmlCount === 0,
     warnings,
   };
-}
-
-// Helper keeps the root folder from being incorrectly reported as a company candidate.
-function entryLeaf(entries: ArchiveEntry[]): string {
-  return entries.length ? "__no_matching_root__" : "";
 }
 
 /** Inspect and safely extract a RAR/ZIP/7z archive to a private temporary directory. */
