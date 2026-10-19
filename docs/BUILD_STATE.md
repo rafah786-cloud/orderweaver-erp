@@ -160,3 +160,7 @@
 - [ ] Await baseline replay result, WS0 migration application, SQL assertions and concurrent numbering test. Merge is blocked until all local tests pass and the owner explicitly approves in chat.
 
 - [x] Number-series allocation now writes a redacted audit event to the existing `erp_domain_audit_log`; no separate duplicate audit table was introduced.
+
+
+- [x] Added a restrictive insert policy that prevents authenticated clients from forging `module='ws0'` records in the reused `erp_domain_audit_log`; the security-definer audit trigger remains able to write them. Added a SQL assertion for direct forgery attempts.
+- [ ] Latest CI head includes the audit-integrity hardening; wait for its fresh local Supabase run before deciding pass/fail.
