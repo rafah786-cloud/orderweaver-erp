@@ -43,3 +43,16 @@ same-name companies or unsupported message envelopes fail explicitly.
 The UI currently offers source preview/validation only. Canonical transactional Tally
 commit, changed-voucher policy, ledger/stock identity mapping and verified isolated
 recovery remain required before live import. No successful sync is fabricated.
+
+
+## RAR/backup intake (inspection only)
+
+Install 7-Zip on the machine that will inspect the archive, then run:
+
+```powershell
+npm run inspect:archive -- --archive "D:\\TallyBackups\\company-backup.rar"
+```
+
+The command validates the archive listing, extracts into a quarantine directory, and prints a JSON inventory of likely XML exports, native-data files, and warnings. Use `--7z "C:\\Program Files\\7-Zip\\7z.exe"` if 7-Zip is not on PATH. To select a new output directory, use `--output "D:\\TallyQuarantine\\run-001"`; that directory must not already exist.
+
+This is not a binary Tally reader and it does not import data into the ERP. If the archive contains native Tally backup data rather than XML exports, restore it with the compatible Tally release in an isolated environment, then use the read-only local TallyBridge export. Never upload private Tally HTTP ports to the internet. See ../docs/TALLY_RAR_IMPORT_ARCHITECTURE.md for the full gated pipeline.
