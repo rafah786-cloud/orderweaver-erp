@@ -2,7 +2,7 @@
 -- Snapshots use an allowlist, not a blacklist, to avoid leaking PII/secrets.
 BEGIN;
 
-CREATE OR REPLACE FUNCTION public.ws0_redact_audit_snapshot(p_data jsonb)
+CREATE FUNCTION public.ws0_redact_audit_snapshot(p_data jsonb)
 RETURNS jsonb
 LANGUAGE sql IMMUTABLE SECURITY DEFINER
 SET search_path = pg_catalog, public
@@ -20,7 +20,7 @@ AS $function$
 $function$;
 REVOKE ALL ON FUNCTION public.ws0_redact_audit_snapshot(jsonb) FROM PUBLIC, anon, authenticated;
 
-CREATE OR REPLACE FUNCTION public.ws0_guard_append_only_audit()
+CREATE FUNCTION public.ws0_guard_append_only_audit()
 RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, public
