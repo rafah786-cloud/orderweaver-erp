@@ -26,6 +26,12 @@ restore_ws0_migrations() {
 }
 trap restore_ws0_migrations EXIT
 
+# Hide WS0 files before starting Docker: some CLI versions may apply pending migrations on startup.
+for name in "${WS0_MIGRATIONS[@]}"; do
+  cp "$MIGRATION_DIR/$name" "$TEMP_MIGRATIONS/$name"
+  rm "$MIGRATION_DIR/$name"
+done
+
 echo "phase=supabase_start" > "$ARTIFACT_DIR/summary.txt"
 set +e
 supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor > "$ARTIFACT_DIR/supabase-start.log" 2>&1
@@ -53,10 +59,6 @@ if [[ -n "${GITHUB_ENV:-}" ]]; then
 fi
 
 # Phase 1: replay the untouched authoritative baseline without the six WS0 files.
-for name in "${WS0_MIGRATIONS[@]}"; do
-  cp "$MIGRATION_DIR/$name" "$TEMP_MIGRATIONS/$name"
-  rm "$MIGRATION_DIR/$name"
-done
 echo "phase=baseline_replay" >> "$ARTIFACT_DIR/summary.txt"
 set +e
 supabase db reset --local --no-seed > "$ARTIFACT_DIR/baseline-replay.log" 2>&1
