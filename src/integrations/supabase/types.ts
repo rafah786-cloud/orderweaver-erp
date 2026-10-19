@@ -4068,6 +4068,220 @@ export type Database = {
           },
         ]
       }
+      marketing_campaign_attributions: {
+        Row: {
+          attributed_at: string
+          attribution_model: string
+          campaign_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string | null
+          lead_id: string | null
+          notes: string | null
+          source: string | null
+        }
+        Insert: {
+          attributed_at?: string
+          attribution_model?: string
+          campaign_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          source?: string | null
+        }
+        Update: {
+          attributed_at?: string
+          attribution_model?: string
+          campaign_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_attributions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaign_attributions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaign_attributions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaign_attributions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaign_costs: {
+        Row: {
+          amount: number
+          campaign_id: string
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          reference: string | null
+          spend_date: string
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          campaign_id: string
+          category?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          spend_date?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          spend_date?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_costs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaign_costs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaigns: {
+        Row: {
+          audience_description: string | null
+          budget_amount: number
+          campaign_code: string
+          channel: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          landing_page_url: string | null
+          name: string
+          notes: string | null
+          objective: string
+          owner_id: string | null
+          start_date: string | null
+          status: string
+          target_conversions: number | null
+          target_leads: number | null
+          target_revenue: number | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          audience_description?: string | null
+          budget_amount?: number
+          campaign_code: string
+          channel: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          landing_page_url?: string | null
+          name: string
+          notes?: string | null
+          objective?: string
+          owner_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_conversions?: number | null
+          target_leads?: number | null
+          target_revenue?: number | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          audience_description?: string | null
+          budget_amount?: number
+          campaign_code?: string
+          channel?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          landing_page_url?: string | null
+          name?: string
+          notes?: string | null
+          objective?: string
+          owner_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_conversions?: number | null
+          target_leads?: number | null
+          target_revenue?: number | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_data_quality_rules: {
         Row: {
           active: boolean

@@ -36,6 +36,13 @@
       "when": 1792152754275,
       "tag": "0004_tally_source_staging_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792391874567,
+      "tag": "0005_marketing_campaign_management",
+      "breakpoints": true
     }
   ]
 }
