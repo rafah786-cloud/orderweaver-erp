@@ -188,4 +188,4 @@
 - **Approval enforcement** requires proving direct DML/RPC bypasses are denied and that the domain transaction rechecks invariants at execution time.
 - Run `python docs/tools/migration_security_matrix.py --markdown docs/SECURITY_MATRIX.generated.md --csv docs/SECURITY_MATRIX.generated.csv` from the repository root to produce a reproducible static inventory. Generated outputs should be compared to this reviewed matrix; dynamic SQL must be reviewed manually.
 
-**Current result:** 172 distinct table names are listed across the migration-like sources inventoried here. The exhaustive one-row-per-table enumeration is in place, but rows marked `unknown` are not security passes. No database was queried or changed.
+**Current result:** 170 distinct table names are listed across the migration-like sources inventoried here. The exhaustive one-row-per-table enumeration is in place, but rows marked `unknown` are not security passes. No database was queried or changed.
