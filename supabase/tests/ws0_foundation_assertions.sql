@@ -157,6 +157,17 @@ BEGIN
     RAISE;
   END;
 
+  -- Authenticated clients cannot forge WS0 audit records directly.
+  BEGIN
+    INSERT INTO public.erp_domain_audit_log(company_id,module,entity_type,action,actor_id)
+    VALUES(v_company_a,'ws0','forged_test_event','insert',v_requester);
+    RAISE EXCEPTION 'TEST FAILURE: direct WS0 audit insert unexpectedly succeeded';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  WHEN OTHERS THEN
+    IF SQLERRM LIKE 'TEST FAILURE:%' THEN RAISE; END IF;
+    RAISE;
+  END;
+
   -- Self-approval is prohibited even for an admin.
   PERFORM set_config('request.jwt.claim.sub',v_a::text,true);
   PERFORM set_config('request.jwt.claims',json_build_object('sub',v_a::text,'role','authenticated')::text,true);
