@@ -83,7 +83,7 @@ export function parse7zListing(listing: string, limits: ArchiveLimits = {}): Arc
     if (!name || name === "----------" || (!fields.has("Folder") && !fields.has("Attributes"))) continue;
     if (isUnsafeArchivePath(name)) throw new Error(`Unsafe archive path rejected: ${name}`);
     const attributes = fields.get("Attributes") ?? "";
-    if (attributes.startsWith("L")) {
+    if (/^L/i.test(attributes) || fields.has("Symbolic Link") || fields.has("Hard Link")) {
       throw new Error(`Symbolic link rejected in archive: ${name}`);
     }
     const sizeText = fields.get("Size") ?? "0";
