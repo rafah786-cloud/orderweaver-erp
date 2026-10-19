@@ -166,3 +166,12 @@
 - [ ] Latest CI head includes the audit-integrity hardening; wait for its fresh local Supabase run before deciding pass/fail.
 
 - [x] Extended the local runner to execute all six compensating scripts after functional/concurrency tests in the disposable database, then assert all four feature controls are disabled. This validates compensations without dropping schema or data.
+
+
+## Baseline replay failure — 2026-10-19
+
+- Local Supabase run `39215179545` failed while Supabase CLI was applying the existing authoritative migration `20261005150000_production_accounting_inventory_hardening.sql`.
+- Error: `relation "public.bill_allocations" does not exist (SQLSTATE 42P01)`, at statement 11, `CREATE UNIQUE INDEX IF NOT EXISTS bill_allocations_idempotency_key_unique ON public.bill_allocations (idempotency_key) WHERE idempotency_key IS NOT NULL`.
+- This is a **pre-existing baseline migration replay failure**, before the six WS0 migrations were applied or WS0 tests ran. The artifact `ws0-local-supabase-39215179545` contains the full startup log.
+- The local runner was corrected to classify SQL/migration errors during `supabase start` as `baseline_replay=failed`, rather than mislabelling them as a generic container startup failure.
+- No existing migration was changed. Do not merge PR #126 while the authoritative baseline cannot replay from zero. Fixing the existing migration requires separate owner approval.
