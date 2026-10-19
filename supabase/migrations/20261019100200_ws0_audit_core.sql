@@ -43,6 +43,12 @@ END
 $function$;
 REVOKE ALL ON FUNCTION public.ws0_guard_append_only_audit() FROM PUBLIC, anon, authenticated;
 
+-- Prevent authenticated clients from forging WS0 audit events. SECURITY DEFINER audit triggers run as the table owner.
+CREATE POLICY ws0_audit_no_client_forgery
+ON public.erp_domain_audit_log
+AS RESTRICTIVE FOR INSERT TO authenticated
+WITH CHECK (module <> 'ws0');
+
 -- New trigger affects only rows tagged module='ws0'; other audit-log behavior is unchanged.
 CREATE TRIGGER ws0_audit_rows_append_only
 BEFORE UPDATE OR DELETE ON public.erp_domain_audit_log
