@@ -65,11 +65,17 @@ set -e
 restore_ws0_migrations
 if [[ $baseline_rc -ne 0 ]]; then
   printf 'baseline_replay=failed exit_code=%s\n' "$baseline_rc" >> "$ARTIFACT_DIR/summary.txt"
+  psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c 'select version from supabase_migrations.schema_migrations order by version' > "$ARTIFACT_DIR/migration-ledger-baseline-partial.txt" 2>&1 || true
+  pg_dump "$DB_URL" --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema-baseline-partial.sql" 2> "$ARTIFACT_DIR/schema-baseline-partial.stderr" || true
   docker ps -a > "$ARTIFACT_DIR/docker-containers.txt" 2>&1 || true
   exit 20
 fi
 baseline_count="$(psql "$DB_URL" -X -qAt -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations')"
 printf 'baseline_replay=passed migration_count=%s\n' "$baseline_count" >> "$ARTIFACT_DIR/summary.txt"
+if [[ "$baseline_count" != "117" ]]; then
+  echo "baseline_replay=failed reason=expected_117_authoritative_migrations" >> "$ARTIFACT_DIR/summary.txt"
+  exit 21
+fi
 psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c 'select version from supabase_migrations.schema_migrations order by version' > "$ARTIFACT_DIR/migration-ledger-baseline.txt"
 pg_dump "$DB_URL" --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema-baseline.sql"
 
@@ -86,6 +92,10 @@ if [[ $ws0_rc -ne 0 ]]; then
 fi
 ws0_count="$(psql "$DB_URL" -X -qAt -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations')"
 printf 'ws0_apply=passed migration_count=%s\n' "$ws0_count" >> "$ARTIFACT_DIR/summary.txt"
+if [[ "$ws0_count" != "123" ]]; then
+  echo "ws0_apply=failed reason=expected_123_total_migrations" >> "$ARTIFACT_DIR/summary.txt"
+  exit 31
+fi
 psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c 'select version from supabase_migrations.schema_migrations order by version' > "$ARTIFACT_DIR/migration-ledger-after.txt"
 pg_dump "$DB_URL" --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema-after.sql"
 diff -u "$ARTIFACT_DIR/schema-baseline.sql" "$ARTIFACT_DIR/schema-after.sql" > "$ARTIFACT_DIR/schema-diff.diff" || true
