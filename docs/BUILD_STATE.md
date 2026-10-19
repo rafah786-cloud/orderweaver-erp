@@ -95,19 +95,18 @@
 
 ## Blueprint authority and latest source-only work — 2026-10-19
 
-**Mandatory rule before every task:** read the relevant sections of `docs/blueprint-full.md` directly before planning or implementing that task. Do not use `docs/blueprint.md`, an audit summary, or any paraphrase as the source of requirements. `docs/blueprint.md` is navigation only. the original PDF is retained only as a checksum reference in `docs/AUDIT.md`.
+**Mandatory rule before every task:** read the relevant sections of `docs/blueprint-full.md` directly before planning or implementing that task. Do not use `docs/blueprint.md`, an audit summary, or a paraphrase as the source of requirements. `docs/blueprint.md` is navigation only.
 
-- [x] Added `docs/blueprint-full.md` from the attached Markdown via the file retrieval connector.
-- [ ] Exact-byte verification is NOT passed: attached file SHA-256 is `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c` (137,124 characters). The committed text fetched back from GitHub is 137,122 characters. Therefore checksum equality is unverified and the file must not be treated as verbatim yet. The retrieval connector returned two fewer characters than the local attachment; exact location has not been isolated. Correct by byte-preserving upload and compare SHA-256 before claiming success.
-- [x] Recorded PDF checksum from the uploaded 69-page original: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The original PDF is not stored in the repository; its checksum is retained in `docs/AUDIT.md` for reference only.
-- [x] Updated `docs/blueprint.md` to designate `docs/blueprint-full.md` as authoritative text, the original PDF is retained only as a checksum reference in `docs/AUDIT.md`.
-- [x] Added draft `docs/SECURITY_MATRIX.md`; it explicitly warns that it is incomplete and contains an outstanding grouped row. Do not call the requested one-row-per-every-table matrix complete yet.
-- [x] Added `docs/MIGRATION_PLAN.md` for Supabase CLI authority, Drizzle/phase-folder inventory and proposed consolidation; no migration files changed.
-- [x] Added `docs/WS0_GAP_PLAN.md` as an additive-only approval/audit/status/number-series design and staging test plan; no migrations created.
-- [ ] Finish exhaustive migration-by-migration table and policy/trigger/grant inventory, split every grouped row and attach evidence.
-- [ ] Verify source markdown exactly (character count and SHA-256) after a byte-preserving Git workflow. Current committed file differs in reported character count, so do not claim complete.
+- [x] `docs/blueprint-full.md` is byte-for-byte verified against the attached Markdown.
+- [x] Original attachment: 137,124 bytes; SHA-256 `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c`. GitHub blob SHA-1 after repair: `8603ca3271ee9114665e85d12b98f290287b8bcb`, equal to the Git blob SHA-1 computed from the original bytes.
+- [x] Located and repaired exactly two omitted newline characters: the newline between lines 1000–1001 in the Section 13.4 JSON example and the final newline at EOF. All 144 heading-delimited sections were compared; zero mismatches.
+- [x] Original PDF checksum retained as a reference only: SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF is not stored in this repository and no upload is required.
+- [x] `docs/SECURITY_MATRIX.md` has one row per table name inventoried across the migration-like SQL sources and no grouped catch-all row. Unverified fields are marked unknown; manual review of effective policies, dynamic SQL, grants, audit and approval enforcement remains an explicit follow-up.
+- [x] Added `docs/tools/migration_security_matrix.py`, a read-only source inventory script; no application source or SQL migration was edited.
+- [x] `docs/MIGRATION_PLAN.md` documents the approved Supabase CLI migration authority. `docs/WS0_GAP_PLAN.md` remains planning only.
+- [ ] CI for PR #125 must complete successfully before merge.
 - [ ] Live database remains **UNVERIFIED**; no database access was performed.
-- [ ] No application code, existing migration, database, production data, or deployment was changed. Nothing was merged.
+- [x] No application code, existing migration, database, production data or deployment was changed. No merge has occurred during this review.
 
 
 ## Baseline before documentation PR review
