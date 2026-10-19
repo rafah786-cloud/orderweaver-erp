@@ -47,3 +47,14 @@
 
 ## Change log
 - 2026-10-19: Created audit baseline and WS0–WS8 tracker on `feature/audit-blueprint-baseline`. Source-level only. No application code or database changed.
+
+
+## Owner decisions and remaining Step 0 gates — 2026-10-19
+
+- [x] Baseline confirmed: `main` SHA `e4658ea188b76095903e133df7b5669affb68a46`; other PRs are reviewed separately.
+- [x] Supabase CLI migrations are authoritative; Drizzle must be checked for parity.
+- [x] Exact source PDF approved for `docs/blueprint.pdf`; Markdown remains an index.
+- [ ] **Supabase blocker:** both currently available connector links list `ibnacjirwnhbtqrirdsz`, but repo config names `ysaocrumxikgywdotkne`. Reauthorize the correct account/project before live audit.
+- [ ] **PDF blocker:** current GitHub file-writing action supports UTF-8 text only, not binary PDF upload. Commit via a binary-capable Git workflow and verify exact bytes.
+- [ ] Review other open PRs separately; do not merge them as part of Step 0.
+- **No application code, migrations, production data writes, or deployments** until blockers are resolved and the owner approves the next phase.
