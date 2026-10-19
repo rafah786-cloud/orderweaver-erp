@@ -11,7 +11,7 @@
 - [x] Inventory repository structure, stack/package scripts, route list, migration tracks, tests, docs and environment-variable names (no values).
 - [x] Create source-level audit and mapping.
 - [ ] Verify actual ERP production schema, policies, functions, storage and deployed migration state — blocker: both available Supabase links expose ref ibnacjirwnhbtqrirdsz, while repo config/documentation identifies ysaocrumxikgywdotkne. Read-only inspection of the former found seven migration records and only public.tally_archive_uploads; do not treat it as production.
-- [ ] Commit the exact 69-page source report as docs/blueprint.pdf byte-for-byte — owner decision confirmed; connector has no direct binary upload path, so a binary-capable Git workflow is still required. Source SHA-256: ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937.
+- [ ] Commit the exact 69-page source report as the original PDF (not stored in this repository) byte-for-byte — owner decision confirmed; connector has no direct binary upload path, so a binary-capable Git workflow is still required. Source SHA-256: ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937.
 - [x] Owner decisions Q1–Q4 received; Supabase project identity and exact-PDF binary upload remain technical blockers.
 - [x] Documentation-only PR #124 merged to `main` at `a9c0ea39932ce22e3384b6e86046f7bb9b557370`. No production deployment occurred.
 
