@@ -19,6 +19,15 @@ describe("Razorpay sandbox checkout safety", () => {
     expect(createOrder).not.toMatch(/amount:\s*body\./);
   });
 
+  it("reports which test credential setting is missing without revealing its value", () => {
+    for (const source of [createOrder, verifyPayment]) {
+      expect(source).toContain("Razorpay test Key ID is missing from this server environment.");
+      expect(source).toContain("Razorpay test Key Secret is missing from this server environment.");
+      expect(source).toContain("The configured Razorpay Key ID is not a test-mode key.");
+      expect(source).not.toMatch(/console\.(log|info|debug)\(.*keySecret/);
+    }
+  });
+
   it("verifies Standard Checkout signatures using HMAC SHA-256 and constant-time comparison", () => {
     expect(verifyPayment).toContain('createHmac("sha256", keySecret)');
     expect(verifyPayment).toContain('update(`${orderId}|${paymentId}`, "utf8")');
