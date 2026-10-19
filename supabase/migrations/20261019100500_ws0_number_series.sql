@@ -24,6 +24,11 @@ CREATE POLICY ws0_number_series_scoped_read ON public.ws0_number_series
 FOR SELECT TO authenticated
 USING (public.ws0_scope_allowed(company_id,branch_id));
 
+-- Number allocations are logged through the existing ERP audit sink; no current voucher flow is wired here.
+CREATE TRIGGER ws0_audit_number_series
+AFTER INSERT OR UPDATE ON public.ws0_number_series
+FOR EACH ROW EXECUTE FUNCTION public.ws0_audit_foundation_change();
+
 CREATE FUNCTION public.ws0_next_document_number(
   p_company_id uuid, p_branch_id uuid, p_document_type text, p_fiscal_year text
 )
