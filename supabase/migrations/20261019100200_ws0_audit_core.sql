@@ -26,7 +26,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, public
 AS $function$
 BEGIN
-  IF OLD.module='ws0' THEN
+  IF OLD.module='ws0' OR (TG_OP='UPDATE' AND NEW.module='ws0') THEN
     RAISE EXCEPTION 'WS0 audit rows are append-only';
   END IF;
   RETURN OLD;
