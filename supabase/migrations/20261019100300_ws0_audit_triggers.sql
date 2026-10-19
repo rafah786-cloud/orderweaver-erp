@@ -14,7 +14,7 @@ DECLARE
   v_entity uuid;
 BEGIN
   IF NOT public.ws0_feature_enabled('audit') THEN
-    RETURN COALESCE(NEW,OLD);
+    IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
   END IF;
   IF TG_OP='DELETE' THEN v_row:=to_jsonb(OLD); ELSE v_row:=to_jsonb(NEW); END IF;
   v_company := NULLIF(v_row->>'company_id','')::uuid;
@@ -23,7 +23,7 @@ BEGIN
   IF TG_OP IN ('INSERT','UPDATE') THEN v_after:=public.ws0_redact_audit_snapshot(to_jsonb(NEW)); END IF;
   INSERT INTO public.erp_domain_audit_log(company_id,module,entity_type,entity_id,action,before_data,after_data,actor_id,created_at)
   VALUES(v_company,'ws0',TG_TABLE_NAME,v_entity,lower(TG_OP),v_before,v_after,auth.uid(),now());
-  RETURN COALESCE(NEW,OLD);
+  IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
 END
 $function$;
 REVOKE ALL ON FUNCTION public.ws0_audit_foundation_change() FROM PUBLIC, anon, authenticated;
