@@ -50,6 +50,9 @@ CREATE TEMP TABLE ws0_test_ids (
   company_b_request uuid
 ) ON COMMIT PRESERVE ROWS;
 GRANT ALL ON TABLE ws0_test_ids TO authenticated;
+INSERT INTO ws0_test_ids(company_a,company_b)
+SELECT a.id,b.id FROM public.companies a CROSS JOIN public.companies b
+WHERE a.code='ABOOD' AND b.code='ZIZZ';
 
 BEGIN;
 SET LOCAL ROLE authenticated;
@@ -70,9 +73,7 @@ DECLARE
   v_approver uuid := '10000000-0000-4000-8000-000000000003';
   v_admin_b uuid := '10000000-0000-4000-8000-000000000004';
 BEGIN
-  SELECT id INTO STRICT v_company_a FROM public.companies WHERE code='ABOOD';
-  SELECT id INTO STRICT v_company_b FROM public.companies WHERE code='ZIZZ';
-  INSERT INTO ws0_test_ids(company_a,company_b) VALUES(v_company_a,v_company_b);
+  SELECT company_a,company_b INTO STRICT v_company_a,v_company_b FROM ws0_test_ids;
 
   PERFORM set_config('request.jwt.claim.sub',v_a::text,true);
   PERFORM set_config('request.jwt.claims',json_build_object('sub',v_a::text,'role','authenticated')::text,true);
