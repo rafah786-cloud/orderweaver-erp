@@ -59,3 +59,24 @@
 - [ ] **PDF blocker:** current GitHub file-writing action supports UTF-8 text only, not binary PDF upload. Commit via a binary-capable Git workflow and verify exact bytes.
 - [ ] Review other open PRs separately; do not merge them as part of Step 0.
 - **No application code, migrations, production data writes, or deployments** until blockers are resolved and the owner approves the next phase.
+
+
+## Source-only schema/security audit — 2026-10-19
+
+- [x] Enumerated 117 SQL files under `supabase/migrations/` at confirmed baseline and reviewed the generated Supabase type table index (156 table-like declarations) against blueprint Sections 11.1–11.16 and 13.
+- [x] Added source-only RLS/company-separation, audit logging, approval-handling and Section 11 domain inventory findings to `docs/AUDIT.md`.
+- [x] Compared the 21 AI platform table families specified in Section 11.15 with source declarations and documented exists/partial/missing equivalents and Section 13 runtime gaps.
+- [ ] Build and validate the definitive one-row-per-table migration-derived matrix for every table: RLS/policies/grants, company/branch scope, approval predicate, audit triggers/columns, soft delete/status history, child references and tests. Current findings are a source-level coverage assessment, not a completed runtime security certification.
+- [ ] **Live database remains entirely UNVERIFIED:** the Supabase connector project reference mismatch remains unresolved. No live catalog, applied migration ledger, storage, Realtime, grants or policy state was inspected in this task.
+- [ ] Commit the exact PDF as `docs/blueprint.pdf` using a binary-capable Git workflow and verify SHA-256; the available connector only writes UTF-8 text.
+- [ ] Review other open PRs separately. No merge authorized.
+
+### Source findings to carry forward
+
+- Supabase CLI migration source is the intended schema authority; Drizzle must be checked for parity.
+- Company-scope policies are applied through several explicit/dynamic allowlists. Approval hardening is a separate restrictive layer in source; some HR/AI tables are deliberately locked from browser/API roles until purpose-built policies exist.
+- Universal audit/status-history coverage is not demonstrated. Central blueprint-named `approval_rules` / `approval_requests` are not evidenced as tables.
+- AI foundations exist, but the complete Section 11.15 registry/run/step/action/feedback/memory/evaluation/budget/gateway/anomaly schema and Section 13 governed runtime are incomplete or not evidenced.
+- Every claim about live tables, RLS, grants, storage, Realtime, migration application or production behavior is **UNVERIFIED** until the correct Supabase project is authorized and read-only catalog checks are performed.
+
+**Guardrail:** source/docs only. No application code, migration execution, database changes, production writes, PR merges or deployments.
