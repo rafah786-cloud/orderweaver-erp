@@ -1,5 +1,7 @@
 # Repository Audit — Blueprint Alignment
 
+> **LIVE-DATABASE STATUS: UNVERIFIED.** The current work is source-only. Do not treat any historical live-database statement elsewhere in this document or older audit artifacts as currently verified until the correct Supabase project is authorized and its catalog/migration ledger is read back.
+
 **Audit date:** 2026-10-19  
 **Repository:** `rafah786-cloud/orderweaver-erp`  
 **Audited baseline:** `main` at `e4658ea188b76095903e133df7b5669affb68a46`  
