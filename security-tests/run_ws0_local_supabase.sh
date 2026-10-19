@@ -125,4 +125,30 @@ if [[ $concurrency_rc -ne 0 ]]; then
   exit 50
 fi
 printf 'ws0_concurrency=passed\n' >> "$ARTIFACT_DIR/summary.txt"
+# Phase 4: exercise the six non-destructive compensating scripts in the disposable local DB.
+echo "phase=compensation_tests" >> "$ARTIFACT_DIR/summary.txt"
+set +e
+for rollback in \
+  supabase/rollback/20261019110000_ws0_approval_core_compensate.sql \
+  supabase/rollback/20261019110100_ws0_approval_security_compensate.sql \
+  supabase/rollback/20261019110200_ws0_audit_core_compensate.sql \
+  supabase/rollback/20261019110300_ws0_audit_triggers_compensate.sql \
+  supabase/rollback/20261019110400_ws0_status_history_compensate.sql \
+  supabase/rollback/20261019110500_ws0_number_series_compensate.sql; do
+  echo "Applying compensation: $rollback" >> "$ARTIFACT_DIR/ws0-compensation.log"
+  psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$rollback" >> "$ARTIFACT_DIR/ws0-compensation.log" 2>&1
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    printf 'ws0_compensation=failed file=%s exit_code=%s\n' "$rollback" "$rc" >> "$ARTIFACT_DIR/summary.txt"
+    set -e
+    exit 60
+  fi
+done
+set -e
+disabled_flags="$(psql "$DB_URL" -X -qAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.ws0_feature_controls WHERE feature_key IN ('approvals','audit','status_history','number_series') AND enabled=false")"
+if [[ "$disabled_flags" != "4" ]]; then
+  printf 'ws0_compensation=failed disabled_flags=%s\n' "$disabled_flags" >> "$ARTIFACT_DIR/summary.txt"
+  exit 61
+fi
+printf 'ws0_compensation=passed disabled_flags=%s\n' "$disabled_flags" >> "$ARTIFACT_DIR/summary.txt"
 echo "overall=passed" >> "$ARTIFACT_DIR/summary.txt"
