@@ -127,3 +127,37 @@ Follow Section 14.6 exactly; dependencies are not dates:
 - **Supabase access decision confirmed, blocker unresolved:** both currently available connector links list only `orderweaver-erp` at ref `ibnacjirwnhbtqrirdsz`, while repository config names `ysaocrumxikgywdotkne`. The correct project/account must be reauthorized before live schema, RLS, function, storage and migration-state checks can be performed.
 - **PDF commit blocker:** the available GitHub file-writing action accepts UTF-8 text only and does not provide a direct binary upload action. The PDF is not committed yet; use a binary-capable Git workflow and verify the committed file is byte-for-byte identical to the supplied source.
 - **Scope guard:** no application-code changes, migration execution, production data writes, or production deployment until the remaining Step 0 blockers are resolved and the next phase is explicitly approved.
+
+
+## Step 0 live-read verification update — 2026-10-19
+
+### Supabase connector discovery (read-only)
+
+Both currently listed Supabase connector links (Primary and reee) resolve to the same single project:
+- Project name: orderweaver-erp
+- Project ref: ibnacjirwnhbtqrirdsz
+- Status: ACTIVE_HEALTHY
+- Organization: Ree
+
+This does not match the repository's configured project ref ysaocrumxikgywdotkne, nor the documented production project ref cited by existing open PRs. The correct production project is therefore not yet identified/authorized through the available connector. Do not treat the connected ibnacjirwnhbtqrirdsz database as production or apply changes to it.
+
+Read-only catalog observations from ibnacjirwnhbtqrirdsz:
+- Deployed migration ledger lists seven migrations, versions 20261006132937 through 20261010044700.
+- The public schema listing returned one table: public.tally_archive_uploads; RLS is enabled; row count is zero.
+- The Supabase security advisor returned zero lint findings for this project.
+- These observations are limited to the connected project and do not verify the real ERP production database. Zero advisor lints is not a security certification.
+
+### Owner decisions applied
+
+- Supabase CLI migration history is authoritative for deployment. Drizzle must be validated against it and must not act as an independent schema authority.
+- Original PDF must be committed byte-for-byte at docs/blueprint.pdf; docs/blueprint.md remains an index.
+- Baseline remains main at e4658ea188b76095903e133df7b5669affb68a46; review other open PRs separately.
+
+### Remaining Step 0 blockers
+
+1. Reauthorize the Supabase account that owns the actual ERP production project ref ysaocrumxikgywdotkne (or explicitly identify the correct production project). Do not share keys in chat.
+2. Commit the exact source PDF through a binary-capable Git workflow. The available GitHub connector file-content operation only writes UTF-8 text; the PDF has not been committed. Verify the committed PDF's SHA-256 matches the supplied source: ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937.
+3. Review other open PRs against the confirmed baseline as separate reviews. No PR is merged by this audit.
+4. After the correct project is available, compare its migration ledger with repository supabase/migrations/, inspect live tables/RLS/policies/function grants/storage/realtime, and validate Drizzle artifacts against the Supabase CLI migration source.
+
+Guardrail: Step 0 remains open. No application code, migrations, live business data, or production deployment were changed.
