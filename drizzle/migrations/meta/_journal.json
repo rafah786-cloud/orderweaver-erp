@@ -36,6 +36,34 @@
       "when": 1792152754275,
       "tag": "0004_tally_source_staging_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792391874567,
+      "tag": "0005_marketing_campaign_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792391905428,
+      "tag": "0006_ai_marketing_creative_studio_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792391933415,
+      "tag": "0007_marketing_creative_assets_storage_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792392040213,
+      "tag": "0008_marketing_attributions_immutable_regrant_guard",
+      "breakpoints": true
     }
   ]
 }

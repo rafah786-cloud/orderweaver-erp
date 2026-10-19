@@ -32,7 +32,7 @@ const currency = (value: number) => new Intl.NumberFormat("en-IN", { style: "cur
 const dateTime = (value: string | null) => value ? new Date(value).toLocaleString("en-IN") : "—";
 const BACKLOG = new Set(["open", "assigned", "in_progress", "waiting_parts"]);
 
-export const Route = createFileRoute("/_app.maintenance")({ component: MaintenancePage });
+export const Route = createFileRoute("/_app/maintenance")({ component: MaintenancePage });
 
 function MaintenancePage() {
   const { activeCompany, loading: companyLoading } = useCompany();

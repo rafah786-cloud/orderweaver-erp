@@ -973,7 +973,8 @@ export const generateMarketingCreative = createServerFn({ method: "POST" })
       throw new Error("The marketing agent returned an incomplete creative pack. Please retry.");
     }
 
-    const agentTrace: Record<string, unknown>[] = [{
+    type AgentTraceEntry = { agentId: string; capability: string; provider: string; model: string; status: string };
+    const agentTrace: AgentTraceEntry[] = [{
       agentId: copyAgent.id, capability: copyAgent.capability, provider: process.env["AI_PROVIDER"] || "nvidia",
       model: AI_MODELS.chat, status: "completed",
     }];
