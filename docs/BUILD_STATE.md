@@ -184,3 +184,12 @@
 - Latest observed Task 2 workflow run: `39215667868`, conclusion **failure**. ERP CI run `39215667915` passed. The WS0 workflow reached the local runner, then exited with code 20; its artifact is `ws0-local-supabase-39215667868`.
 - Baseline replay failure was already recorded for run `39215179545`: existing migration `20261005150000_production_accounting_inventory_hardening.sql` fails because `public.bill_allocations` does not exist when it attempts to create `bill_allocations_idempotency_key_unique` (SQLSTATE 42P01). This happens before WS0 migrations or WS0 assertions execute. The new workflow must classify this as baseline failure, separately from WS0 application/test failure.
 - Per owner instruction, do not edit/fix existing migration history without separate approval. Because the baseline cannot replay from zero, WS0 behavior has **not** yet been proven by the local Supabase test suite. Do not merge PR #126. No hosted/live database was accessed; live database remains **UNVERIFIED**. No deployment occurred.
+
+
+## Task 2 latest verification — 2026-10-19 13:12 IST
+
+- [x] Rechecked PR #126 head `c49c832c7ec897db33caae334073fdb16605e611`, changed-file list (17 files), and latest WS0 workflow run `39217532560`.
+- [x] Downloaded and inspected artifact `ws0-local-supabase-39217532560`. The workflow fails during local Supabase startup while replaying the untouched baseline, before WS0 is applied: existing migration `20261005150000_production_accounting_inventory_hardening.sql`, statement 11, attempts to create an index on missing relation `public.bill_allocations` (SQLSTATE 42P01).
+- [ ] WS0 migration application, SQL security assertions and concurrent-numbering tests remain unexecuted/unproven because baseline replay fails first. This is a pre-existing migration-chain defect, not a WS0 test failure.
+- [ ] Do not repair or edit the existing migration without separate owner approval. PR #126 remains open and must not be merged.
+- **Live Supabase remains UNVERIFIED. No hosted database access, migration application or deployment occurred.**
