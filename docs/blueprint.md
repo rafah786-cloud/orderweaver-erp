@@ -1,7 +1,8 @@
 # AI-Assisted Business Management Environment — Blueprint Source of Truth
 
 > **Source report:** `AI-Assisted Business Management Environment Complete Blueprint for a Mattress Manufacturer.pdf` (69 pages; supplied by the owner on 2026-10-19).  
-> **Authority:** The supplied PDF remains the authoritative full specification. This Markdown file is the repository's navigational/specification index, not a claim that every paragraph of the PDF has been transcribed verbatim. Do not use this index to override the PDF where details are omitted. The original PDF must be added to the repository alongside this file to make the complete source durable in Git.
+> **Authority:** `docs/blueprint-full.md` is the authoritative text for all implementation and audit work. Use it directly; do not substitute this index, summaries, or paraphrases. `docs/blueprint.pdf` is intended to preserve the original 69-page PDF. The index is navigation only.
+
 
 ## Part I — Vision and operating principles (Sections 1–10)
 
