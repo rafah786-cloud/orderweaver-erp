@@ -2,7 +2,7 @@
 -- Default-deny: no matching rule, an ambiguous winning rule, invalid scope, or self-approval fails.
 BEGIN;
 
-CREATE OR REPLACE FUNCTION public.ws0_feature_enabled(p_feature text)
+CREATE FUNCTION public.ws0_feature_enabled(p_feature text)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = pg_catalog, public
@@ -10,7 +10,7 @@ AS $function$
   SELECT COALESCE((SELECT enabled FROM public.ws0_feature_controls WHERE feature_key=p_feature),false)
 $function$;
 
-CREATE OR REPLACE FUNCTION public.ws0_scope_allowed(p_company_id uuid, p_branch_id uuid DEFAULT NULL)
+CREATE FUNCTION public.ws0_scope_allowed(p_company_id uuid, p_branch_id uuid DEFAULT NULL)
 RETURNS boolean
 LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = pg_catalog, public
@@ -57,7 +57,7 @@ END
 $function$;
 
 -- Safe boolean predicate used by RLS policies. It never reveals rule contents.
-CREATE OR REPLACE FUNCTION public.ws0_can_review_request(
+CREATE FUNCTION public.ws0_can_review_request(
   p_rule_id uuid, p_company_id uuid, p_branch_id uuid
 )
 RETURNS boolean
@@ -78,7 +78,7 @@ AS $function$
     )
 $function$;
 
-CREATE OR REPLACE FUNCTION public.ws0_resolve_approval_rule(
+CREATE FUNCTION public.ws0_resolve_approval_rule(
   p_company_id uuid, p_branch_id uuid, p_action_key text, p_entity_type text,
   p_amount numeric, p_currency text
 )
@@ -143,7 +143,7 @@ BEGIN
 END
 $function$;
 
-CREATE OR REPLACE FUNCTION public.ws0_submit_approval_request(
+CREATE FUNCTION public.ws0_submit_approval_request(
   p_company_id uuid, p_branch_id uuid, p_action_key text, p_entity_type text,
   p_entity_id uuid, p_amount numeric, p_currency text DEFAULT 'INR',
   p_reason text DEFAULT NULL, p_idempotency_key text DEFAULT NULL,
@@ -196,7 +196,7 @@ BEGIN
 END
 $function$;
 
-CREATE OR REPLACE FUNCTION public.ws0_decide_approval_request(
+CREATE FUNCTION public.ws0_decide_approval_request(
   p_request_id uuid, p_decision text, p_reason text DEFAULT NULL
 )
 RETURNS text
