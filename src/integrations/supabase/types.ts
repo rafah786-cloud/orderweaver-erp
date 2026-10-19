@@ -4282,6 +4282,78 @@ export type Database = {
           },
         ]
       }
+      marketing_creatives: {
+        Row: {
+          agent_trace: Json
+          audience: string | null
+          campaign_id: string | null
+          channel: string
+          company_id: string
+          created_at: string
+          created_by: string
+          creative_payload: Json
+          id: string
+          image_path: string | null
+          language: string
+          offer: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_prompt: string
+        }
+        Insert: {
+          agent_trace?: Json
+          audience?: string | null
+          campaign_id?: string | null
+          channel: string
+          company_id: string
+          created_at?: string
+          created_by: string
+          creative_payload: Json
+          id?: string
+          image_path?: string | null
+          language?: string
+          offer?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_prompt: string
+        }
+        Update: {
+          agent_trace?: Json
+          audience?: string | null
+          campaign_id?: string | null
+          channel?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          creative_payload?: Json
+          id?: string
+          image_path?: string | null
+          language?: string
+          offer?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_creatives_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_data_quality_rules: {
         Row: {
           active: boolean

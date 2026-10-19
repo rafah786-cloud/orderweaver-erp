@@ -43,6 +43,13 @@
       "when": 1792391874567,
       "tag": "0005_marketing_campaign_management",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792391905428,
+      "tag": "0006_ai_marketing_creative_studio_table",
+      "breakpoints": true
     }
   ]
 }
