@@ -3,7 +3,7 @@
 > **LIVE-DATABASE STATUS: UNVERIFIED.** Source-only review only. No live schema, RLS, grants, storage, Realtime, migration ledger or production behavior was verified in this task.
 
 **Last updated:** 2026-10-19  
-**Baseline:** `main` `e4658ea188b76095903e133df7b5669affb68a46`  
+**Baseline:** `main` merge commit `a9c0ea39932ce22e3384b6e86046f7bb9b557370` (PR #124 merged)  
 **Current task:** Step 0 audit only. No application code, migrations, production data or deployments changed.
 
 ## Current gate
@@ -12,8 +12,8 @@
 - [x] Create source-level audit and mapping.
 - [ ] Verify actual ERP production schema, policies, functions, storage and deployed migration state — blocker: both available Supabase links expose ref ibnacjirwnhbtqrirdsz, while repo config/documentation identifies ysaocrumxikgywdotkne. Read-only inspection of the former found seven migration records and only public.tally_archive_uploads; do not treat it as production.
 - [ ] Commit the exact 69-page source report as docs/blueprint.pdf byte-for-byte — owner decision confirmed; connector has no direct binary upload path, so a binary-capable Git workflow is still required. Source SHA-256: ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937.
-- [ ] Owner answers Q1–Q4 in `docs/AUDIT.md`.
-- [ ] Owner reviews and merges the documentation-only PR. No production deployment is allowed.
+- [x] Owner decisions Q1–Q4 received; Supabase project identity and exact-PDF binary upload remain technical blockers.
+- [x] Documentation-only PR #124 merged to `main` at `a9c0ea39932ce22e3384b6e86046f7bb9b557370`. No production deployment occurred.
 
 ## Workstream tracker
 
@@ -48,7 +48,7 @@
 - The supplied PDF is the authority; this repository Markdown index is not a substitute for detailed source prompts, schema lists or screens.
 
 ## Change log
-- 2026-10-19: Created audit baseline and WS0–WS8 tracker on `feature/audit-blueprint-baseline`. Source-level only. No application code or database changed.
+- 2026-10-19: Created audit baseline and WS0–WS8 tracker on `feature/audit-blueprint-baseline`; PR #124 subsequently merged. Source-level only. No application code or database changed.
 - 2026-10-19: Owner confirmed Step 0 decisions. Read-only Supabase discovery found the available linked accounts both expose ref ibnacjirwnhbtqrirdsz, not the configured/documented production ref ysaocrumxikgywdotkne; exact PDF remains blocked on binary-capable Git upload.
 
 
@@ -59,7 +59,7 @@
 - [x] Exact source PDF approved for `docs/blueprint.pdf`; Markdown remains an index.
 - [ ] **Supabase blocker:** both currently available connector links list `ibnacjirwnhbtqrirdsz`, but repo config names `ysaocrumxikgywdotkne`. Reauthorize the correct account/project before live audit.
 - [ ] **PDF blocker:** current GitHub file-writing action supports UTF-8 text only, not binary PDF upload. Commit via a binary-capable Git workflow and verify exact bytes.
-- [ ] Review other open PRs separately; do not merge them as part of Step 0.
+- [ ] Review other open PRs separately; this does not authorize merging them.
 - **No application code, migrations, production data writes, or deployments** until blockers are resolved and the owner approves the next phase.
 
 
@@ -71,7 +71,7 @@
 - [ ] Build and validate the definitive one-row-per-table migration-derived matrix for every table: RLS/policies/grants, company/branch scope, approval predicate, audit triggers/columns, soft delete/status history, child references and tests. Current findings are a source-level coverage assessment, not a completed runtime security certification.
 - [ ] **Live database remains entirely UNVERIFIED:** the Supabase connector project reference mismatch remains unresolved. No live catalog, applied migration ledger, storage, Realtime, grants or policy state was inspected in this task.
 - [ ] Commit the exact PDF as `docs/blueprint.pdf` using a binary-capable Git workflow and verify SHA-256; the available connector only writes UTF-8 text.
-- [ ] Review other open PRs separately. No merge authorized.
+- [ ] Review other open PRs separately. No further merge or deployment is authorized by the current source-only task.
 
 ### Source findings to carry forward
 
@@ -81,4 +81,13 @@
 - AI foundations exist, but the complete Section 11.15 registry/run/step/action/feedback/memory/evaluation/budget/gateway/anomaly schema and Section 13 governed runtime are incomplete or not evidenced.
 - Every claim about live tables, RLS, grants, storage, Realtime, migration application or production behavior is **UNVERIFIED** until the correct Supabase project is authorized and read-only catalog checks are performed.
 
-**Guardrail:** source/docs only. No application code, migration execution, database changes, production writes, PR merges or deployments.
+**Guardrail:** source/docs only. No application code, migration execution, database changes, production writes, additional PR merges or deployments.
+
+
+## Post-merge continuation — 2026-10-19
+
+- [x] Confirmed PR #124 is merged; merge commit `a9c0ea39932ce22e3384b6e86046f7bb9b557370` is now `main`.
+- [x] Advanced the existing `feature/audit-blueprint-baseline` branch to that same `main` commit for continued documentation work.
+- [ ] Continue the definitive migration-derived table matrix. Previous schema review was a selected-source assessment, not a literal inspection of every SQL statement in all 117 migration files.
+- [ ] Keep live Supabase schema/RLS/grants/storage/Realtime/applied migration state UNVERIFIED until the correct project is authorized and read-only verification succeeds.
+- [ ] Add exact source PDF to `docs/blueprint.pdf` through a binary-capable Git workflow and verify SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937`.
