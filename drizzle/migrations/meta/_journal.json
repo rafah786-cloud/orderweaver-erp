@@ -57,6 +57,13 @@
       "when": 1792391933415,
       "tag": "0007_marketing_creative_assets_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792392040213,
+      "tag": "0008_marketing_attributions_immutable_regrant_guard",
+      "breakpoints": true
     }
   ]
 }
