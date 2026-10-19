@@ -24,13 +24,13 @@ ON CONFLICT (id) DO UPDATE SET full_name=excluded.full_name,email=excluded.email
   status='approved'::public.user_status,active_company_id=excluded.active_company_id;
 
 INSERT INTO public.user_company_access(user_id,company_id,is_default,can_view,can_create,can_edit,can_delete)
-SELECT v.user_id,c.id,true,true,true,true,false
+SELECT v.user_id,c.id,v.is_default,true,true,true,false
 FROM (VALUES
- ('10000000-0000-4000-8000-000000000001'::uuid,'ABOOD'),
- ('10000000-0000-4000-8000-000000000002'::uuid,'ABOOD'),
- ('10000000-0000-4000-8000-000000000003'::uuid,'ABOOD'),
- ('10000000-0000-4000-8000-000000000004'::uuid,'ZIZZ')
-) AS v(user_id,company_code)
+ ('10000000-0000-4000-8000-000000000001'::uuid,'ABOOD',true),
+ ('10000000-0000-4000-8000-000000000002'::uuid,'ABOOD',true),
+ ('10000000-0000-4000-8000-000000000003'::uuid,'ABOOD',true),
+ ('10000000-0000-4000-8000-000000000004'::uuid,'ZIZZ',false)
+) AS v(user_id,company_code,is_default)
 JOIN public.companies c ON c.code=v.company_code
 ON CONFLICT (user_id,company_id) DO UPDATE SET can_view=true,can_create=true,can_edit=true;
 
