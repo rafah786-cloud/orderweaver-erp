@@ -91,3 +91,20 @@
 - [ ] Continue the definitive migration-derived table matrix. Previous schema review was a selected-source assessment, not a literal inspection of every SQL statement in all 117 migration files.
 - [ ] Keep live Supabase schema/RLS/grants/storage/Realtime/applied migration state UNVERIFIED until the correct project is authorized and read-only verification succeeds.
 - [ ] Add exact source PDF to `docs/blueprint.pdf` through a binary-capable Git workflow and verify SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937`.
+
+
+## Blueprint authority and latest source-only work — 2026-10-19
+
+**Mandatory rule before every task:** read the relevant sections of `docs/blueprint-full.md` directly before planning or implementing that task. Do not use `docs/blueprint.md`, an audit summary, or any paraphrase as the source of requirements. `docs/blueprint.md` is navigation only. `docs/blueprint.pdf` is the original source PDF, to be uploaded by the owner.
+
+- [x] Added `docs/blueprint-full.md` from the attached Markdown via the file retrieval connector.
+- [ ] Exact-byte verification is NOT passed: attached file SHA-256 is `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c` (137,124 characters). The committed text fetched back from GitHub is 137,122 characters. Therefore checksum equality is unverified and the file must not be treated as verbatim yet. The retrieval connector returned two fewer characters than the local attachment; exact location has not been isolated. Correct by byte-preserving upload and compare SHA-256 before claiming success.
+- [x] Recorded PDF checksum from the uploaded 69-page original: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF has not been uploaded to the repository; owner must add `docs/blueprint.pdf` on GitHub and then ask for checksum comparison.
+- [x] Updated `docs/blueprint.md` to designate `docs/blueprint-full.md` as authoritative text, `docs/blueprint.pdf` as original, and the index as navigation only.
+- [x] Added draft `docs/SECURITY_MATRIX.md`; it explicitly warns that it is incomplete and contains an outstanding grouped row. Do not call the requested one-row-per-every-table matrix complete yet.
+- [x] Added `docs/MIGRATION_PLAN.md` for Supabase CLI authority, Drizzle/phase-folder inventory and proposed consolidation; no migration files changed.
+- [x] Added `docs/WS0_GAP_PLAN.md` as an additive-only approval/audit/status/number-series design and staging test plan; no migrations created.
+- [ ] Finish exhaustive migration-by-migration table and policy/trigger/grant inventory, split every grouped row and attach evidence.
+- [ ] Verify source markdown exactly (character count and SHA-256) after a byte-preserving Git workflow. Current committed file differs in reported character count, so do not claim complete.
+- [ ] Live database remains **UNVERIFIED**; no database access was performed.
+- [ ] No application code, existing migration, database, production data, or deployment was changed. Nothing was merged.
