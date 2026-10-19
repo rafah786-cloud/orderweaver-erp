@@ -26,10 +26,19 @@ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, public
 AS $function$
 BEGIN
-  IF OLD.module='ws0' OR (TG_OP='UPDATE' AND NEW.module='ws0') THEN
-    RAISE EXCEPTION 'WS0 audit rows are append-only';
+  IF TG_OP='UPDATE' THEN
+    IF OLD.module='ws0' OR NEW.module='ws0' THEN
+      RAISE EXCEPTION 'WS0 audit rows are append-only';
+    END IF;
+    -- Preserve the pre-existing behavior for non-WS0 audit records.
+    RETURN NEW;
+  ELSIF TG_OP='DELETE' THEN
+    IF OLD.module='ws0' THEN
+      RAISE EXCEPTION 'WS0 audit rows are append-only';
+    END IF;
+    RETURN OLD;
   END IF;
-  RETURN OLD;
+  RAISE EXCEPTION 'Unexpected operation for WS0 audit guard';
 END
 $function$;
 REVOKE ALL ON FUNCTION public.ws0_guard_append_only_audit() FROM PUBLIC, anon, authenticated;
