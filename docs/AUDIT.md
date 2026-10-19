@@ -304,7 +304,7 @@ The owner-supplied PDF's SHA-256 is `ea9d33339005a1622a455c4ee757fb39fa15714b40c
 
 ### Migration security matrix and tooling
 
-- `docs/SECURITY_MATRIX.md` now has one row per table name inventoried across the Supabase CLI migration history and secondary SQL tracks; there is no grouped catch-all row. Fields not established by source review are marked `unknown`.
+- `docs/SECURITY_MATRIX.md` now has one row per 170 table names inventoried across the Supabase CLI migration history and secondary SQL tracks; there is no grouped catch-all row. Fields not established by source review are marked `unknown`.
 - `docs/tools/migration_security_matrix.py` is a read-only static inventory script for Supabase CLI, Drizzle, accounting-phase and manufacturing-phase SQL sources. Regex output is evidence for review, not a security verdict. Effective policy composition, dynamic SQL, grants, scope, audit coverage and approval bypasses still require manual SQL review.
 - `docs/MIGRATION_PLAN.md` retains Supabase CLI as the deployment migration authority. `docs/WS0_GAP_PLAN.md` remains a draft proposal only; no migration was created or changed.
 
