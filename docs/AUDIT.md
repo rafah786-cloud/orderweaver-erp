@@ -117,3 +117,13 @@ Follow Section 14.6 exactly; dependencies are not dates:
 - **Q4 — Baseline:** confirm the repository's `main` at `e4658ea` is the baseline to build on; existing work in other open PRs will be audited separately before merge.
 
 **Audit status:** source-level audit and mapping documented; live database audit blocked by connector authorization; awaiting owner decisions. No application code changes or production operations performed.
+
+
+## Step 0 owner decisions — 2026-10-19
+
+- **Baseline confirmed:** use `main` at `e4658ea188b76095903e133df7b5669affb68a46`; review other open PRs separately. Do not merge them as part of Step 0.
+- **Migration authority confirmed:** Supabase CLI migrations are authoritative for deployed schema. Drizzle must be validated against that source; it must not act as an independent schema authority.
+- **Blueprint persistence confirmed:** commit the exact original PDF as `docs/blueprint.pdf`; `docs/blueprint.md` remains a navigational index, not a replacement.
+- **Supabase access decision confirmed, blocker unresolved:** both currently available connector links list only `orderweaver-erp` at ref `ibnacjirwnhbtqrirdsz`, while repository config names `ysaocrumxikgywdotkne`. The correct project/account must be reauthorized before live schema, RLS, function, storage and migration-state checks can be performed.
+- **PDF commit blocker:** the available GitHub file-writing action accepts UTF-8 text only and does not provide a direct binary upload action. The PDF is not committed yet; use a binary-capable Git workflow and verify the committed file is byte-for-byte identical to the supplied source.
+- **Scope guard:** no application-code changes, migration execution, production data writes, or production deployment until the remaining Step 0 blockers are resolved and the next phase is explicitly approved.
