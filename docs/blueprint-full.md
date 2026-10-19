@@ -997,7 +997,8 @@ Every agent returns this JSON so the UI, the audit log and other agents can rely
   "records_used": [{"type": "party", "id": "..."}],
   "actions_taken": [{"tool": "...", "entity": "...", "id": "..."}],
   "approvals_requested": ["approval_request_id"],
-  "follow_ups": [{"task": "...", "owner": "...", "due": "..."}]}
+  "follow_ups": [{"task": "...", "owner": "...", "due": "..."}]
+}
 ```
 
 ### 13.5 Agent specifications: sales and credit
