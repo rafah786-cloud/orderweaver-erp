@@ -142,10 +142,14 @@
 - [x] Task branch: `feature/ws0-approval-audit-foundation`. The branch existed with a draft of the six new migrations and compensating scripts; it is being audited and corrected rather than duplicated.
 - [x] Read the relevant authoritative blueprint sections directly: 11.1–11.16, 13.1–13.3 and 14.1–14.10.
 - [x] Newest pre-WS0 authoritative migration: `20261018210000_ai_marketing_creative_studio.sql`. New WS0 timestamps: `20261019100000` through `20261019100500`.
-- [x] Corrected the malformed/duplicated approval-security migration and the audit guard so non-WS0 audit updates retain their prior behavior.
+- [x] Corrected the malformed/duplicated approval-security migration; all WS0 functions now use `CREATE FUNCTION` (fail rather than replace a same-named function), and the audit guard preserves non-WS0 update/delete behavior.
 - [x] Added SQL assertions covering company RLS, fail-closed branch scope, thresholds, missing/overlapping rules, self-approval, direct DML denial, cross-company decision denial, audit append-only/redaction, and transaction rollback of status history.
 - [x] Added a parallel psql concurrency test for the new number allocator.
-- [x] Added a local Supabase CLI/Docker workflow and runner. It removes the six WS0 migration files temporarily to replay the 117-file baseline first, then restores and applies the six WS0 migrations, runs tests, and saves migration ledgers, schema snapshots/diffs and logs as CI artifacts.
+- [x] Added `supabase/tests/ws0_foundation_assertions.sql`, `security-tests/ws0_number_series_concurrency.py`, `security-tests/run_ws0_local_supabase.sh` and `.github/workflows/ws0-foundation.yml`. The runner hides the six WS0 migrations before Docker starts, replays the 117-file baseline, then restores/applies WS0, runs SQL and concurrency tests, and saves migration ledgers, schema snapshots/diffs and logs as CI artifacts.
 - [ ] CI has not yet verified baseline replay, WS0 application or tests. Report baseline migration failures separately and do not repair existing migrations without approval.
 - [ ] Do not merge the Task 2 PR until local CI passes and the owner separately approves in chat.
 - **Safety:** no hosted/live Supabase database was accessed; no migrations were applied to a hosted database; no deployment occurred. Live database remains **UNVERIFIED**. Existing application flows are not wired to the new approval/status/numbering foundation.
+
+
+- [x] Added six non-destructive compensating scripts under `supabase/rollback/`; they disable the corresponding new WS0 feature and preserve schema/data instead of dropping objects.
+- [ ] Review CI result. The existing migration replay must be reported independently from WS0 migration/test failures. Do not fix baseline migration failures without owner approval.
