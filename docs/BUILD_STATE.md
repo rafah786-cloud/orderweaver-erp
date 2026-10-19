@@ -56,7 +56,7 @@
 
 - [x] Baseline confirmed: `main` SHA `e4658ea188b76095903e133df7b5669affb68a46`; other PRs are reviewed separately.
 - [x] Supabase CLI migrations are authoritative; Drizzle must be checked for parity.
-- [x] Exact source PDF approved for `docs/blueprint.pdf`; Markdown remains an index.
+- [x] Exact source PDF approved for the original PDF is not stored in this repository; its checksum is recorded in `docs/AUDIT.md` for reference only.
 - [ ] **Supabase blocker:** both currently available connector links list `ibnacjirwnhbtqrirdsz`, but repo config names `ysaocrumxikgywdotkne`. Reauthorize the correct account/project before live audit.
 - [ ] **PDF blocker:** current GitHub file-writing action supports UTF-8 text only, not binary PDF upload. Commit via a binary-capable Git workflow and verify exact bytes.
 - [ ] Review other open PRs separately; this does not authorize merging them.
@@ -70,7 +70,7 @@
 - [x] Compared the 21 AI platform table families specified in Section 11.15 with source declarations and documented exists/partial/missing equivalents and Section 13 runtime gaps.
 - [ ] Build and validate the definitive one-row-per-table migration-derived matrix for every table: RLS/policies/grants, company/branch scope, approval predicate, audit triggers/columns, soft delete/status history, child references and tests. Current findings are a source-level coverage assessment, not a completed runtime security certification.
 - [ ] **Live database remains entirely UNVERIFIED:** the Supabase connector project reference mismatch remains unresolved. No live catalog, applied migration ledger, storage, Realtime, grants or policy state was inspected in this task.
-- [ ] Commit the exact PDF as `docs/blueprint.pdf` using a binary-capable Git workflow and verify SHA-256; the available connector only writes UTF-8 text.
+- [ ] Commit the exact PDF as the original PDF is not stored in this repository; its checksum is recorded in `docs/AUDIT.md` for reference only.
 - [ ] Review other open PRs separately. No further merge or deployment is authorized by the current source-only task.
 
 ### Source findings to carry forward
@@ -90,17 +90,17 @@
 - [x] Advanced the existing `feature/audit-blueprint-baseline` branch to that same `main` commit for continued documentation work.
 - [ ] Continue the definitive migration-derived table matrix. Previous schema review was a selected-source assessment, not a literal inspection of every SQL statement in all 117 migration files.
 - [ ] Keep live Supabase schema/RLS/grants/storage/Realtime/applied migration state UNVERIFIED until the correct project is authorized and read-only verification succeeds.
-- [ ] Add exact source PDF to `docs/blueprint.pdf` through a binary-capable Git workflow and verify SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937`.
+- [ ] Add exact source PDF to the original PDF is not stored in this repository; its checksum is recorded in `docs/AUDIT.md` for reference only.
 
 
 ## Blueprint authority and latest source-only work — 2026-10-19
 
-**Mandatory rule before every task:** read the relevant sections of `docs/blueprint-full.md` directly before planning or implementing that task. Do not use `docs/blueprint.md`, an audit summary, or any paraphrase as the source of requirements. `docs/blueprint.md` is navigation only. `docs/blueprint.pdf` is the original source PDF, to be uploaded by the owner.
+**Mandatory rule before every task:** read the relevant sections of `docs/blueprint-full.md` directly before planning or implementing that task. Do not use `docs/blueprint.md`, an audit summary, or any paraphrase as the source of requirements. `docs/blueprint.md` is navigation only. the original PDF is not stored in this repository; its checksum is recorded in `docs/AUDIT.md` for reference only.
 
 - [x] Added `docs/blueprint-full.md` from the attached Markdown via the file retrieval connector.
 - [ ] Exact-byte verification is NOT passed: attached file SHA-256 is `93e3bd78362882a7e0bc3e49977d104c78a7f06aedf8e623267a3711f325a04c` (137,124 characters). The committed text fetched back from GitHub is 137,122 characters. Therefore checksum equality is unverified and the file must not be treated as verbatim yet. The retrieval connector returned two fewer characters than the local attachment; exact location has not been isolated. Correct by byte-preserving upload and compare SHA-256 before claiming success.
-- [x] Recorded PDF checksum from the uploaded 69-page original: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF has not been uploaded to the repository; owner must add `docs/blueprint.pdf` on GitHub and then ask for checksum comparison.
-- [x] Updated `docs/blueprint.md` to designate `docs/blueprint-full.md` as authoritative text, `docs/blueprint.pdf` as original, and the index as navigation only.
+- [x] Recorded PDF checksum from the uploaded 69-page original: `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes). The PDF has not been uploaded to the repository; owner must add the original PDF is not stored in this repository; its checksum is recorded in `docs/AUDIT.md` for reference only.
+- [x] Updated `docs/blueprint.md` to designate `docs/blueprint-full.md` as authoritative text, the original PDF is not stored in this repository; its checksum is recorded in `docs/AUDIT.md` for reference only.
 - [x] Added draft `docs/SECURITY_MATRIX.md`; it explicitly warns that it is incomplete and contains an outstanding grouped row. Do not call the requested one-row-per-every-table matrix complete yet.
 - [x] Added `docs/MIGRATION_PLAN.md` for Supabase CLI authority, Drizzle/phase-folder inventory and proposed consolidation; no migration files changed.
 - [x] Added `docs/WS0_GAP_PLAN.md` as an additive-only approval/audit/status/number-series design and staging test plan; no migrations created.
@@ -108,3 +108,10 @@
 - [ ] Verify source markdown exactly (character count and SHA-256) after a byte-preserving Git workflow. Current committed file differs in reported character count, so do not claim complete.
 - [ ] Live database remains **UNVERIFIED**; no database access was performed.
 - [ ] No application code, existing migration, database, production data, or deployment was changed. Nothing was merged.
+
+
+## Baseline before documentation PR review
+
+- `main` baseline recorded before any further merge: `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
+- Original source PDF checksum (reference only; not stored in repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
+- `docs/blueprint-full.md` is authoritative. Live Supabase database remains **UNVERIFIED**. No database access, migrations, app code changes, or deployment are authorized by this source-only documentation work.
