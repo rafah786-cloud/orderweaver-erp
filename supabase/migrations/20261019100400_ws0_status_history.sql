@@ -25,7 +25,7 @@ CREATE POLICY ws0_status_history_scoped_read ON public.ws0_status_history
 FOR SELECT TO authenticated
 USING (public.ws0_scope_allowed(company_id,branch_id));
 
-CREATE OR REPLACE FUNCTION public.ws0_record_status_history(
+CREATE FUNCTION public.ws0_record_status_history(
   p_company_id uuid, p_branch_id uuid, p_entity_type text, p_entity_id uuid,
   p_from_status text, p_to_status text, p_reason text DEFAULT NULL,
   p_correlation_id uuid DEFAULT NULL, p_approval_request_id uuid DEFAULT NULL
