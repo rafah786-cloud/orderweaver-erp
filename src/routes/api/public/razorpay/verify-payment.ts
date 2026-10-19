@@ -5,15 +5,24 @@ function jsonError(error: string, status: number) {
   return Response.json({ ok: false, error }, { status });
 }
 
+function getTestCredentialError(keyId: string | undefined, keySecret: string | undefined) {
+  if (!keyId) return "Razorpay test Key ID is missing from this server environment.";
+  if (!keySecret) return "Razorpay test Key Secret is missing from this server environment.";
+  if (!keyId.startsWith("rzp_test_")) {
+    return "The configured Razorpay Key ID is not a test-mode key. Use an rzp_test_ Key ID; live keys are rejected.";
+  }
+  return null;
+}
+
 export const Route = createFileRoute("/api/public/razorpay/verify-payment")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Read secrets inside the request handler so runtime bindings are available.
         const keyId = process.env.RAZORPAY_KEY_ID;
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
-        if (!keyId || !keySecret || !keyId.startsWith("rzp_test_")) {
-          return jsonError("Razorpay test credentials are not configured.", 503);
-        }
+        const credentialError = getTestCredentialError(keyId, keySecret);
+        if (credentialError) return jsonError(credentialError, 503);
 
         const contentType = request.headers.get("content-type") ?? "";
         if (!contentType.toLowerCase().includes("application/json")) {
