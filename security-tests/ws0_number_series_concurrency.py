@@ -51,5 +51,28 @@ if duplicates:
     raise SystemExit(1)
 if len(set(values)) != WORKERS:
     raise SystemExit(f"FAIL: expected {WORKERS} unique numbers, got {len(set(values))}")
+
+audit_sql = (
+    "SELECT count(*) FROM public.erp_domain_audit_log "
+    "WHERE module='ws0' AND entity_type='ws0_number_series' "
+    "AND action IN ('insert','update') "
+    "AND COALESCE(after_data,'{}'::jsonb) ? 'next_value' "
+    "AND NOT (COALESCE(after_data,'{}'::jsonb) ?| "
+    "ARRAY['email','password','token','secret','raw_user_meta_data','reason']);"
+)
+audit = subprocess.run(
+    ["psql", DB_URL, "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-c", audit_sql],
+    text=True, capture_output=True, check=False,
+)
+if audit.returncode:
+    raise SystemExit(f"FAIL: could not verify number-series audit rows: {audit.stderr.strip()}")
+try:
+    audit_count = int(audit.stdout.strip().splitlines()[-1])
+except (ValueError, IndexError):
+    raise SystemExit(f"FAIL: invalid audit count output: {audit.stdout!r}")
+if audit_count < WORKERS:
+    raise SystemExit(f"FAIL: expected at least {WORKERS} redacted number-series audit rows, found {audit_count}")
+
 print(f"PASS: {WORKERS} concurrent allocations produced {len(set(values))} unique numbers.")
+print(f"PASS: {audit_count} number-series audit rows contain next_value and exclude sensitive keys.")
 print("Allocated values: " + ", ".join(sorted(values)))
