@@ -4,7 +4,7 @@
 
 **Audit date:** 2026-10-19  
 **Repository:** `rafah786-cloud/orderweaver-erp`  
-**Audited baseline:** `main` at `e4658ea188b76095903e133df7b5669affb68a46`  
+**Audited baseline:** `main` merge commit `a9c0ea39932ce22e3384b6e86046f7bb9b557370` (PR #124)  
 **Scope:** source/tree/config/migration/test inventory plus the owner's 69-page blueprint. This is a source-level audit, not a production security certification. No application code or database was changed by this audit.
 
 ## Executive summary
@@ -109,7 +109,7 @@ Follow Section 14.6 exactly; dependencies are not dates:
 2. **Migration authority:** repo has both Supabase and Drizzle migration tracks plus phase-specific SQL. Recommendation: Supabase CLI migrations are authoritative for Supabase deployment; Drizzle is retained only if actively used and CI validates parity. Confirm.
 3. **Blueprint file:** the PDF has 69 pages and detailed prompt/schema/screen text. The GitHub file-writing connector accepts UTF-8 text but not a direct PDF binary upload. This branch's `docs/blueprint.md` explicitly identifies itself as an index, not a verbatim copy. Please either (A) approve the source PDF as `docs/blueprint.pdf` via normal Git file upload, or (B) require full Markdown transcription as a separate task. Recommendation A preserves exact fidelity.
 4. **Multi-company data boundaries:** existing migrations show a four-company access workflow and special management/estimate books. The report's generic company model must be reconciled to the existing approved-book rules; do not infer company identities or broaden access. Recommendation: preserve current controls and map the report to them.
-5. **No code/deploy:** no application code, database or production deployment changes were made. This PR contains audit documentation only and should be reviewed/merged by the owner.
+5. **No code/deploy:** no application code, database or production deployment changes were made. PR #124 contained audit documentation only and has since been merged. Follow-up documentation work continues on `feature/audit-blueprint-baseline`.
 
 ## 9. Questions requiring owner response before implementation
 
@@ -118,7 +118,7 @@ Follow Section 14.6 exactly; dependencies are not dates:
 - **Q3 — Blueprint persistence:** commit the exact source PDF as `docs/blueprint.pdf` (recommended), or require the entire 69-page document to be transcribed into Markdown? No need to change any application code either way.
 - **Q4 — Baseline:** confirm the repository's `main` at `e4658ea` is the baseline to build on; existing work in other open PRs will be audited separately before merge.
 
-**Audit status:** source-level audit and mapping documented; live database audit blocked by connector authorization; awaiting owner decisions. No application code changes or production operations performed.
+**Audit status:** source-level audit and mapping documented; PR #124 merged. Owner decisions on baseline, migration authority and exact PDF persistence are received. Live database audit remains blocked by project authorization; exact PDF binary commit remains outstanding. No application code changes or production operations performed.
 
 
 ## Step 0 owner decisions — 2026-10-19
@@ -274,3 +274,14 @@ The PDF requires `agents`, `agent_prompt_versions`, `agent_tools`, `agent_trigge
 7. All live-database findings in historical docs are unverified for this pass. Re-validate them against the correct project and annotate with date/project reference before relying on them.
 
 No application code, migration files, database, production data or deployment was changed during this source-only review.
+
+
+## Post-merge continuation — 2026-10-19
+
+- PR #124 is merged; `main` is at `a9c0ea39932ce22e3384b6e86046f7bb9b557370` at the time of this follow-up.
+- The existing `feature/audit-blueprint-baseline` branch was advanced to that same commit before further documentation work.
+- The migration inventory contains 117 SQL files. The prior review sampled migration definitions and generated declarations; it did **not** inspect every SQL statement in every file. Do not represent the existing assessment as a completed one-row-per-table proof.
+- A regex-based spot-check of early migrations shows several foundational table batches do enable RLS and define policies, but that alone cannot establish policy correctness, restrictive/permissive interaction, grants, child-row isolation, audit coverage, or live deployment state.
+- Next source-only audit deliverable: produce a reproducible migration-derived table/control matrix with explicit evidence references and an `unknown/not evidenced` state wherever dynamic SQL, policy replacement, grant behavior, or migration ordering prevents a reliable static conclusion. The matrix must distinguish source declarations from live verification.
+- Live Supabase schema, RLS, grants, storage, Realtime and applied migration ledger remain **UNVERIFIED** until the correct project is authorized and inspected read-only.
+- The exact source PDF remains not committed; preserve byte-for-byte SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` when adding `docs/blueprint.pdf` through a binary-capable Git workflow.
