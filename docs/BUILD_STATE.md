@@ -8,8 +8,8 @@
 - [x] Read supplied blueprint structure and dependency workstreams WS0–WS8.
 - [x] Inventory repository structure, stack/package scripts, route list, migration tracks, tests, docs and environment-variable names (no values).
 - [x] Create source-level audit and mapping.
-- [ ] Verify live Supabase schema, policies, functions, storage and deployed migration state — blocked because the Supabase connector has no eligible linked account.
-- [ ] Persist the exact 69-page source report in the repository — current Markdown file is an index/summary, not a full transcription; owner decision required.
+- [ ] Verify actual ERP production schema, policies, functions, storage and deployed migration state — blocker: both available Supabase links expose ref ibnacjirwnhbtqrirdsz, while repo config/documentation identifies ysaocrumxikgywdotkne. Read-only inspection of the former found seven migration records and only public.tally_archive_uploads; do not treat it as production.
+- [ ] Commit the exact 69-page source report as docs/blueprint.pdf byte-for-byte — owner decision confirmed; connector has no direct binary upload path, so a binary-capable Git workflow is still required. Source SHA-256: ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937.
 - [ ] Owner answers Q1–Q4 in `docs/AUDIT.md`.
 - [ ] Owner reviews and merges the documentation-only PR. No production deployment is allowed.
 
@@ -39,7 +39,7 @@
 
 ## Decisions / assumptions
 - Preserve existing code and patterns; no rewrite.
-- Supabase SQL migrations are provisionally proposed as deployment authority because the app is Supabase-backed; owner confirmation required.
+- Supabase CLI migrations are authoritative for deployment; validate Drizzle against them and do not allow a parallel schema authority.
 - Keep live integrations mocked/sandboxed until authorized.
 - All agents start at L0/L1 and cannot perform money movement, price changes, hiring decisions or statutory filings without human approval.
 - No destructive migration or production deployment by the coding agent.
@@ -47,6 +47,7 @@
 
 ## Change log
 - 2026-10-19: Created audit baseline and WS0–WS8 tracker on `feature/audit-blueprint-baseline`. Source-level only. No application code or database changed.
+- 2026-10-19: Owner confirmed Step 0 decisions. Read-only Supabase discovery found the available linked accounts both expose ref ibnacjirwnhbtqrirdsz, not the configured/documented production ref ysaocrumxikgywdotkne; exact PDF remains blocked on binary-capable Git upload.
 
 
 ## Owner decisions and remaining Step 0 gates — 2026-10-19
