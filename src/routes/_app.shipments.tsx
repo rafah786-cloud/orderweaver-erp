@@ -25,7 +25,7 @@ type Shipment = { id: string; company_id: string; shipment_number: string; sales
 const dateLabel = (v: string | null) => v ? new Date(v + (v.length===10 ? "T00:00:00" : "")).toLocaleDateString("en-IN") : "—";
 const NEXT: Record<string,string|null> = { draft:"packed", packed:"dispatched", dispatched:"in_transit", in_transit:"delivered", delivered:null, cancelled:null, returned:null };
 
-export const Route = createFileRoute("/_app.shipments")({ component: ShipmentsPage });
+export const Route = createFileRoute("/_app/shipments")({ component: ShipmentsPage });
 
 function ShipmentsPage() {
   const { activeCompany, loading: companyLoading } = useCompany();

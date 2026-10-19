@@ -35,27 +35,27 @@ import { Route as AppCapacityRouteImport } from './routes/_app.capacity'
 import { Route as AppCommunicationsRouteImport } from './routes/_app.communications'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
-import { Route as AppFleetRouteImport } from './routes/_app.fleet'
 import { Route as AppEnterpriseWorkbenchRouteImport } from './routes/_app.enterprise-workbench'
+import { Route as AppFleetRouteImport } from './routes/_app.fleet'
 import { Route as AppGstRouteImport } from './routes/_app.gst'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppLocalTallyAccountsRouteImport } from './routes/_app.local-tally-accounts'
-import { Route as AppMrpRouteImport } from './routes/_app.mrp'
-import { Route as AppMarketingRouteImport } from './routes/_app.marketing'
-import { Route as AppQualityRouteImport } from './routes/_app.quality'
 import { Route as AppMaintenanceRouteImport } from './routes/_app.maintenance'
+import { Route as AppMarketingRouteImport } from './routes/_app.marketing'
+import { Route as AppMrpRouteImport } from './routes/_app.mrp'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppPartiesRouteImport } from './routes/_app.parties'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppPrintRouteImport } from './routes/_app.print'
 import { Route as AppProductionRouteImport } from './routes/_app.production'
-import { Route as AppSmartSleepTecRouteImport } from './routes/_app.smart-sleeptec'
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
+import { Route as AppQualityRouteImport } from './routes/_app.quality'
 import { Route as AppSalesOrdersRouteImport } from './routes/_app.sales-orders'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppShipmentsRouteImport } from './routes/_app.shipments'
 import { Route as AppShopFloorRouteImport } from './routes/_app.shop-floor'
+import { Route as AppSmartSleeptecRouteImport } from './routes/_app.smart-sleeptec'
 import { Route as AppTallyImportRouteImport } from './routes/_app.tally-import'
 import { Route as AppVendorRouteImport } from './routes/_app.vendor'
 import { Route as AppWebsiteEnquiriesRouteImport } from './routes/_app.website-enquiries'
@@ -250,14 +250,14 @@ const AppEmployeesRoute = AppEmployeesRouteImport.update({
   path: '/employees',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFleetRoute = AppFleetRouteImport.update({
-  id: '/fleet',
-  path: '/fleet',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppEnterpriseWorkbenchRoute = AppEnterpriseWorkbenchRouteImport.update({
   id: '/enterprise-workbench',
   path: '/enterprise-workbench',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFleetRoute = AppFleetRouteImport.update({
+  id: '/fleet',
+  path: '/fleet',
   getParentRoute: () => AppRoute,
 } as any)
 const AppGstRoute = AppGstRouteImport.update({
@@ -280,9 +280,9 @@ const AppLocalTallyAccountsRoute = AppLocalTallyAccountsRouteImport.update({
   path: '/local-tally-accounts',
   getParentRoute: () => AppRoute,
 } as any)
-const AppMrpRoute = AppMrpRouteImport.update({
-  id: '/mrp',
-  path: '/mrp',
+const AppMaintenanceRoute = AppMaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMarketingRoute = AppMarketingRouteImport.update({
@@ -290,29 +290,9 @@ const AppMarketingRoute = AppMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => AppRoute,
 } as any)
-const AppMaintenanceRoute = AppMaintenanceRouteImport.update({
-  id: '/maintenance',
-  path: '/maintenance',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppQualityRoute = AppQualityRouteImport.update({
-  id: '/quality',
-  path: '/quality',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSmartSleepTecRoute = AppSmartSleepTecRouteImport.update({
-  id: '/smart-sleeptec',
-  path: '/smart-sleeptec',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppShipmentsRoute = AppShipmentsRouteImport.update({
-  id: '/shipments',
-  path: '/shipments',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppShopFloorRoute = AppShopFloorRouteImport.update({
-  id: '/shop-floor',
-  path: '/shop-floor',
+const AppMrpRoute = AppMrpRouteImport.update({
+  id: '/mrp',
+  path: '/mrp',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -345,6 +325,11 @@ const AppPurchasesRoute = AppPurchasesRouteImport.update({
   path: '/purchases',
   getParentRoute: () => AppRoute,
 } as any)
+const AppQualityRoute = AppQualityRouteImport.update({
+  id: '/quality',
+  path: '/quality',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
   id: '/sales-orders',
   path: '/sales-orders',
@@ -353,6 +338,21 @@ const AppSalesOrdersRoute = AppSalesOrdersRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShipmentsRoute = AppShipmentsRouteImport.update({
+  id: '/shipments',
+  path: '/shipments',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShopFloorRoute = AppShopFloorRouteImport.update({
+  id: '/shop-floor',
+  path: '/shop-floor',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSmartSleeptecRoute = AppSmartSleeptecRouteImport.update({
+  id: '/smart-sleeptec',
+  path: '/smart-sleeptec',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTallyImportRoute = AppTallyImportRouteImport.update({
@@ -709,10 +709,13 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
+  '/fleet': typeof AppFleetRoute
   '/gst': typeof AppGstRouteWithChildren
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/local-tally-accounts': typeof AppLocalTallyAccountsRoute
+  '/maintenance': typeof AppMaintenanceRoute
+  '/marketing': typeof AppMarketingRoute
   '/mrp': typeof AppMrpRoute
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
@@ -720,8 +723,12 @@ export interface FileRoutesByFullPath {
   '/print': typeof AppPrintRouteWithChildren
   '/production': typeof AppProductionRoute
   '/purchases': typeof AppPurchasesRoute
+  '/quality': typeof AppQualityRoute
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
+  '/shipments': typeof AppShipmentsRoute
+  '/shop-floor': typeof AppShopFloorRoute
+  '/smart-sleeptec': typeof AppSmartSleeptecRoute
   '/tally-import': typeof AppTallyImportRoute
   '/vendor': typeof AppVendorRouteWithChildren
   '/website-enquiries': typeof AppWebsiteEnquiriesRoute
@@ -810,10 +817,13 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
+  '/fleet': typeof AppFleetRoute
   '/gst': typeof AppGstRouteWithChildren
   '/inventory': typeof AppInventoryRouteWithChildren
   '/invoices': typeof AppInvoicesRoute
   '/local-tally-accounts': typeof AppLocalTallyAccountsRoute
+  '/maintenance': typeof AppMaintenanceRoute
+  '/marketing': typeof AppMarketingRoute
   '/mrp': typeof AppMrpRoute
   '/operations': typeof AppOperationsRoute
   '/parties': typeof AppPartiesRoute
@@ -821,8 +831,12 @@ export interface FileRoutesByTo {
   '/print': typeof AppPrintRouteWithChildren
   '/production': typeof AppProductionRoute
   '/purchases': typeof AppPurchasesRoute
+  '/quality': typeof AppQualityRoute
   '/sales-orders': typeof AppSalesOrdersRoute
   '/settings': typeof AppSettingsRoute
+  '/shipments': typeof AppShipmentsRoute
+  '/shop-floor': typeof AppShopFloorRoute
+  '/smart-sleeptec': typeof AppSmartSleeptecRoute
   '/tally-import': typeof AppTallyImportRoute
   '/website-enquiries': typeof AppWebsiteEnquiriesRoute
   '/whatsapp': typeof AppWhatsappRoute
@@ -915,10 +929,13 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/enterprise-workbench': typeof AppEnterpriseWorkbenchRoute
+  '/_app/fleet': typeof AppFleetRoute
   '/_app/gst': typeof AppGstRouteWithChildren
   '/_app/inventory': typeof AppInventoryRouteWithChildren
   '/_app/invoices': typeof AppInvoicesRoute
   '/_app/local-tally-accounts': typeof AppLocalTallyAccountsRoute
+  '/_app/maintenance': typeof AppMaintenanceRoute
+  '/_app/marketing': typeof AppMarketingRoute
   '/_app/mrp': typeof AppMrpRoute
   '/_app/operations': typeof AppOperationsRoute
   '/_app/parties': typeof AppPartiesRoute
@@ -926,8 +943,12 @@ export interface FileRoutesById {
   '/_app/print': typeof AppPrintRouteWithChildren
   '/_app/production': typeof AppProductionRoute
   '/_app/purchases': typeof AppPurchasesRoute
+  '/_app/quality': typeof AppQualityRoute
   '/_app/sales-orders': typeof AppSalesOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/shipments': typeof AppShipmentsRoute
+  '/_app/shop-floor': typeof AppShopFloorRoute
+  '/_app/smart-sleeptec': typeof AppSmartSleeptecRoute
   '/_app/tally-import': typeof AppTallyImportRoute
   '/_app/vendor': typeof AppVendorRouteWithChildren
   '/_app/website-enquiries': typeof AppWebsiteEnquiriesRoute
@@ -1021,10 +1042,13 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/employees'
     | '/enterprise-workbench'
+    | '/fleet'
     | '/gst'
     | '/inventory'
     | '/invoices'
     | '/local-tally-accounts'
+    | '/maintenance'
+    | '/marketing'
     | '/mrp'
     | '/operations'
     | '/parties'
@@ -1032,8 +1056,12 @@ export interface FileRouteTypes {
     | '/print'
     | '/production'
     | '/purchases'
+    | '/quality'
     | '/sales-orders'
     | '/settings'
+    | '/shipments'
+    | '/shop-floor'
+    | '/smart-sleeptec'
     | '/tally-import'
     | '/vendor'
     | '/website-enquiries'
@@ -1122,10 +1150,13 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/employees'
     | '/enterprise-workbench'
+    | '/fleet'
     | '/gst'
     | '/inventory'
     | '/invoices'
     | '/local-tally-accounts'
+    | '/maintenance'
+    | '/marketing'
     | '/mrp'
     | '/operations'
     | '/parties'
@@ -1133,8 +1164,12 @@ export interface FileRouteTypes {
     | '/print'
     | '/production'
     | '/purchases'
+    | '/quality'
     | '/sales-orders'
     | '/settings'
+    | '/shipments'
+    | '/shop-floor'
+    | '/smart-sleeptec'
     | '/tally-import'
     | '/website-enquiries'
     | '/whatsapp'
@@ -1226,10 +1261,13 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/enterprise-workbench'
+    | '/_app/fleet'
     | '/_app/gst'
     | '/_app/inventory'
     | '/_app/invoices'
     | '/_app/local-tally-accounts'
+    | '/_app/maintenance'
+    | '/_app/marketing'
     | '/_app/mrp'
     | '/_app/operations'
     | '/_app/parties'
@@ -1237,8 +1275,12 @@ export interface FileRouteTypes {
     | '/_app/print'
     | '/_app/production'
     | '/_app/purchases'
+    | '/_app/quality'
     | '/_app/sales-orders'
     | '/_app/settings'
+    | '/_app/shipments'
+    | '/_app/shop-floor'
+    | '/_app/smart-sleeptec'
     | '/_app/tally-import'
     | '/_app/vendor'
     | '/_app/website-enquiries'
@@ -1518,6 +1560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEnterpriseWorkbenchRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/fleet': {
+      id: '/_app/fleet'
+      path: '/fleet'
+      fullPath: '/fleet'
+      preLoaderRoute: typeof AppFleetRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/gst': {
       id: '/_app/gst'
       path: '/gst'
@@ -1544,6 +1593,20 @@ declare module '@tanstack/react-router' {
       path: '/local-tally-accounts'
       fullPath: '/local-tally-accounts'
       preLoaderRoute: typeof AppLocalTallyAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/maintenance': {
+      id: '/_app/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof AppMaintenanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/marketing': {
+      id: '/_app/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof AppMarketingRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/mrp': {
@@ -1595,6 +1658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPurchasesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/quality': {
+      id: '/_app/quality'
+      path: '/quality'
+      fullPath: '/quality'
+      preLoaderRoute: typeof AppQualityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/sales-orders': {
       id: '/_app/sales-orders'
       path: '/sales-orders'
@@ -1607,6 +1677,27 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/shipments': {
+      id: '/_app/shipments'
+      path: '/shipments'
+      fullPath: '/shipments'
+      preLoaderRoute: typeof AppShipmentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/shop-floor': {
+      id: '/_app/shop-floor'
+      path: '/shop-floor'
+      fullPath: '/shop-floor'
+      preLoaderRoute: typeof AppShopFloorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/smart-sleeptec': {
+      id: '/_app/smart-sleeptec'
+      path: '/smart-sleeptec'
+      fullPath: '/smart-sleeptec'
+      preLoaderRoute: typeof AppSmartSleeptecRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tally-import': {
@@ -2292,27 +2383,27 @@ interface AppRouteChildren {
   AppCommunicationsRoute: typeof AppCommunicationsRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
-  AppFleetRoute: typeof AppFleetRoute
   AppEnterpriseWorkbenchRoute: typeof AppEnterpriseWorkbenchRoute
+  AppFleetRoute: typeof AppFleetRoute
   AppGstRoute: typeof AppGstRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppLocalTallyAccountsRoute: typeof AppLocalTallyAccountsRoute
-  AppMrpRoute: typeof AppMrpRoute
-  AppMarketingRoute: typeof AppMarketingRoute
   AppMaintenanceRoute: typeof AppMaintenanceRoute
-  AppQualityRoute: typeof AppQualityRoute
-  AppSmartSleepTecRoute: typeof AppSmartSleepTecRoute
-  AppShipmentsRoute: typeof AppShipmentsRoute
-  AppShopFloorRoute: typeof AppShopFloorRoute
+  AppMarketingRoute: typeof AppMarketingRoute
+  AppMrpRoute: typeof AppMrpRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPartiesRoute: typeof AppPartiesRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppPrintRoute: typeof AppPrintRouteWithChildren
   AppProductionRoute: typeof AppProductionRoute
   AppPurchasesRoute: typeof AppPurchasesRoute
+  AppQualityRoute: typeof AppQualityRoute
   AppSalesOrdersRoute: typeof AppSalesOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppShipmentsRoute: typeof AppShipmentsRoute
+  AppShopFloorRoute: typeof AppShopFloorRoute
+  AppSmartSleeptecRoute: typeof AppSmartSleeptecRoute
   AppTallyImportRoute: typeof AppTallyImportRoute
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppWebsiteEnquiriesRoute: typeof AppWebsiteEnquiriesRoute
@@ -2330,27 +2421,27 @@ const AppRouteChildren: AppRouteChildren = {
   AppCommunicationsRoute: AppCommunicationsRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
-  AppFleetRoute: AppFleetRoute,
   AppEnterpriseWorkbenchRoute: AppEnterpriseWorkbenchRoute,
+  AppFleetRoute: AppFleetRoute,
   AppGstRoute: AppGstRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppInvoicesRoute: AppInvoicesRoute,
   AppLocalTallyAccountsRoute: AppLocalTallyAccountsRoute,
-  AppMrpRoute: AppMrpRoute,
-  AppMarketingRoute: AppMarketingRoute,
   AppMaintenanceRoute: AppMaintenanceRoute,
-  AppQualityRoute: AppQualityRoute,
-  AppSmartSleepTecRoute: AppSmartSleepTecRoute,
-  AppShipmentsRoute: AppShipmentsRoute,
-  AppShopFloorRoute: AppShopFloorRoute,
+  AppMarketingRoute: AppMarketingRoute,
+  AppMrpRoute: AppMrpRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPartiesRoute: AppPartiesRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppPrintRoute: AppPrintRouteWithChildren,
   AppProductionRoute: AppProductionRoute,
   AppPurchasesRoute: AppPurchasesRoute,
+  AppQualityRoute: AppQualityRoute,
   AppSalesOrdersRoute: AppSalesOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppShipmentsRoute: AppShipmentsRoute,
+  AppShopFloorRoute: AppShopFloorRoute,
+  AppSmartSleeptecRoute: AppSmartSleeptecRoute,
   AppTallyImportRoute: AppTallyImportRoute,
   AppVendorRoute: AppVendorRouteWithChildren,
   AppWebsiteEnquiriesRoute: AppWebsiteEnquiriesRoute,
@@ -2385,13 +2476,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
