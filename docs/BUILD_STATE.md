@@ -145,7 +145,7 @@
 - [x] Corrected the malformed/duplicated approval-security migration; all WS0 functions now use `CREATE FUNCTION` (fail rather than replace a same-named function), and the audit guard preserves non-WS0 update/delete behavior.
 - [x] Added SQL assertions covering company RLS, fail-closed branch scope, thresholds, missing/overlapping rules, self-approval, direct DML denial, cross-company decision denial, audit append-only/redaction, and transaction rollback of status history.
 - [x] Added a parallel psql concurrency test for the new number allocator.
-- [x] Added `supabase/tests/ws0_foundation_assertions.sql`, `security-tests/ws0_number_series_concurrency.py`, `security-tests/run_ws0_local_supabase.sh` and `.github/workflows/ws0-foundation.yml`. The runner hides the six WS0 migrations before Docker starts, replays the 117-file baseline, then restores/applies WS0, runs SQL and concurrency tests, and saves migration ledgers, schema snapshots/diffs and logs as CI artifacts.
+- [x] Added `supabase/tests/ws0_foundation_assertions.sql`, `security-tests/ws0_number_series_concurrency.py`, `security-tests/run_ws0_local_supabase.sh` and `.github/workflows/ws0-foundation.yml`. The runner hides the six WS0 migrations before Docker starts, replays the 117-file baseline, then restores/applies WS0, runs SQL and concurrency tests, and saves migration ledgers, schema snapshots/diffs and logs as CI artifacts. Number-series allocations are audited through the existing ERP audit sink, and the concurrency test checks both uniqueness and snapshot redaction.
 - [ ] CI has not yet verified baseline replay, WS0 application or tests. Report baseline migration failures separately and do not repair existing migrations without approval.
 - [ ] Do not merge the Task 2 PR until local CI passes and the owner separately approves in chat.
 - **Safety:** no hosted/live Supabase database was accessed; no migrations were applied to a hosted database; no deployment occurred. Live database remains **UNVERIFIED**. Existing application flows are not wired to the new approval/status/numbering foundation.
@@ -156,5 +156,7 @@
 
 
 - [x] Opened Task 2 PR #126: https://github.com/rafah786-cloud/orderweaver-erp/pull/126. Its changed-file list contains only the six new WS0 migrations, six compensating scripts, tests, local test runner, local CI workflow and this build-state document; no application source or existing migration file is changed.
-- [x] PR #126 CI started: ERP CI run `39214387158`; local Supabase WS0 workflow run `39214387160`.
+- [x] PR #126 opened with documentation, new migrations, compensating scripts and test infrastructure only. CI runs are triggered on the current head; earlier runs were superseded by subsequent test-hardening commits.
 - [ ] Await baseline replay result, WS0 migration application, SQL assertions and concurrent numbering test. Merge is blocked until all local tests pass and the owner explicitly approves in chat.
+
+- [x] Number-series allocation now writes a redacted audit event to the existing `erp_domain_audit_log`; no separate duplicate audit table was introduced.
