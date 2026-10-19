@@ -24,7 +24,7 @@ CREATE POLICY ws0_number_series_scoped_read ON public.ws0_number_series
 FOR SELECT TO authenticated
 USING (public.ws0_scope_allowed(company_id,branch_id));
 
-CREATE OR REPLACE FUNCTION public.ws0_next_document_number(
+CREATE FUNCTION public.ws0_next_document_number(
   p_company_id uuid, p_branch_id uuid, p_document_type text, p_fiscal_year text
 )
 RETURNS text
