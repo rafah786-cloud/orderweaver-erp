@@ -57,7 +57,6 @@
 - [x] Supabase CLI migrations are authoritative; Drizzle must be checked for parity.
 - [x] Original PDF checksum retained as reference only; no PDF repository copy is required.
 - [ ] **Supabase blocker:** both currently available connector links list `ibnacjirwnhbtqrirdsz`, but repo config names `ysaocrumxikgywdotkne`. Reauthorize the correct account/project before live audit.
-- [ ] **PDF blocker:** current GitHub file-writing action supports UTF-8 text only, not binary PDF upload. Commit via a binary-capable Git workflow and verify exact bytes.
 - [ ] Review other open PRs separately; this does not authorize merging them.
 - **No application code, migrations, production data writes, or deployments** until blockers are resolved and the owner approves the next phase.
 
