@@ -85,6 +85,26 @@ CREATE POLICY company_scope_bill_allocations ON public.bill_allocations
   AS RESTRICTIVE FOR ALL TO authenticated
   USING (company_id = public.current_company_id() AND public.has_company_access(company_id))
   WITH CHECK (company_id = public.current_company_id() AND public.has_company_access(company_id));
+DROP POLICY IF EXISTS bill_allocations_read ON public.bill_allocations;
+CREATE POLICY bill_allocations_read ON public.bill_allocations FOR SELECT TO authenticated
+  USING (
+    company_id = public.current_company_id()
+    AND public.has_company_access(company_id)
+    AND EXISTS (
+      SELECT 1 FROM public.bills b
+      WHERE b.id = bill_allocations.bill_id
+        AND (
+          public.has_role(auth.uid(),'admin')
+          OR public.has_role(auth.uid(),'accountant')
+          OR (b.party_kind='customer' AND public.has_role(auth.uid(),'sales'))
+          OR (b.party_kind='customer' AND public.has_role(auth.uid(),'customer')
+              AND b.party_id IN (SELECT id FROM public.parties WHERE user_id=auth.uid()))
+          OR (b.party_kind='supplier' AND public.has_role(auth.uid(),'production'))
+          OR (b.party_kind='supplier' AND public.has_role(auth.uid(),'vendor')
+              AND b.supplier_id IN (SELECT id FROM public.suppliers WHERE user_id=auth.uid()))
+        )
+    )
+  );
 
 GRANT SELECT ON public.bill_allocations TO authenticated;
 GRANT ALL ON public.bill_allocations TO service_role;
