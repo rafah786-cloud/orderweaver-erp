@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { path7za } from "7zip-bin";
 import { mkdir, mkdtemp, readdir, realpath, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -48,7 +49,7 @@ function run(command: string, args: string[], timeoutMs = 120_000): Promise<stri
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      reject(new Error(`Could not run ${command}. Install 7-Zip/7zz and ensure it is on PATH. ${error.message}`));
+      reject(new Error(`Could not run ${command}. The bundled 7-Zip executable could not be started; reinstall dependencies or set SEVEN_ZIP_PATH. ${error.message}`));
     });
     child.on("close", (code) => {
       if (settled) return;
@@ -144,7 +145,7 @@ export async function inspectAndExtractArchive(
   const archiveStat = await stat(resolvedArchive);
   if (!archiveStat.isFile()) throw new Error("Archive path must point to a file.");
   if (!/\.(rar|zip|7z)$/i.test(resolvedArchive)) throw new Error("Supported archive extensions are .rar, .zip and .7z.");
-  const sevenZip = options.sevenZipPath || process.env.SEVEN_ZIP_PATH || (process.platform === "win32" ? "7z.exe" : "7z");
+  const sevenZip = options.sevenZipPath || process.env.SEVEN_ZIP_PATH || path7za;
   const listing = await run(sevenZip, ["l", "-slt", "--", resolvedArchive]);
   const entries = parse7zListing(listing, options);
   if (!entries.length) throw new Error("Archive listing is empty; refusing to extract.");
