@@ -51,6 +51,7 @@ export const Route = createFileRoute("/api/public/razorpay/verify-payment")({
           return jsonError("Missing or invalid payment verification fields.", 400);
         }
 
+        if (!keySecret) return jsonError("Payment verification is not configured.", 503);
         const expected = createHmac("sha256", keySecret)
           .update(`${orderId}|${paymentId}`, "utf8")
           .digest();
