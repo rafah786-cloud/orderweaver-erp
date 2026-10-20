@@ -3,16 +3,15 @@
 > **LIVE-DATABASE STATUS: UNVERIFIED.** Source-only review only. No live schema, RLS, grants, storage, Realtime, migration ledger or production behavior was verified in this task.
 
 **Last updated:** 2026-10-19  
-**Baseline:** `main` merge commit `a9c0ea39932ce22e3384b6e86046f7bb9b557370` (PR #124 merged)  
-**Current task:** Step 0 audit only. No application code, migrations, production data or deployments changed.
+**Task 2 base reference:** latest `main` observed at `402c0d65365c4ddf9218c3bfacd295bc090fb10e`; PR #125 merge commit `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`.  
+**Current task:** WS0 additive approval/audit foundation, local-only CI, no hosted database or deployment.
 
 ## Current gate
 - [x] Read supplied blueprint structure and dependency workstreams WS0–WS8.
 - [x] Inventory repository structure, stack/package scripts, route list, migration tracks, tests, docs and environment-variable names (no values).
 - [x] Create source-level audit and mapping.
 - [ ] Verify actual ERP production schema, policies, functions, storage and deployed migration state — blocker: both available Supabase links expose ref ibnacjirwnhbtqrirdsz, while repo config/documentation identifies ysaocrumxikgywdotkne. Read-only inspection of the former found seven migration records and only public.tally_archive_uploads; do not treat it as production.
-- [ ] Commit the exact 69-page source report as the original PDF (not stored in this repository) byte-for-byte — owner decision confirmed; connector has no direct binary upload path, so a binary-capable Git workflow is still required. Source SHA-256: ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937.
-- [x] Owner decisions Q1–Q4 received; Supabase project identity and exact-PDF binary upload remain technical blockers.
+- [x] Owner decisions received; the original source checksum is retained for reference only. The live Supabase project identity remains unresolved.
 - [x] Documentation-only PR #124 merged to `main` at `a9c0ea39932ce22e3384b6e86046f7bb9b557370`. No production deployment occurred.
 
 ## Workstream tracker
@@ -49,7 +48,7 @@
 
 ## Change log
 - 2026-10-19: Created audit baseline and WS0–WS8 tracker on `feature/audit-blueprint-baseline`; PR #124 subsequently merged. Source-level only. No application code or database changed.
-- 2026-10-19: Owner confirmed Step 0 decisions. Read-only Supabase discovery found the available linked accounts both expose ref ibnacjirwnhbtqrirdsz, not the configured/documented production ref ysaocrumxikgywdotkne; exact PDF remains blocked on binary-capable Git upload.
+- 2026-10-19: Owner confirmed Step 0 decisions. Read-only Supabase discovery found the available linked accounts both expose ref ibnacjirwnhbtqrirdsz, not the configured/documented production ref ysaocrumxikgywdotkne; the blueprint Markdown is now byte-for-byte verified.
 
 
 ## Owner decisions and remaining Step 0 gates — 2026-10-19
@@ -58,7 +57,6 @@
 - [x] Supabase CLI migrations are authoritative; Drizzle must be checked for parity.
 - [x] Original PDF checksum retained as reference only; no PDF repository copy is required.
 - [ ] **Supabase blocker:** both currently available connector links list `ibnacjirwnhbtqrirdsz`, but repo config names `ysaocrumxikgywdotkne`. Reauthorize the correct account/project before live audit.
-- [ ] **PDF blocker:** current GitHub file-writing action supports UTF-8 text only, not binary PDF upload. Commit via a binary-capable Git workflow and verify exact bytes.
 - [ ] Review other open PRs separately; this does not authorize merging them.
 - **No application code, migrations, production data writes, or deployments** until blockers are resolved and the owner approves the next phase.
 
@@ -114,3 +112,84 @@
 - `main` baseline recorded before any further merge: `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
 - Original source PDF checksum (reference only; not stored in repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
 - `docs/blueprint-full.md` is authoritative. Live Supabase database remains **UNVERIFIED**. No database access, migrations, app code changes, or deployment are authorized by this source-only documentation work.
+
+
+## Task 2 — WS0 additive approval/audit foundation — 2026-10-19
+
+- [x] PR #125 was verified to change only files under `docs/`; its ERP CI workflow completed successfully. Merged by the owner-authorized assistant action as commit `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. PR #124 was already merged at `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
+- [x] Created branch `feature/ws0-approval-audit-foundation` from the post-PR #125 main commit `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`.
+- [x] Read blueprint sections 11 and 13 and `docs/WS0_GAP_PLAN.md` before preparing Task 2.
+- [ ] Add six forward-only migrations and six non-destructive compensating scripts under `supabase/rollback/`; use timestamps later than the newest existing CLI migration `20261018210000_ai_marketing_creative_studio.sql`.
+- [ ] Add isolated local-Supabase CI: replay current main migrations in a separate baseline job; replay all migrations including WS0 in the test job; run security/approval/audit/status/numbering tests; retain logs and schema diff as artifacts.
+- [ ] Open PR for Task 2 only after source checks are complete. Do not merge until all local CI tests pass and the owner separately approves in chat.
+- **No hosted/live Supabase access, migration application, or deployment is permitted. Live database status remains UNVERIFIED.**
+
+
+## Task 2 — WS0 additive foundation (2026-10-19)
+
+- PR #125 is already merged at `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. Its ERP CI run was observed pending with zero jobs; the workflow has a plain `pull_request` trigger and no path filters. No branch-protection/ruleset required checks were returned. A later unrelated main commit `402c0d65365c4ddf9218c3bfacd295bc090fb10e` is not part of this Task 2 work.
+- Task branch: `feature/ws0-approval-audit-foundation`. It already existed with an initial six-migration draft and non-destructive compensating scripts; this pass is auditing and correcting that draft, not creating duplicate files.
+- Authoritative blueprint sections read before this task: Sections 11.1–11.16 (database conventions, governance, key functions), 13.1–13.3 (agent approval gating), and 14.1–14.10 (database patterns, WS0 exit criteria and testing).
+- Newest existing authoritative migration before WS0: `20261018210000_ai_marketing_creative_studio.sql`. WS0 migration timestamps `20261019100000` through `20261019100500` are later.
+- Initial source review found a malformed/duplicated approval-security migration and an audit guard that could suppress updates to non-WS0 audit rows. The approval-security migration has been replaced with a single clean transaction; the audit guard now preserves existing non-WS0 update/delete behavior.
+- Still required: correct branch/role/RLS gaps; add SQL assertions and concurrent numbering tests; add a local Supabase CLI/Docker workflow that separately reports baseline replay failures, WS0 application failures and test failures; upload logs and schema diffs as artifacts; verify CI before opening/finishing the PR.
+- Strict scope: new WS0 functions and objects only. No existing domain workflows are wired into approvals/status history/numbering. No existing migrations are edited, no live or hosted database is accessed, and no deployment is authorized. Live database remains **UNVERIFIED**.
+
+
+## Task 2 implementation and local test gate — 2026-10-19
+
+- [x] Confirmed PR #125 is already merged at `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. The ERP CI run previously appeared pending with zero jobs; the workflow uses a plain `pull_request` trigger without path filters. The GitHub rulesets endpoint returned no rulesets, and no required status checks were reported by the connected status API.
+- [x] Task branch: `feature/ws0-approval-audit-foundation`. The branch existed with a draft of the six new migrations and compensating scripts; it is being audited and corrected rather than duplicated.
+- [x] Read the relevant authoritative blueprint sections directly: 11.1–11.16, 13.1–13.3 and 14.1–14.10.
+- [x] Newest pre-WS0 authoritative migration: `20261018210000_ai_marketing_creative_studio.sql`. New WS0 timestamps: `20261019100000` through `20261019100500`.
+- [x] Corrected the malformed/duplicated approval-security migration; all WS0 functions now use `CREATE FUNCTION` (fail rather than replace a same-named function), and the audit guard preserves non-WS0 update/delete behavior.
+- [x] Added SQL assertions covering company RLS, fail-closed branch scope, thresholds, missing/overlapping rules, self-approval, direct DML denial, cross-company decision denial, audit append-only/redaction, and transaction rollback of status history.
+- [x] Added a parallel psql concurrency test for the new number allocator.
+- [x] Added `supabase/tests/ws0_foundation_assertions.sql`, `security-tests/ws0_number_series_concurrency.py`, `security-tests/run_ws0_local_supabase.sh` and `.github/workflows/ws0-foundation.yml`. The runner hides the six WS0 migrations before Docker starts, replays the 117-file baseline, then restores/applies WS0, runs SQL and concurrency tests, and saves migration ledgers, schema snapshots/diffs and logs as CI artifacts. Number-series allocations are audited through the existing ERP audit sink, and the concurrency test checks both uniqueness and snapshot redaction.
+- [ ] CI has not yet verified baseline replay, WS0 application or tests. Report baseline migration failures separately and do not repair existing migrations without approval.
+- [ ] Do not merge the Task 2 PR until local CI passes and the owner separately approves in chat.
+- **Safety:** no hosted/live Supabase database was accessed; no migrations were applied to a hosted database; no deployment occurred. Live database remains **UNVERIFIED**. Existing application flows are not wired to the new approval/status/numbering foundation.
+
+
+- [x] Added six non-destructive compensating scripts under `supabase/rollback/`; they disable the corresponding new WS0 feature and preserve schema/data instead of dropping objects.
+- [ ] Review CI result. The existing migration replay must be reported independently from WS0 migration/test failures. Do not fix baseline migration failures without owner approval.
+
+
+- [x] Opened Task 2 PR #126: https://github.com/rafah786-cloud/orderweaver-erp/pull/126. Its changed-file list contains only the six new WS0 migrations, six compensating scripts, tests, local test runner, local CI workflow and this build-state document; no application source or existing migration file is changed.
+- [x] PR #126 opened with documentation, new migrations, compensating scripts and test infrastructure only. CI runs are triggered on the current head; earlier runs were superseded by subsequent test-hardening commits.
+- [ ] Await baseline replay result, WS0 migration application, SQL assertions and concurrent numbering test. Merge is blocked until all local tests pass and the owner explicitly approves in chat.
+
+- [x] Number-series allocation now writes a redacted audit event to the existing `erp_domain_audit_log`; no separate duplicate audit table was introduced.
+
+
+- [x] Added a restrictive insert policy that prevents authenticated clients from forging `module='ws0'` records in the reused `erp_domain_audit_log`; the security-definer audit trigger remains able to write them. Added a SQL assertion for direct forgery attempts.
+- [ ] Latest CI head includes the audit-integrity hardening; wait for its fresh local Supabase run before deciding pass/fail.
+
+- [x] Extended the local runner to execute all six compensating scripts after functional/concurrency tests in the disposable database, then assert all four feature controls are disabled. This validates compensations without dropping schema or data.
+
+
+## Baseline replay failure — 2026-10-19
+
+- Local Supabase run `39215179545` failed while Supabase CLI was applying the existing authoritative migration `20261005150000_production_accounting_inventory_hardening.sql`.
+- Error: `relation "public.bill_allocations" does not exist (SQLSTATE 42P01)`, at statement 11, `CREATE UNIQUE INDEX IF NOT EXISTS bill_allocations_idempotency_key_unique ON public.bill_allocations (idempotency_key) WHERE idempotency_key IS NOT NULL`.
+- This is a **pre-existing baseline migration replay failure**, before the six WS0 migrations were applied or WS0 tests ran. The artifact `ws0-local-supabase-39215179545` contains the full startup log.
+- The local runner was corrected to classify SQL/migration errors during `supabase start` as `baseline_replay=failed`, rather than mislabelling them as a generic container startup failure.
+- No existing migration was changed. Do not merge PR #126 while the authoritative baseline cannot replay from zero. Fixing the existing migration requires separate owner approval.
+
+
+## Latest Task 2 CI review — 2026-10-19
+
+- PR #125 is closed and merged at `867c0778c0ecb2b7ae66d9cc4898053cd0fb9888`. Its changed files are documentation-only. The ERP CI workflow has a normal `pull_request` trigger and no path filters; the earlier zero-job pending display did not represent a required check. The connected status API reports no required checks. PR #125 is already merged; no second merge action is needed.
+- PR #126 remains open at `https://github.com/rafah786-cloud/orderweaver-erp/pull/126`. Its changed files are the six new WS0 migrations, six compensating scripts, SQL assertions, concurrency test, local Supabase runner/workflow, and this build-state document. No existing migration or application source is changed.
+- Latest observed Task 2 workflow run: `39215667868`, conclusion **failure**. ERP CI run `39215667915` passed. The WS0 workflow reached the local runner, then exited with code 20; its artifact is `ws0-local-supabase-39215667868`.
+- Baseline replay failure was already recorded for run `39215179545`: existing migration `20261005150000_production_accounting_inventory_hardening.sql` fails because `public.bill_allocations` does not exist when it attempts to create `bill_allocations_idempotency_key_unique` (SQLSTATE 42P01). This happens before WS0 migrations or WS0 assertions execute. The new workflow must classify this as baseline failure, separately from WS0 application/test failure.
+- Per owner instruction, do not edit/fix existing migration history without separate approval. Because the baseline cannot replay from zero, WS0 behavior has **not** yet been proven by the local Supabase test suite. Do not merge PR #126. No hosted/live database was accessed; live database remains **UNVERIFIED**. No deployment occurred.
+
+
+## Task 2 latest verification — 2026-10-19 13:12 IST
+
+- [x] Rechecked PR #126 head `c49c832c7ec897db33caae334073fdb16605e611`, changed-file list (17 files), and latest WS0 workflow run `39217532560`.
+- [x] Downloaded and inspected artifact `ws0-local-supabase-39217532560`. The workflow fails during local Supabase startup while replaying the untouched baseline, before WS0 is applied: existing migration `20261005150000_production_accounting_inventory_hardening.sql`, statement 11, attempts to create an index on missing relation `public.bill_allocations` (SQLSTATE 42P01).
+- [ ] WS0 migration application, SQL security assertions and concurrent-numbering tests remain unexecuted/unproven because baseline replay fails first. This is a pre-existing migration-chain defect, not a WS0 test failure.
+- [ ] Do not repair or edit the existing migration without separate owner approval. PR #126 remains open and must not be merged.
+- **Live Supabase remains UNVERIFIED. No hosted database access, migration application or deployment occurred.**
