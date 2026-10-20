@@ -43,3 +43,16 @@ same-name companies or unsupported message envelopes fail explicitly.
 The UI currently offers source preview/validation only. Canonical transactional Tally
 commit, changed-voucher policy, ledger/stock identity mapping and verified isolated
 recovery remain required before live import. No successful sync is fabricated.
+
+
+## RAR/backup intake (inspection only)
+
+Install Node.js 20+ and run `npm install` inside `tally-bridge`. The project bundles a platform-specific 7-Zip executable through `7zip-bin`, so a separate system-wide 7-Zip installation is not normally required. An explicit executable can still be supplied with `--7z` or `SEVEN_ZIP_PATH`.
+
+```powershell
+npm run inspect:archive -- --archive "D:\\TallyBackups\\company-backup.rar"
+```
+
+The command uses the bundled extractor, validates the archive listing, extracts into a quarantine directory, and prints a JSON inventory of likely XML exports, native-data files, and warnings. Use `--7z "C:\\Program Files\\7-Zip\\7z.exe"` if 7-Zip is not on PATH. To select a new output directory, use `--output "D:\\TallyQuarantine\\run-001"`; that directory must not already exist.
+
+This is not a binary Tally reader and it does not import data into the ERP. If the archive contains native Tally backup data rather than XML exports, restore it with the compatible Tally release in an isolated environment, then use the read-only local TallyBridge export. Never upload private Tally HTTP ports to the internet. See ../docs/TALLY_RAR_IMPORT_ARCHITECTURE.md for the full gated pipeline.

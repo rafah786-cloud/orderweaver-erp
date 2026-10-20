@@ -6,9 +6,11 @@
     "start": "tsx src/index.ts",
     "serve": "tsx src/serve.ts",
     "build": "tsc --noEmit",
-    "test": "node --import tsx --test src/*.test.ts"
+    "test": "node --import tsx --test src/*.test.ts",
+    "inspect:archive": "tsx src/archive-inspect.ts"
   },
   "dependencies": {
+    "7zip-bin": "^5.2.0",
     "fast-xml-parser": "^5.8.0"
   },
   "devDependencies": {
