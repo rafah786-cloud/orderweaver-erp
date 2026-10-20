@@ -93,3 +93,14 @@ Each module should be tested with separate synthetic identities and companies, n
 - For any security migration affecting posting/receipt hooks, retain a rollback script, record before/after function definitions, and verify live readback after deployment.
 - Keep Live Razorpay checkout disabled until order persistence, authoritative pricing/tax, inventory reservation, webhook verification/idempotency, reconciliation, delivery, policy and fulfilment gates are complete.
 - Update this inventory as findings are confirmed, remediated and independently re-tested. Never label the system “fully secure” from source review alone.
+
+
+## 6. Findings from the 18 October 2026 iterative cycle
+
+| ID | Severity / confidence | Finding | Action / acceptance criteria |
+|---|---|---|---|
+| SEC-2026-012 | High; confirmed in source, deployment not verified | `budgets`, `bank_reconciliations` and `fixed_assets` have an admin-only write guard but no equivalent database role gate for reads. Existing company-view policy can be broader than the `/banking` route's Admin/Accountant role boundary. | Proposed restrictive role guard + isolated PostgreSQL test. Require CI pass, apply only to the confirmed ERP database, read back the policy and verify negative direct-API tests for Sales, Production, HR, Employee, Customer and Vendor. |
+| SEC-2026-013 | High operational blocker; confirmed mismatch | Tracked root `.env` project ID/URL differ from the Supabase project available to the connected database tool. The latter exposes only the Tally archive registry table, not the app schema described by repository migrations. | Resolve the deployed app's actual Supabase project before claiming live authorization coverage or applying ERP migrations. No secrets were printed; the tracked file currently contains public client configuration, but must be removed after builds no longer depend on it. |
+| SEC-2026-014 | Medium; applies to connected archive DB only | `authenticated` has excess `TRUNCATE`, `REFERENCES` and `TRIGGER` grants on `tally_archive_uploads`; three owner policies have avoidable per-row auth-function evaluation warnings. | Do not patch until project identity is reconciled. Revoke the excess grants, optimize policy expressions, then recheck catalog and performance advisor on the correct database. |
+
+**Coverage limitation:** This cycle did not prove live role/department behavior for the full ERP because the connected Supabase target does not match the project URL/reference embedded in the tracked build configuration. Source-level findings and CI tests are useful, but they are not a substitute for testing the actual deployed database with synthetic identities.

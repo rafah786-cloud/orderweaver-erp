@@ -62,6 +62,19 @@ jobs:
           export PATH="$(pg_config --bindir):$PATH"
           python security-tests/unapproved_profile_data_access.py supabase/migrations/20261018170000_require_approved_data_access.sql supabase/migrations/20261018180000_restrict_profile_self_insert.sql
 
+  enterprise-finance-role-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test finance table role, approval and company boundaries
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/enterprise_finance_role_access.py supabase/migrations/20261018195000_restrict_enterprise_finance_roles.sql
+
   bank-reconciliation-rpc:
     runs-on: ubuntu-latest
     steps:

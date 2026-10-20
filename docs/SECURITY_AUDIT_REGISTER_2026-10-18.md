@@ -106,3 +106,30 @@ Before the database migration is applied:
 ## Release discipline
 
 No live database migration is authorized by this report. All security migrations must first pass disposable PostgreSQL adversarial tests. Never weaken accounting, inventory or company-isolation rules to pass CI. Keep live checkout disabled until authoritative product/price/tax, stock, order persistence, webhook validation/idempotency, reconciliation, delivery and fulfilment are complete. Mark a finding “fixed” only after the commit is integrated, CI passes, deployed policy/function definitions are read back, and the real intended workflow plus negative authorization cases are re-tested.
+
+
+## Next iterative cycle — 18 October 2026, 20:33 IST
+
+### SEC-2026-012 — Sensitive enterprise finance tables lack a database role gate for reads
+
+**Severity:** High (source-level authorization gap; deployment status unverified).  
+**Evidence:** The source migration `20261014143000_harden_enterprise_domain_permissions.sql` creates permissive read policies for additive-domain records using approval, active-company and `can_view` membership checks, but no domain role check. The separate `20261014140000_enterprise_workbench_admin_dml_guard.sql` restricts writes on `budgets`, `bank_reconciliations` and `fixed_assets`, but deliberately leaves reads unchanged. The frontend route policy for `/banking` admits Admin/Accountant only. A user with generic company-view membership but no finance role can therefore bypass the frontend and may read these tables directly if these source policies are deployed together.
+
+**Fix proposed:** Add restrictive `enterprise_finance_role_guard` policies to `budgets`, `bank_reconciliations` and `fixed_assets`, requiring approved Admin or Accountant, active-company match and company access. Restrictive policies AND with existing company/CRUD policies; they grant no new table privileges. The migration fails rather than silently skipping an expected table or `company_id` column.
+
+**Regression coverage:** New disposable-PostgreSQL harness tests Admin/Accountant allow, Sales/Production/HR/Employee/Customer/Vendor denial, pending-profile denial, company A/B row isolation and unauthorized CRUD attempts. CI job is added in the proposed PR. Do not mark fixed until CI passes and the migration is applied to the confirmed ERP database with catalog readback and approved-role smoke tests.
+
+### SEC-2026-013 — Supabase connection/configuration mismatch blocks trustworthy live verification
+
+**Severity:** High operational/security verification blocker; not proof of a data breach.  
+**Evidence:** The tracked root `.env` contains only Supabase URL/project identifiers and legacy anon/publishable client keys (no service-role, password, Razorpay or other private-secret variable names were found). Its project identifier and URL do not match the Supabase project available through the current connected database tool. That connected database exposes only `public.tally_archive_uploads` as a public application table and three public functions, whereas this repository's ERP migrations and types expect profiles, company access, accounting, sales, inventory, production and HR tables. The connected project has a private `tally-archives` bucket. Do not apply ERP schema/authorization migrations to this mismatched target.
+
+**Action required:** Resolve which Supabase project the deployed Lovable app actually uses; verify the project reference and URL in the hosting environment without sharing key values. Then rerun catalog/grant/policy/function/storage audits against that confirmed target. The tracked `.env` is a hygiene concern and should be removed from version control only after CI/build and hosting environment variables are proven independent of it.
+
+### SEC-2026-014 — Connected archive database retains excess non-row privileges and has an RLS performance warning
+
+**Severity:** Medium; applies only to the currently connected database, which is not yet proven to be the live ERP database.  
+**Evidence:** Live ACL readback for `public.tally_archive_uploads` shows `authenticated` still has effective `TRUNCATE`, `REFERENCES` and `TRIGGER` privileges. Its owner SELECT/INSERT/DELETE policies call `auth.uid()` directly, and the Supabase performance advisor reports three `auth_rls_initplan` warnings for those policies. The security advisor returned no lints, but that does not override the explicit ACL readback.
+
+**Action:** Keep the migration unapplied until project ownership is confirmed. In the correct target, revoke unnecessary non-row privileges and optimize owner policies with scalar subqueries such as `(select auth.uid())`, then verify grants and policy expressions. Do not infer that RLS makes `TRUNCATE` safe.
+
