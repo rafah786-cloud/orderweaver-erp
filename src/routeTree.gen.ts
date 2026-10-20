@@ -118,7 +118,10 @@ import { Route as AppPrintPurchaseIdRouteImport } from './routes/_app.print.purc
 import { Route as AppPrintSupplierLedgerIdRouteImport } from './routes/_app.print.supplier-ledger.$id'
 import { Route as AppVendorPurchaseOrdersIdRouteImport } from './routes/_app.vendor.purchase-orders.$id'
 import { Route as ApiPublicBiometricPunchRouteImport } from './routes/api/public/biometric/punch'
+import { Route as ApiPublicRazorpayCreateOrderRouteImport } from './routes/api/public/razorpay/create-order'
+import { Route as ApiPublicRazorpayVerifyPaymentRouteImport } from './routes/api/public/razorpay/verify-payment'
 import { Route as ApiPublicWhatsappInteraktRouteImport } from './routes/api/public/whatsapp/interakt'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -675,10 +678,28 @@ const ApiPublicBiometricPunchRoute = ApiPublicBiometricPunchRouteImport.update({
   path: '/api/public/biometric/punch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRazorpayCreateOrderRoute =
+  ApiPublicRazorpayCreateOrderRouteImport.update({
+    id: '/api/public/razorpay/create-order',
+    path: '/api/public/razorpay/create-order',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicRazorpayVerifyPaymentRoute =
+  ApiPublicRazorpayVerifyPaymentRouteImport.update({
+    id: '/api/public/razorpay/verify-payment',
+    path: '/api/public/razorpay/verify-payment',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWhatsappInteraktRoute =
   ApiPublicWhatsappInteraktRouteImport.update({
     id: '/api/public/whatsapp/interakt',
     path: '/api/public/whatsapp/interakt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -791,7 +812,10 @@ export interface FileRoutesByFullPath {
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/razorpay/create-order': typeof ApiPublicRazorpayCreateOrderRoute
+  '/api/public/razorpay/verify-payment': typeof ApiPublicRazorpayVerifyPaymentRoute
   '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -898,7 +922,10 @@ export interface FileRoutesByTo {
   '/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/razorpay/create-order': typeof ApiPublicRazorpayCreateOrderRoute
+  '/api/public/razorpay/verify-payment': typeof ApiPublicRazorpayVerifyPaymentRoute
   '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1011,7 +1038,10 @@ export interface FileRoutesById {
   '/_app/print/supplier-ledger/$id': typeof AppPrintSupplierLedgerIdRoute
   '/_app/vendor/purchase-orders/$id': typeof AppVendorPurchaseOrdersIdRoute
   '/api/public/biometric/punch': typeof ApiPublicBiometricPunchRoute
+  '/api/public/razorpay/create-order': typeof ApiPublicRazorpayCreateOrderRoute
+  '/api/public/razorpay/verify-payment': typeof ApiPublicRazorpayVerifyPaymentRoute
   '/api/public/whatsapp/interakt': typeof ApiPublicWhatsappInteraktRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1124,7 +1154,10 @@ export interface FileRouteTypes {
     | '/print/supplier-ledger/$id'
     | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/razorpay/create-order'
+    | '/api/public/razorpay/verify-payment'
     | '/api/public/whatsapp/interakt'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1231,7 +1264,10 @@ export interface FileRouteTypes {
     | '/print/supplier-ledger/$id'
     | '/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/razorpay/create-order'
+    | '/api/public/razorpay/verify-payment'
     | '/api/public/whatsapp/interakt'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -1343,7 +1379,10 @@ export interface FileRouteTypes {
     | '/_app/print/supplier-ledger/$id'
     | '/_app/vendor/purchase-orders/$id'
     | '/api/public/biometric/punch'
+    | '/api/public/razorpay/create-order'
+    | '/api/public/razorpay/verify-payment'
     | '/api/public/whatsapp/interakt'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1366,7 +1405,10 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicWebsiteEnquiryRoute: typeof ApiPublicWebsiteEnquiryRoute
   ApiPublicBiometricPunchRoute: typeof ApiPublicBiometricPunchRoute
+  ApiPublicRazorpayCreateOrderRoute: typeof ApiPublicRazorpayCreateOrderRoute
+  ApiPublicRazorpayVerifyPaymentRoute: typeof ApiPublicRazorpayVerifyPaymentRoute
   ApiPublicWhatsappInteraktRoute: typeof ApiPublicWhatsappInteraktRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2134,11 +2176,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBiometricPunchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/razorpay/create-order': {
+      id: '/api/public/razorpay/create-order'
+      path: '/api/public/razorpay/create-order'
+      fullPath: '/api/public/razorpay/create-order'
+      preLoaderRoute: typeof ApiPublicRazorpayCreateOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/razorpay/verify-payment': {
+      id: '/api/public/razorpay/verify-payment'
+      path: '/api/public/razorpay/verify-payment'
+      fullPath: '/api/public/razorpay/verify-payment'
+      preLoaderRoute: typeof ApiPublicRazorpayVerifyPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/interakt': {
       id: '/api/public/whatsapp/interakt'
       path: '/api/public/whatsapp/interakt'
       fullPath: '/api/public/whatsapp/interakt'
       preLoaderRoute: typeof ApiPublicWhatsappInteraktRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -2471,7 +2534,10 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicWebsiteEnquiryRoute: ApiPublicWebsiteEnquiryRoute,
   ApiPublicBiometricPunchRoute: ApiPublicBiometricPunchRoute,
+  ApiPublicRazorpayCreateOrderRoute: ApiPublicRazorpayCreateOrderRoute,
+  ApiPublicRazorpayVerifyPaymentRoute: ApiPublicRazorpayVerifyPaymentRoute,
   ApiPublicWhatsappInteraktRoute: ApiPublicWhatsappInteraktRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
