@@ -84,6 +84,20 @@
 **Guardrail:** source/docs only. No application code, migration execution, database changes, production writes, additional PR merges or deployments.
 
 
+
+## Production targeting and deployment gate — 2026-10-24
+
+- [x] Read-only inspection of the connected Supabase account found one project named `orderweaver-erp`, ref `ibnacjirwnhbtqrirdsz`, PostgreSQL 17.11. Its public schema currently contains exactly one base table, `public.tally_archive_uploads`, and the remote migration ledger exposes seven migrations.
+- [x] The repository's authoritative `supabase/config.toml` instead names project ref `ysaocrumxikgywdotkne`; read-only Supabase project lookup for that ref returns a permission error in the connected account.
+- [x] The connected project's schema does not include the canonical ERP tables checked (`profiles`, `companies`, `user_roles`, `bills`, `bill_allocations`, stock journals, Tally migration control tables, notification providers or the enterprise audit log). Treat this as a target-project mismatch or incomplete environment, not as evidence that production has those missing tables.
+- [x] PR #131 has been merged to `main` at `f24e74639dde0b824176b462ef75fc5fcff2861c`; the existing Lovable project's `latest_commit_sha` now matches that merge commit and its edit status is completed. Lovable deployment request `e4ea3123-e1a8-49d7-a3a5-788e95df7fba` still reports `pending`; live deployment of that commit is not confirmed.
+- [ ] **Release blocker:** identify and obtain read-only access to the exact Supabase project used by the published ERP before any migration application. Do not change `supabase/config.toml` to the accessible but schema-incomplete project merely to clear the mismatch.
+- [ ] **Release blocker:** PR #127 modifies previously timestamped migrations. Before merge/deployment, produce a forward-only production migration plan based on the confirmed live migration ledger/schema, document preflight/rollback and preserve existing financial balances. A clean replay on a disposable database is necessary but not sufficient for live upgrade approval.
+- [ ] Verify the pending Lovable deployment via provider evidence and published-domain smoke tests before claiming deployment complete. Network access to the preview/published Lovable host was unavailable from this runner during the current attempt.
+
+**Safety:** no migration was applied to a hosted database, no production rows were changed, and no claim is made that the accessible Supabase project is the published ERP's runtime database.
+
+
 ## Post-merge continuation — 2026-10-19
 
 - [x] Confirmed PR #124 is merged; merge commit `a9c0ea39932ce22e3384b6e86046f7bb9b557370` is now `main`.
