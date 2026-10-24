@@ -85,7 +85,13 @@ async function save(root: string, name: string, xml: string) {
 export async function snapshotCompany(client: TallyClient, options: SnapshotOptions) {
   validateSnapshotOptions(options);
   const format = options.format ?? "XML";
-  const companyFolder = options.company.replace(/[^a-z0-9._-]+/gi, "_");
+  const companySlug = options.company.replace(/[^a-z0-9._-]+/gi, "_");
+  // JSONEx is a new path, so a stable hash suffix prevents two distinct Tally
+  // company names that sanitize to the same Windows-safe slug from overwriting
+  // each other's raw financial source snapshots. Keep the legacy XML path stable.
+  const companyFolder = format === "JSONEx"
+    ? companySlug + "-" + createHash("sha256").update(options.company, "utf8").digest("hex").slice(0, 10)
+    : companySlug;
   // Keep JSONEx evidence separate from the established XML staging folder.
   const root = format === "JSONEx"
     ? options.outputDir + "/jsonex/" + companyFolder
