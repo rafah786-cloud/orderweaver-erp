@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TallyClient, collectionRequest, dataRequest } from "./tally-client.js";
+import { TallyClient, collectionRequest, dataRequest, jsonExCollectionId } from "./tally-client.js";
 
 test("collection requests pin the selected Tally company and XML export format", () => {
   const xml = collectionRequest("List of Ledgers", {
@@ -74,6 +74,33 @@ test("JSONEx client preserves original response bytes and rejects unsuccessful s
 
     globalThis.fetch = (async () => new Response("<not-json>", { status: 200 })) as typeof fetch;
     await assert.rejects(client.request("DayBook", dataRequest("DayBook", options), options), /malformed JSONEx/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+
+test("JSONEx master collection labels map to native Tally collection IDs and unknown names fail closed", () => {
+  assert.equal(jsonExCollectionId("List of Groups"), "Group");
+  assert.equal(jsonExCollectionId("List of Ledgers"), "Ledger");
+  assert.equal(jsonExCollectionId("List of Stock Items"), "StockItem");
+  assert.equal(jsonExCollectionId("List of Godowns"), "Godown");
+  assert.equal(jsonExCollectionId("List of Cost Centres"), "CostCentre");
+  assert.throws(() => jsonExCollectionId("Unknown Custom Collection"), /No verified JSONEx collection mapping/);
+});
+
+test("JSONEx collection client sends the documented native collection identifier", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedId = "";
+  const options = { company: "Abood Tradings", format: "JSONEx" as const };
+  try {
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      requestedId = (init?.headers as Record<string, string>).Id;
+      return new Response('{"status":"1","data":{"Ledger":[]}}', { status: 200 });
+    }) as typeof fetch;
+    const client = new TallyClient("http://127.0.0.1:9000");
+    await client.request("List of Ledgers", collectionRequest("List of Ledgers", options), options);
+    assert.equal(requestedId, "Ledger");
   } finally {
     globalThis.fetch = originalFetch;
   }
