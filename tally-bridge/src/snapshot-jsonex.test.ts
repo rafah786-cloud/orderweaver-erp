@@ -37,16 +37,19 @@ test("JSONEx snapshot preserves raw JSON and writes a non-staging-compatible sep
     });
     assert.equal(manifest.format, "JSONEx");
     assert.equal(manifest.stagingCompatible, false);
-    assert.equal(manifest.segments.length, 5);
+    assert.equal(manifest.sourceCoverage, "partial");
+    assert.deepEqual(manifest.requestedMasterCollections, ["List of Ledgers", "List of Stock Items"]);
+    assert.equal(manifest.segments.length, 2);
     assert.ok(manifest.segments.every((segment: { path: string }) => segment.path.endsWith(".json")));
     const folder = join(outputDir, "jsonex", "Abood_Tradings");
     const files = await readdir(folder);
-    assert.equal(files.filter((name) => name.endsWith(".json")).length, 6); // five sources plus manifest
+    assert.equal(files.filter((name) => name.endsWith(".json")).length, 3); // two sources plus manifest
     const manifestText = await readFile(join(folder, "manifest.json"), "utf8");
     assert.equal(JSON.parse(manifestText).stagingCompatible, false);
+    assert.equal(JSON.parse(manifestText).sourceCoverage, "partial");
     const rawSource = await readFile(manifest.segments[0].path, "utf8");
     assert.equal(rawSource, responseBody);
-    assert.equal(payloads.length, 5);
+    assert.equal(payloads.length, 2);
     assert.ok(payloads.every((payload) => JSON.parse(payload).static_variables[0].value === "JSONEx"));
   } finally {
     await rm(outputDir, { recursive: true, force: true });
