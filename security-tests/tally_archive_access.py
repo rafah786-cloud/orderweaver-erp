@@ -204,6 +204,13 @@ def main() -> None:
                 NOT has_table_privilege('anon','public.tally_archive_uploads','SELECT')
             """)
             expect("registry ACLs are least-privilege", privileges == "t")
+            helper_exec = scalar("""
+              SELECT has_function_privilege('authenticated','public.can_access_tally_archive(uuid)','EXECUTE')
+                 AND NOT has_function_privilege('anon','public.can_access_tally_archive(uuid)','EXECUTE')
+            """)
+            expect("archive authorization helper execute privilege is restricted", helper_exec == "t")
+            expect("Admin cannot ask the helper to authorize another identity",
+                   scalar(f"SELECT public.can_access_tally_archive('{SALES_B}')", user_id=ADMIN_A) == "f")
 
             expect("approved Admin sees own archive only",
                    scalar("SELECT count(*) FROM public.tally_archive_uploads", user_id=ADMIN_A) == "1")
