@@ -15,6 +15,11 @@ export const MASTER_COLLECTIONS = [
   "List of Cost Centres",
 ] as const;
 
+// The XML bridge supports the Units collection already used by the ERP's
+// Tally folder-scanner. Keep JSONEx on the explicitly mapped/verified set
+// until its native Unit collection identifier has an official fixture.
+export const XML_MASTER_COLLECTIONS = [...MASTER_COLLECTIONS, "List of Units"] as const;
+
 export type SnapshotOptions = TallyRequestOptions & {
   outputDir: string;
   includeDayBook: boolean;
@@ -84,7 +89,8 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
   await mkdir(root, { recursive: true });
   const segments: any[] = [];
 
-  for (const collection of MASTER_COLLECTIONS) {
+  const collections = format === "XML" ? XML_MASTER_COLLECTIONS : MASTER_COLLECTIONS;
+  for (const collection of collections) {
     const response = await client.request(
       collection,
       collectionRequest(collection, options),
