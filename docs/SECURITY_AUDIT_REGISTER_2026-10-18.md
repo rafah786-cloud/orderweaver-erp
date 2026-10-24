@@ -133,3 +133,46 @@ No live database migration is authorized by this report. All security migrations
 
 **Action:** Keep the migration unapplied until project ownership is confirmed. In the correct target, revoke unnecessary non-row privileges and optimize owner policies with scalar subqueries such as `(select auth.uid())`, then verify grants and policy expressions. Do not infer that RLS makes `TRUNCATE` safe.
 
+## 2026-10-24 iterative audit addendum
+
+**Scope:** Current source files fetched from `main`; all nine open PRs listed by the connected GitHub search; read-only catalog, grants, RLS, migration-ledger and Supabase-advisor inspection of connected project `ibnacjirwnhbtqrirdsz`; no production writes or deployments.
+
+### SEC-2026-010 — Tally archive access is owner-scoped but not approved-Admin-scoped; excess table ACLs
+
+**Severity:** High review priority.  
+**Evidence:** In connected project `ibnacjirwnhbtqrirdsz`, `public.tally_archive_uploads` has RLS enabled and zero rows. Its SELECT/INSERT/DELETE policies restrict the caller to their own `user_id`, but do not require an approved Admin role. The private `tally-archives` Storage policies similarly require only an owner-folder match. The bucket is private with a 500 MiB configured size limit, but no allowed-MIME-type list is configured. That is not itself proof of a bypass, but client-side RAR signature validation can be bypassed by direct Storage API calls, so server-side validation must precede any extraction or import. The live table ACL also grants `authenticated` UPDATE, TRUNCATE, TRIGGER and REFERENCES in addition to SELECT/INSERT/DELETE. RLS does not constrain TRUNCATE; the ACL excess is confirmed, while exploitation through an ordinary REST request was not demonstrated. Supabase's security advisor returned no lints; its performance advisor reported three RLS init-plan warnings and one unused-index notice.
+
+**Target identity caveat:** Repository `supabase/config.toml` identifies `ysaocrumxikgywdotkne`, while both connected account links expose `ibnacjirwnhbtqrirdsz`. The latter has seven migrations and only one public application table, so it is not a verified match for the full ERP schema. Do not attribute its live findings to the published website until the deployed backend is identified.
+
+**Fix proposed:** Existing PR #35 now contains additive migration `20261024090000_harden_tally_archive_access.sql`, which adds an identity-bound SECURITY DEFINER helper with fixed `search_path`, revokes all browser/API table privileges before granting only SELECT/INSERT/DELETE, and requires approved Admin plus owner-folder/row scope for archive registry and Storage operations. The PR also adds `security-tests/tally_archive_access.py` and a disposable-PostgreSQL CI job covering approved Admin, Sales, pending Admin, forged identity/path, UPDATE/TRUNCATE denial, and function execute privileges.
+
+**Validation status:** The patch was committed to the existing PR #35 branch; a successful CI run for the new job was not visible through the connected workflow-run/status query at audit time. A current comparison shows that branch is 33 commits ahead and 214 behind `main`; PR #35 remains draft and must be cleanly updated/rebased before merge. The workflow file was aligned with main's current security jobs plus the archive test job, but no successful run was verified. No hosted migration was applied. Treat the fix as proposed, not verified or deployed.
+
+### SEC-2026-011 — Canonical accounting/inventory migration chain still fails replay validation
+
+**Severity:** High release blocker.  
+**Evidence:** The current `main` source for `supabase/migrations/20261005180000_final_production_alignment.sql` contains 42 `$function$` delimiters across 21 function definitions; all 21 closing delimiters inspected lack the required statement-terminating semicolon. This is a source-level syntax defect. The preceding production-hardening migration references `public.bill_allocations` before its definition appears in the authoritative Supabase migration sequence; PR #127 proposes to repair that missing schema. An earlier dedicated replay workflow failed, and no successful full clean replay of the current main tree was verified in this cycle.
+
+**Required verification:** Correct the function statement terminators and authoritative migration order, then replay the full chain from an empty disposable Supabase environment. Run accounting, inventory, company-isolation, idempotency and authorization tests and review rollback before any deployment. No accounting/inventory migration was changed in this cycle.
+
+### SEC-2026-012 — Published-domain and live checkout behavior remain unverified
+
+**Severity:** Release readiness blocker, not a confirmed website outage.  
+**Evidence:** Direct web inspection of `https://www.zizzmattress.com` was inaccessible through the available inspection path. The repository's manual production-smoke workflow checks the Lovable-hosted ERP login checkpoint rather than proving the public Zizz domain, catalogue, contact form, checkout or shipping flow works. This is an evidence gap, not proof that the site is down.
+
+**Disposition:** Keep real payments and live checkout disabled until authoritative variants/prices/tax, persistent order snapshots, inventory reservation, payment signature/idempotency, shipping/serviceability, reconciliation and fulfilment are verified together. Velocity rate/serviceability support alone is not complete shipment fulfilment.
+
+### SEC-2026-013 — Current CI and deployment evidence not sufficient for certification
+
+**Evidence:** The connected GitHub combined-status and commit-workflow-run queries returned no status contexts/runs for the inspected main/feature commits. This does not prove CI did not run; it means this audit could not independently confirm a current passing run. No production smoke run was verified. The route → role → server function/API → SQL RPC → table/storage policy → adversarial test inventory remains incomplete.
+
+**Residual risk:** No complete deployed-backend catalog readback, full endpoint/RPC adversarial pass, backup-restore exercise, or public ecommerce end-to-end test was completed in this cycle. The connected database identity must be resolved before applying any live remediation.
+
+### SEC-2026-014 — Velocity secret/runtime binding and fulfilment remain unverified
+
+**Severity:** Medium integration-readiness risk; not a confirmed credential exposure.  
+**Evidence:** The tracked `.env` contains project identifiers, Supabase URL and publishable client keys; no server-side Velocity, Razorpay secret, or Supabase service-role key was found in that file. The server-only Velocity client reads `process.env.VELOCITY_API_KEY`, uses a fixed provider origin, restricts endpoints to serviceability/rates, disables redirects, caps response size, and discards provider error bodies. Server functions call authentication middleware and an approved-Admin check before provider calls. The connected Supabase project has no deployed Edge Functions, one public application table, and no reported realtime publication rows; it is not a verified match for the repository's configured ERP backend.
+
+**Runtime caveat:** The owner reports adding `VELOCITY_API_KEY` to the existing Lovable project's Secrets. The connected tools cannot read secret values or prove that the published website runtime is bound to that project/revision. The repository's older integration note was updated to reflect the report without claiming successful authentication.
+
+**Residual risk:** The current client implements only serviceability/rate queries. Shipment booking, tracking/status synchronization, return fulfilment, and an end-to-end website order → paid/eligible order → serviceable destination → shipment → reconciliation workflow are not implemented/verified in the reviewed code. No live Velocity request was made and no shipment was created. Keep live checkout/payment and shipment creation disabled until a controlled provider request and the complete order/fulfilment workflow pass.
