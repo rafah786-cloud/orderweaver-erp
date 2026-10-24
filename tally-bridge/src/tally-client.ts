@@ -9,6 +9,8 @@ export type TallyRequestOptions = {
   timeoutMs?: number;
   /** Defaults to XML for backward compatibility. JSONEx export is read-only. */
   format?: TallyExportFormat;
+  /** Native JSON protocol header. Defaults to the legacy DayBook/collection inference. */
+  requestType?: "Data" | "Collection";
 };
 
 export type TallyResponse = {
@@ -32,11 +34,9 @@ const parser = new XMLParser({
 // the friendly XML report label. These are the master collections used by this
 // bridge; unmapped names fail closed instead of sending an unverified request.
 const JSONEX_COLLECTION_IDS: Record<string, string> = {
-  "List of Groups": "Group",
+  // These identifiers are explicitly shown in Tally's official JSON integration examples.
   "List of Ledgers": "Ledger",
   "List of Stock Items": "StockItem",
-  "List of Godowns": "Godown",
-  "List of Cost Centres": "CostCentre",
 };
 
 export function jsonExCollectionId(label: string): string {
@@ -78,12 +78,15 @@ function jsonExRequest(options: TallyRequestOptions): string {
   if (options.fromDate && options.toDate && options.fromDate > options.toDate) {
     throw new Error("JSONEx date range must have fromDate on or before toDate.");
   }
-  const static_variables: Array<{ name: string; value: string }> = [
-    { name: "svExportFormat", value: "JSONEx" },
-    { name: "svCurrentCompany", value: options.company },
+  // Follow Tally's documented static_variables object shape: type, key, name,
+  // and value. Empty key is intentional for system variables; do not omit the
+  // schema fields simply because this request does not use repeated variables.
+  const static_variables: Array<{ type: string; key: string; name: string; value: string }> = [
+    { type: "String", key: "", name: "svExportFormat", value: "JSONEx" },
+    { type: "String", key: "", name: "svCurrentCompany", value: options.company },
   ];
-  if (options.fromDate) static_variables.push({ name: "SVFROMDATE", value: jsonExDate(options.fromDate) });
-  if (options.toDate) static_variables.push({ name: "SVTODATE", value: jsonExDate(options.toDate) });
+  if (options.fromDate) static_variables.push({ type: "Date", key: "", name: "SVFROMDATE", value: jsonExDate(options.fromDate) });
+  if (options.toDate) static_variables.push({ type: "Date", key: "", name: "SVTODATE", value: jsonExDate(options.toDate) });
   return JSON.stringify({ static_variables });
 }
 
@@ -158,7 +161,7 @@ export class TallyClient {
   ): Promise<TallyResponse> {
     const format = options.format ?? "XML";
     const jsonEx = format === "JSONEx";
-    const requestType = requestName === "DayBook" ? "Data" : "Collection";
+    const requestType = options.requestType ?? (requestName === "DayBook" ? "Data" : "Collection");
     const requestId = jsonEx && requestType === "Collection" ? jsonExCollectionId(requestName) : requestName;
     const response = await fetch(this.baseUrl, {
       method: "POST",
