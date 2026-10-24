@@ -84,7 +84,7 @@ def main() -> None:
                     raise AssertionError(name)
                 checks += 1
 
-            sql("""
+            sql(f"""
                 CREATE ROLE anon NOLOGIN;
                 CREATE ROLE authenticated NOLOGIN;
                 CREATE ROLE service_role NOLOGIN BYPASSRLS;
@@ -173,22 +173,22 @@ def main() -> None:
                   USING (bucket_id = 'tally-archives' AND (storage.foldername(name))[1] = auth.uid()::text);
 
                 INSERT INTO public.profiles(id, status) VALUES
-                  ('${ADMIN_A}', 'approved'),
-                  ('${SALES_B}', 'approved'),
-                  ('${PENDING_ADMIN_C}', 'pending');
+                  ('{ADMIN_A}', 'approved'),
+                  ('{SALES_B}', 'approved'),
+                  ('{PENDING_ADMIN_C}', 'pending');
                 INSERT INTO public.user_roles(user_id, role) VALUES
-                  ('${ADMIN_A}', 'admin'),
-                  ('${SALES_B}', 'sales'),
-                  ('${PENDING_ADMIN_C}', 'admin');
+                  ('{ADMIN_A}', 'admin'),
+                  ('{SALES_B}', 'sales'),
+                  ('{PENDING_ADMIN_C}', 'admin');
 
                 INSERT INTO public.tally_archive_uploads
                   (id, user_id, original_filename, object_path, byte_size, sha256_hex, archive_format)
                 VALUES
-                  ('${ROW_A}', '${ADMIN_A}', 'a.rar', '${ADMIN_A}/a.rar', 100, '${SHA}', 'rar5'),
-                  ('${ROW_B}', '${SALES_B}', 'b.rar', '${SALES_B}/b.rar', 100, '${SHA}', 'rar5');
+                  ('{ROW_A}', '{ADMIN_A}', 'a.rar', '{ADMIN_A}/a.rar', 100, '{SHA}', 'rar5'),
+                  ('{ROW_B}', '{SALES_B}', 'b.rar', '{SALES_B}/b.rar', 100, '{SHA}', 'rar5');
                 INSERT INTO storage.objects(bucket_id, name) VALUES
-                  ('tally-archives', '${ADMIN_A}/a.rar'),
-                  ('tally-archives', '${SALES_B}/b.rar');
+                  ('tally-archives', '{ADMIN_A}/a.rar'),
+                  ('tally-archives', '{SALES_B}/b.rar');
             """)
             sql(migration.read_text())
 
