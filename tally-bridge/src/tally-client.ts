@@ -28,6 +28,23 @@ const parser = new XMLParser({
   trimValues: true,
 });
 
+// Tally's JSON integration examples use the object/collection identifier, not
+// the friendly XML report label. These are the master collections used by this
+// bridge; unmapped names fail closed instead of sending an unverified request.
+const JSONEX_COLLECTION_IDS: Record<string, string> = {
+  "List of Groups": "Group",
+  "List of Ledgers": "Ledger",
+  "List of Stock Items": "StockItem",
+  "List of Godowns": "Godown",
+  "List of Cost Centres": "CostCentre",
+};
+
+export function jsonExCollectionId(label: string): string {
+  const id = JSONEX_COLLECTION_IDS[label];
+  if (!id) throw new Error("No verified JSONEx collection mapping exists for: " + label);
+  return id;
+}
+
 function escapeXml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -132,6 +149,7 @@ export class TallyClient {
     const format = options.format ?? "XML";
     const jsonEx = format === "JSONEx";
     const requestType = requestName === "DayBook" ? "Data" : "Collection";
+    const requestId = jsonEx && requestType === "Collection" ? jsonExCollectionId(requestName) : requestName;
     const response = await fetch(this.baseUrl, {
       method: "POST",
       headers: {
@@ -140,7 +158,7 @@ export class TallyClient {
           Version: "1",
           Tallyrequest: "Export",
           Type: requestType,
-          Id: requestName,
+          Id: requestId,
         } : {}),
         "Cache-Control": "no-cache",
       },
