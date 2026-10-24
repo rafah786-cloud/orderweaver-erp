@@ -20,6 +20,11 @@ export const MASTER_COLLECTIONS = [
 // until its native Unit collection identifier has an official fixture.
 export const XML_MASTER_COLLECTIONS = [...MASTER_COLLECTIONS, "List of Units"] as const;
 
+// Only these JSONEx collection identifiers are explicitly demonstrated in
+// Tally's official JSON integration guide. Other master IDs fail closed until
+// an official sample or capture from a supported TallyPrime release confirms them.
+export const JSONEX_MASTER_COLLECTIONS = ["List of Ledgers", "List of Stock Items"] as const;
+
 export type SnapshotOptions = TallyRequestOptions & {
   outputDir: string;
   includeDayBook: boolean;
@@ -89,12 +94,13 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
   await mkdir(root, { recursive: true });
   const segments: any[] = [];
 
-  const collections = format === "XML" ? XML_MASTER_COLLECTIONS : MASTER_COLLECTIONS;
+  const collections = format === "XML" ? XML_MASTER_COLLECTIONS : JSONEX_MASTER_COLLECTIONS;
   for (const collection of collections) {
+    const requestOptions = { ...options, requestType: "Collection" as const };
     const response = await client.request(
       collection,
-      collectionRequest(collection, options),
-      options,
+      collectionRequest(collection, requestOptions),
+      requestOptions,
     );
     segments.push({
       name: collection,
@@ -120,6 +126,7 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         ...options,
         fromDate: cursor,
         toDate: chunkEnd,
+        requestType: "Data" as const,
       };
       const response = await client.request(
         "DayBook",
@@ -145,7 +152,10 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
   const manifest = {
     schemaVersion: 1,
     format,
-    // JSONEx is retained as raw source evidence; the ERP parser currently accepts XML only.
+    // JSONEx is only a supported-source subset until all master collection identifiers
+    // and canonical ERP mappings have been verified. Never imply complete coverage.
+    sourceCoverage: format === "JSONEx" ? "partial" : "configured",
+    requestedMasterCollections: collections,
     stagingCompatible: format === "XML",
     generatedAt: new Date().toISOString(),
     company: options.company,
