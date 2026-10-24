@@ -156,6 +156,28 @@ BEGIN
       AND has_function_privilege('authenticated',p.oid,'EXECUTE')
   ) THEN RAISE EXCEPTION 'Canonical stock journal posting RPC is not granted to authenticated'; END IF;
 
+  IF to_regclass('public.erp_domain_audit_log') IS NULL THEN
+    RAISE EXCEPTION 'Enterprise domain audit sink is missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname='audit_enterprise_domain_change'
+      AND p.prorettype='trigger'::regtype AND p.prosecdef
+  ) THEN RAISE EXCEPTION 'Enterprise domain audit trigger function is missing or not SECURITY DEFINER'; END IF;
+  IF has_function_privilege('authenticated','public.audit_enterprise_domain_change()','EXECUTE')
+     OR has_function_privilege('anon','public.audit_enterprise_domain_change()','EXECUTE') THEN
+    RAISE EXCEPTION 'Client roles can directly execute the enterprise audit trigger function';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_proc p ON p.oid=tr.tgfoid
+    JOIN pg_class cl ON cl.oid=tr.tgrelid
+    JOIN pg_namespace ns ON ns.oid=cl.relnamespace
+    WHERE p.proname='audit_enterprise_domain_change'
+      AND ns.nspname='public' AND cl.relname='work_centers'
+      AND NOT tr.tgisinternal
+  ) THEN RAISE EXCEPTION 'Enterprise domain audit trigger missing on work_centers'; END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_indexes WHERE schemaname='public' AND tablename='bills'
       AND indexdef ILIKE '%source_voucher_entry_id%' AND indexdef ILIKE '%UNIQUE%'
@@ -185,7 +207,7 @@ BEGIN
     WHERE n.nspname='public' AND p.proname='post_bill_settlement'
       AND has_function_privilege('authenticated',p.oid,'EXECUTE')
   ) THEN RAISE EXCEPTION 'Authenticated settlement RPC grant is missing'; END IF;
-  RAISE NOTICE 'PASS: accounting tables, Tally staging isolation, stock-journal isolation, direct-DML revocations, unique keys and canonical RPC grants';
+  RAISE NOTICE 'PASS: accounting tables, Tally staging isolation, stock-journal isolation, append-only enterprise audit, direct-DML revocations, unique keys and canonical RPC grants';
 END
 $test$;
 SELECT 'public_tables='||count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';
