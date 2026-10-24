@@ -114,3 +114,22 @@ test("JSONEx collection client sends the documented native collection identifier
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("connection ping uses company discovery rather than exporting business ledgers", async () => {
+  const originalFetch = globalThis.fetch;
+  let sentBody = "";
+  try {
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      sentBody = String(init?.body ?? "");
+      return new Response("<ENVELOPE><HEADER><STATUS>1</STATUS></HEADER></ENVELOPE>", { status: 200 });
+    }) as typeof fetch;
+    const client = new TallyClient("http://127.0.0.1:9000");
+    await client.ping();
+    assert.ok(sentBody.includes("<ID>List of Companies</ID>"));
+    assert.ok(sentBody.includes("<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>"));
+    assert.ok(!sentBody.includes("<ID>List of Ledgers</ID>"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
