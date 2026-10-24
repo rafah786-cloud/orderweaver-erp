@@ -10,6 +10,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buildTallyStagingBundles, buildTallyXmlBundle, type BulkBundleResult } from "@/lib/tally-bulk-bundle";
 import { archiveTallyStaging } from "@/lib/tally-bulk-archive";
 
+async function hasUnsupportedJsonExManifest(files: File[]): Promise<boolean> {
+  const manifests = files.filter((file) => file.name.toLowerCase() === "manifest.json");
+  for (const manifestFile of manifests) {
+    try {
+      const manifest = JSON.parse(await manifestFile.text()) as { format?: unknown; stagingCompatible?: unknown };
+      if ((typeof manifest.format === "string" && manifest.format.toUpperCase() !== "XML") || manifest.stagingCompatible === false) return true;
+    } catch {
+      // Leave malformed manifests to the existing bundle validation path.
+    }
+  }
+  return false;
+}
+
 export function TallyBulkStaging() {
   const input = useRef<HTMLInputElement>(null);
   const xmlInput = useRef<HTMLInputElement>(null);
@@ -28,6 +41,10 @@ export function TallyBulkStaging() {
     const first = files[0];
     if (!first) return;
     setBusy(true); setError(null); setResult(null); setArchive(null); setStatus("Checking manifests and file hashes…");
+    if (!directXml && await hasUnsupportedJsonExManifest(files)) {
+      setError("This folder contains a native Tally JSONEx snapshot. It has been preserved as read-only source evidence, but the ERP staging parser currently accepts XML only. Nothing was staged; use an XML snapshot for the existing staging workflow.");
+      setStatus(""); setBusy(false); return;
+    }
     if (!directXml) {
       const scan = scanTallyFolder(files); setDetected(scan);
       if (scan.missing.length || scan.unsupported.length) {
@@ -37,20 +54,6 @@ export function TallyBulkStaging() {
     } else setDetected(null);
     try {
       await new Promise((r) => setTimeout(r, 0)); // let the status paint before work starts
-      if (!directXml) {
-        const manifests = files.filter((file) => file.name.toLowerCase() === "manifest.json");
-        for (const manifestFile of manifests) {
-          let manifest: { format?: unknown; stagingCompatible?: unknown };
-          try {
-            manifest = JSON.parse(await manifestFile.text()) as { format?: unknown; stagingCompatible?: unknown };
-          } catch {
-            continue; // The bundle builder reports malformed legacy manifests with its normal validation.
-          }
-          if ((typeof manifest.format === "string" && manifest.format.toUpperCase() !== "XML") || manifest.stagingCompatible === false) {
-            throw new Error("This folder contains a native Tally JSONEx snapshot. It has been preserved as read-only source evidence, but the ERP staging parser currently accepts XML only. Nothing was staged; use an XML snapshot for the existing staging workflow.");
-          }
-        }
-      }
       const prepared = directXml ? await buildTallyXmlBundle(first, setStatus) : await buildTallyStagingBundles(files, setStatus);
       // Avoid duplicating all original/derivative data in memory for large sources.
       if (files.reduce((total, file) => total + file.size, 0) <= 32 * 1024 * 1024) setArchive(await archiveTallyStaging(prepared, files));
