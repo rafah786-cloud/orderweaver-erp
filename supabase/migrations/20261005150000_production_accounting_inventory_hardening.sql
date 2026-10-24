@@ -119,6 +119,8 @@ CREATE POLICY "bills staff read" ON public.bills FOR SELECT TO authenticated USI
         AND supplier_id IN (SELECT id FROM public.suppliers WHERE user_id=auth.uid()))
   )
 );
+-- Canonical bill mutations must go through the posting/settlement RPCs, not direct table DML.
+REVOKE ALL ON TABLE public.bills FROM anon, authenticated;
 GRANT SELECT ON public.bills TO authenticated;
 GRANT ALL ON public.bills TO service_role;
 CREATE INDEX IF NOT EXISTS bills_party_status_due_idx
@@ -188,6 +190,8 @@ CREATE POLICY bill_allocations_read ON public.bill_allocations FOR SELECT TO aut
     )
   );
 
+-- Allocation rows are financial evidence; clients may read through RLS but cannot mutate them directly.
+REVOKE ALL ON TABLE public.bill_allocations FROM anon, authenticated;
 GRANT SELECT ON public.bill_allocations TO authenticated;
 GRANT ALL ON public.bill_allocations TO service_role;
 
