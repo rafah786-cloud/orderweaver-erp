@@ -132,11 +132,17 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         ...options,
         fromDate: cursor,
         toDate: chunkEnd,
-        requestType: "Data" as const,
+        requestType: "Collection" as const,
       };
+      // The official JSON integration guide documents voucher history as the
+      // TSPLVoucherColl collection. Do not reuse the XML DayBook report ID in
+      // JSONEx requests, because its native JSON definition is not verified.
+      const requestBody = format === "JSONEx"
+        ? collectionRequest("DayBook", requestOptions)
+        : dataRequest("DayBook", { ...requestOptions, requestType: "Data" });
       const response = await client.request(
         "DayBook",
-        dataRequest("DayBook", requestOptions),
+        requestBody,
         requestOptions,
       );
       segments.push({
