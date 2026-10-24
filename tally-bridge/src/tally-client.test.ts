@@ -81,6 +81,14 @@ test("JSONEx client preserves original response bytes and rejects unsuccessful s
 });
 
 
+test("XML business-data requests require an explicit company while company discovery remains available", () => {
+  assert.throws(() => collectionRequest("List of Ledgers", { company: "" }), /explicit Tally company/);
+  assert.throws(() => dataRequest("DayBook", { company: "   " }), /explicit Tally company/);
+  const companyList = collectionRequest("List of Companies", { company: "" });
+  assert.match(companyList, /<ID>List of Companies<\\/ID>/);
+  assert.doesNotMatch(companyList, /<SVCURRENTCOMPANY/);
+});
+
 test("JSONEx master collection labels map to native Tally collection IDs and unknown names fail closed", () => {
   assert.equal(jsonExCollectionId("List of Groups"), "Group");
   assert.equal(jsonExCollectionId("List of Ledgers"), "Ledger");
