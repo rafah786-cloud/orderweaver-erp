@@ -46,13 +46,29 @@ if [[ "$reset_rc" -ne 0 ]]; then
   echo "clean_migration_replay=failed exit_code=$reset_rc" >> "$ARTIFACT_DIR/summary.txt"
   grep -E 'Applying migration .*\\.sql|ERROR:|SQLSTATE|At statement:|Try rerunning' "$RESET_LOG" | tail -30 >> "$ARTIFACT_DIR/summary.txt" || true
   psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c 'select version from supabase_migrations.schema_migrations order by version' > "$ARTIFACT_DIR/migration-ledger-partial.txt" 2>&1 || true
-  pg_dump "$DB_URL" --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema-partial.sql" 2> "$ARTIFACT_DIR/schema-partial.stderr" || true
+  # The disposable Supabase DB currently runs PostgreSQL 17 while the
+  # Ubuntu runner's default pg_dump is 16. Use the matching client bundled in
+  # the DB container; never let a client/server version mismatch mask the
+  # migration failure we are trying to capture.
+  DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+  if [[ -n "$DB_CONTAINER" ]]; then
+    docker exec "$DB_CONTAINER" pg_dump -U postgres --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema-partial.sql" 2> "$ARTIFACT_DIR/schema-partial.stderr" || true
+  else
+    echo "matching_pg_dump=unavailable" > "$ARTIFACT_DIR/schema-partial.stderr"
+  fi
   exit 20
 fi
 echo "clean_migration_replay=passed" >> "$ARTIFACT_DIR/summary.txt"
 
 psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c 'select version from supabase_migrations.schema_migrations order by version' > "$ARTIFACT_DIR/migration-ledger.txt"
-pg_dump "$DB_URL" --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema.sql"
+# Use the PostgreSQL client shipped with the disposable DB container so its
+# pg_dump major version always matches the server's major version.
+DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+if [[ -z "$DB_CONTAINER" ]]; then
+  echo "matching_pg_dump=unavailable" >> "$ARTIFACT_DIR/summary.txt"
+  exit 12
+fi
+docker exec "$DB_CONTAINER" pg_dump -U postgres --schema-only --no-owner --no-privileges --schema=public > "$ARTIFACT_DIR/schema.sql"
 echo "phase=accounting_security_integrity" >> "$ARTIFACT_DIR/summary.txt"
 psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f security-tests/accounting_migration_integrity.sql > "$ARTIFACT_DIR/accounting-integrity.log" 2>&1
 echo "accounting_security_integrity=passed" >> "$ARTIFACT_DIR/summary.txt"
