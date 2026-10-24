@@ -41,7 +41,10 @@ test("JSONEx snapshot preserves raw JSON and writes a non-staging-compatible sep
     assert.deepEqual(manifest.requestedMasterCollections, ["List of Ledgers", "List of Stock Items"]);
     assert.equal(manifest.segments.length, 2);
     assert.ok(manifest.segments.every((segment: { path: string }) => segment.path.endsWith(".json")));
-    const folder = join(outputDir, "jsonex", "Abood_Tradings");
+    const jsonexRoot = join(outputDir, "jsonex");
+    const [folderName] = await readdir(jsonexRoot);
+    assert.match(folderName, /^Abood_Tradings-[a-f0-9]{10}$/);
+    const folder = join(jsonexRoot, folderName);
     const files = await readdir(folder);
     assert.equal(files.filter((name) => name.endsWith(".json")).length, 3); // two sources plus manifest
     const manifestText = await readFile(join(folder, "manifest.json"), "utf8");
@@ -155,6 +158,54 @@ test("XML snapshots include the Unit of Measure master needed by inventory impor
     assert.ok(requestedCollections.includes("List of Units"));
     assert.equal(manifest.segments.length, 6);
     assert.ok(manifest.segments.every((segment: { path: string }) => segment.path.endsWith(".xml")));
+  } finally {
+    await rm(outputDir, { recursive: true, force: true });
+  }
+});
+
+
+test("JSONEx folders stay isolated when different company names sanitize to the same slug", async () => {
+  const outputDir = await mkdtemp(join(tmpdir(), "tally-jsonex-collision-"));
+  const responseBody = '{"status":"1","data":[]}';
+  const fakeClient = {
+    request: async (_name: string, _body: string, options: { company: string; format?: "XML" | "JSONEx" }) => ({
+      company: options.company,
+      requestName: _name,
+      requestedAt: "2026-10-24T00:00:00.000Z",
+      status: 1,
+      format: options.format ?? "XML",
+      body: responseBody,
+      bytes: Buffer.byteLength(responseBody, "utf8"),
+    }),
+  } as unknown as TallyClient;
+  try {
+    await snapshotCompany(fakeClient, {
+      company: "A&B",
+      fromDate: "2026-04-01",
+      toDate: "2026-04-30",
+      outputDir,
+      includeDayBook: false,
+      chunkMonths: 1,
+      format: "JSONEx",
+    });
+    await snapshotCompany(fakeClient, {
+      company: "A B",
+      fromDate: "2026-04-01",
+      toDate: "2026-04-30",
+      outputDir,
+      includeDayBook: false,
+      chunkMonths: 1,
+      format: "JSONEx",
+    });
+    const root = join(outputDir, "jsonex");
+    const folders = await readdir(root);
+    assert.equal(folders.length, 2);
+    assert.ok(folders.every((name) => /^A_B-[a-f0-9]{10}$/.test(name)));
+    const companies = await Promise.all(folders.map(async (name) => {
+      const manifest = JSON.parse(await readFile(join(root, name, "manifest.json"), "utf8")) as { company: string };
+      return manifest.company;
+    }));
+    assert.deepEqual(companies.sort(), ["A B", "A&B"]);
   } finally {
     await rm(outputDir, { recursive: true, force: true });
   }
