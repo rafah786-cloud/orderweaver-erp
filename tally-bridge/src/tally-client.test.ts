@@ -29,20 +29,20 @@ test("JSONEx collection payload pins company, format and exact date bounds", () 
   const options = { company: "A & B", fromDate: "2026-04-01", toDate: "2026-10-06", format: "JSONEx" as const };
   const payload = JSON.parse(collectionRequest("List of Ledgers", options));
   assert.deepEqual(payload.static_variables, [
-    { name: "svExportFormat", value: "JSONEx" },
-    { name: "svCurrentCompany", value: "A & B" },
-    { name: "SVFROMDATE", value: "20260401" },
-    { name: "SVTODATE", value: "20261006" },
+    { type: "String", key: "", name: "svExportFormat", value: "JSONEx" },
+    { type: "String", key: "", name: "svCurrentCompany", value: "A & B" },
+    { type: "Date", key: "", name: "SVFROMDATE", value: "20260401" },
+    { type: "Date", key: "", name: "SVTODATE", value: "20261006" },
   ]);
 });
 
 test("JSONEx data payload uses the same explicit source-company/date contract", () => {
   const payload = JSON.parse(dataRequest("DayBook", { company: "Abood Tradings", fromDate: "2026-01-01", toDate: "2026-01-31", format: "JSONEx" }));
   assert.deepEqual(payload.static_variables, [
-    { name: "svExportFormat", value: "JSONEx" },
-    { name: "svCurrentCompany", value: "Abood Tradings" },
-    { name: "SVFROMDATE", value: "20260101" },
-    { name: "SVTODATE", value: "20260131" },
+    { type: "String", key: "", name: "svExportFormat", value: "JSONEx" },
+    { type: "String", key: "", name: "svCurrentCompany", value: "Abood Tradings" },
+    { type: "Date", key: "", name: "SVFROMDATE", value: "20260101" },
+    { type: "Date", key: "", name: "SVTODATE", value: "20260131" },
   ]);
 });
 
@@ -90,11 +90,11 @@ test("XML business-data requests require an explicit company while company disco
 });
 
 test("JSONEx master collection labels map to native Tally collection IDs and unknown names fail closed", () => {
-  assert.equal(jsonExCollectionId("List of Groups"), "Group");
   assert.equal(jsonExCollectionId("List of Ledgers"), "Ledger");
   assert.equal(jsonExCollectionId("List of Stock Items"), "StockItem");
-  assert.equal(jsonExCollectionId("List of Godowns"), "Godown");
-  assert.equal(jsonExCollectionId("List of Cost Centres"), "CostCentre");
+  assert.throws(() => jsonExCollectionId("List of Groups"), /No verified JSONEx collection mapping/);
+  assert.throws(() => jsonExCollectionId("List of Godowns"), /No verified JSONEx collection mapping/);
+  assert.throws(() => jsonExCollectionId("List of Cost Centres"), /No verified JSONEx collection mapping/);
   assert.throws(() => jsonExCollectionId("Unknown Custom Collection"), /No verified JSONEx collection mapping/);
 });
 
