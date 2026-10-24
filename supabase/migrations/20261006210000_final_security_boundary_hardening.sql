@@ -769,7 +769,7 @@ CREATE OR REPLACE FUNCTION public.set_user_company_access(
   p_user_id uuid,
   p_company_ids uuid[]
 )
-RETURNS TABLE(company_id uuid, can_view boolean, can_create boolean, can_edit boolean, can_delete boolean)
+RETURNS TABLE(out_company_id uuid, out_can_view boolean, out_can_create boolean, out_can_edit boolean, out_can_delete boolean)
 LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path=public

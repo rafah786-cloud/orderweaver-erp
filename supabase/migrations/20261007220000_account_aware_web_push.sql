@@ -51,7 +51,15 @@ CREATE TRIGGER trg_wps_updated
   BEFORE UPDATE ON public.web_push_subscriptions
   FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
--- Push is now a real provider channel, not a stub.
+-- Push is now a real provider channel, not a stub. The initial notification
+-- migration seeds push/stub as the default, so demote any other current default
+-- before the unique one-default-per-channel constraint is evaluated.
+UPDATE public.notification_providers
+SET is_default = false, updated_at = now()
+WHERE channel = 'push'
+  AND is_default = true
+  AND name <> 'webpush';
+
 INSERT INTO public.notification_providers (
   channel, name, display_name, is_active, is_default, priority, config, secret_env_keys, notes
 ) VALUES (

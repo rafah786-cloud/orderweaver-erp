@@ -84,6 +84,20 @@
 **Guardrail:** source/docs only. No application code, migration execution, database changes, production writes, additional PR merges or deployments.
 
 
+
+## Production targeting and deployment gate — 2026-10-24
+
+- [x] Read-only inspection of the connected Supabase account found one project named `orderweaver-erp`, ref `ibnacjirwnhbtqrirdsz`, PostgreSQL 17.11. Its public schema currently contains exactly one base table, `public.tally_archive_uploads`, and the remote migration ledger exposes seven migrations.
+- [x] The repository's authoritative `supabase/config.toml` instead names project ref `ysaocrumxikgywdotkne`; read-only Supabase project lookup for that ref returns a permission error in the connected account.
+- [x] The connected project's schema does not include the canonical ERP tables checked (`profiles`, `companies`, `user_roles`, `bills`, `bill_allocations`, stock journals, Tally migration control tables, notification providers or the enterprise audit log). Treat this as a target-project mismatch or incomplete environment, not as evidence that production has those missing tables.
+- [x] PR #131 has been merged to `main` at `f24e74639dde0b824176b462ef75fc5fcff2861c`; the existing Lovable project's `latest_commit_sha` now matches that merge commit and its edit status is completed. Lovable deployment request `e4ea3123-e1a8-49d7-a3a5-788e95df7fba` still reports `pending`; live deployment of that commit is not confirmed.
+- [ ] **Release blocker:** identify and obtain read-only access to the exact Supabase project used by the published ERP before any migration application. Do not change `supabase/config.toml` to the accessible but schema-incomplete project merely to clear the mismatch.
+- [ ] **Release blocker:** PR #127 modifies previously timestamped migrations. Before merge/deployment, produce a forward-only production migration plan based on the confirmed live migration ledger/schema, document preflight/rollback and preserve existing financial balances. A clean replay on a disposable database is necessary but not sufficient for live upgrade approval.
+- [ ] Verify the pending Lovable deployment via provider evidence and published-domain smoke tests before claiming deployment complete. Network access to the preview/published Lovable host was unavailable from this runner during the current attempt.
+
+**Safety:** no migration was applied to a hosted database, no production rows were changed, and no claim is made that the accessible Supabase project is the published ERP's runtime database.
+
+
 ## Post-merge continuation — 2026-10-19
 
 - [x] Confirmed PR #124 is merged; merge commit `a9c0ea39932ce22e3384b6e86046f7bb9b557370` is now `main`.
@@ -114,3 +128,18 @@
 - `main` baseline recorded before any further merge: `a9c0ea39932ce22e3384b6e86046f7bb9b557370`.
 - Original source PDF checksum (reference only; not stored in repository): SHA-256 `ea9d33339005a1622a455c4ee757fb39fa15714b40c35a5be5c6181d4c227937` (2,547,569 bytes).
 - `docs/blueprint-full.md` is authoritative. Live Supabase database remains **UNVERIFIED**. No database access, migrations, app code changes, or deployment are authorized by this source-only documentation work.
+
+
+## Separate baseline replay repair — 2026-10-19
+
+- [x] Owner approved a separate PR to repair the pre-existing clean-replay failure. Scope is isolated to `fix/bill-allocations-migration-replay`; it does not authorize changing live/hosted Supabase, deploying, or merging PR #126.
+- [x] Source trace confirmed the billwise table/type definition existed only under the non-authoritative `accounting-phase2/001_billwise_accounting.sql` track, while authoritative migrations `20261005150000`, `20261005160000`, `20261005180000`, and later SQL reference `public.bill_allocations`. The isolated Phase 2 file explicitly warns it must not be applied to the shared live database, so it was not copied or executed.
+- [x] Repair branch adds the missing `bill_allocation_type` enum (idempotent duplicate handling) and the additive `public.bill_allocations` table definition to the existing failing authoritative migration before its first index reference. Includes company context trigger, restrictive company RLS, role-scoped read policy, grants and supporting indexes so the late-created table does not miss the earlier multi-company migration's dynamic protections.
+- [ ] Run local Supabase clean replay and all subsequent migrations; report any next pre-existing failure separately. No existing migration other than the specifically approved failing migration was edited.
+- [ ] Open separate repair PR and wait for its local CI results. Do not merge PR #126 until its own complete local tests pass and owner separately approves.
+- **Safety:** no hosted/live Supabase access, migration application, production writes or deployment. Live database remains **UNVERIFIED**.
+
+
+- [x] First isolated replay confirmed the bill_allocations relation was created but then failed on its FK to missing public.bills (SQLSTATE 42P01). This exposed the same omitted authoritative dependency: the billwise schema existed only in the isolated Phase 2 track.
+- [x] Extended the separate replay repair to add the prerequisite bill enums and additive public.bills table before bill_allocations, with company-context enforcement, restrictive company RLS, role-scoped reads and indexes. The isolated Phase 2 script was used for source tracing only; it was not applied.
+- [ ] Rerun clean local Supabase replay from zero and inspect the next result. This remains source/replay validation only; hosted/live database status remains UNVERIFIED.

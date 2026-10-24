@@ -154,7 +154,7 @@ EXCEPTION WHEN unique_violation THEN
   END IF;
   RAISE;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.dispatch_sales_order(p_order uuid, p_godown uuid, p_idempotency text)
  RETURNS integer
@@ -190,7 +190,7 @@ BEGIN
   WHERE id=p_order AND company_id=company;
   RETURN n;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ensure_invoice_bill(p_invoice uuid)
  RETURNS uuid
@@ -279,7 +279,7 @@ BEGIN
   IF bill_id IS NULL THEN SELECT id INTO bill_id FROM public.bills WHERE company_id=company AND external_ref='invoice:'||inv.id::text LIMIT 1; END IF;
   RETURN bill_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ensure_purchase_bill(p_bill uuid)
  RETURNS uuid
@@ -359,7 +359,7 @@ BEGIN
   END IF;
   RETURN bill_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_or_create_party_ledger(_party_id uuid)
  RETURNS uuid
@@ -385,7 +385,7 @@ BEGIN
   RETURNING id INTO lid;
   RETURN lid;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_or_create_supplier_ledger(_supplier_id uuid)
  RETURNS uuid
@@ -409,7 +409,7 @@ BEGIN
   RETURNING id INTO lid;
   RETURN lid;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_bill_settlement(p_type voucher_type, p_date date, p_cash_ledger uuid, p_allocations jsonb, p_reference text, p_idempotency_key text)
  RETURNS uuid
@@ -508,7 +508,7 @@ BEGIN
   END LOOP;
   RETURN v.id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_stock_issue(p_item uuid, p_godown uuid, p_qty numeric, p_date date, p_key text, p_source text DEFAULT NULL::text, p_source_id uuid DEFAULT NULL::uuid, p_movement_type stock_movement_type DEFAULT 'sale'::stock_movement_type)
  RETURNS uuid
@@ -547,7 +547,7 @@ BEGIN
   RETURNING id INTO movement;
   RETURN movement;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_stock_production_output(p_item uuid, p_godown uuid, p_qty numeric, p_rate numeric, p_date date, p_key text, p_source text DEFAULT NULL::text, p_source_id uuid DEFAULT NULL::uuid)
  RETURNS uuid
@@ -571,7 +571,7 @@ BEGIN
   RETURNING id INTO movement;
   RETURN movement;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_stock_receipt(p_item uuid, p_godown uuid, p_qty numeric, p_rate numeric, p_date date, p_key text, p_source text DEFAULT NULL::text, p_source_id uuid DEFAULT NULL::uuid)
  RETURNS uuid
@@ -595,7 +595,7 @@ BEGIN
   RETURNING id INTO movement;
   RETURN movement;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.post_stock_transfer(p_item uuid, p_from_godown uuid, p_to_godown uuid, p_qty numeric, p_date date, p_key text)
  RETURNS uuid
@@ -636,7 +636,7 @@ BEGIN
 
   RETURN out_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.produce_sales_order_bom(p_order uuid, p_godown uuid, p_idempotency text)
  RETURNS integer
@@ -666,7 +666,7 @@ BEGIN
   END LOOP;
   RETURN n;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.receive_purchase_bill(p_bill uuid)
  RETURNS uuid
@@ -733,7 +733,7 @@ BEGIN
 
   RETURN p_bill;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.receive_sales_order_finished_goods(p_order uuid, p_godown uuid, p_idempotency text)
  RETURNS integer
@@ -772,7 +772,7 @@ BEGIN
   END LOOP;
   RETURN n;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.record_invoice_receipt(p_invoice uuid, p_amount numeric, p_idempotency text)
  RETURNS numeric
@@ -851,7 +851,7 @@ BEGIN
 
   RETURN public.bill_outstanding(bill.id);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.refresh_canonical_bill_status(p_bill uuid)
  RETURNS void
@@ -872,7 +872,7 @@ BEGIN
       updated_at=now()
   WHERE id=p_bill AND company_id=company;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.reserve_sales_order(p_order uuid, p_godown uuid DEFAULT NULL::uuid)
  RETURNS integer
@@ -922,7 +922,7 @@ BEGIN
   WHERE id=p_order AND company_id=company;
   RETURN n;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.reverse_bill_settlement(p_voucher uuid, p_date date, p_reason text)
  RETURNS uuid
@@ -976,7 +976,7 @@ BEGIN
   END LOOP;
   RETURN reversal_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.reverse_gl_voucher(p_voucher uuid, p_date date, p_reason text)
  RETURNS uuid
@@ -1024,7 +1024,7 @@ BEGIN
   WHERE id=v.id AND company_id=company;
   RETURN v.id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.reverse_invoice(p_invoice uuid, p_idempotency text)
  RETURNS uuid
@@ -1078,7 +1078,7 @@ BEGIN
 
   RETURN reversal;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.reverse_stock_movement(p_movement uuid, p_date date, p_key text)
  RETURNS uuid
@@ -1137,7 +1137,7 @@ BEGIN
 
   RETURN movement;
 END;
-$function$
+$function$;
 
 -- Keep canonical write functions out of direct client DML.
 REVOKE ALL ON FUNCTION public.create_gl_voucher_internal(public.voucher_type,date,jsonb,text,text,text,uuid,text,uuid) FROM PUBLIC,anon,authenticated;

@@ -1,0 +1,83 @@
+name: Baseline Migration Replay — Local Supabase
+
+on:
+  push:
+    branches:
+      - "fix/bill-allocations-migration-replay"
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/baseline-replay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: baseline-replay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          supabase --version
+          docker --version
+
+      - name: Start local Supabase and replay authoritative migrations from zero
+        shell: bash
+        run: |
+          mkdir -p artifacts/baseline
+          set +e
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor > artifacts/baseline/supabase-start.log 2>&1
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > artifacts/baseline/exit-code.txt
+          if [[ "$rc" -eq 0 ]]; then
+            supabase status > artifacts/baseline/supabase-status.txt 2>&1 || true
+            eval "$(supabase status -o env 2> artifacts/baseline/status-stderr.txt)"
+            if [[ -n "${DB_URL:-}" ]]; then
+              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c 'select version from supabase_migrations.schema_migrations order by version' > artifacts/baseline/migration-ledger.txt 2>&1 || true
+              pg_dump "$DB_URL" --schema-only --no-owner --no-privileges --schema=public > artifacts/baseline/schema-public.sql 2> artifacts/baseline/schema-dump.stderr || true
+            fi
+          fi
+          docker ps -a > artifacts/baseline/docker-containers.txt 2>&1 || true
+          if [[ "$rc" -ne 0 ]]; then
+            grep -E 'Applying migration .*\.sql|ERROR:|SQLSTATE|At statement:|relation .* does not exist|Try rerunning the command with --debug' artifacts/baseline/supabase-start.log | tail -30 > artifacts/baseline/failure-summary.txt || true
+          fi
+
+      - name: Upload replay logs and schema artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-replay-${{ github.run_id }}
+          path: artifacts/baseline/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail if clean replay failed
+        if: always()
+        shell: bash
+        run: |
+          if [[ ! -f artifacts/baseline/exit-code.txt ]]; then
+            echo "baseline_replay=not_run"
+            exit 1
+          fi
+          rc="$(cat artifacts/baseline/exit-code.txt)"
+          if [[ "$rc" != "0" ]]; then
+            echo "baseline_replay=failed exit_code=$rc"
+            cat artifacts/baseline/failure-summary.txt 2>/dev/null || true
+            exit 1
+          fi
+          echo "baseline_replay=passed"
