@@ -104,3 +104,18 @@ Each module should be tested with separate synthetic identities and companies, n
 | SEC-2026-014 | Medium; applies to connected archive DB only | `authenticated` has excess `TRUNCATE`, `REFERENCES` and `TRIGGER` grants on `tally_archive_uploads`; three owner policies have avoidable per-row auth-function evaluation warnings. | Do not patch until project identity is reconciled. Revoke the excess grants, optimize policy expressions, then recheck catalog and performance advisor on the correct database. |
 
 **Coverage limitation:** This cycle did not prove live role/department behavior for the full ERP because the connected Supabase target does not match the project URL/reference embedded in the tracked build configuration. Source-level findings and CI tests are useful, but they are not a substitute for testing the actual deployed database with synthetic identities.
+
+## 2026-10-24 coverage delta — Tally archive upload (PR #35, not yet merged)
+
+The archive upload panel is described in PR #35 as part of the Tally Data Import page. The exact frontend route path was not confirmed from the current `main` tree, so this entry records the page-level route label rather than inventing a path. UI visibility is not an authorization boundary.
+
+| Route/page label | Role/state | Data operation | Data surface / enforcing policy | Regression coverage / status |
+|---|---|---|---|---|
+| Tally Data Import → archive list | Approved Admin; own uploaded records | Read | `public.tally_archive_uploads` SELECT; `tally archive uploads owner read`; requires `user_id = auth.uid()` and `can_access_tally_archive(auth.uid())` | Proposed in PR #35; disposable PostgreSQL test added, run result not visible yet |
+| Tally Data Import → upload archive | Approved Admin; caller owns destination folder | Create registry row and Storage object | Registry INSERT with `processing_status='uploaded'`; Storage `tally archive owners upload own files`; approved Admin helper plus first folder segment = `auth.uid()` | Proposed adversarial tests cover Sales, pending Admin, forged user ID and forged Storage folder |
+| Tally Data Import → remove own archive | Approved Admin; own record/folder | Delete | Registry DELETE and Storage DELETE policies require approved Admin plus owner scope | Proposed test job; not yet verified green |
+| Archive processing/status transition | Server-side service role only | Update processing status | Browser role has no UPDATE grant/policy; `service_role` retains server-side table privileges | Grant assertion added; live worker/runtime behavior not verified |
+| Any page/direct PostgREST request | Anonymous or non-Admin / pending or rejected | Read/create/delete | Anonymous table access revoked; RLS helper binds the passed identity to `auth.uid()`, approved profile status and the database-backed `admin` role | Proposed direct SQL/RLS adversarial test; actual HTTP/API integration test still outstanding |
+| Any browser/API SQL session | Authenticated | TRUNCATE / trigger / references / UPDATE | Registry table ACL is revoked then narrowed to SELECT/INSERT/DELETE; RLS alone would not constrain TRUNCATE | Proposed ACL assertions; must pass CI before merge |
+
+**Residual gaps:** This coverage delta describes the proposed migration and test in PR #35, not a deployed control. The connected Supabase project reference does not match `supabase/config.toml`, so do not treat its catalog as the production ERP. Verify the actual deployed backend, run the new disposable-PostgreSQL job, test HTTP/PostgREST and Storage API behavior with synthetic tokens, and confirm the migration ledger before deployment.
