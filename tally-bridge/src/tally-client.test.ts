@@ -46,9 +46,10 @@ test("JSONEx data payload uses the same explicit source-company/date contract", 
   ]);
 });
 
-test("JSONEx never exports against an implicit active company and rejects invalid date values", () => {
+test("JSONEx never exports against an implicit active company and rejects invalid or reversed date ranges", () => {
   assert.throws(() => collectionRequest("Ledger", { company: "", format: "JSONEx" }), /explicit Tally company/);
   assert.throws(() => dataRequest("DayBook", { company: "Abood Tradings", fromDate: "2026-02-30", format: "JSONEx" }), /valid calendar dates/);
+  assert.throws(() => dataRequest("DayBook", { company: "Abood Tradings", fromDate: "2026-03-01", toDate: "2026-02-28", format: "JSONEx" }), /fromDate on or before toDate/);
 });
 
 test("JSONEx client preserves original response bytes and rejects unsuccessful status", async () => {
