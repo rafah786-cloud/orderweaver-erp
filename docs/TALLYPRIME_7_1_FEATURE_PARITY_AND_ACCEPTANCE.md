@@ -150,6 +150,22 @@ These are existing source surfaces to verify and extend; they are not a list of 
 - Accounting replacement requirements: `.lovable/plan/tallyprime-retirement-remediation-plan-2026-09-15.md`
 - Cross-module gap audit: `docs/GLOBAL_ERP_CAPABILITY_GAP_AUDIT_2026-10-08.md`
 
+## Tally import security review — unverified coverage gap
+
+Source inspection of `src/lib/tally-import.functions.ts` on the baseline shows that the bulk master-import server function uses `requireSupabaseAuth` and then checks for a `user_roles.role = 'admin'` row. Unlike the source-staging boundary in `src/lib/tally-source-staging.functions.ts`, the visible import handler does not explicitly call `is_approved`. It also builds direct writes to master tables without including a current company identifier in each payload. Database RLS may provide additional enforcement, but the intended production backend has not been verified and no direct adversarial run has proven the effective result.
+
+**Classification:** authorization coverage gap / potential risk to test, not a confirmed production vulnerability.
+
+**Affected data:** customer/supplier master records, raw materials, finished goods/product models, ledger-related imports; company-scoped master data and opening balances where handled by the importer.
+
+**Preconditions that must be tested:** authenticated identity with an Admin role but pending/rejected approval; approved Admin switching between two companies; direct invocation bypassing the UI; forged Tally source IDs and names/GSTIN collisions; cross-company reads/writes; partial failure midway through import; replay after timeout; RLS denied writes; safe error messages.
+
+**Release rule:** do not treat the legacy master-import function as approved for full/canonical historical import or Tally cutover until these tests run against the verified target schema and the import's company assignment/rollback behavior are explicit. Prefer a dry-run/preview and staging-to-canonical approval step over bulk writes directly from browser-supplied parsed JSON. Do not add a production approval/company mutation here without isolated authorization and integrity tests.
+
+Relevant source:
+- `src/lib/tally-import.functions.ts` — legacy direct master importer; explicit Admin role query, no visible explicit approval check.
+- `src/lib/tally-source-staging.functions.ts` — separate source-staging function with `requireApprovedAdmin`, SHA-256 verification and idempotent chunk staging. This safer staging control does not, by itself, secure the separate legacy import endpoint.
+
 ## Required implementation sequence
 
 ### Gate 0 — baseline integrity (must precede feature parity)
