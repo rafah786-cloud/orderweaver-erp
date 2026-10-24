@@ -64,14 +64,14 @@ test("monthly Day Book windows stay contiguous around month-end dates", async ()
   const outputDir = await mkdtemp(join(tmpdir(), "tally-monthly-windows-"));
   const dayBookRanges: Array<{ fromDate?: string; toDate?: string }> = [];
   const dayBookTypes: string[] = [];
-  const dayBookIds: string[] = [];
+  const dayBookFormats: string[] = [];
   const responseBody = '{"status":"1","data":[]}';
   const fakeClient = {
     request: async (name: string, body: string, options: { company: string; format?: "XML" | "JSONEx"; requestType?: "Data" | "Collection"; fromDate?: string; toDate?: string }) => {
       if (name === "DayBook") {
         dayBookRanges.push({ fromDate: options.fromDate, toDate: options.toDate });
         dayBookTypes.push(options.requestType ?? "");
-        dayBookIds.push(JSON.parse(body).static_variables[0].value);
+        dayBookFormats.push(JSON.parse(body).static_variables[0].value);
       }
       return {
         company: options.company,
@@ -101,7 +101,7 @@ test("monthly Day Book windows stay contiguous around month-end dates", async ()
       { fromDate: "2026-03-28", toDate: "2026-03-31" },
     ]);
     assert.deepEqual(dayBookTypes, ["Collection", "Collection", "Collection"]);
-    assert.deepEqual(dayBookIds, ["JSONEx", "JSONEx", "JSONEx"]);
+    assert.deepEqual(dayBookFormats, ["JSONEx", "JSONEx", "JSONEx"]);
     for (let i = 1; i < dayBookRanges.length; i++) {
       const previousToDate: string | undefined = dayBookRanges[i - 1].toDate;
       const currentFromDate: string | undefined = dayBookRanges[i].fromDate;
