@@ -107,7 +107,7 @@ export function collectionRequest(collection: string, options: TallyRequestOptio
     escapeXml(collection) +
     "</ID></HEADER><BODY><DESC><STATICVARIABLES>" +
     companyVariable +
-    "<SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT>" +
+    "<SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT>" +
     dateVariable("SVFROMDATE", options.fromDate) +
     dateVariable("SVTODATE", options.toDate) +
     "</STATICVARIABLES></DESC></BODY></ENVELOPE>"
@@ -125,7 +125,7 @@ export function dataRequest(report: string, options: TallyRequestOptions): strin
     '<SVCURRENTCOMPANY TYPE="String">' +
     escapeXml(options.company) +
     "</SVCURRENTCOMPANY>" +
-    "<SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT>" +
+    "<SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT>" +
     dateVariable("SVFROMDATE", options.fromDate) +
     dateVariable("SVTODATE", options.toDate) +
     "</STATICVARIABLES></DESC></BODY></ENVELOPE>"
@@ -145,7 +145,7 @@ export class TallyClient {
         "Content-Type": "text/xml;charset=UTF-8",
         "Cache-Control": "no-cache",
       },
-      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Ledgers</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
+      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Ledgers</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
       signal: AbortSignal.timeout(this.defaultTimeoutMs),
     });
     if (!response.ok) throw new Error("Tally HTTP " + response.status);
