@@ -26,6 +26,18 @@ Official entry points:
 - [JSON integration](https://help.tallysolutions.com/tally-prime-integration-using-json-1/)
 - [Import data from JSON or XML](https://help.tallysolutions.com/import-data-from-xml-or-json/)
 - [TallyPrime Cloud Access](https://help.tallysolutions.com/tallyprime-with-cloud-access/)
+- [Security and user management](https://help.tallysolutions.com/security-user-management-in-talllyprime/)
+- [User profile and notification preferences](https://help.tallysolutions.com/profile-details/)
+- [Multilingual data entry and display](https://help.tallysolutions.com/use-tallyprime-in-your-preferred-language/)
+- [Notifications report](https://help.tallysolutions.com/notifications-report/)
+- [Digital signatures for invoices and reports](https://help.tallysolutions.com/digital-signature-tallyprime/)
+- [Working with reports](https://help.tallysolutions.com/working-with-reports/)
+- [Saved report views](https://help.tallysolutions.com/use-save-view-feature-in-tallyprime/)
+- [Connected services](https://help.tallysolutions.com/connected-services-in-tallyprime/)
+- [Export data and report formats](https://help.tallysolutions.com/export-data-in-tally/)
+- [Extract/share data and ODBC](https://help.tallysolutions.com/extract-share-data-in-tallyprime/)
+- [TallyVault encryption](https://help.tallysolutions.com/tallyvault-for-company-tally/)
+- [TallyPrime Server concurrency and central control](https://help.tallysolutions.com/tally-prime-server/)
 
 ### Evidence status is deliberately strict
 
