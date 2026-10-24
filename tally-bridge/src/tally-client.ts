@@ -37,6 +37,9 @@ const JSONEX_COLLECTION_IDS: Record<string, string> = {
   // These identifiers are explicitly shown in Tally's official JSON integration examples.
   "List of Ledgers": "Ledger",
   "List of Stock Items": "StockItem",
+  // Tally's official JSON integration example identifies voucher export as
+  // the TSPLVoucherColl collection; do not assume the XML DayBook report ID works for JSONEx.
+  "DayBook": "TSPLVoucherColl",
 };
 
 export function jsonExCollectionId(label: string): string {
