@@ -10,6 +10,11 @@ The current Tally Solutions download page observed for this audit lists TallyPri
 
 Official entry points:
 - [TallyPrime features and capabilities](https://help.tallysolutions.com/tallyprime-get-started/)
+- [Company Features / F11 configuration options](https://help.tallysolutions.com/set-up-company-features/)
+- [TallyPrime company feature switches](https://help.tallysolutions.com/company-features-f11-tally/)
+- [Export data: formats, options and dependent masters](https://help.tallysolutions.com/export-data-in-tally/)
+- [Import data: duplicate-master behavior and exception handling](https://help.tallysolutions.com/import-data-faq/)
+- [TallyPrime integration methods](https://help.tallysolutions.com/integrate-with-tallyprime/)
 - [TallyPrime features by release](https://help.tallysolutions.com/tallyprime-features-release-wise/)
 - [TallyPrime 7.1 release notes](https://help.tallysolutions.com/release-notes-tallyprime-7-1/)
 - [TallyPrime accounting](https://help.tallysolutions.com/accounting-in-tally-prime/)
