@@ -92,6 +92,7 @@ test("XML business-data requests require an explicit company while company disco
 test("JSONEx master collection labels map to native Tally collection IDs and unknown names fail closed", () => {
   assert.equal(jsonExCollectionId("List of Ledgers"), "Ledger");
   assert.equal(jsonExCollectionId("List of Stock Items"), "StockItem");
+  assert.equal(jsonExCollectionId("DayBook"), "TSPLVoucherColl");
   assert.throws(() => jsonExCollectionId("List of Groups"), /No verified JSONEx collection mapping/);
   assert.throws(() => jsonExCollectionId("List of Godowns"), /No verified JSONEx collection mapping/);
   assert.throws(() => jsonExCollectionId("List of Cost Centres"), /No verified JSONEx collection mapping/);
@@ -110,6 +111,9 @@ test("JSONEx collection client sends the documented native collection identifier
     const client = new TallyClient("http://127.0.0.1:9000");
     await client.request("List of Ledgers", collectionRequest("List of Ledgers", options), options);
     assert.equal(requestedId, "Ledger");
+    const voucherOptions = { ...options, requestType: "Collection" as const };
+    await client.request("DayBook", collectionRequest("DayBook", voucherOptions), voucherOptions);
+    assert.equal(requestedId, "TSPLVoucherColl");
   } finally {
     globalThis.fetch = originalFetch;
   }
