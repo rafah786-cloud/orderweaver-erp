@@ -52,3 +52,48 @@ test("JSONEx snapshot preserves raw JSON and writes a non-staging-compatible sep
     await rm(outputDir, { recursive: true, force: true });
   }
 });
+
+
+test("monthly Day Book windows stay contiguous around month-end dates", async () => {
+  const outputDir = await mkdtemp(join(tmpdir(), "tally-monthly-windows-"));
+  const dayBookRanges: Array<{ fromDate?: string; toDate?: string }> = [];
+  const responseBody = '{"status":"1","data":[]}';
+  const fakeClient = {
+    request: async (name: string, _body: string, options: { company: string; format?: "XML" | "JSONEx"; fromDate?: string; toDate?: string }) => {
+      if (name === "DayBook") dayBookRanges.push({ fromDate: options.fromDate, toDate: options.toDate });
+      return {
+        company: options.company,
+        requestName: name,
+        requestedAt: "2026-10-24T00:00:00.000Z",
+        status: 1,
+        format: options.format ?? "XML",
+        body: responseBody,
+        bytes: Buffer.byteLength(responseBody, "utf8"),
+      };
+    },
+  } as unknown as TallyClient;
+
+  try {
+    await snapshotCompany(fakeClient, {
+      company: "Abood Tradings",
+      fromDate: "2026-01-31",
+      toDate: "2026-03-31",
+      outputDir,
+      includeDayBook: true,
+      chunkMonths: 1,
+      format: "JSONEx",
+    });
+    assert.deepEqual(dayBookRanges, [
+      { fromDate: "2026-01-31", toDate: "2026-02-27" },
+      { fromDate: "2026-02-28", toDate: "2026-03-27" },
+      { fromDate: "2026-03-28", toDate: "2026-03-31" },
+    ]);
+    for (let i = 1; i < dayBookRanges.length; i++) {
+      const previousEnd = new Date(dayBookRanges[i - 1].toDate + "T00:00:00Z");
+      previousEnd.setUTCDate(previousEnd.getUTCDate() + 1);
+      assert.equal(previousEnd.toISOString().slice(0, 10), dayBookRanges[i].fromDate);
+    }
+  } finally {
+    await rm(outputDir, { recursive: true, force: true });
+  }
+});
