@@ -192,8 +192,17 @@ def main() -> None:
                  AND NOT has_function_privilege('anon','public.can_access_tally_archive(uuid)','EXECUTE')
             """)
             expect("archive authorization helper execute privilege is restricted", helper_exec == "t")
+            helper_hardened = scalar("""
+              SELECT prosecdef AND 'search_path=pg_catalog' = ANY(proconfig)
+              FROM pg_proc WHERE oid='public.can_access_tally_archive(uuid)'::regprocedure
+            """)
+            expect("archive helper is SECURITY DEFINER with fixed search_path", helper_hardened == "t")
             expect("Admin cannot ask the helper to authorize another identity",
                    scalar(f"SELECT public.can_access_tally_archive('{SALES_B}')", user_id=ADMIN_A) == "f")
+            expect("Sales cannot authorize their own archive access",
+                   scalar("SELECT public.can_access_tally_archive(auth.uid())", user_id=SALES_B) == "f")
+            expect("pending Admin cannot authorize archive access",
+                   scalar("SELECT public.can_access_tally_archive(auth.uid())", user_id=PENDING_ADMIN_C) == "f")
 
             expect("approved Admin sees own archive only",
                    scalar("SELECT count(*) FROM public.tally_archive_uploads", user_id=ADMIN_A) == "1")
