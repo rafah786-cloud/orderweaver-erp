@@ -21,6 +21,26 @@ export type SnapshotOptions = TallyRequestOptions & {
   chunkMonths: number;
 };
 
+function isValidIsoDate(value: string): boolean {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const date = new Date(value + "T00:00:00.000Z");
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+export function validateSnapshotOptions(options: SnapshotOptions): void {
+  if (!options.company.trim()) throw new Error("An explicit Tally company is required for snapshot export.");
+  if (!options.fromDate || !options.toDate || !isValidIsoDate(options.fromDate) || !isValidIsoDate(options.toDate)) {
+    throw new Error("Snapshot dates must be valid calendar dates in YYYY-MM-DD format.");
+  }
+  if (options.fromDate > options.toDate) throw new Error("Snapshot from-date must be on or before to-date.");
+  if (!Number.isSafeInteger(options.chunkMonths) || options.chunkMonths < 1 || options.chunkMonths > 120) {
+    throw new Error("Snapshot chunk months must be a whole number from 1 to 120.");
+  }
+  if (options.format !== undefined && options.format !== "XML" && options.format !== "JSONEx") {
+    throw new Error("Snapshot format must be XML or JSONEx.");
+  }
+}
+
 function shiftMonths(date: string, months: number): string {
   // setUTCMonth() overflows dates such as January 31 into March. Clamp to the
   // target month's final day before subtracting one day so export windows are
@@ -53,6 +73,7 @@ async function save(root: string, name: string, xml: string) {
 }
 
 export async function snapshotCompany(client: TallyClient, options: SnapshotOptions) {
+  validateSnapshotOptions(options);
   const format = options.format ?? "XML";
   const companyFolder = options.company.replace(/[^a-z0-9._-]+/gi, "_");
   // Keep JSONEx evidence separate from the established XML staging folder.
