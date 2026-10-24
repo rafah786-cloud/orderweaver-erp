@@ -36,3 +36,16 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm test
+
+  tally-archive-access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test approved Admin archive access and least-privilege grants
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/tally_archive_access.py supabase/migrations/20261024090000_harden_tally_archive_access.sql
