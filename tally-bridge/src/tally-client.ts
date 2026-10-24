@@ -145,7 +145,7 @@ export class TallyClient {
         "Content-Type": "text/xml;charset=UTF-8",
         "Cache-Control": "no-cache",
       },
-      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Ledgers</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
+      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Companies</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
       signal: AbortSignal.timeout(this.defaultTimeoutMs),
     });
     if (!response.ok) throw new Error("Tally HTTP " + response.status);
