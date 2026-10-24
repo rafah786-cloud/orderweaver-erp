@@ -14,7 +14,7 @@ function value(name: string, fallback?: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : fallback;
 }
 
-const companies = values("--company");
+const companies = values("--company").map((company) => company.trim());
 const fromDate = value("--from");
 const toDate = value("--to");
 const outputDir = value("--output", "./tally-snapshots") || "./tally-snapshots";
@@ -27,6 +27,7 @@ if (formatInput !== "XML" && formatInput !== "JSONEX") {
 const format = formatInput === "JSONEX" ? "JSONEx" : "XML";
 
 if (!companies.length) throw new Error("At least one --company is required.");
+if (companies.some((company) => !company)) throw new Error("Every --company value must name a specific non-empty Tally company.");
 if (!fromDate || !toDate) throw new Error("--from and --to are required.");
 
 const client = new TallyClient();
