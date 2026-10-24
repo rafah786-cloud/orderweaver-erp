@@ -20,6 +20,11 @@ const toDate = value("--to");
 const outputDir = value("--output", "./tally-snapshots") || "./tally-snapshots";
 const includeDayBook = !process.argv.includes("--masters-only");
 const chunkMonths = Math.max(1, Number(value("--chunk-months", "1") || "1"));
+const formatInput = (value("--format", "XML") || "XML").toUpperCase();
+if (formatInput !== "XML" && formatInput !== "JSONEX") {
+  throw new Error("--format must be XML or JSONEx. XML is the default.");
+}
+const format = formatInput === "JSONEX" ? "JSONEx" : "XML";
 
 if (!companies.length) throw new Error("At least one --company is required.");
 if (!fromDate || !toDate) throw new Error("--from and --to are required.");
@@ -27,13 +32,14 @@ if (!fromDate || !toDate) throw new Error("--from and --to are required.");
 const client = new TallyClient();
 
 for (const company of companies) {
-  console.log("[tally-bridge] Pulling " + company);
+  console.log("[tally-bridge] Pulling " + company + " as " + format + " (read-only)");
   const manifest = await snapshotCompany(client, {
     fromDate,
     toDate,
     outputDir,
     includeDayBook,
     chunkMonths,
+    format,
     company,
   });
   const bytes = manifest.segments.reduce((n: number, s: any) => n + s.bytes, 0);
