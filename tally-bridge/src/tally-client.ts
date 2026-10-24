@@ -75,6 +75,9 @@ function jsonExDate(value: string): string {
  */
 function jsonExRequest(options: TallyRequestOptions): string {
   if (!options.company.trim()) throw new Error("JSONEx export requires an explicit Tally company name.");
+  if (options.fromDate && options.toDate && options.fromDate > options.toDate) {
+    throw new Error("JSONEx date range must have fromDate on or before toDate.");
+  }
   const static_variables: Array<{ name: string; value: string }> = [
     { name: "svExportFormat", value: "JSONEx" },
     { name: "svCurrentCompany", value: options.company },
