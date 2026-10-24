@@ -2,7 +2,7 @@ name: ERP CI
 
 on:
   push:
-    branches: ["feat/**"]
+    branches: ["main", "feat/**"]
   workflow_dispatch:
   pull_request:
 
@@ -36,6 +36,57 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm test
+
+  enterprise-workbench-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test company isolation and admin-only writes
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/enterprise_workbench_admin_rls.py supabase/migrations/20261014140000_enterprise_workbench_admin_dml_guard.sql
+      - name: Test vendor purchase-bill acknowledgement boundary
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/vendor_purchase_bill_ack.py supabase/migrations/20261018160000_harden_vendor_purchase_bill_ack.sql
+      - name: Test vendor supplier-master write restrictions
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/vendor_supplier_master_access.py supabase/migrations/20261018190000_restrict_vendor_supplier_master_updates.sql
+      - name: Test approved-profile database access boundary
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/unapproved_profile_data_access.py supabase/migrations/20261018170000_require_approved_data_access.sql supabase/migrations/20261018180000_restrict_profile_self_insert.sql
+
+  enterprise-finance-role-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test finance table role, approval and company boundaries
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/enterprise_finance_role_access.py supabase/migrations/20261018195000_restrict_enterprise_finance_roles.sql
+
+  bank-reconciliation-rpc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated PostgreSQL test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      - name: Test bank reconciliation RPC company and role boundaries
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python security-tests/bank_reconciliation_rpc.py supabase/migrations/20261007210000_harden_bank_reconciliation.sql supabase/migrations/20261014210000_fix_bank_reconciliation_live_schema.sql
 
   tally-archive-access:
     runs-on: ubuntu-latest
