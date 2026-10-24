@@ -19,7 +19,19 @@ npm start -- --from 2018-04-01 --to 2026-10-06 --chunk-months 1 --company "Abood
 
 Add the other company names as additional --company arguments. Use the real earliest accounting date for the first migration.
 
-The bridge writes tally-snapshots/<company>/manifest.json plus the raw XML segments. Each segment is SHA-256 hashed. A failed request stops the affected company instead of silently producing an incomplete snapshot.
+The bridge writes `tally-snapshots/<company>/manifest.json` plus the raw export segments. Each segment is SHA-256 hashed. A failed request stops the affected company instead of silently producing an incomplete snapshot.
+
+## Native JSONEx snapshot export (TallyPrime 7.0+)
+
+XML remains the default and backward-compatible format. On a TallyPrime release that supports native JSONEx, an operator may request a read-only JSONEx snapshot:
+
+```powershell
+npm start -- --from 2026-04-01 --to 2026-10-06 --chunk-months 1 --company "Abood Tradings" --format JSONEx
+```
+
+The client sends Tally's documented HTTP JSON request metadata (`Version: 1`, `Tallyrequest: Export`, `Type`, and `Id`) and explicitly supplies `svExportFormat=JSONEx` and `svCurrentCompany`; date bounds are passed in Tally date form. The raw JSON response is retained as-is and hashed in the manifest. There is no Import request or Tally write endpoint in this bridge.
+
+JSONEx snapshots are written under `tally-snapshots/jsonex/<company>/`, separate from the established XML snapshot path. Their manifest explicitly marks `stagingCompatible: false`: the ERP's current staging parser is XML-based. The Tally Import page rejects these snapshots with an explanatory error instead of mis-parsing or staging them as XML. Do not treat a successful JSONEx export as proof of ERP import compatibility or accounting parity; a native JSONEx-to-staging mapper and golden Tally fixtures remain required.
 
 The next application step is to feed these segments into the existing Tally migration staging/control plane. The uploaded XML path remains as a fallback.
 
