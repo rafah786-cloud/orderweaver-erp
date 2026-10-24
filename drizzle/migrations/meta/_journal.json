@@ -64,6 +64,13 @@
       "when": 1792392040213,
       "tag": "0008_marketing_attributions_immutable_regrant_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792488596370,
+      "tag": "0009_pin_email_queue_function_search_path",
+      "breakpoints": true
     }
   ]
 }
