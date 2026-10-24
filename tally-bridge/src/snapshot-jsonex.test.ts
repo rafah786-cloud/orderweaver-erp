@@ -89,9 +89,12 @@ test("monthly Day Book windows stay contiguous around month-end dates", async ()
       { fromDate: "2026-03-28", toDate: "2026-03-31" },
     ]);
     for (let i = 1; i < dayBookRanges.length; i++) {
-      const previousEnd = new Date(dayBookRanges[i - 1].toDate + "T00:00:00Z");
+      const previousToDate: string | undefined = dayBookRanges[i - 1].toDate;
+      const currentFromDate: string | undefined = dayBookRanges[i].fromDate;
+      assert.ok(previousToDate, "previous date chunk must have an end date");
+      const previousEnd: Date = new Date(previousToDate + "T00:00:00Z");
       previousEnd.setUTCDate(previousEnd.getUTCDate() + 1);
-      assert.equal(previousEnd.toISOString().slice(0, 10), dayBookRanges[i].fromDate);
+      assert.equal(previousEnd.toISOString().slice(0, 10), currentFromDate);
     }
   } finally {
     await rm(outputDir, { recursive: true, force: true });
