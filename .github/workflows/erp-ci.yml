@@ -38,6 +38,7 @@ jobs:
       - run: npm test
 
   enterprise-workbench-rls:
+    if: ${{ github.event_name != 'push' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +64,7 @@ jobs:
           python security-tests/unapproved_profile_data_access.py supabase/migrations/20261018170000_require_approved_data_access.sql supabase/migrations/20261018180000_restrict_profile_self_insert.sql
 
   enterprise-finance-role-rls:
+    if: ${{ github.event_name != 'push' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +78,7 @@ jobs:
           python security-tests/enterprise_finance_role_access.py supabase/migrations/20261018195000_restrict_enterprise_finance_roles.sql
 
   bank-reconciliation-rpc:
+    if: ${{ github.event_name != 'push' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
