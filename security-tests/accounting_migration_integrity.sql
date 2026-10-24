@@ -39,6 +39,72 @@ BEGIN
         AND COALESCE(with_check,'') ILIKE '%has_company_access%'
     ) THEN RAISE EXCEPTION 'Restrictive company policy missing/incomplete on public.%', t; END IF;
   END LOOP;
+  -- The Tally staging/reconciliation control plane must be company-isolated too.
+  FOREACH t IN ARRAY ARRAY[
+    'tally_migration_runs','tally_migration_rows','tally_migration_issues','tally_reconciliation_snapshots'
+  ] LOOP
+    IF to_regclass('public.' || t) IS NULL THEN
+      RAISE EXCEPTION 'Missing Tally migration control table public.%', t;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname='public' AND c.relname=t AND c.relrowsecurity
+    ) THEN RAISE EXCEPTION 'RLS disabled on Tally control table public.%', t; END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema='public' AND table_name=t AND column_name='company_id'
+    ) THEN RAISE EXCEPTION 'company_id missing on Tally control table public.%', t; END IF;
+    FOREACH p IN ARRAY ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'] LOOP
+      IF has_table_privilege('anon','public.'||t,p) THEN
+        RAISE EXCEPTION 'Anon unexpectedly has % privilege on Tally control table public.%',p,t;
+      END IF;
+    END LOOP;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname='public' AND tablename=t AND permissive='RESTRICTIVE'
+        AND COALESCE(qual,'') ILIKE '%current_company_id%'
+        AND COALESCE(qual,'') ILIKE '%has_company_access%'
+        AND COALESCE(with_check,'') ILIKE '%current_company_id%'
+        AND COALESCE(with_check,'') ILIKE '%has_company_access%'
+    ) THEN RAISE EXCEPTION 'Restrictive company boundary missing on Tally control table public.%',t; END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname='public' AND tablename=t AND permissive='PERMISSIVE'
+        AND COALESCE(qual,'') ILIKE '%has_role%'
+        AND COALESCE(with_check,'') ILIKE '%has_role%'
+    ) THEN RAISE EXCEPTION 'Admin-only permissive policy missing on Tally control table public.%',t; END IF;
+  END LOOP;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_class cl ON cl.oid=tr.tgrelid
+    JOIN pg_namespace ns ON ns.oid=cl.relnamespace
+    WHERE ns.nspname='public' AND cl.relname='tally_migration_rows'
+      AND tr.tgname='tally_migration_rows_company_guard' AND NOT tr.tgisinternal
+  ) THEN RAISE EXCEPTION 'Tally migration row cross-company guard trigger missing'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_class cl ON cl.oid=tr.tgrelid
+    JOIN pg_namespace ns ON ns.oid=cl.relnamespace
+    WHERE ns.nspname='public' AND cl.relname='tally_migration_issues'
+      AND tr.tgname='tally_migration_issues_company_guard' AND NOT tr.tgisinternal
+  ) THEN RAISE EXCEPTION 'Tally migration issue cross-company guard trigger missing'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_class cl ON cl.oid=tr.tgrelid
+    JOIN pg_namespace ns ON ns.oid=cl.relnamespace
+    WHERE ns.nspname='public' AND cl.relname='tally_migration_runs'
+      AND tr.tgname='guard_failed_tally_migration_run' AND NOT tr.tgisinternal
+  ) THEN RAISE EXCEPTION 'Failed Tally migration-run terminal-state guard missing'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_class cl ON cl.oid=tr.tgrelid
+    JOIN pg_namespace ns ON ns.oid=cl.relnamespace
+    WHERE ns.nspname='public' AND cl.relname='tally_migration_runs'
+      AND tr.tgname='guard_tally_approval_control_totals' AND NOT tr.tgisinternal
+  ) THEN RAISE EXCEPTION 'Tally approval control-total guard missing'; END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_indexes WHERE schemaname='public' AND tablename='bills'
       AND indexdef ILIKE '%source_voucher_entry_id%' AND indexdef ILIKE '%UNIQUE%'
@@ -68,7 +134,7 @@ BEGIN
     WHERE n.nspname='public' AND p.proname='post_bill_settlement'
       AND has_function_privilege('authenticated',p.oid,'EXECUTE')
   ) THEN RAISE EXCEPTION 'Authenticated settlement RPC grant is missing'; END IF;
-  RAISE NOTICE 'PASS: schema, company RLS, direct-DML revocations, unique keys and canonical RPC grants';
+  RAISE NOTICE 'PASS: accounting tables, Tally staging company isolation, state guards, direct-DML revocations, unique keys and canonical RPC grants';
 END
 $test$;
 SELECT 'public_tables='||count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';
