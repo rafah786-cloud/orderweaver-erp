@@ -4,7 +4,7 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { TallyClient } from "./tally-client.js";
-import { snapshotCompany } from "./snapshot.js";
+import { snapshotCompany, validateSnapshotOptions } from "./snapshot.js";
 
 test("JSONEx snapshot preserves raw JSON and writes a non-staging-compatible separate manifest", async () => {
   const outputDir = await mkdtemp(join(tmpdir(), "tally-jsonex-snapshot-"));
@@ -99,4 +99,23 @@ test("monthly Day Book windows stay contiguous around month-end dates", async ()
   } finally {
     await rm(outputDir, { recursive: true, force: true });
   }
+});
+
+
+test("snapshot options reject blank company, invalid dates, reversed ranges and unsafe chunk sizes", () => {
+  const base = {
+    company: "Abood Tradings",
+    fromDate: "2026-04-01",
+    toDate: "2026-04-30",
+    outputDir: "/tmp/tally-snapshots",
+    includeDayBook: false,
+    chunkMonths: 1,
+    format: "XML" as const,
+  };
+  assert.doesNotThrow(() => validateSnapshotOptions(base));
+  assert.throws(() => validateSnapshotOptions({ ...base, company: "  " }), /explicit Tally company/);
+  assert.throws(() => validateSnapshotOptions({ ...base, fromDate: "2026-02-30" }), /valid calendar dates/);
+  assert.throws(() => validateSnapshotOptions({ ...base, fromDate: "2026-05-01", toDate: "2026-04-30" }), /on or before/);
+  assert.throws(() => validateSnapshotOptions({ ...base, chunkMonths: 1.5 }), /whole number/);
+  assert.throws(() => validateSnapshotOptions({ ...base, chunkMonths: 121 }), /1 to 120/);
 });
