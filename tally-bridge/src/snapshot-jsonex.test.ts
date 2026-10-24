@@ -156,6 +156,7 @@ test("XML snapshots include the Unit of Measure master needed by inventory impor
       format: "XML",
     });
     assert.ok(requestedCollections.includes("List of Units"));
+    assert.equal(manifest.sourceCoverage, "configured-subset");
     assert.equal(manifest.segments.length, 6);
     assert.ok(manifest.segments.every((segment: { path: string }) => segment.path.endsWith(".xml")));
   } finally {
