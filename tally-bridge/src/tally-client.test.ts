@@ -85,7 +85,7 @@ test("XML business-data requests require an explicit company while company disco
   assert.throws(() => collectionRequest("List of Ledgers", { company: "" }), /explicit Tally company/);
   assert.throws(() => dataRequest("DayBook", { company: "   " }), /explicit Tally company/);
   const companyList = collectionRequest("List of Companies", { company: "" });
-  assert.match(companyList, /<ID>List of Companies<\\/ID>/);
+  assert.ok(companyList.includes("<ID>List of Companies</ID>"));
   assert.doesNotMatch(companyList, /<SVCURRENTCOMPANY/);
 });
 
