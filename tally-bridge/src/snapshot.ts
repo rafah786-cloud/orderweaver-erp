@@ -45,7 +45,13 @@ async function save(root: string, name: string, xml: string) {
 }
 
 export async function snapshotCompany(client: TallyClient, options: SnapshotOptions) {
-  const root = options.outputDir + "/" + options.company.replace(/[^a-z0-9._-]+/gi, "_");
+  const format = options.format ?? "XML";
+  const companyFolder = options.company.replace(/[^a-z0-9._-]+/gi, "_");
+  // Keep JSONEx evidence separate from the established XML staging folder.
+  const root = format === "JSONEx"
+    ? options.outputDir + "/jsonex/" + companyFolder
+    : options.outputDir + "/" + companyFolder;
+  const extension = format === "JSONEx" ? ".json" : ".xml";
   await mkdir(root, { recursive: true });
   const segments: any[] = [];
 
@@ -60,8 +66,8 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
       kind: "collection",
       ...(await save(
         root,
-        "master-" + collection.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".xml",
-        response.xml,
+        "master-" + collection.toLowerCase().replace(/[^a-z0-9]+/g, "-") + extension,
+        response.body,
       )),
     });
   }
@@ -92,8 +98,8 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
         toDate: chunkEnd,
         ...(await save(
           root,
-          "daybook-" + String(index).padStart(4, "0") + "-" + cursor + "-" + chunkEnd + ".xml",
-          response.xml,
+          "daybook-" + String(index).padStart(4, "0") + "-" + cursor + "-" + chunkEnd + extension,
+          response.body,
         )),
       });
       index++;
@@ -103,6 +109,9 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
 
   const manifest = {
     schemaVersion: 1,
+    format,
+    // JSONEx is retained as raw source evidence; the ERP parser currently accepts XML only.
+    stagingCompatible: format === "XML",
     generatedAt: new Date().toISOString(),
     company: options.company,
     fromDate: options.fromDate,
