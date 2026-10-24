@@ -218,15 +218,15 @@ These are existing source surfaces to verify and extend; they are not a list of 
 
 ## Tally import security review — unverified coverage gap
 
-Source inspection of `src/lib/tally-import.functions.ts` on the baseline shows that the bulk master-import server function uses `requireSupabaseAuth` and then checks for a `user_roles.role = 'admin'` row. Unlike the source-staging boundary in `src/lib/tally-source-staging.functions.ts`, the visible import handler does not explicitly call `is_approved`. It also builds direct writes to master tables without including a current company identifier in each payload. Database RLS may provide additional enforcement, but the intended production backend has not been verified and no direct adversarial run has proven the effective result.
+The baseline bulk master-import server function used `requireSupabaseAuth` and checked for a `user_roles.role = 'admin'` row, but did not explicitly check profile approval. The source-staging boundary already used both checks. PR #131 now factors an `requireApprovedAdmin` guard into `src/lib/tally-import.functions.ts` and applies it to both the master importer and balance-finalization function. This is source-level defense in depth; the production backend has not been verified and the new guard has not yet been proven by an approved/pending/rejected profile E2E test.
 
-**Classification:** authorization coverage gap / potential risk to test, not a confirmed production vulnerability.
+**Remaining classification:** company-scope, partial-write/rollback and effective-RLS behavior remain unverified potential risks; not a confirmed production vulnerability.
 
 **Affected data:** customer/supplier master records, raw materials, finished goods/product models, ledger-related imports; company-scoped master data and opening balances where handled by the importer.
 
-**Preconditions that must be tested:** authenticated identity with an Admin role but pending/rejected approval; approved Admin switching between two companies; direct invocation bypassing the UI; forged Tally source IDs and names/GSTIN collisions; cross-company reads/writes; partial failure midway through import; replay after timeout; RLS denied writes; safe error messages.
+**Preconditions that must be tested:** Admin with pending/rejected approval is denied before any write; approved Admin switching between two companies; direct invocation bypassing UI; forged Tally source IDs and names/GSTIN collisions; cross-company reads/writes; partial failure midway through import; replay after timeout; RLS-denied writes; safe error messages.
 
-**Release rule:** do not treat the legacy master-import function as approved for full/canonical historical import or Tally cutover until these tests run against the verified target schema and the import's company assignment/rollback behavior are explicit. Prefer a dry-run/preview and staging-to-canonical approval step over bulk writes directly from browser-supplied parsed JSON. Do not add a production approval/company mutation here without isolated authorization and integrity tests.
+**Release rule:** do not treat the legacy master-import function as approved for full/canonical historical import or Tally cutover until these tests run against the verified target schema and the import's company assignment/rollback behavior are explicit. Prefer a dry-run/preview and staging-to-canonical approval step over bulk writes directly from browser-supplied parsed JSON.
 
 Relevant source:
 - `src/lib/tally-import.functions.ts` — legacy direct master importer; explicit Admin role query, no visible explicit approval check.
