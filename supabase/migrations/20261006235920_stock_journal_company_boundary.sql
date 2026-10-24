@@ -100,7 +100,10 @@ END
 $stock_journal_header_company$;
 
 ALTER TABLE public.stock_journals ALTER COLUMN company_id SET NOT NULL;
-DROP INDEX IF EXISTS public.stock_journals_journal_number_key;
+-- The legacy unique index is owned by a table constraint, so drop the
+-- constraint rather than attempting to drop its backing index directly.
+ALTER TABLE public.stock_journals
+  DROP CONSTRAINT IF EXISTS stock_journals_journal_number_key;
 ALTER TABLE public.stock_journals
   ADD CONSTRAINT stock_journals_company_number_key UNIQUE (company_id, journal_number);
 
