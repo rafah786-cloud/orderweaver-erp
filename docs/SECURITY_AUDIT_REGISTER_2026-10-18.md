@@ -146,7 +146,7 @@ No live database migration is authorized by this report. All security migrations
 
 **Fix proposed:** Existing PR #35 now contains additive migration `20261024090000_harden_tally_archive_access.sql`, which adds an identity-bound SECURITY DEFINER helper with fixed `search_path`, revokes all browser/API table privileges before granting only SELECT/INSERT/DELETE, and requires approved Admin plus owner-folder/row scope for archive registry and Storage operations. The PR also adds `security-tests/tally_archive_access.py` and a disposable-PostgreSQL CI job covering approved Admin, Sales, pending Admin, forged identity/path, UPDATE/TRUNCATE denial, and function execute privileges.
 
-**Validation status:** The patch was committed to the existing PR #35 branch; a successful CI run for the new job was not visible through the connected workflow-run/status query at audit time. No hosted migration was applied. Treat the fix as proposed, not verified or deployed. Review the SQL and wait for the adversarial job to pass before merging.
+**Validation status:** The patch was committed to the existing PR #35 branch; a successful CI run for the new job was not visible through the connected workflow-run/status query at audit time. A current comparison shows that branch is 31 commits ahead and 214 behind `main`; PR #35 remains draft and must be cleanly updated/rebased before merge. The workflow file was aligned with main's current security jobs plus the archive test job, but no successful run was verified. No hosted migration was applied. Treat the fix as proposed, not verified or deployed.
 
 ### SEC-2026-011 — Canonical accounting/inventory migration chain still fails replay validation
 
