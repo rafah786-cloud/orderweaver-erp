@@ -227,6 +227,19 @@ def main() -> None:
             expect("approved Admin can register own upload",
                    scalar(f"SELECT count(*) FROM public.tally_archive_uploads WHERE id='{ROW_NEW}'") == "1")
 
+            sql(f"DELETE FROM public.tally_archive_uploads WHERE id='{ROW_B}'", user_id=SALES_B)
+            expect("Sales cannot delete their own archive row",
+                   scalar(f"SELECT count(*) FROM public.tally_archive_uploads WHERE id='{ROW_B}'") == "1")
+            sql(f"DELETE FROM public.tally_archive_uploads WHERE id='{ROW_NEW}'", user_id=ADMIN_A)
+            expect("approved Admin can delete own archive row",
+                   scalar(f"SELECT count(*) FROM public.tally_archive_uploads WHERE id='{ROW_NEW}'") == "0")
+
+            denied_anon = run([
+                "psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-c",
+                "SET ROLE anon; SELECT count(*) FROM public.tally_archive_uploads",
+            ], check=False)
+            expect("anonymous direct registry read is denied", denied_anon.returncode != 0)
+
             denied_sales = sql(f"""
               INSERT INTO public.tally_archive_uploads
                 (id, user_id, original_filename, object_path, byte_size, sha256_hex, archive_format)
@@ -268,6 +281,14 @@ def main() -> None:
 
             sql(f"INSERT INTO storage.objects(bucket_id,name) VALUES ('tally-archives','{ADMIN_A}/new.rar')",
                 user_id=ADMIN_A)
+            sql(f"DELETE FROM storage.objects WHERE bucket_id='tally-archives' AND name='{SALES_B}/b.rar'",
+                user_id=SALES_B)
+            expect("Sales cannot delete their own Storage object",
+                   scalar(f"SELECT count(*) FROM storage.objects WHERE bucket_id='tally-archives' AND name='{SALES_B}/b.rar'") == "1")
+            sql(f"DELETE FROM storage.objects WHERE bucket_id='tally-archives' AND name='{ADMIN_A}/new.rar'",
+                user_id=ADMIN_A)
+            expect("approved Admin can delete own Storage object",
+                   scalar(f"SELECT count(*) FROM storage.objects WHERE bucket_id='tally-archives' AND name='{ADMIN_A}/new.rar'") == "0")
             denied_storage_sales = sql(
                 f"INSERT INTO storage.objects(bucket_id,name) VALUES ('tally-archives','{SALES_B}/bad.rar')",
                 user_id=SALES_B, check=False)
