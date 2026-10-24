@@ -119,3 +119,40 @@ test("snapshot options reject blank company, invalid dates, reversed ranges and 
   assert.throws(() => validateSnapshotOptions({ ...base, chunkMonths: 1.5 }), /whole number/);
   assert.throws(() => validateSnapshotOptions({ ...base, chunkMonths: 121 }), /1 to 120/);
 });
+
+
+test("XML snapshots include the Unit of Measure master needed by inventory imports", async () => {
+  const outputDir = await mkdtemp(join(tmpdir(), "tally-xml-units-"));
+  const requestedCollections: string[] = [];
+  const responseBody = "<ENVELOPE><HEADER><STATUS>1</STATUS></HEADER><BODY/></ENVELOPE>";
+  const fakeClient = {
+    request: async (name: string, _body: string, options: { company: string; format?: "XML" | "JSONEx" }) => {
+      requestedCollections.push(name);
+      return {
+        company: options.company,
+        requestName: name,
+        requestedAt: "2026-10-24T00:00:00.000Z",
+        status: 1,
+        format: options.format ?? "XML",
+        body: responseBody,
+        bytes: Buffer.byteLength(responseBody, "utf8"),
+      };
+    },
+  } as unknown as TallyClient;
+  try {
+    const manifest = await snapshotCompany(fakeClient, {
+      company: "Abood Tradings",
+      fromDate: "2026-04-01",
+      toDate: "2026-04-30",
+      outputDir,
+      includeDayBook: false,
+      chunkMonths: 1,
+      format: "XML",
+    });
+    assert.ok(requestedCollections.includes("List of Units"));
+    assert.equal(manifest.segments.length, 6);
+    assert.ok(manifest.segments.every((segment: { path: string }) => segment.path.endsWith(".xml")));
+  } finally {
+    await rm(outputDir, { recursive: true, force: true });
+  }
+});
