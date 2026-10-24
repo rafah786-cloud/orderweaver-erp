@@ -93,15 +93,21 @@ function jsonExRequest(options: TallyRequestOptions): string {
  */
 export function collectionRequest(collection: string, options: TallyRequestOptions): string {
   if (options.format === "JSONEx") return jsonExRequest(options);
+  // The one deliberate company-agnostic query is the company discovery list;
+  // all business-data exports must name their source company explicitly.
+  if (!options.company.trim() && collection !== "List of Companies") {
+    throw new Error("An explicit Tally company is required for business-data export.");
+  }
+  const companyVariable = options.company.trim()
+    ? '<SVCURRENTCOMPANY TYPE="String">' + escapeXml(options.company) + "</SVCURRENTCOMPANY>"
+    : "";
   return (
     "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>" +
     "<TYPE>Collection</TYPE><ID>" +
     escapeXml(collection) +
     "</ID></HEADER><BODY><DESC><STATICVARIABLES>" +
-    '<SVCURRENTCOMPANY TYPE="String">' +
-    escapeXml(options.company) +
-    "</SVCURRENTCOMPANY>" +
-    "<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>" +
+    companyVariable +
+    "<SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT>" +
     dateVariable("SVFROMDATE", options.fromDate) +
     dateVariable("SVTODATE", options.toDate) +
     "</STATICVARIABLES></DESC></BODY></ENVELOPE>"
@@ -110,6 +116,7 @@ export function collectionRequest(collection: string, options: TallyRequestOptio
 
 export function dataRequest(report: string, options: TallyRequestOptions): string {
   if (options.format === "JSONEx") return jsonExRequest(options);
+  if (!options.company.trim()) throw new Error("An explicit Tally company is required for business-data export.");
   return (
     "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>" +
     "<TYPE>Data</TYPE><ID>" +
@@ -118,7 +125,7 @@ export function dataRequest(report: string, options: TallyRequestOptions): strin
     '<SVCURRENTCOMPANY TYPE="String">' +
     escapeXml(options.company) +
     "</SVCURRENTCOMPANY>" +
-    "<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>" +
+    "<SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT>" +
     dateVariable("SVFROMDATE", options.fromDate) +
     dateVariable("SVTODATE", options.toDate) +
     "</STATICVARIABLES></DESC></BODY></ENVELOPE>"
