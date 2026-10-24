@@ -75,8 +75,9 @@ ALTER TABLE public.stock_journal_entries
 
 UPDATE public.stock_journals j
 SET company_id = COALESCE(
-  (SELECT min(e.company_id) FROM public.stock_journal_entries e
-   WHERE e.journal_id=j.id AND e.company_id IS NOT NULL),
+  (SELECT e.company_id FROM public.stock_journal_entries e
+   WHERE e.journal_id=j.id AND e.company_id IS NOT NULL
+   ORDER BY e.company_id LIMIT 1),
   (SELECT p.active_company_id FROM public.profiles p WHERE p.id=j.created_by)
 )
 WHERE j.company_id IS NULL;
