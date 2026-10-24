@@ -160,7 +160,7 @@ export async function snapshotCompany(client: TallyClient, options: SnapshotOpti
     format,
     // JSONEx is only a supported-source subset until all master collection identifiers
     // and canonical ERP mappings have been verified. Never imply complete coverage.
-    sourceCoverage: format === "JSONEx" ? "partial" : "configured",
+    sourceCoverage: format === "JSONEx" ? "partial" : "configured-subset",
     requestedMasterCollections: collections,
     stagingCompatible: format === "XML",
     generatedAt: new Date().toISOString(),
