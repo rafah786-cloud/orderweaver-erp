@@ -22,10 +22,18 @@ export type SnapshotOptions = TallyRequestOptions & {
 };
 
 function shiftMonths(date: string, months: number): string {
-  const d = new Date(date + "T00:00:00Z");
-  d.setUTCMonth(d.getUTCMonth() + months);
-  d.setUTCDate(d.getUTCDate() - 1);
-  return d.toISOString().slice(0, 10);
+  // setUTCMonth() overflows dates such as January 31 into March. Clamp to the
+  // target month's final day before subtracting one day so export windows are
+  // contiguous and cannot silently grow past the configured chunk size.
+  const source = new Date(date + "T00:00:00Z");
+  const targetMonth = new Date(Date.UTC(source.getUTCFullYear(), source.getUTCMonth() + months, 1));
+  const targetYear = targetMonth.getUTCFullYear();
+  const targetMonthIndex = targetMonth.getUTCMonth();
+  const lastTargetDay = new Date(Date.UTC(targetYear, targetMonthIndex + 1, 0)).getUTCDate();
+  const targetDay = Math.min(source.getUTCDate(), lastTargetDay);
+  const exclusive = new Date(Date.UTC(targetYear, targetMonthIndex, targetDay));
+  exclusive.setUTCDate(exclusive.getUTCDate() - 1);
+  return exclusive.toISOString().slice(0, 10);
 }
 
 function nextDay(date: string): string {
