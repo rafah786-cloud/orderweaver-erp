@@ -116,6 +116,24 @@ test("JSONEx collection client sends the documented native collection identifier
 });
 
 
+test("JSONEx report requests can explicitly use the Data header instead of Collection", async () => {
+  const originalFetch = globalThis.fetch;
+  const options = { company: "Abood Tradings", format: "JSONEx" as const, requestType: "Data" as const };
+  let headers: Record<string, string> = {};
+  try {
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      headers = init?.headers as Record<string, string>;
+      return new Response('{"status":"1","data":{}}', { status: 200 });
+    }) as typeof fetch;
+    const client = new TallyClient("http://127.0.0.1:9000");
+    await client.request("Balance Sheet", dataRequest("Balance Sheet", options), options);
+    assert.equal(headers.Type, "Data");
+    assert.equal(headers.Id, "Balance Sheet");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("connection ping uses company discovery rather than exporting business ledgers", async () => {
   const originalFetch = globalThis.fetch;
   let sentBody = "";
