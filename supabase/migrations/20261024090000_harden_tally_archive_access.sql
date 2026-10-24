@@ -14,6 +14,8 @@ BEGIN
 END
 $preflight$;
 
+ALTER TABLE public.tally_archive_uploads ENABLE ROW LEVEL SECURITY;
+
 -- This helper binds role/approval to auth.uid(), not a caller-supplied identity
 -- or mutable session setting. A fixed search_path and fully qualified objects
 -- prevent object-shadowing in this SECURITY DEFINER authorization check.
