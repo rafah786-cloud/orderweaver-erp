@@ -19,7 +19,19 @@ npm start -- --from 2018-04-01 --to 2026-10-06 --chunk-months 1 --company "Abood
 
 Add the other company names as additional --company arguments. Use the real earliest accounting date for the first migration.
 
-The bridge writes tally-snapshots/<company>/manifest.json plus the raw XML segments. Each segment is SHA-256 hashed. A failed request stops the affected company instead of silently producing an incomplete snapshot.
+The bridge writes `tally-snapshots/<company>/manifest.json` plus the raw export segments. Each segment is SHA-256 hashed. A failed request stops the affected company instead of silently producing an incomplete snapshot.
+
+## Native JSONEx snapshot export (TallyPrime 7.0+)
+
+XML remains the default and backward-compatible format. On a TallyPrime release that supports native JSONEx, an operator may request a read-only JSONEx snapshot:
+
+```powershell
+npm start -- --from 2026-04-01 --to 2026-10-06 --chunk-months 1 --company "Abood Tradings" --format JSONEx
+```
+
+The client sends Tally's documented HTTP JSON request metadata (`Version: 1`, `Tallyrequest: Export`, `Type`, and `Id`) and the documented `static_variables` entries (`type`, `key`, `name`, `value`) for `svExportFormat=JSONEx`, `svCurrentCompany`, and date bounds. The raw JSON response is retained as-is and hashed in the manifest. There is no Import request or Tally write endpoint in this bridge.
+
+JSONEx snapshots are written under `tally-snapshots/jsonex/<company-slug>-<company-name-hash>/`, separate from the established XML snapshot path. The hash suffix prevents distinct company names from colliding after filename sanitization. Their manifest explicitly marks `stagingCompatible: false` and `sourceCoverage: "partial"`: the official integration guide demonstrates the Ledger and StockItem collection IDs and the `TSPLVoucherColl` collection for voucher export. The snapshot labels the history segment `DayBook`, but sends the native JSONEx collection ID `TSPLVoucherColl` using the Collection request type. Other master collection IDs fail closed until checked against an authoritative fixture from a supported TallyPrime version. The ERP's current staging parser is XML-based, so the Tally Import page rejects these snapshots instead of mis-parsing them as XML. Do not treat a successful JSONEx export as proof of ERP import compatibility or accounting parity; a complete collection map, native JSONEx-to-staging mapper and golden Tally fixtures remain required.
 
 The next application step is to feed these segments into the existing Tally migration staging/control plane. The uploaded XML path remains as a fallback.
 

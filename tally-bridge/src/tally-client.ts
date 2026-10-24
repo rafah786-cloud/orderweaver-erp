@@ -1,10 +1,16 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 
+export type TallyExportFormat = "XML" | "JSONEx";
+
 export type TallyRequestOptions = {
   company: string;
   fromDate?: string;
   toDate?: string;
   timeoutMs?: number;
+  /** Defaults to XML for backward compatibility. JSONEx export is read-only. */
+  format?: TallyExportFormat;
+  /** Native JSON protocol header. Defaults to the legacy DayBook/collection inference. */
+  requestType?: "Data" | "Collection";
 };
 
 export type TallyResponse = {
@@ -12,7 +18,9 @@ export type TallyResponse = {
   requestName: string;
   requestedAt: string;
   status: number;
-  xml: string;
+  format: TallyExportFormat;
+  /** Exact response text retained without parsing/re-serializing source data. */
+  body: string;
   bytes: number;
 };
 
@@ -21,6 +29,24 @@ const parser = new XMLParser({
   attributeNamePrefix: "@_",
   trimValues: true,
 });
+
+// Tally's JSON integration examples use the object/collection identifier, not
+// the friendly XML report label. These are the master collections used by this
+// bridge; unmapped names fail closed instead of sending an unverified request.
+const JSONEX_COLLECTION_IDS: Record<string, string> = {
+  // These identifiers are explicitly shown in Tally's official JSON integration examples.
+  "List of Ledgers": "Ledger",
+  "List of Stock Items": "StockItem",
+  // Tally's official JSON integration example identifies voucher export as
+  // the TSPLVoucherColl collection; do not assume the XML DayBook report ID works for JSONEx.
+  "DayBook": "TSPLVoucherColl",
+};
+
+export function jsonExCollectionId(label: string): string {
+  const id = JSONEX_COLLECTION_IDS[label];
+  if (!id) throw new Error("No verified JSONEx collection mapping exists for: " + label);
+  return id;
+}
 
 function escapeXml(value: string): string {
   return value
@@ -35,20 +61,59 @@ function dateVariable(name: string, value?: string): string {
   return value ? "<" + name + ' TYPE="Date">' + escapeXml(value) + "</" + name + ">" : "";
 }
 
+function jsonExDate(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) throw new Error("JSONEx date filters must use YYYY-MM-DD.");
+  const date = new Date(value + "T00:00:00.000Z");
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new Error("JSONEx date filters must be valid calendar dates.");
+  }
+  return match[1] + match[2] + match[3];
+}
+
 /**
- * Company is always explicit. This prevents a request from accidentally
- * exporting whichever company happens to be active in the Tally UI.
+ * TallyPrime 7.0+ JSONEx export request payload. This bridge deliberately
+ * builds only Export requests; it has no native JSON import/post operation.
+ * The HTTP metadata (version/tallyrequest/type/id) is supplied by TallyClient.
+ */
+function jsonExRequest(options: TallyRequestOptions): string {
+  if (!options.company.trim()) throw new Error("JSONEx export requires an explicit Tally company name.");
+  if (options.fromDate && options.toDate && options.fromDate > options.toDate) {
+    throw new Error("JSONEx date range must have fromDate on or before toDate.");
+  }
+  // Follow Tally's documented static_variables object shape: type, key, name,
+  // and value. Empty key is intentional for system variables; do not omit the
+  // schema fields simply because this request does not use repeated variables.
+  const static_variables: Array<{ type: string; key: string; name: string; value: string }> = [
+    { type: "String", key: "", name: "svExportFormat", value: "JSONEx" },
+    { type: "String", key: "", name: "svCurrentCompany", value: options.company },
+  ];
+  if (options.fromDate) static_variables.push({ type: "Date", key: "", name: "SVFROMDATE", value: jsonExDate(options.fromDate) });
+  if (options.toDate) static_variables.push({ type: "Date", key: "", name: "SVTODATE", value: jsonExDate(options.toDate) });
+  return JSON.stringify({ static_variables });
+}
+
+/**
+ * Company is always explicit in both protocols. This prevents a request from
+ * accidentally exporting whichever company happens to be active in Tally.
  */
 export function collectionRequest(collection: string, options: TallyRequestOptions): string {
+  if (options.format === "JSONEx") return jsonExRequest(options);
+  // The one deliberate company-agnostic query is the company discovery list;
+  // all business-data exports must name their source company explicitly.
+  if (!options.company.trim() && collection !== "List of Companies") {
+    throw new Error("An explicit Tally company is required for business-data export.");
+  }
+  const companyVariable = options.company.trim()
+    ? '<SVCURRENTCOMPANY TYPE="String">' + escapeXml(options.company) + "</SVCURRENTCOMPANY>"
+    : "";
   return (
     "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>" +
     "<TYPE>Collection</TYPE><ID>" +
     escapeXml(collection) +
     "</ID></HEADER><BODY><DESC><STATICVARIABLES>" +
-    '<SVCURRENTCOMPANY TYPE="String">' +
-    escapeXml(options.company) +
-    "</SVCURRENTCOMPANY>" +
-    "<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>" +
+    companyVariable +
+    "<SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT>" +
     dateVariable("SVFROMDATE", options.fromDate) +
     dateVariable("SVTODATE", options.toDate) +
     "</STATICVARIABLES></DESC></BODY></ENVELOPE>"
@@ -56,6 +121,8 @@ export function collectionRequest(collection: string, options: TallyRequestOptio
 }
 
 export function dataRequest(report: string, options: TallyRequestOptions): string {
+  if (options.format === "JSONEx") return jsonExRequest(options);
+  if (!options.company.trim()) throw new Error("An explicit Tally company is required for business-data export.");
   return (
     "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>" +
     "<TYPE>Data</TYPE><ID>" +
@@ -64,7 +131,7 @@ export function dataRequest(report: string, options: TallyRequestOptions): strin
     '<SVCURRENTCOMPANY TYPE="String">' +
     escapeXml(options.company) +
     "</SVCURRENTCOMPANY>" +
-    "<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>" +
+    "<SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT>" +
     dateVariable("SVFROMDATE", options.fromDate) +
     dateVariable("SVTODATE", options.toDate) +
     "</STATICVARIABLES></DESC></BODY></ENVELOPE>"
@@ -84,7 +151,7 @@ export class TallyClient {
         "Content-Type": "text/xml;charset=UTF-8",
         "Cache-Control": "no-cache",
       },
-      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Ledgers</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>$SysName:XML</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
+      body: "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Collection</TYPE><ID>List of Companies</ID></HEADER><BODY><DESC><STATICVARIABLES><SVEXPORTFORMAT>" + "$" + "$SysName:XML" + "</SVEXPORTFORMAT></STATICVARIABLES></DESC></BODY></ENVELOPE>",
       signal: AbortSignal.timeout(this.defaultTimeoutMs),
     });
     if (!response.ok) throw new Error("Tally HTTP " + response.status);
@@ -92,31 +159,57 @@ export class TallyClient {
 
   async request(
     requestName: string,
-    xml: string,
+    requestBody: string,
     options: TallyRequestOptions,
   ): Promise<TallyResponse> {
+    const format = options.format ?? "XML";
+    const jsonEx = format === "JSONEx";
+    const requestType = options.requestType ?? (requestName === "DayBook" ? "Data" : "Collection");
+    const requestId = jsonEx && requestType === "Collection" ? jsonExCollectionId(requestName) : requestName;
     const response = await fetch(this.baseUrl, {
       method: "POST",
       headers: {
-        "Content-Type": "text/xml;charset=UTF-8",
+        "Content-Type": jsonEx ? "application/json" : "text/xml;charset=UTF-8",
+        ...(jsonEx ? {
+          Version: "1",
+          Tallyrequest: "Export",
+          Type: requestType,
+          Id: requestId,
+        } : {}),
         "Cache-Control": "no-cache",
       },
-      body: xml,
+      body: requestBody,
       signal: AbortSignal.timeout(options.timeoutMs || this.defaultTimeoutMs),
     });
-    const responseXml = await response.text();
-    if (!response.ok) {
-      throw new Error("Tally HTTP " + response.status + ": " + responseXml.slice(0, 500));
-    }
+    const responseBody = await response.text();
+    if (!response.ok) throw new Error("Tally HTTP " + response.status);
 
-    if (/<!DOCTYPE|<!ENTITY/i.test(responseXml) || XMLValidator.validate(responseXml) !== true) {
-      throw new Error("Tally returned malformed XML or unsupported document entities");
-    }
-    const parsed = parser.parse(responseXml) as Record<string, any>;
-    if (!parsed?.ENVELOPE) throw new Error("Tally response has no ENVELOPE");
-    const status = Number(parsed.ENVELOPE.HEADER?.STATUS ?? 1);
-    if (!Number.isFinite(status) || status <= 0 || /<LINEERROR[\s>]/i.test(responseXml)) {
-      throw new Error("Tally request " + requestName + " returned STATUS=" + status);
+    let status: number;
+    if (jsonEx) {
+      let parsed: Record<string, unknown>;
+      try {
+        const value: unknown = JSON.parse(responseBody);
+        if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("not an object");
+        parsed = value as Record<string, unknown>;
+      } catch {
+        throw new Error("Tally returned malformed JSONEx response.");
+      }
+      const rawStatus = parsed.status;
+      status = rawStatus === "1" || rawStatus === 1 ? 1 : rawStatus === "0" || rawStatus === 0 ? 0 : Number.NaN;
+      if (status !== 1) {
+        const safeStatus = rawStatus === undefined ? "missing" : String(rawStatus).slice(0, 32);
+        throw new Error("Tally request " + requestName + " returned JSON status=" + safeStatus);
+      }
+    } else {
+      if (/<!DOCTYPE|<!ENTITY/i.test(responseBody) || XMLValidator.validate(responseBody) !== true) {
+        throw new Error("Tally returned malformed XML or unsupported document entities");
+      }
+      const parsed = parser.parse(responseBody) as Record<string, any>;
+      if (!parsed?.ENVELOPE) throw new Error("Tally response has no ENVELOPE");
+      status = Number(parsed.ENVELOPE.HEADER?.STATUS ?? 1);
+      if (!Number.isFinite(status) || status <= 0 || /<LINEERROR[\s>]/i.test(responseBody)) {
+        throw new Error("Tally request " + requestName + " returned STATUS=" + status);
+      }
     }
 
     return {
@@ -124,8 +217,9 @@ export class TallyClient {
       requestName,
       requestedAt: new Date().toISOString(),
       status,
-      xml: responseXml,
-      bytes: Buffer.byteLength(responseXml, "utf8"),
+      format,
+      body: responseBody,
+      bytes: Buffer.byteLength(responseBody, "utf8"),
     };
   }
 }

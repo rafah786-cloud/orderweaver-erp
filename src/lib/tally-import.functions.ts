@@ -113,6 +113,18 @@ function norm(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
 }
 
+async function requireApprovedAdmin(supabase: any, userId: string): Promise<void> {
+  const [{ data: roles, error: roleError }, { data: approved, error: approvalError }] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase.rpc("is_approved", { _user_id: userId }),
+  ]);
+  if (roleError || approvalError) throw new Error("Authorization check failed");
+  if (!(roles ?? []).some((role: { role: string }) => role.role === "admin")) {
+    throw new Error("Admin only");
+  }
+  if (!approved) throw new Error("Approved administrator access required.");
+}
+
 export async function chunkInsert(
   supabase: any,
   table: "party_ledger_entries" | "supplier_ledger_entries",
@@ -147,19 +159,9 @@ export const importTallyMasters = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    // Server-side admin gate. The UI also restricts this, but the client
-    // check alone is insufficient because authenticated non-admins could call
-    // this server function directly.
-    const { data: roles, error: rolesErr } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (rolesErr) {
-      console.error("[tally-import] role lookup failed", rolesErr);
-      throw new Error("Authorization check failed");
-    }
-    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-    if (!isAdmin) throw new Error("Admin only");
+    // The UI gate is not an authorization boundary: direct server-function
+    // calls must require both an Admin role and an approved profile.
+    await requireApprovedAdmin(supabase, userId);
     const result: TallyImportResult = {
       customers: { inserted: 0, updated: 0 },
       vendors: { inserted: 0, updated: 0 },
@@ -689,11 +691,7 @@ export const recomputeTallyBalances = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: roles, error: roleError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (roleError || !(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+    await requireApprovedAdmin(supabase, userId);
     const { data: companyId, error: companyError } = await supabase.rpc("current_company_id");
     if (companyError || !companyId) throw new Error("No active company selected");
 

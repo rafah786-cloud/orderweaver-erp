@@ -16,7 +16,7 @@ export function authorizeLocalRequest(req: IncomingMessage, config: BridgeConfig
 async function companies(client: TallyClient) {
   // Standard read-only collection export. Missing GUIDs are a blocker, never invented.
   const response = await client.request("List of Companies", collectionRequest("List of Companies", { company: "" }), { company: "" });
-  const parsed = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", parseTagValue: false }).parse(response.xml);
+  const parsed = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", parseTagValue: false }).parse(response.body);
   const result: Array<{ name: string; guid: string }> = [];
   function walk(node: unknown) {
     if (!node || typeof node !== "object") return;
@@ -81,7 +81,7 @@ export function createLocalBridge(config: BridgeConfig) {
       if (response.bytes > 20 * 1024 * 1024) throw new Error("Export exceeds 20 MB. Choose a smaller date range.");
       const after = await companies(config.client);
       if (!after.some((c) => c.guid === guid && c.name === company.name)) throw new Error("Company identity changed during export. Nothing was accepted.");
-      res.end(JSON.stringify({ protocol: 1, company, kind, from, to, xml: response.xml, exportedAt: response.requestedAt }));
+      res.end(JSON.stringify({ protocol: 1, company, kind, from, to, xml: response.body, exportedAt: response.requestedAt }));
     } catch (error) {
       res.writeHead(422).end(JSON.stringify({ error: error instanceof Error ? error.message : "Local Tally export failed" }));
     }
