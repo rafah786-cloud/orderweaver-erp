@@ -105,6 +105,57 @@ BEGIN
       AND tr.tgname='guard_tally_approval_control_totals' AND NOT tr.tgisinternal
   ) THEN RAISE EXCEPTION 'Tally approval control-total guard missing'; END IF;
 
+  -- Stock journal headers and lines must share an enforced company scope.
+  FOREACH t IN ARRAY ARRAY['stock_journals','stock_journal_entries'] LOOP
+    IF to_regclass('public.'||t) IS NULL THEN
+      RAISE EXCEPTION 'Missing stock journal table public.%',t;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname='public' AND c.relname=t AND c.relrowsecurity
+    ) THEN RAISE EXCEPTION 'RLS disabled on public.%',t; END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema='public' AND table_name=t AND column_name='company_id'
+    ) THEN RAISE EXCEPTION 'company_id missing on public.%',t; END IF;
+    IF NOT has_table_privilege('authenticated','public.'||t,'SELECT') THEN
+      RAISE EXCEPTION 'Authenticated SELECT missing on public.%',t;
+    END IF;
+    FOREACH p IN ARRAY ARRAY['INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'] LOOP
+      IF has_table_privilege('authenticated','public.'||t,p) THEN
+        RAISE EXCEPTION 'Authenticated direct % privilege remains on public.%',p,t;
+      END IF;
+    END LOOP;
+    FOREACH p IN ARRAY ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'] LOOP
+      IF has_table_privilege('anon','public.'||t,p) THEN
+        RAISE EXCEPTION 'Anon unexpectedly has % privilege on public.%',p,t;
+      END IF;
+    END LOOP;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname='public' AND tablename=t AND permissive='RESTRICTIVE'
+        AND COALESCE(qual,'') ILIKE '%current_company_id%'
+        AND COALESCE(qual,'') ILIKE '%has_company_access%'
+        AND COALESCE(with_check,'') ILIKE '%current_company_id%'
+        AND COALESCE(with_check,'') ILIKE '%has_company_access%'
+    ) THEN RAISE EXCEPTION 'Restrictive company boundary missing on stock journal table public.%',t; END IF;
+  END LOOP;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_class cl ON cl.oid=tr.tgrelid
+    JOIN pg_namespace ns ON ns.oid=cl.relnamespace
+    WHERE ns.nspname='public' AND cl.relname='stock_journal_entries'
+      AND tr.tgname='stock_journal_entry_company_guard' AND NOT tr.tgisinternal
+  ) THEN RAISE EXCEPTION 'Stock journal entry parent/item/godown company guard is missing'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname='create_stock_journal'
+      AND p.prosecdef
+      AND has_function_privilege('authenticated',p.oid,'EXECUTE')
+  ) THEN RAISE EXCEPTION 'Canonical stock journal posting RPC is not granted to authenticated'; END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_indexes WHERE schemaname='public' AND tablename='bills'
       AND indexdef ILIKE '%source_voucher_entry_id%' AND indexdef ILIKE '%UNIQUE%'
@@ -134,7 +185,7 @@ BEGIN
     WHERE n.nspname='public' AND p.proname='post_bill_settlement'
       AND has_function_privilege('authenticated',p.oid,'EXECUTE')
   ) THEN RAISE EXCEPTION 'Authenticated settlement RPC grant is missing'; END IF;
-  RAISE NOTICE 'PASS: accounting tables, Tally staging company isolation, state guards, direct-DML revocations, unique keys and canonical RPC grants';
+  RAISE NOTICE 'PASS: accounting tables, Tally staging isolation, stock-journal isolation, direct-DML revocations, unique keys and canonical RPC grants';
 END
 $test$;
 SELECT 'public_tables='||count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';
